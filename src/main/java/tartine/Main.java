@@ -14,6 +14,8 @@ import tartine.dex.DexClass;
 import tartine.dex.DexDump;
 import tartine.dex.DexMethod;
 import tartine.dex.DexSet;
+import tartine.fw.FwIndex;
+import tartine.fw.Sdk;
 import tartine.vm.Interpreter;
 import tartine.vm.VmException;
 import tartine.vm.VmObject;
@@ -145,6 +147,10 @@ public final class Main {
             }
             // Probe: <init> skipped, receiver is uninitialized on purpose.
             Interpreter interpreter = new Interpreter(dexes);
+            FwIndex framework = loadFramework(manifest);
+            if (framework != null) {
+                interpreter.setFramework(framework);
+            }
             try {
                 Object result = interpreter.invoke(cls, onCreate, new VmObject(cls),
                         new Object[]{null});
@@ -158,6 +164,32 @@ public final class Main {
                         + bug);
                 bug.printStackTrace(System.err);
             }
+        }
+    }
+
+    private static FwIndex loadFramework(BinaryXml.Element manifest) {
+        int targetSdk = -1;
+        BinaryXml.Element usesSdk = manifest.child("uses-sdk");
+        if (usesSdk != null) {
+            try {
+                targetSdk = Integer.parseInt(usesSdk.attr("targetSdkVersion"));
+            } catch (NumberFormatException | NullPointerException e) {
+                targetSdk = -1;
+            }
+        }
+        java.nio.file.Path jar = Sdk.findJar(targetSdk);
+        if (jar == null) {
+            System.out.println("framework: no SDK android.jar (hierarchy unavailable)");
+            return null;
+        }
+        try {
+            FwIndex framework = FwIndex.loadJar(jar);
+            System.out.println("framework: " + jar.getParent().getFileName() + "/"
+                    + jar.getFileName() + " (" + framework.classCount() + " classes)");
+            return framework;
+        } catch (Exception e) {
+            System.out.println("framework: cannot read " + jar + " (" + e.getMessage() + ")");
+            return null;
         }
     }
 

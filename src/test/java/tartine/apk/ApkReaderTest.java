@@ -107,6 +107,7 @@ class ApkReaderTest {
             BinaryXml.Element sdk = root.child("uses-sdk");
             assertNotNull(sdk);
             assertEquals("21", sdk.attr("minSdkVersion"));
+            assertEquals("36", sdk.attr("targetSdkVersion"));
         }
     }
 
@@ -147,7 +148,8 @@ class ApkReaderTest {
                 "TestApp", // 7
                 "com.example.test", // 8
                 "minSdkVersion", // 9
-                "uses-sdk"); // 10
+                "targetSdkVersion", // 10
+                "uses-sdk"); // 11
         ByteBuffer out = ByteBuffer.allocate(2048).order(ByteOrder.LITTLE_ENDIAN);
         putU16(out, 0x0003);
         putU16(out, 8);
@@ -192,10 +194,11 @@ class ApkReaderTest {
                 {0, 2, -1, 0x12, 1}, // android:debuggable=true
         });
         endElement(out, 1);
-        startElement(out, 10, new int[][]{
+        startElement(out, 11, new int[][]{
                 {0, 9, -1, 0x10, 21}, // android:minSdkVersion=21
+                {0, 10, -1, 0x10, 36}, // android:targetSdkVersion=36
         });
-        endElement(out, 10);
+        endElement(out, 11);
         endElement(out, 4);
 
         out.putInt(fileSizePos, out.position());

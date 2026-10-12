@@ -1,16 +1,22 @@
 package tartine.vm;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import tartine.dex.Descriptors;
 import tartine.dex.DexClass;
 import tartine.dex.DexMethod;
 import tartine.dex.DexSet;
 import tartine.dex.Insn;
+import tartine.fw.FwIndex;
 
 /**
  * Tree-walking DEX interpreter over our IR.
@@ -36,10 +42,34 @@ public final class Interpreter {
     private final Map<String, Object> statics = new HashMap<>();
     private final Set<String> initialized = new HashSet<>();
     private final Set<String> initializing = new HashSet<>();
+    private final Map<String, HostMethod> builtins = new HashMap<>();
+    private final Map<VmObject, PendingThrowable> throwables = new IdentityHashMap<>();
+    private FwIndex framework;
     private long steps = 0;
 
     public Interpreter(DexSet dexes) {
         this.dexes = dexes;
+        registerBuiltins();
+    }
+
+    /** Framework type universe (hierarchy, signatures, constants). Optional. */
+    public void setFramework(FwIndex framework) {
+        this.framework = framework;
+    }
+
+    /** Host-implemented method: framework behavior in plain Java. */
+    public interface HostMethod {
+        Object invoke(Object receiver, Object[] args);
+    }
+
+    /** Throwable allocated before its message is known (seen at {@code <init>}). */
+    static final class PendingThrowable {
+        final Class<?> clazz;
+        String message;
+
+        PendingThrowable(Class<?> clazz) {
+            this.clazz = clazz;
+        }
     }
 
     /** Instructions executed by the last top-level {@link #call} or {@link #invoke}. */
@@ -92,7 +122,7 @@ public final class Interpreter {
         }
         int words = isStatic ? 0 : 1;
         for (String param : method.parameterTypes) {
-            words += isWide(param) ? 2 : 1;
+            words += Descriptors.isWide(param) ? 2 : 1;
         }
         Object[] regs = new Object[method.registerCount];
         int reg = regs.length - words;
@@ -104,7 +134,7 @@ public final class Interpreter {
         }
         for (int i = 0; i < args.length; i++) {
             regs[reg] = args[i];
-            reg += isWide(method.parameterTypes.get(i)) ? 2 : 1;
+            reg += Descriptors.isWide(method.parameterTypes.get(i)) ? 2 : 1;
         }
 
         List<Insn> code = method.instructions;
@@ -459,14 +489,17 @@ public final class Interpreter {
                         pc = check(asInt(regs[g.get(0)]) <= 0, addresses, insn, pc);
                         break;
                     case "new-instance": {
-                        DexClass target = dexes.findClass(insn.reference);
-                        if (target == null) {
-                            throw new VmException("unimplemented: " + insn.reference);
+                        Object created = createInstance(insn.reference);
+                        if (created == null) {
+                            DexClass target = dexes.findClass(insn.reference);
+                            if (target == null) {
+                                throw new VmException("unimplemented: " + insn.reference);
+                            }
+                            ensureInit(target);
+                            created = new VmObject(target);
                         }
-                        ensureInit(target);
-                        VmObject object = new VmObject(target);
-                        regs[g.get(0)] = object;
-                        pending = object;
+                        regs[g.get(0)] = created;
+                        pending = created;
                         hasPending = true;
                         pc++;
                         break;
@@ -507,7 +540,7 @@ public final class Interpreter {
                     case "filled-new-array":
                     case "filled-new-array-range": {
                         String element = arrayElement(insn.reference);
-                        if (isWide(element)) {
+                        if (Descriptors.isWide(element)) {
                             throw new VmException("unsupported opcode: " + op + " wide");
                         }
                         VmArray array = new VmArray(element, g.size());
@@ -669,28 +702,38 @@ public final class Interpreter {
                     case "invoke-static-range": {
                         MethodRef ref = MethodRef.parse(insn.reference);
                         DexClass target = dexes.findClass(ref.definingClass);
-                        if (target == null) {
-                            throw new VmException("unimplemented: " + insn.reference);
+                        DexMethod callee = target == null ? null : findMethod(target, ref);
+                        if (callee != null) {
+                            if ((callee.accessFlags & ACC_STATIC) == 0) {
+                                throw new VmException("static mismatch: " + insn.reference);
+                            }
+                            ensureInit(target);
+                            Object[] callArgs = readArgs(callee, g, 0, regs);
+                            Object result = execute(target, callee, null, callArgs);
+                            if (callee.returnType.equals("V")) {
+                                pending = null;
+                                hasPending = false;
+                            } else {
+                                pending = result;
+                                hasPending = true;
+                            }
+                            pc++;
+                            break;
                         }
-                        DexMethod callee = findMethod(target, ref);
-                        if (callee == null) {
-                            throw new VmException("unimplemented: " + insn.reference);
+                        HostMethod builtin = builtins.get(builtinKey(ref));
+                        if (builtin != null) {
+                            Object result = builtin.invoke(null, readRefArgs(ref, g, 0, regs));
+                            if (ref.returnType.equals("V")) {
+                                pending = null;
+                                hasPending = false;
+                            } else {
+                                pending = result;
+                                hasPending = true;
+                            }
+                            pc++;
+                            break;
                         }
-                        if ((callee.accessFlags & ACC_STATIC) == 0) {
-                            throw new VmException("static mismatch: " + insn.reference);
-                        }
-                        ensureInit(target);
-                        Object[] callArgs = readArgs(callee, g, 0, regs);
-                        Object result = execute(target, callee, null, callArgs);
-                        if (callee.returnType.equals("V")) {
-                            pending = null;
-                            hasPending = false;
-                        } else {
-                            pending = result;
-                            hasPending = true;
-                        }
-                        pc++;
-                        break;
+                        throw frameworkGap(ref.definingClass, ref, insn.reference);
                     }
                     case "invoke-direct":
                     case "invoke-direct-range":
@@ -713,38 +756,63 @@ public final class Interpreter {
                             throw new NullPointerException(
                                     "null receiver: " + insn.reference);
                         }
-                        DexMethod callee;
-                        DexClass home;
+                        DexMethod callee = null;
+                        DexClass home = null;
                         if (op.startsWith("invoke-direct")) {
                             home = dexes.findClass(ref.definingClass);
-                            if (home == null) {
-                                throw new VmException("unimplemented: " + insn.reference);
+                            if (home != null) {
+                                callee = findMethod(home, ref);
                             }
-                            callee = findMethod(home, ref);
                         } else if (op.startsWith("invoke-super")) {
                             home = superOf(lexical);
-                            callee = home == null ? null : lookupUp(home, ref);
+                            if (home != null) {
+                                callee = lookupUp(home, ref);
+                            }
                         } else {
-                            home = runtimeClass(receiver);
-                            callee = home == null ? null : lookupUp(home, ref);
+                            DexClass runtime = runtimeClass(receiver);
+                            home = runtime;
+                            if (runtime != null) {
+                                callee = lookupUp(runtime, ref);
+                            }
                         }
-                        if (callee == null || home == null) {
-                            throw new VmException("unimplemented: " + insn.reference);
+                        if (callee != null) {
+                            if ((callee.accessFlags & ACC_STATIC) != 0) {
+                                throw new VmException("static mismatch: " + insn.reference);
+                            }
+                            Object[] callArgs = readArgs(callee, g, 1, regs);
+                            Object result = execute(home, callee, receiver, callArgs);
+                            if (callee.returnType.equals("V")) {
+                                pending = null;
+                                hasPending = false;
+                            } else {
+                                pending = result;
+                                hasPending = true;
+                            }
+                            pc++;
+                            break;
                         }
-                        if ((callee.accessFlags & ACC_STATIC) != 0) {
-                            throw new VmException("static mismatch: " + insn.reference);
+                        HostMethod builtin = builtins.get(builtinKey(ref));
+                        if (builtin != null) {
+                            Object[] callArgs = readRefArgs(ref, g, 1, regs);
+                            Object result = builtin.invoke(receiver, callArgs);
+                            if (ref.returnType.equals("V")) {
+                                pending = null;
+                                hasPending = false;
+                            } else {
+                                pending = result;
+                                hasPending = true;
+                            }
+                            pc++;
+                            break;
                         }
-                        Object[] callArgs = readArgs(callee, g, 1, regs);
-                        Object result = execute(home, callee, receiver, callArgs);
-                        if (callee.returnType.equals("V")) {
-                            pending = null;
-                            hasPending = false;
-                        } else {
-                            pending = result;
-                            hasPending = true;
+                        Outcome special = runSpecial(receiver, ref, readRefArgs(ref, g, 1, regs));
+                        if (special.handled) {
+                            pending = special.hasValue ? special.value : null;
+                            hasPending = special.hasValue;
+                            pc++;
+                            break;
                         }
-                        pc++;
-                        break;
+                        throw frameworkGap(ref.definingClass, ref, insn.reference);
                     }
                     default:
                         throw new VmException("unsupported opcode: " + op);
@@ -779,6 +847,57 @@ public final class Interpreter {
         }
     }
 
+    /**
+     * Host-allocates framework objects with value semantics. Returns null
+     * when the class needs a DEX body (or a gap message) instead.
+     */
+    private Object createInstance(String descriptor) {
+        if (descriptor.equals("Ljava/lang/StringBuilder;")) {
+            return new StringBuilder();
+        }
+        if (descriptor.equals("Ljava/lang/String;")) {
+            return "";
+        }
+        if (descriptor.startsWith("Ljava/lang/")) {
+            Class<?> clazz = hostThrowable(descriptor);
+            if (clazz != null) {
+                String superDesc = "Ljava/lang/Throwable;";
+                if (framework != null) {
+                    FwIndex.FwClass fw = framework.find(descriptor);
+                    if (fw != null && fw.superclass != null) {
+                        superDesc = fw.superclass;
+                    }
+                }
+                VmObject placeholder = new VmObject(new DexClass(descriptor, superDesc,
+                        new ArrayList<String>(), new ArrayList<DexMethod>()));
+                throwables.put(placeholder, new PendingThrowable(clazz));
+                return placeholder;
+            }
+        }
+        return null;
+    }
+
+    /** Host {@link Throwable} subclass for a framework descriptor, else null. */
+    private static Class<?> hostThrowable(String descriptor) {
+        if (!descriptor.startsWith("Ljava/lang/") || !descriptor.endsWith(";")) {
+            return null;
+        }
+        String simple = descriptor.substring("Ljava/lang/".length(), descriptor.length() - 1);
+        if (simple.isEmpty() || simple.indexOf('/') >= 0 || simple.indexOf('[') >= 0) {
+            return null;
+        }
+        String binary = "java.lang." + simple;
+        try {
+            Class<?> clazz = Class.forName(binary);
+            if (java.lang.Throwable.class.isAssignableFrom(clazz)) {
+                return clazz;
+            }
+            return null;
+        } catch (ClassNotFoundException | LinkageError e) {
+            return null;
+        }
+    }
+
     private void ensureInit(DexClass cls) {
         if (initialized.contains(cls.type) || initializing.contains(cls.type)) {
             return;
@@ -800,32 +919,86 @@ public final class Interpreter {
     private void ensureInitFor(String fieldReference) {
         FieldRef ref = FieldRef.parse(fieldReference);
         DexClass cls = dexes.findClass(ref.definingClass);
-        if (cls == null) {
+        if (cls != null) {
+            ensureInit(cls);
+            return;
+        }
+        if (framework == null || framework.find(ref.definingClass) == null) {
             throw new VmException("unimplemented: " + fieldReference);
         }
-        ensureInit(cls);
+        // Framework class: no <clinit> to run; constants served without init.
     }
 
     private Object staticInt(String fieldReference) {
         ensureInitFor(fieldReference);
         Object value = statics.get(staticKey(fieldReference));
-        return value == null ? 0 : asInt(value);
+        if (value != null) {
+            return asInt(value);
+        }
+        Object constant = frameworkConstant(fieldReference);
+        if (constant instanceof Number) {
+            return ((Number) constant).intValue();
+        }
+        if (constant != null || !isDexClass(fieldReference)) {
+            throw new VmException("unimplemented: " + fieldReference);
+        }
+        return 0;
     }
 
     private Object staticLong(String fieldReference) {
         ensureInitFor(fieldReference);
         Object value = statics.get(staticKey(fieldReference));
-        return value == null ? 0L : asLong(value);
+        if (value != null) {
+            return asLong(value);
+        }
+        Object constant = frameworkConstant(fieldReference);
+        if (constant instanceof Number) {
+            return ((Number) constant).longValue();
+        }
+        if (constant != null || !isDexClass(fieldReference)) {
+            throw new VmException("unimplemented: " + fieldReference);
+        }
+        return 0L;
     }
 
     private Object staticRef(String fieldReference) {
         ensureInitFor(fieldReference);
-        return statics.get(staticKey(fieldReference));
+        String key = staticKey(fieldReference);
+        if (statics.containsKey(key)) {
+            return statics.get(key);
+        }
+        Object constant = frameworkConstant(fieldReference);
+        if (constant != null) {
+            return constant;
+        }
+        if (isDexClass(fieldReference)) {
+            return null;
+        }
+        throw new VmException("unimplemented: " + fieldReference);
     }
 
     private void staticPut(String fieldReference, Object value) {
         ensureInitFor(fieldReference);
+        if (!isDexClass(fieldReference)) {
+            throw new VmException("unimplemented: " + fieldReference);
+        }
         statics.put(staticKey(fieldReference), value);
+    }
+
+    private boolean isDexClass(String fieldReference) {
+        return dexes.findClass(FieldRef.parse(fieldReference).definingClass) != null;
+    }
+
+    private Object frameworkConstant(String fieldReference) {
+        if (framework == null) {
+            return null;
+        }
+        FieldRef ref = FieldRef.parse(fieldReference);
+        FwIndex.FwClass fw = framework.find(ref.definingClass);
+        if (fw == null) {
+            return null;
+        }
+        return fw.constants.get(ref.name);
     }
 
     private static String staticKey(String fieldReference) {
@@ -891,8 +1064,7 @@ public final class Interpreter {
         return reference.substring(1);
     }
 
-    /** Null passes check-cast; instance-of null is false. Otherwise walks
-     * the same-dex superclass chain (arrays: exact component or Object). */
+    /** Null is never an instance; otherwise BFS over supers and interfaces. */
     private boolean isInstance(Object value, String target) {
         if (value == null) {
             return false;
@@ -910,22 +1082,105 @@ public final class Interpreter {
                     || (want.equals("Ljava/lang/Object;") && isRefType(have));
         }
         if (!(value instanceof VmObject)) {
-            return false;
+            return hostAssignable(target, value.getClass());
         }
-        String current = ((VmObject) value).type.type;
-        while (true) {
+        Deque<String> queue = new ArrayDeque<>();
+        Set<String> seen = new HashSet<>();
+        queue.add(((VmObject) value).type.type);
+        while (!queue.isEmpty()) {
+            String current = queue.removeFirst();
             if (current.equals(target)) {
                 return true;
             }
-            if (current.equals("Ljava/lang/Object;")) {
-                return false;
+            if (!seen.add(current)) {
+                continue;
             }
-            DexClass cls = dexes.findClass(current);
-            if (cls == null || cls.superclass == null) {
-                throw new VmException("unimplemented class: " + current);
+            Supers supers = supersOf(current);
+            if (supers.superclass != null
+                    && !supers.superclass.equals("Ljava/lang/Object;")) {
+                queue.add(supers.superclass);
             }
-            current = cls.superclass;
+            queue.addAll(supers.interfaces);
         }
+        return false;
+    }
+
+    private static final class Supers {
+        final String superclass;
+        final List<String> interfaces;
+
+        Supers(String superclass, List<String> interfaces) {
+            this.superclass = superclass;
+            this.interfaces = interfaces;
+        }
+    }
+
+    private Supers supersOf(String descriptor) {
+        DexClass dex = dexes.findClass(descriptor);
+        if (dex != null) {
+            return new Supers(dex.superclass, dex.interfaces);
+        }
+        if (framework != null) {
+            FwIndex.FwClass fw = framework.find(descriptor);
+            if (fw != null) {
+                return new Supers(fw.superclass, fw.interfaces);
+            }
+        }
+        throw new VmException("unimplemented class: " + descriptor);
+    }
+
+    private static boolean hostAssignable(String target, Class<?> start) {
+        Deque<Class<?>> queue = new ArrayDeque<>();
+        Set<Class<?>> seen = new HashSet<>();
+        queue.add(start);
+        while (!queue.isEmpty()) {
+            Class<?> current = queue.removeFirst();
+            if (!seen.add(current)) {
+                continue;
+            }
+            if (hostDescriptor(current).equals(target)) {
+                return true;
+            }
+            if (current.getSuperclass() != null) {
+                queue.add(current.getSuperclass());
+            }
+            Collections.addAll(queue, current.getInterfaces());
+        }
+        return false;
+    }
+
+    static String hostDescriptor(Class<?> type) {
+        if (type.isArray()) {
+            return type.getName().replace('.', '/');
+        }
+        if (type == boolean.class) {
+            return "Z";
+        }
+        if (type == byte.class) {
+            return "B";
+        }
+        if (type == short.class) {
+            return "S";
+        }
+        if (type == char.class) {
+            return "C";
+        }
+        if (type == int.class) {
+            return "I";
+        }
+        if (type == long.class) {
+            return "J";
+        }
+        if (type == float.class) {
+            return "F";
+        }
+        if (type == double.class) {
+            return "D";
+        }
+        if (type == void.class) {
+            return "V";
+        }
+        return "L" + type.getName().replace('.', '/') + ";";
     }
 
     private static boolean isRefType(String type) {
@@ -974,18 +1229,52 @@ public final class Interpreter {
         return null;
     }
 
+    private static String builtinKey(MethodRef ref) {
+        StringBuilder key = new StringBuilder(ref.definingClass).append("->")
+                .append(ref.name).append('(');
+        for (String param : ref.parameters) {
+            key.append(param);
+        }
+        return key.append(')').append(ref.returnType).toString();
+    }
+
+    private VmException frameworkGap(String definingClass, MethodRef ref, String reference) {
+        FwIndex.FwClass fw = framework == null ? null : framework.find(definingClass);
+        if (fw != null && fw.hasMethod(ref.name, ref.parameters, ref.returnType)) {
+            return new VmException("unimplemented: " + reference);
+        }
+        if (dexes.findClass(definingClass) != null || fw != null) {
+            return new VmException("no such method: " + reference);
+        }
+        return new VmException("unimplemented: " + reference);
+    }
+
     private static Object[] readArgs(DexMethod callee, List<Integer> slots, int first,
             Object[] regs) {
         Object[] callArgs = new Object[callee.parameterTypes.size()];
         int slot = first;
         for (int i = 0; i < callArgs.length; i++) {
             callArgs[i] = regs[slots.get(slot)];
-            slot += isWide(callee.parameterTypes.get(i)) ? 2 : 1;
+            slot += Descriptors.isWide(callee.parameterTypes.get(i)) ? 2 : 1;
+        }
+        return callArgs;
+    }
+
+    private static Object[] readRefArgs(MethodRef ref, List<Integer> slots, int first,
+            Object[] regs) {
+        Object[] callArgs = new Object[ref.parameters.size()];
+        int slot = first;
+        for (int i = 0; i < callArgs.length; i++) {
+            callArgs[i] = regs[slots.get(slot)];
+            slot += Descriptors.isWide(ref.parameters.get(i)) ? 2 : 1;
         }
         return callArgs;
     }
 
     private boolean catches(String handlerType, Object value) {
+        if (value instanceof java.lang.Throwable) {
+            return hostAssignable(handlerType, value.getClass());
+        }
         if (!(value instanceof VmObject)) {
             return false;
         }
@@ -993,6 +1282,559 @@ public final class Interpreter {
             return isInstance(value, handlerType);
         } catch (VmException unknown) {
             return false;
+        }
+    }
+
+    private void builtin(String key, HostMethod impl) {
+        builtins.put(key, impl);
+    }
+
+    private static String argString(Object[] args, int i) {
+        return (String) args[i];
+    }
+
+    private static int argInt(Object[] args, int i) {
+        return ((Number) args[i]).intValue();
+    }
+
+    private static long argLong(Object[] args, int i) {
+        return ((Number) args[i]).longValue();
+    }
+
+    private static float argFloat(Object[] args, int i) {
+        return ((Number) args[i]).floatValue();
+    }
+
+    private static double argDouble(Object[] args, int i) {
+        return ((Number) args[i]).doubleValue();
+    }
+
+    private static int bool(boolean value) {
+        return value ? 1 : 0;
+    }
+
+    private static VmArray stringArray(String[] values) {
+        VmArray array = new VmArray("Ljava/lang/String;", values.length);
+        for (int i = 0; i < values.length; i++) {
+            array.set(i, values[i]);
+        }
+        return array;
+    }
+
+    private static VmArray byteArray(byte[] values) {
+        VmArray array = new VmArray("B", values.length);
+        for (int i = 0; i < values.length; i++) {
+            array.set(i, (int) values[i]);
+        }
+        return array;
+    }
+
+    private static VmArray charArray(char[] values) {
+        VmArray array = new VmArray("C", values.length);
+        for (int i = 0; i < values.length; i++) {
+            array.set(i, (int) values[i]);
+        }
+        return array;
+    }
+
+    /** Outcome of a name-based default rule (see {@link #runSpecial}). */
+    static final class Outcome {
+        static final Outcome MISS = new Outcome(false, null, false);
+        final boolean handled;
+        final Object value;
+        final boolean hasValue;
+
+        Outcome(boolean handled, Object value, boolean hasValue) {
+            this.handled = handled;
+            this.value = value;
+            this.hasValue = hasValue;
+        }
+
+        static Outcome value(Object result) {
+            return new Outcome(true, result, true);
+        }
+
+        static Outcome empty() {
+            return new Outcome(true, null, false);
+        }
+    }
+
+    /**
+     * Default implementations keyed by method name (not declaring class):
+     * constructors on host/placeholder objects and the
+     * {@code Object}/{@code Throwable} protocol.
+     */
+    private Outcome runSpecial(Object receiver, MethodRef ref, Object[] args) {
+        boolean noArgs = ref.parameters.isEmpty();
+        if (ref.name.equals("<init>")) {
+            if (receiver instanceof StringBuilder) {
+                StringBuilder builder = (StringBuilder) receiver;
+                if (noArgs) {
+                    return Outcome.empty();
+                }
+                if (ref.parameters.size() == 1
+                        && ref.parameters.get(0).equals("Ljava/lang/String;")) {
+                    builder.append(argString(args, 0));
+                    return Outcome.empty();
+                }
+                if (ref.parameters.size() == 1 && ref.parameters.get(0).equals("I")) {
+                    return Outcome.empty();
+                }
+                return Outcome.MISS;
+            }
+            if (receiver instanceof String && noArgs) {
+                return Outcome.empty();
+            }
+            if (isPlaceholder(receiver)) {
+                if (noArgs) {
+                    return Outcome.empty();
+                }
+                if (ref.parameters.size() == 1
+                        && ref.parameters.get(0).equals("Ljava/lang/String;")) {
+                    PendingThrowable pending = throwables.get(receiver);
+                    if (pending != null) {
+                        pending.message = argString(args, 0);
+                        return Outcome.empty();
+                    }
+                }
+                return Outcome.MISS;
+            }
+            return Outcome.MISS;
+        }
+        if (ref.name.equals("toString") && noArgs
+                && ref.returnType.equals("Ljava/lang/String;")) {
+            if (receiver instanceof VmObject) {
+                VmObject object = (VmObject) receiver;
+                PendingThrowable pending = throwables.get(object);
+                String name = dots(object.type.type);
+                if (pending != null) {
+                    return Outcome.value(pending.message == null ? name
+                            : name + ": " + pending.message);
+                }
+                return Outcome.value(defaultToString(object));
+            }
+            return Outcome.value(String.valueOf(receiver));
+        }
+        if (ref.name.equals("getMessage") && noArgs
+                && ref.returnType.equals("Ljava/lang/String;")) {
+            if (receiver instanceof VmObject) {
+                PendingThrowable pending = throwables.get(receiver);
+                return Outcome.value(pending == null ? null : pending.message);
+            }
+            if (receiver instanceof java.lang.Throwable) {
+                return Outcome.value(((java.lang.Throwable) receiver).getMessage());
+            }
+            return Outcome.MISS;
+        }
+        if (ref.name.equals("equals") && ref.parameters.size() == 1
+                && ref.returnType.equals("Z")) {
+            if (receiver instanceof VmObject) {
+                return Outcome.value(bool(receiver == args[0]));
+            }
+            return Outcome.value(bool(receiver.equals(args[0])));
+        }
+        if (ref.name.equals("hashCode") && noArgs && ref.returnType.equals("I")) {
+            if (receiver instanceof VmObject) {
+                return Outcome.value(System.identityHashCode(receiver));
+            }
+            return Outcome.value(receiver.hashCode());
+        }
+        if (ref.name.equals("printStackTrace") && noArgs
+                && ref.returnType.equals("V")) {
+            if (receiver instanceof java.lang.Throwable) {
+                ((java.lang.Throwable) receiver).printStackTrace();
+                return Outcome.empty();
+            }
+            return Outcome.MISS;
+        }
+        if (ref.name.equals("fillInStackTrace") && noArgs
+                && ref.returnType.equals("Ljava/lang/Object;")) {
+            if (receiver instanceof java.lang.Throwable) {
+                return Outcome.value(receiver);
+            }
+            return Outcome.MISS;
+        }
+        return Outcome.MISS;
+    }
+
+    private boolean isPlaceholder(Object receiver) {
+        return receiver instanceof VmObject
+                && dexes.findClass(((VmObject) receiver).type.type) == null;
+    }
+
+    private static String dots(String descriptor) {
+        return descriptor.substring(1, descriptor.length() - 1).replace('/', '.');
+    }
+
+    private static String defaultToString(VmObject object) {
+        return dots(object.type.type) + "@"
+                + Integer.toHexString(System.identityHashCode(object));
+    }
+
+    private void registerBuiltins() {
+        builtin("Ljava/lang/String;->length()I",
+                (receiver, args) -> ((String) receiver).length());
+        builtin("Ljava/lang/String;->isEmpty()Z",
+                (receiver, args) -> bool(((String) receiver).isEmpty()));
+        builtin("Ljava/lang/String;->charAt(I)C",
+                (receiver, args) -> (int) ((String) receiver).charAt(argInt(args, 0)));
+        builtin("Ljava/lang/String;->equals(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(receiver.equals(args[0])));
+        builtin("Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z",
+                (receiver, args) -> bool(((String) receiver).equalsIgnoreCase(argString(args, 0))));
+        builtin("Ljava/lang/String;->compareTo(Ljava/lang/String;)I",
+                (receiver, args) -> ((String) receiver).compareTo(argString(args, 0)));
+        builtin("Ljava/lang/String;->compareToIgnoreCase(Ljava/lang/String;)I",
+                (receiver, args) -> ((String) receiver).compareToIgnoreCase(argString(args, 0)));
+        builtin("Ljava/lang/String;->indexOf(I)I",
+                (receiver, args) -> ((String) receiver).indexOf(argInt(args, 0)));
+        builtin("Ljava/lang/String;->indexOf(Ljava/lang/String;)I",
+                (receiver, args) -> ((String) receiver).indexOf(argString(args, 0)));
+        builtin("Ljava/lang/String;->indexOf(Ljava/lang/String;I)I",
+                (receiver, args) -> ((String) receiver).indexOf(argString(args, 0),
+                        argInt(args, 1)));
+        builtin("Ljava/lang/String;->indexOf(II)I",
+                (receiver, args) -> ((String) receiver).indexOf(argInt(args, 0),
+                        argInt(args, 1)));
+        builtin("Ljava/lang/String;->substring(I)Ljava/lang/String;",
+                (receiver, args) -> ((String) receiver).substring(argInt(args, 0)));
+        builtin("Ljava/lang/String;->substring(II)Ljava/lang/String;",
+                (receiver, args) -> ((String) receiver).substring(argInt(args, 0),
+                        argInt(args, 1)));
+        builtin("Ljava/lang/String;->startsWith(Ljava/lang/String;)Z",
+                (receiver, args) -> bool(((String) receiver).startsWith(argString(args, 0))));
+        builtin("Ljava/lang/String;->startsWith(Ljava/lang/String;I)Z",
+                (receiver, args) -> bool(((String) receiver).startsWith(argString(args, 0),
+                        argInt(args, 1))));
+        builtin("Ljava/lang/String;->endsWith(Ljava/lang/String;)Z",
+                (receiver, args) -> bool(((String) receiver).endsWith(argString(args, 0))));
+        builtin("Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z",
+                (receiver, args) -> bool(((String) receiver).contains((CharSequence) args[0])));
+        builtin("Ljava/lang/String;->toLowerCase()Ljava/lang/String;",
+                (receiver, args) -> ((String) receiver).toLowerCase());
+        builtin("Ljava/lang/String;->toUpperCase()Ljava/lang/String;",
+                (receiver, args) -> ((String) receiver).toUpperCase());
+        builtin("Ljava/lang/String;->trim()Ljava/lang/String;",
+                (receiver, args) -> ((String) receiver).trim());
+        builtin("Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;",
+                (receiver, args) -> ((String) receiver).concat(argString(args, 0)));
+        builtin("Ljava/lang/String;->replace(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)"
+                + "Ljava/lang/String;",
+                (receiver, args) -> ((String) receiver).replace((CharSequence) args[0],
+                        (CharSequence) args[1]));
+        builtin("Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;",
+                (receiver, args) -> stringArray(((String) receiver).split(argString(args, 0))));
+        builtin("Ljava/lang/String;->getBytes()[B",
+                (receiver, args) -> byteArray(((String) receiver).getBytes()));
+        builtin("Ljava/lang/String;->toCharArray()[C",
+                (receiver, args) -> charArray(((String) receiver).toCharArray()));
+        builtin("Ljava/lang/String;->matches(Ljava/lang/String;)Z",
+                (receiver, args) -> bool(((String) receiver).matches(argString(args, 0))));
+        builtin("Ljava/lang/String;->replaceAll(Ljava/lang/String;Ljava/lang/String;)"
+                + "Ljava/lang/String;",
+                (receiver, args) -> ((String) receiver).replaceAll(argString(args, 0),
+                        argString(args, 1)));
+        builtin("Ljava/lang/String;->replaceFirst(Ljava/lang/String;Ljava/lang/String;)"
+                + "Ljava/lang/String;",
+                (receiver, args) -> ((String) receiver).replaceFirst(argString(args, 0),
+                        argString(args, 1)));
+        builtin("Ljava/lang/String;->valueOf(Z)Ljava/lang/String;",
+                (receiver, args) -> String.valueOf(argInt(args, 0) != 0));
+        builtin("Ljava/lang/String;->valueOf(C)Ljava/lang/String;",
+                (receiver, args) -> String.valueOf((char) argInt(args, 0)));
+        builtin("Ljava/lang/String;->valueOf(I)Ljava/lang/String;",
+                (receiver, args) -> String.valueOf(argInt(args, 0)));
+        builtin("Ljava/lang/String;->valueOf(J)Ljava/lang/String;",
+                (receiver, args) -> String.valueOf(argLong(args, 0)));
+        builtin("Ljava/lang/String;->valueOf(F)Ljava/lang/String;",
+                (receiver, args) -> String.valueOf(argFloat(args, 0)));
+        builtin("Ljava/lang/String;->valueOf(D)Ljava/lang/String;",
+                (receiver, args) -> String.valueOf(argDouble(args, 0)));
+        builtin("Ljava/lang/String;->valueOf(Ljava/lang/Object;)Ljava/lang/String;",
+                (receiver, args) -> String.valueOf(args[0]));
+        builtin("Ljava/lang/String;->toString()Ljava/lang/String;",
+                (receiver, args) -> receiver);
+
+        builtin("Ljava/lang/StringBuilder;->append(Ljava/lang/String;)"
+                + "Ljava/lang/StringBuilder;",
+                (receiver, args) -> ((StringBuilder) receiver).append(argString(args, 0)));
+        builtin("Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;",
+                (receiver, args) -> ((StringBuilder) receiver).append(argInt(args, 0) != 0));
+        builtin("Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;",
+                (receiver, args) -> ((StringBuilder) receiver).append((char) argInt(args, 0)));
+        builtin("Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;",
+                (receiver, args) -> ((StringBuilder) receiver).append(argInt(args, 0)));
+        builtin("Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;",
+                (receiver, args) -> ((StringBuilder) receiver).append(argLong(args, 0)));
+        builtin("Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;",
+                (receiver, args) -> ((StringBuilder) receiver).append(argFloat(args, 0)));
+        builtin("Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;",
+                (receiver, args) -> ((StringBuilder) receiver).append(argDouble(args, 0)));
+        builtin("Ljava/lang/StringBuilder;->append(Ljava/lang/Object;)"
+                + "Ljava/lang/StringBuilder;",
+                (receiver, args) -> ((StringBuilder) receiver).append(args[0]));
+        builtin("Ljava/lang/StringBuilder;->toString()Ljava/lang/String;",
+                (receiver, args) -> receiver.toString());
+        builtin("Ljava/lang/StringBuilder;->length()I",
+                (receiver, args) -> ((StringBuilder) receiver).length());
+        builtin("Ljava/lang/StringBuilder;->setLength(I)V",
+                (receiver, args) -> {
+                    ((StringBuilder) receiver).setLength(argInt(args, 0));
+                    return null;
+                });
+
+        builtin("Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;",
+                (receiver, args) -> Integer.valueOf(argInt(args, 0)));
+        builtin("Ljava/lang/Integer;->intValue()I",
+                (receiver, args) -> ((Integer) receiver).intValue());
+        builtin("Ljava/lang/Integer;->parseInt(Ljava/lang/String;)I",
+                (receiver, args) -> Integer.parseInt(argString(args, 0)));
+        builtin("Ljava/lang/Integer;->parseInt(Ljava/lang/String;I)I",
+                (receiver, args) -> Integer.parseInt(argString(args, 0), argInt(args, 1)));
+        builtin("Ljava/lang/Integer;->toString(I)Ljava/lang/String;",
+                (receiver, args) -> Integer.toString(argInt(args, 0)));
+        builtin("Ljava/lang/Integer;->toString(II)Ljava/lang/String;",
+                (receiver, args) -> Integer.toString(argInt(args, 0), argInt(args, 1)));
+        builtin("Ljava/lang/Integer;->toHexString(I)Ljava/lang/String;",
+                (receiver, args) -> Integer.toHexString(argInt(args, 0)));
+        builtin("Ljava/lang/Integer;->toOctalString(I)Ljava/lang/String;",
+                (receiver, args) -> Integer.toOctalString(argInt(args, 0)));
+        builtin("Ljava/lang/Integer;->toBinaryString(I)Ljava/lang/String;",
+                (receiver, args) -> Integer.toBinaryString(argInt(args, 0)));
+        builtin("Ljava/lang/Integer;->compare(II)I",
+                (receiver, args) -> Integer.compare(argInt(args, 0), argInt(args, 1)));
+
+        builtin("Ljava/lang/Long;->valueOf(J)Ljava/lang/Long;",
+                (receiver, args) -> Long.valueOf(argLong(args, 0)));
+        builtin("Ljava/lang/Long;->longValue()J",
+                (receiver, args) -> ((Long) receiver).longValue());
+        builtin("Ljava/lang/Long;->parseLong(Ljava/lang/String;)J",
+                (receiver, args) -> Long.parseLong(argString(args, 0)));
+        builtin("Ljava/lang/Long;->parseLong(Ljava/lang/String;I)J",
+                (receiver, args) -> Long.parseLong(argString(args, 0), argInt(args, 1)));
+        builtin("Ljava/lang/Long;->toString(J)Ljava/lang/String;",
+                (receiver, args) -> Long.toString(argLong(args, 0)));
+        builtin("Ljava/lang/Long;->toHexString(J)Ljava/lang/String;",
+                (receiver, args) -> Long.toHexString(argLong(args, 0)));
+        builtin("Ljava/lang/Long;->compare(JJ)I",
+                (receiver, args) -> Long.compare(argLong(args, 0), argLong(args, 1)));
+
+        builtin("Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;",
+                (receiver, args) -> Float.valueOf(argFloat(args, 0)));
+        builtin("Ljava/lang/Float;->floatValue()F",
+                (receiver, args) -> ((Float) receiver).floatValue());
+        builtin("Ljava/lang/Float;->parseFloat(Ljava/lang/String;)F",
+                (receiver, args) -> Float.parseFloat(argString(args, 0)));
+        builtin("Ljava/lang/Float;->toString(F)Ljava/lang/String;",
+                (receiver, args) -> Float.toString(argFloat(args, 0)));
+        builtin("Ljava/lang/Float;->isNaN()Z",
+                (receiver, args) -> bool(Float.isNaN(argFloat(args, 0))));
+        builtin("Ljava/lang/Float;->isNaN(F)Z",
+                (receiver, args) -> bool(Float.isNaN(argFloat(args, 0))));
+        builtin("Ljava/lang/Float;->isInfinite()Z",
+                (receiver, args) -> bool(Float.isInfinite(argFloat(args, 0))));
+        builtin("Ljava/lang/Float;->isInfinite(F)Z",
+                (receiver, args) -> bool(Float.isInfinite(argFloat(args, 0))));
+        builtin("Ljava/lang/Float;->compare(FF)I",
+                (receiver, args) -> Float.compare(argFloat(args, 0), argFloat(args, 1)));
+
+        builtin("Ljava/lang/Double;->valueOf(D)Ljava/lang/Double;",
+                (receiver, args) -> Double.valueOf(argDouble(args, 0)));
+        builtin("Ljava/lang/Double;->doubleValue()D",
+                (receiver, args) -> ((Double) receiver).doubleValue());
+        builtin("Ljava/lang/Double;->parseDouble(Ljava/lang/String;)D",
+                (receiver, args) -> Double.parseDouble(argString(args, 0)));
+        builtin("Ljava/lang/Double;->toString(D)Ljava/lang/String;",
+                (receiver, args) -> Double.toString(argDouble(args, 0)));
+        builtin("Ljava/lang/Double;->isNaN()Z",
+                (receiver, args) -> bool(Double.isNaN(argDouble(args, 0))));
+        builtin("Ljava/lang/Double;->isNaN(D)Z",
+                (receiver, args) -> bool(Double.isNaN(argDouble(args, 0))));
+        builtin("Ljava/lang/Double;->isInfinite()Z",
+                (receiver, args) -> bool(Double.isInfinite(argDouble(args, 0))));
+        builtin("Ljava/lang/Double;->isInfinite(D)Z",
+                (receiver, args) -> bool(Double.isInfinite(argDouble(args, 0))));
+        builtin("Ljava/lang/Double;->compare(DD)I",
+                (receiver, args) -> Double.compare(argDouble(args, 0), argDouble(args, 1)));
+
+        builtin("Ljava/lang/Boolean;->valueOf(Z)Ljava/lang/Boolean;",
+                (receiver, args) -> argInt(args, 0) != 0 ? 1 : 0);
+        builtin("Ljava/lang/Boolean;->booleanValue()Z",
+                (receiver, args) -> argInt(new Object[]{receiver}, 0));
+        builtin("Ljava/lang/Boolean;->parseBoolean(Ljava/lang/String;)Z",
+                (receiver, args) -> bool(Boolean.parseBoolean(argString(args, 0))));
+        builtin("Ljava/lang/Boolean;->toString(Z)Ljava/lang/String;",
+                (receiver, args) -> Boolean.toString(argInt(args, 0) != 0));
+
+        builtin("Ljava/lang/Character;->valueOf(C)Ljava/lang/Character;",
+                (receiver, args) -> argInt(args, 0));
+        builtin("Ljava/lang/Character;->charValue()C",
+                (receiver, args) -> argInt(new Object[]{receiver}, 0));
+        builtin("Ljava/lang/Character;->isDigit(C)Z",
+                (receiver, args) -> bool(Character.isDigit((char) argInt(args, 0))));
+        builtin("Ljava/lang/Character;->isLetter(C)Z",
+                (receiver, args) -> bool(Character.isLetter((char) argInt(args, 0))));
+        builtin("Ljava/lang/Character;->isWhitespace(C)Z",
+                (receiver, args) -> bool(Character.isWhitespace((char) argInt(args, 0))));
+        builtin("Ljava/lang/Character;->isLowerCase(C)Z",
+                (receiver, args) -> bool(Character.isLowerCase((char) argInt(args, 0))));
+        builtin("Ljava/lang/Character;->isUpperCase(C)Z",
+                (receiver, args) -> bool(Character.isUpperCase((char) argInt(args, 0))));
+        builtin("Ljava/lang/Character;->toLowerCase(C)C",
+                (receiver, args) -> (int) Character.toLowerCase((char) argInt(args, 0)));
+        builtin("Ljava/lang/Character;->toUpperCase(C)C",
+                (receiver, args) -> (int) Character.toUpperCase((char) argInt(args, 0)));
+        builtin("Ljava/lang/Character;->digit(CI)I",
+                (receiver, args) -> Character.digit((char) argInt(args, 0), argInt(args, 1)));
+        builtin("Ljava/lang/Character;->getNumericValue(C)I",
+                (receiver, args) -> Character.getNumericValue((char) argInt(args, 0)));
+
+        builtin("Ljava/lang/Byte;->valueOf(B)Ljava/lang/Byte;",
+                (receiver, args) -> argInt(args, 0));
+        builtin("Ljava/lang/Byte;->byteValue()B",
+                (receiver, args) -> argInt(new Object[]{receiver}, 0));
+        builtin("Ljava/lang/Byte;->parseByte(Ljava/lang/String;)B",
+                (receiver, args) -> (int) Byte.parseByte(argString(args, 0)));
+        builtin("Ljava/lang/Byte;->parseByte(Ljava/lang/String;I)B",
+                (receiver, args) -> (int) Byte.parseByte(argString(args, 0), argInt(args, 1)));
+        builtin("Ljava/lang/Short;->valueOf(S)Ljava/lang/Short;",
+                (receiver, args) -> argInt(args, 0));
+        builtin("Ljava/lang/Short;->shortValue()S",
+                (receiver, args) -> argInt(new Object[]{receiver}, 0));
+        builtin("Ljava/lang/Short;->parseShort(Ljava/lang/String;)S",
+                (receiver, args) -> (int) Short.parseShort(argString(args, 0)));
+        builtin("Ljava/lang/Short;->parseShort(Ljava/lang/String;I)S",
+                (receiver, args) -> (int) Short.parseShort(argString(args, 0), argInt(args, 1)));
+
+        builtin("Ljava/lang/Math;->abs(I)I",
+                (receiver, args) -> Math.abs(argInt(args, 0)));
+        builtin("Ljava/lang/Math;->abs(J)J",
+                (receiver, args) -> Math.abs(argLong(args, 0)));
+        builtin("Ljava/lang/Math;->abs(F)F",
+                (receiver, args) -> Math.abs(argFloat(args, 0)));
+        builtin("Ljava/lang/Math;->abs(D)D",
+                (receiver, args) -> Math.abs(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->max(II)I",
+                (receiver, args) -> Math.max(argInt(args, 0), argInt(args, 1)));
+        builtin("Ljava/lang/Math;->max(JJ)J",
+                (receiver, args) -> Math.max(argLong(args, 0), argLong(args, 1)));
+        builtin("Ljava/lang/Math;->max(FF)F",
+                (receiver, args) -> Math.max(argFloat(args, 0), argFloat(args, 1)));
+        builtin("Ljava/lang/Math;->max(DD)D",
+                (receiver, args) -> Math.max(argDouble(args, 0), argDouble(args, 1)));
+        builtin("Ljava/lang/Math;->min(II)I",
+                (receiver, args) -> Math.min(argInt(args, 0), argInt(args, 1)));
+        builtin("Ljava/lang/Math;->min(JJ)J",
+                (receiver, args) -> Math.min(argLong(args, 0), argLong(args, 1)));
+        builtin("Ljava/lang/Math;->min(FF)F",
+                (receiver, args) -> Math.min(argFloat(args, 0), argFloat(args, 1)));
+        builtin("Ljava/lang/Math;->min(DD)D",
+                (receiver, args) -> Math.min(argDouble(args, 0), argDouble(args, 1)));
+        builtin("Ljava/lang/Math;->sqrt(D)D",
+                (receiver, args) -> Math.sqrt(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->pow(DD)D",
+                (receiver, args) -> Math.pow(argDouble(args, 0), argDouble(args, 1)));
+        builtin("Ljava/lang/Math;->ceil(D)D",
+                (receiver, args) -> Math.ceil(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->floor(D)D",
+                (receiver, args) -> Math.floor(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->rint(D)D",
+                (receiver, args) -> Math.rint(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->round(F)I",
+                (receiver, args) -> Math.round(argFloat(args, 0)));
+        builtin("Ljava/lang/Math;->round(D)J",
+                (receiver, args) -> Math.round(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->sin(D)D",
+                (receiver, args) -> Math.sin(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->cos(D)D",
+                (receiver, args) -> Math.cos(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->tan(D)D",
+                (receiver, args) -> Math.tan(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->asin(D)D",
+                (receiver, args) -> Math.asin(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->acos(D)D",
+                (receiver, args) -> Math.acos(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->atan(D)D",
+                (receiver, args) -> Math.atan(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->atan2(DD)D",
+                (receiver, args) -> Math.atan2(argDouble(args, 0), argDouble(args, 1)));
+        builtin("Ljava/lang/Math;->log(D)D",
+                (receiver, args) -> Math.log(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->log10(D)D",
+                (receiver, args) -> Math.log10(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->exp(D)D",
+                (receiver, args) -> Math.exp(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->cbrt(D)D",
+                (receiver, args) -> Math.cbrt(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->hypot(DD)D",
+                (receiver, args) -> Math.hypot(argDouble(args, 0), argDouble(args, 1)));
+        builtin("Ljava/lang/Math;->toDegrees(D)D",
+                (receiver, args) -> Math.toDegrees(argDouble(args, 0)));
+        builtin("Ljava/lang/Math;->toRadians(D)D",
+                (receiver, args) -> Math.toRadians(argDouble(args, 0)));
+
+        builtin("Ljava/lang/System;->currentTimeMillis()J",
+                (receiver, args) -> System.currentTimeMillis());
+        builtin("Ljava/lang/System;->nanoTime()J",
+                (receiver, args) -> System.nanoTime());
+        builtin("Ljava/lang/System;->identityHashCode(Ljava/lang/Object;)I",
+                (receiver, args) -> System.identityHashCode(args[0]));
+        builtin("Ljava/lang/System;->arraycopy(Ljava/lang/Object;ILjava/lang/Object;II)V",
+                (receiver, args) -> {
+                    arrayCopy(args);
+                    return null;
+                });
+
+        builtin("Ljava/util/Objects;->equals(Ljava/lang/Object;Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(java.util.Objects.equals(args[0], args[1])));
+        builtin("Ljava/util/Objects;->hashCode(Ljava/lang/Object;)I",
+                (receiver, args) -> java.util.Objects.hashCode(args[0]));
+        builtin("Ljava/util/Objects;->hash([Ljava/lang/Object;)I",
+                (receiver, args) -> {
+                    if (!(args[0] instanceof VmArray)) {
+                        throw new VmException("not an array");
+                    }
+                    VmArray array = (VmArray) args[0];
+                    Object[] values = new Object[array.length()];
+                    for (int i = 0; i < values.length; i++) {
+                        values[i] = array.get(i);
+                    }
+                    return java.util.Objects.hash(values);
+                });
+        builtin("Ljava/util/Objects;->requireNonNull(Ljava/lang/Object;)Ljava/lang/Object;",
+                (receiver, args) -> java.util.Objects.requireNonNull(args[0]));
+        builtin("Ljava/util/Objects;->requireNonNull(Ljava/lang/Object;Ljava/lang/String;)"
+                + "Ljava/lang/Object;",
+                (receiver, args) -> java.util.Objects.requireNonNull(args[0],
+                        argString(args, 1)));
+        builtin("Ljava/util/Objects;->toString(Ljava/lang/Object;)Ljava/lang/String;",
+                (receiver, args) -> java.util.Objects.toString(args[0]));
+        builtin("Ljava/util/Objects;->toString(Ljava/lang/Object;Ljava/lang/String;)"
+                + "Ljava/lang/String;",
+                (receiver, args) -> java.util.Objects.toString(args[0], argString(args, 1)));
+    }
+
+    private static void arrayCopy(Object[] args) {
+        if (!(args[0] instanceof VmArray) || !(args[2] instanceof VmArray)) {
+            throw new VmException("arraycopy of non-array");
+        }
+        VmArray src = (VmArray) args[0];
+        VmArray dst = (VmArray) args[2];
+        int srcPos = ((Number) args[1]).intValue();
+        int dstPos = ((Number) args[3]).intValue();
+        int length = ((Number) args[4]).intValue();
+        if (srcPos < 0 || dstPos < 0 || length < 0
+                || srcPos + length > src.length() || dstPos + length > dst.length()) {
+            throw new ArrayIndexOutOfBoundsException(length);
+        }
+        if (src == dst && srcPos < dstPos) {
+            for (int i = length - 1; i >= 0; i--) {
+                dst.set(dstPos + i, src.get(srcPos + i));
+            }
+        } else {
+            for (int i = 0; i < length; i++) {
+                dst.set(dstPos + i, src.get(srcPos + i));
+            }
         }
     }
 
@@ -1047,10 +1889,6 @@ public final class Interpreter {
         return Double.compare(left, right);
     }
 
-    private static boolean isWide(String type) {
-        return type.equals("J") || type.equals("D");
-    }
-
     /** Smali-like field reference: {@code Lpkg/Cls;->name:Type}. */
     static final class FieldRef {
         final String definingClass;
@@ -1096,42 +1934,8 @@ public final class Interpreter {
                 throw new VmException("bad method reference: " + reference);
             }
             return new MethodRef(reference.substring(0, arrow), reference.substring(arrow + 2, open),
-                    splitTypes(reference.substring(open + 1, close)),
+                    Descriptors.splitTypes(reference.substring(open + 1, close)),
                     reference.substring(close + 1));
-        }
-
-        static List<String> splitTypes(String descriptors) {
-            List<String> types = new ArrayList<>();
-            int i = 0;
-            while (i < descriptors.length()) {
-                char c = descriptors.charAt(i);
-                if (c == 'L') {
-                    int end = descriptors.indexOf(';', i);
-                    if (end < 0) {
-                        throw new VmException("bad type: " + descriptors);
-                    }
-                    types.add(descriptors.substring(i, end + 1));
-                    i = end + 1;
-                } else if (c == '[') {
-                    int dims = 0;
-                    while (descriptors.charAt(i) == '[') {
-                        dims++;
-                        i++;
-                    }
-                    if (descriptors.charAt(i) == 'L') {
-                        int end = descriptors.indexOf(';', i);
-                        types.add(descriptors.substring(i - dims, end + 1));
-                        i = end + 1;
-                    } else {
-                        types.add(descriptors.substring(i - dims, i + 1));
-                        i++;
-                    }
-                } else {
-                    types.add(String.valueOf(c));
-                    i++;
-                }
-            }
-            return types;
         }
     }
 }

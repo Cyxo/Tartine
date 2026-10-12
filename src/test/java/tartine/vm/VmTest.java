@@ -1,6 +1,9 @@
 package tartine.vm;
 
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +12,9 @@ import org.junit.jupiter.api.io.TempDir;
 import tartine.dex.Dex;
 import tartine.dex.DexSet;
 import tartine.dex.FixtureDex;
+import tartine.fw.FwIndex;
+import tartine.fw.FwIndex.FwClass;
+import tartine.fw.FwIndex.FwField;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -99,5 +105,124 @@ class VmTest {
     void stepsWereExecuted() {
         interpreter.call(FixtureDex.HELLO, "twice", 21);
         assertTrue(interpreter.steps() > 0);
+    }
+
+    @Test
+    void sbRunsHostStringBuilder() {
+        assertEquals("a1", interpreter.call(FixtureDex.HELLO, "sb"));
+    }
+
+    @Test
+    void throwCatchKeepsMessage() {
+        assertEquals("desk", interpreter.call(FixtureDex.HELLO, "throwCatch"));
+    }
+
+    @Test
+    void intBoxRoundTrips() {
+        assertEquals(Integer.valueOf(42), interpreter.call(FixtureDex.HELLO, "intBox"));
+    }
+
+    @Test
+    void arrayCopyCopies() {
+        assertEquals(Integer.valueOf(8), interpreter.call(FixtureDex.HELLO, "arrayCopy"));
+    }
+
+    @Test
+    void appendableCastWalksHostInterfaces() {
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "appendableCast"));
+    }
+
+    @Test
+    void badCastRejects() {
+        assertThrows(ClassCastException.class,
+                () -> interpreter.call(FixtureDex.HELLO, "badCast"));
+    }
+
+    @Test
+    void stringOpsCompute() {
+        assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "stringOps"));
+    }
+
+    @Test
+    void mathMaxComputes() {
+        assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "mathMax"));
+    }
+
+    @Test
+    void missingMethodWithoutIndexIsUnimplemented() {
+        VmException e = assertThrows(VmException.class,
+                () -> interpreter.call(FixtureDex.HELLO, "missing"));
+        assertTrue(e.getMessage().startsWith("unimplemented: Lfw/Base;->nope()V"),
+                e.getMessage());
+    }
+
+    @Test
+    void missingMethodWithIndexIsPrecise() {
+        interpreter.setFramework(framework());
+        VmException e = assertThrows(VmException.class,
+                () -> interpreter.call(FixtureDex.HELLO, "missing"));
+        assertTrue(e.getMessage().startsWith("no such method: Lfw/Base;->nope()V"),
+                e.getMessage());
+    }
+
+    @Test
+    void fwCastMergesHierarchies() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "fwCast"));
+    }
+
+    @Test
+    void fwGhostNamesUnknownSuperclass() {
+        interpreter.setFramework(framework());
+        VmException e = assertThrows(VmException.class,
+                () -> interpreter.call(FixtureDex.HELLO, "fwGhost"));
+        assertTrue(e.getMessage().contains("unimplemented class: Lfw/Ghost;"), e.getMessage());
+    }
+
+    @Test
+    void fwConstantsServeWithoutInit() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "vis"));
+    }
+
+    @Test
+    void fwMissingStaticIsUnimplemented() {
+        interpreter.setFramework(framework());
+        VmException e = assertThrows(VmException.class,
+                () -> interpreter.call(FixtureDex.HELLO, "sdk"));
+        assertTrue(e.getMessage().contains("unimplemented:"), e.getMessage());
+    }
+
+    @Test
+    void frameworkMissingIsUnimplemented() {
+        VmException e = assertThrows(VmException.class,
+                () -> interpreter.call(FixtureDex.HELLO, "vis"));
+        assertTrue(e.getMessage().contains("unimplemented:"), e.getMessage());
+    }
+
+    private static FwIndex framework() {
+        FwIndex index = new FwIndex();
+        Map<String, Object> viewConstants = new HashMap<>();
+        viewConstants.put("VISIBLE", 0);
+        index.put(new FwClass("Landroid/view/View;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.singletonList(new FwField("VISIBLE", "I")), viewConstants));
+        index.put(new FwClass("Landroid/os/Build$VERSION;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Lfw/Base;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Lfw/Sub;", "Lfw/Base;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        return index;
     }
 }
