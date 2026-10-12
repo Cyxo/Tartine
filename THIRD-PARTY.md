@@ -44,7 +44,8 @@ java -cp "tools/baksmali-2.5.2.jar;tools/util-2.5.2.jar;tools/jcommander-1.64.ja
 
 - **apktool** (Apache-2.0) — vendored as manifest/resource decode oracle.
 - **dex2jar** (Apache-2.0) / **Enjarify** (Apache-2.0, pure Python 3,
-  archived; successor `Storyyeller/enjarify`) — translation oracles for
-  Step 3. Enjarify needs a dev-time Python 3, never a runtime dep.
+  archived; successor `Storyyeller/enjarify`) — translation oracles.
+  Both translated the Step 3 fixture cleanly (fetch on demand, scratch-only;
+  not vendored).
 - **LWJGL3** (BSD) — windowing/GLES backend for the graphics steps.
 - **AOSP ART / Skia** — reference only, nothing to embed.

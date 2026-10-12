@@ -17,10 +17,7 @@
 - APK is a signed ZIP: `AndroidManifest.xml` (binary XML, use `aapt2 dump`/`apktool`), `classes.dex` (+`classes2.dex`… multidex), `resources.arsc`, `res/`, `assets/`, `lib/<abi>/*.so`, `META-INF/`.
 - DEX != JVM bytecode, never load it directly: register-based (frames fixed at creation, up to v65535, typically <16), 16-bit code units, whole-app shared pools (string/type/proto/field/method); JVM is stack-based per-class files with ~different opcodes. Spec: `source.android.com/docs/core/runtime/dalvik-bytecode`, `/dex-format`.
 - Dalvik (old JIT) is superseded by ART (AOT via on-device `dex2oat` + JIT/GC); both execute DEX so Dalvik-targeted apps run on ART with edge cases. Stock ART is not desktop-portable: it depends on Bionic, Binder IPC, Zygote fork model, system services.
-- Pick one VM strategy and document it here; options in preference order:
-  1. Port ART/Dalvik (precedent: AOSP `platform/dalvik` porting-guide portable interpreter, community `art_standalone`, `dalvikvm-multiplatform`).
-  2. DEX interpreter in Java (simplest, slowest; good bootstrap).
-  3. DEX→JVM bytecode translator (register→locals+operand stack + type inference for untyped moves; precedent: Enjarify preferred over lossy dex2jar, IcedRobot/Daneel).
+- VM strategy (decided Step 3): interpreter-first. `aine.vm.Interpreter` executes our IR directly; unknown opcodes and unimplemented methods throw `VmException` naming the gap, so each failure is the next task. The android.* framework must be reimplemented either way; the interpreter grows one opcode/test at a time, while translation (spiked via ASM 9.6 on the fixture: runs, but first attempt died in the JVM verifier, and type inference/frames/exceptions remain untouched) adds pitfalls without removing framework work. Revisit translation for performance only, after apps run.
 - Whichever VM is chosen, `android.jar` is stubs only: Activity/lifecycle, `AssetManager`/resources, Binder-based services, Bionic/libc shims, and `lib/<abi>` native libs (ARM `.so` needs same-arch APK or binary translation) must each be reimplemented or explicitly stubbed.
 
 ## Graphics ("windows") mapping
