@@ -3,7 +3,7 @@ plugins {
     id 'application'
 }
 
-group = 'aine'
+group = 'tartine'
 version = '0.1.0-SNAPSHOT'
 
 repositories {
@@ -28,5 +28,5 @@ tasks.named('test', Test) {
 }
 
 application {
-    mainClass = 'aine.Main'
+    mainClass = 'tartine.Main'
 }

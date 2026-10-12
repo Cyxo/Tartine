@@ -5,9 +5,9 @@
 - Java 14 compatibility floor, enforced as `options.release = 14` in `build.gradle`. Do not use language features or JDK APIs introduced after Java 14. Verify with `javap -verbose` / `jdeps` if unsure.
 
 ## Repo state
-- Layout: `src/main/java/aine/` (`Main`, `apk/`, `dex/`, `vm/`, `runtime/`, `graphics/`), `src/test/java/` (JUnit 5 suite), `settings.gradle`/`build.gradle` + wrapper, `build/` (ignored output). `tools/` (dev-time CLI oracles), `apks/` (ignored local fixtures), `THIRD-PARTY.md` (versions/licenses). Deps resolve from Maven Central via Gradle; nothing vendored under `libs/`.
+- Layout: `src/main/java/tartine/` (`Main`, `apk/`, `dex/`, `vm/`, `runtime/`, `graphics/`), `src/test/java/` (JUnit 5 suite), `settings.gradle`/`build.gradle` + wrapper, `build/` (ignored output). `tools/` (dev-time CLI oracles), `apks/` (ignored local fixtures), `THIRD-PARTY.md` (versions/licenses). Deps resolve from Maven Central via Gradle; nothing vendored under `libs/`.
 - Verify: `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` (Windows) or `sh scripts/verify.sh` (Mac/Linux). Both run `mise install` (idempotent) then `gradle test`.
-- Single test: `mise exec -- gradle test --tests "aine.apk.*"`.
+- Single test: `mise exec -- gradle test --tests "tartine.apk.*"`.
 
 ## Goal
 - Run Android APKs natively on desktop (Windows/Mac/Linux): no QEMU, no container/VM image (i.e. not Anbox/Waydroid/Emulator). Wine-like translation layer instead.
@@ -17,7 +17,7 @@
 - APK is a signed ZIP: `AndroidManifest.xml` (binary XML, use `aapt2 dump`/`apktool`), `classes.dex` (+`classes2.dex`… multidex), `resources.arsc`, `res/`, `assets/`, `lib/<abi>/*.so`, `META-INF/`.
 - DEX != JVM bytecode, never load it directly: register-based (frames fixed at creation, up to v65535, typically <16), 16-bit code units, whole-app shared pools (string/type/proto/field/method); JVM is stack-based per-class files with ~different opcodes. Spec: `source.android.com/docs/core/runtime/dalvik-bytecode`, `/dex-format`.
 - Dalvik (old JIT) is superseded by ART (AOT via on-device `dex2oat` + JIT/GC); both execute DEX so Dalvik-targeted apps run on ART with edge cases. Stock ART is not desktop-portable: it depends on Bionic, Binder IPC, Zygote fork model, system services.
-- VM strategy (decided Step 3): interpreter-first. `aine.vm.Interpreter` executes our IR directly; unknown opcodes and unimplemented methods throw `VmException` naming the gap, so each failure is the next task. The android.* framework must be reimplemented either way; the interpreter grows one opcode/test at a time, while translation (spiked via ASM 9.6 on the fixture: runs, but first attempt died in the JVM verifier, and type inference/frames/exceptions remain untouched) adds pitfalls without removing framework work. Revisit translation for performance only, after apps run.
+- VM strategy (decided Step 3): interpreter-first. `tartine.vm.Interpreter` executes our IR directly; unknown opcodes and unimplemented methods throw `VmException` naming the gap, so each failure is the next task. The android.* framework must be reimplemented either way; the interpreter grows one opcode/test at a time, while translation (spiked via ASM 9.6 on the fixture: runs, but first attempt died in the JVM verifier, and type inference/frames/exceptions remain untouched) adds pitfalls without removing framework work. Revisit translation for performance only, after apps run.
 - Whichever VM is chosen, `android.jar` is stubs only: Activity/lifecycle, `AssetManager`/resources, Binder-based services, Bionic/libc shims, and `lib/<abi>` native libs (ARM `.so` needs same-arch APK or binary translation) must each be reimplemented or explicitly stubbed.
 
 ## Graphics ("windows") mapping

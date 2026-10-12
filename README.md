@@ -1,4 +1,4 @@
-# Aine
+# Tartine
 
 Run Android applications natively on desktop (Windows/Mac/Linux) via a
 Wine-like translation layer. No emulator, no container image.
@@ -14,7 +14,7 @@ See `AGENTS.md` for the APK-to-execution pipeline and graphics mapping.
 
 ## Layout
 
-- `src/main/java/aine/` — `Main` entrypoint, `apk/`, `dex/`, `vm/`, `runtime/`, `graphics/`
+- `src/main/java/tartine/` — `Main` entrypoint, `apk/`, `dex/`, `vm/`, `runtime/`, `graphics/`
 - `src/test/java/` — JUnit 5 suite
 - `settings.gradle` / `build.gradle` + `gradlew` wrapper
 - `tools/` — dev-time CLI oracles (see `THIRD-PARTY.md`)
@@ -39,7 +39,7 @@ Both trust + install toolchains via mise, then run `gradle test`.
 Single test/class:
 
 ```sh
-mise exec -- gradle test --tests "aine.apk.*"
+mise exec -- gradle test --tests "tartine.apk.*"
 ```
 
 ## Headless APK probes (no GUI yet)
