@@ -1,9 +1,10 @@
-# Tartine
+# Tartine - Android Runtime
 
-Run Android applications natively on desktop (Windows/Mac/Linux) via a
-Wine-like translation layer. No emulator, no container image.
+> **Tartine** *(noun)*: A slice of bread topped with sweet or savoury spreadable food such as butter, jam, honey, cream, or sauce.
 
-See `AGENTS.md` for the APK-to-execution pipeline and graphics mapping.
+Tartine Android RunTime Is Not an Emulator.
+
+Tartine is a tool to run Android apps on Desktop OSes natively, in a similar fashion to [Wine](https://www.winehq.org/).
 
 ## Prerequisites
 
