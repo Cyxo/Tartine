@@ -14,6 +14,9 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import aine.dex.Dex;
+import aine.dex.DexSet;
+
 /**
  * Reads an APK as a ZIP archive and classifies its entries.
  *
@@ -92,6 +95,15 @@ public final class ApkReader implements AutoCloseable {
 
     public boolean hasResources() {
         return zip.getEntry("resources.arsc") != null;
+    }
+
+    /** Loads every DEX entry into a multidex set. */
+    public DexSet dexSet() throws IOException {
+        List<Dex> dexes = new ArrayList<>();
+        for (String name : dexEntries()) {
+            dexes.add(Dex.load(readEntry(name)));
+        }
+        return new DexSet(dexes);
     }
 
     /** ABI names from {@code lib/<abi>/} entries, sorted. */

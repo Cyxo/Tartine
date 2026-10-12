@@ -11,10 +11,16 @@ import org.jf.dexlib2.iface.Method;
 public final class DexClass {
     /** Type descriptor, e.g. {@code Ltest/Hello;}. */
     public final String type;
+    /** Superclass descriptor, or null (only {@code Ljava/lang/Object;}). */
+    public final String superclass;
+    public final List<String> interfaces;
     public final List<DexMethod> methods;
 
-    DexClass(String type, List<DexMethod> methods) {
+    public DexClass(String type, String superclass, List<String> interfaces,
+            List<DexMethod> methods) {
         this.type = type;
+        this.superclass = superclass;
+        this.interfaces = Collections.unmodifiableList(new ArrayList<>(interfaces));
         this.methods = Collections.unmodifiableList(new ArrayList<>(methods));
     }
 
@@ -31,8 +37,9 @@ public final class DexClass {
     static DexClass from(ClassDef classDef) {
         List<DexMethod> methods = new ArrayList<>();
         for (Method method : classDef.getMethods()) {
-            methods.add(DexMethod.from(method));
+            methods.add(DexMethod.from(classDef, method));
         }
-        return new DexClass(classDef.getType(), methods);
+        List<String> interfaces = new ArrayList<>(classDef.getInterfaces());
+        return new DexClass(classDef.getType(), classDef.getSuperclass(), interfaces, methods);
     }
 }

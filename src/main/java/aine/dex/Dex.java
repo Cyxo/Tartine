@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.Opcodes;
+import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.DexFile;
 
@@ -22,7 +23,18 @@ public final class Dex {
     }
 
     public static Dex load(File file) throws IOException {
-        DexFile dexFile = DexFileFactory.loadDexFile(file, Opcodes.getDefault());
+        return fromIface(DexFileFactory.loadDexFile(file, Opcodes.getDefault()));
+    }
+
+    public static Dex load(byte[] bytes) throws IOException {
+        try {
+            return fromIface(new DexBackedDexFile(Opcodes.getDefault(), bytes));
+        } catch (RuntimeException e) {
+            throw new IOException("not a dex file", e);
+        }
+    }
+
+    private static Dex fromIface(DexFile dexFile) {
         List<DexClass> classes = new ArrayList<>();
         for (ClassDef classDef : dexFile.getClasses()) {
             classes.add(DexClass.from(classDef));

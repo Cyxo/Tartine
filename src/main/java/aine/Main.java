@@ -1,14 +1,32 @@
 package aine;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
+import aine.apk.Abi;
+import aine.apk.ApkReader;
+import aine.apk.BinaryXml;
 import aine.dex.Dex;
 import aine.dex.DexClass;
 import aine.dex.DexDump;
+import aine.dex.DexMethod;
+import aine.dex.DexSet;
+import aine.vm.Interpreter;
+import aine.vm.VmException;
+import aine.vm.VmObject;
 
 /**
- * Entry point. With a file argument, dumps its classes; otherwise prints usage.
+ * Entry point.
+ *
+ * <ul>
+ * <li>{@code apk <file.apk>} — headless APK summary: manifest, code, libraries.
+ * <li>{@code run <file.apk>} — headless probe: executes the launcher
+ * activity's {@code onCreate} until the first gap (no GUI yet).
+ * <li>{@code dump <file.dex>} — prints our instruction dump of a dex file.
+ * </ul>
  */
 public final class Main {
     private Main() {
@@ -16,17 +34,176 @@ public final class Main {
 
     public static void main(String[] args) {
         if (args.length == 0) {
-            System.out.println("Aine: run Android apps on desktop (scaffold). Usage: aine.Main <dex>");
+            usage();
             return;
         }
         try {
-            Dex dex = Dex.load(new File(args[0]));
-            for (DexClass cls : dex.classes()) {
-                System.out.print(DexDump.dump(cls));
+            switch (args[0]) {
+                case "apk":
+                    require(args, 2);
+                    printApkSummary(new File(args[1]));
+                    break;
+                case "run":
+                    require(args, 2);
+                    probeRun(new File(args[1]));
+                    break;
+                case "dump":
+                    require(args, 2);
+                    dumpDex(new File(args[1]));
+                    break;
+                default:
+                    if (args[0].endsWith(".apk")) {
+                        printApkSummary(new File(args[0]));
+                    } else {
+                        dumpDex(new File(args[0]));
+                    }
+                    break;
             }
-        } catch (IOException e) {
-            System.err.println("cannot read dex: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("aine: " + e);
             System.exit(1);
         }
+    }
+
+    private static void usage() {
+        System.out.println("Usage: aine.Main (apk|run|dump) <file>");
+    }
+
+    private static void require(String[] args, int count) {
+        if (args.length < count) {
+            throw new IllegalArgumentException("missing file argument");
+        }
+    }
+
+    private static void dumpDex(File file) throws Exception {
+        Dex dex = Dex.load(file);
+        for (DexClass cls : dex.classes()) {
+            System.out.print(DexDump.dump(cls));
+        }
+    }
+
+    private static void printApkSummary(File apk) throws Exception {
+        try (ApkReader reader = ApkReader.open(apk.toPath())) {
+            BinaryXml.Element manifest = reader.manifest();
+            System.out.println("package: " + manifest.attr("package"));
+            System.out.println("version: " + manifest.attr("versionCode")
+                    + " / " + manifest.attr("versionName"));
+            List<String> activities = new ArrayList<>();
+            int permissions = 0;
+            for (BinaryXml.Element child : manifest.children) {
+                if (child.name.equals("uses-permission")) {
+                    permissions++;
+                } else if (child.name.equals("application")) {
+                    for (BinaryXml.Element component : child.children) {
+                        if (component.name.equals("activity")
+                                || component.name.equals("activity-alias")) {
+                            activities.add(component.attr("name"));
+                        }
+                    }
+                }
+            }
+            System.out.println("activities (" + activities.size() + "): " + activities);
+            System.out.println("permissions: " + permissions);
+            DexSet dexes = reader.dexSet();
+            System.out.println("dex files: " + reader.dexEntries().size()
+                    + ", classes: " + dexes.classCount()
+                    + ", methods: " + dexes.methodCount());
+            Set<String> abis = new TreeSet<>(reader.nativeAbis());
+            System.out.println("native abis: " + (abis.isEmpty() ? "none" : abis)
+                    + " (host picks " + Abi.pickBest(abis) + ")");
+            System.out.println("resources: " + reader.hasResources());
+        }
+    }
+
+    private static void probeRun(File apk) throws Exception {
+        try (ApkReader reader = ApkReader.open(apk.toPath())) {
+            BinaryXml.Element manifest = reader.manifest();
+            String packageName = manifest.attr("package");
+            String activity = findLauncher(manifest);
+            if (activity == null) {
+                System.out.println("no launcher activity in manifest");
+                return;
+            }
+            activity = qualify(packageName, activity);
+            System.out.println("launcher: " + activity);
+            DexSet dexes = reader.dexSet();
+            DexClass cls = dexes.findClass("L" + activity.replace('.', '/') + ";");
+            if (cls == null) {
+                System.out.println("class not in dex: " + activity);
+                return;
+            }
+            DexMethod onCreate = null;
+            for (DexMethod method : cls.methods) {
+                if (method.name.equals("onCreate") && method.parameterTypes.size() == 1) {
+                    onCreate = method;
+                    break;
+                }
+            }
+            if (onCreate == null) {
+                System.out.println("no onCreate in " + activity);
+                return;
+            }
+            // Probe: <init> skipped, receiver is uninitialized on purpose.
+            Interpreter interpreter = new Interpreter(dexes);
+            try {
+                Object result = interpreter.invoke(cls, onCreate, new VmObject(cls),
+                        new Object[]{null});
+                System.out.println("onCreate returned after " + interpreter.steps()
+                        + " steps: " + result);
+            } catch (VmException blocked) {
+                System.out.println("blocked after " + interpreter.steps() + " steps at: "
+                        + blocked.getMessage());
+            } catch (RuntimeException bug) {
+                System.out.println("failed after " + interpreter.steps() + " steps with "
+                        + bug);
+                bug.printStackTrace(System.err);
+            }
+        }
+    }
+
+    private static String findLauncher(BinaryXml.Element manifest) {
+        BinaryXml.Element app = manifest.child("application");
+        if (app == null) {
+            return null;
+        }
+        for (BinaryXml.Element child : app.children) {
+            if (!child.name.equals("activity") && !child.name.equals("activity-alias")) {
+                continue;
+            }
+            for (BinaryXml.Element filter : child.children) {
+                if (!filter.name.equals("intent-filter")) {
+                    continue;
+                }
+                boolean main = false;
+                boolean launcher = false;
+                for (BinaryXml.Element part : filter.children) {
+                    if (part.name.equals("action")
+                            && "android.intent.action.MAIN".equals(part.attr("name"))) {
+                        main = true;
+                    }
+                    if (part.name.equals("category")
+                            && "android.intent.category.LAUNCHER".equals(part.attr("name"))) {
+                        launcher = true;
+                    }
+                }
+                if (main && launcher) {
+                    return child.attr("name");
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String qualify(String packageName, String name) {
+        if (name == null) {
+            return null;
+        }
+        if (name.startsWith(".")) {
+            return packageName + name;
+        }
+        if (!name.contains(".")) {
+            return packageName + "." + name;
+        }
+        return name;
     }
 }
