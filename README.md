@@ -15,6 +15,8 @@ See `AGENTS.md` for the APK-to-execution pipeline and graphics mapping.
 - `src/main/java/aine/` — `Main` entrypoint, `dex/`, `runtime/`, `graphics/`
 - `src/test/java/` — hand-rolled `main`-based tests (no test dependencies yet)
 - `scripts/` — `verify.ps1` (Windows) / `verify.sh` (Mac/Linux)
+- `libs/` / `tools/` — vendored jars / dev-time CLI oracles (see `THIRD-PARTY.md`)
+- `apks/` — local test fixtures, gitignored
 - `out/` — build output (ignored by git)
 
 ## Verify

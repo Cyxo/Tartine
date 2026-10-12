@@ -1,0 +1,43 @@
+# Third-party components
+
+Reuse-first per `AGENTS.md`. All jars below were SHA1-verified against
+Maven Central at vendoring time. `libs/` = compile/runtime deps (on the
+verify-script classpath). `tools/` = dev-time CLI oracles, never on the
+runtime classpath. `apks/` (gitignored) holds local test fixtures only.
+
+## Runtime path (`libs/`)
+
+| Artifact | Version | Role | Source | License |
+|---|---|---|---|---|
+| `dexlib2-2.5.2.jar` | 2.5.2 | DEX parse model (frontend for Step 2) | `https://repo1.maven.org/maven2/org/smali/dexlib2/2.5.2/` | BSD 3-Clause |
+| `dexlib2-2.5.2-sources.jar` | 2.5.2 | Debugging sources for dexlib2 | same as above | BSD 3-Clause |
+| `guava-27.1-android.jar` | 27.1-android | dexlib2 runtime dep | `https://repo1.maven.org/maven2/com/google/guava/guava/27.1-android/` | Apache-2.0 |
+| `jsr305-3.0.2.jar` | 3.0.2 | dexlib2 runtime dep (annotations) | `https://repo1.maven.org/maven2/com/google/code/findbugs/jsr305/3.0.2/` | Apache-2.0 |
+
+dexlib2 2.5.2 reads DEX up to version 039 (verified: fixture `classes*.dex`
+are 039 and disassemble cleanly). DEX 040+ needs smali 3.x, which publishes
+no Maven artifacts — revisit if a fixture requires it.
+
+## Dev-time oracles (`tools/`)
+
+| Artifact | Version | Role | Source | License |
+|---|---|---|---|---|
+| `baksmali-2.5.2.jar` | 2.5.2 | Golden disassembly oracle | Maven Central `org/smali/baksmali/2.5.2/` | BSD 3-Clause |
+| `util-2.5.2.jar` | 2.5.2 | baksmali runtime dep | Maven Central `org/smali/util/2.5.2/` | BSD 3-Clause |
+| `jcommander-1.64.jar` | 1.64 | baksmali runtime dep (CLI parsing) | Maven Central `com/beust/jcommander/1.64/` | Apache-2.0 |
+
+Example (Windows; `out/` is gitignored scratch):
+
+```powershell
+java -cp "tools/baksmali-2.5.2.jar;tools/util-2.5.2.jar;tools/jcommander-1.64.jar;libs/*" `
+  org.jf.baksmali.Main d out/fixture-classes2.dex -o out/baksmali-smoke
+```
+
+## Deferred (do not vendor yet)
+
+- **apktool** (Apache-2.0) — manifest/resource decode oracle for Step 1.
+- **dex2jar** (Apache-2.0) / **Enjarify** (Apache-2.0, pure Python 3,
+  archived; successor `Storyyeller/enjarify`) — translation oracles for
+  Step 3. Enjarify needs a dev-time Python 3, never a runtime dep.
+- **LWJGL3** (BSD) — windowing/GLES backend for the graphics steps.
+- **AOSP ART / Skia** — reference only, nothing to embed.

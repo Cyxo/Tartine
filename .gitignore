@@ -1,4 +1,7 @@
 out/
 *.class
 *.jar
+!libs/*.jar
+!tools/*.jar
 .DS_Store
+apks/

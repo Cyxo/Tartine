@@ -6,7 +6,7 @@
 - Do not use language features or JDK APIs introduced after Java 14. Verify with `javap -verbose` / `jdeps` if unsure.
 
 ## Repo state
-- Layout: `src/main/java/aine/` (`Main`, `dex/`, `runtime/`, `graphics/`), `src/test/java/` (hand-rolled `main`-based tests, no test deps), `scripts/`, `out/` (ignored build output). No build tool; plain `javac` only.
+- Layout: `src/main/java/aine/` (`Main`, `dex/`, `runtime/`, `graphics/`), `src/test/java/` (hand-rolled `main`-based tests, no test deps), `scripts/`, `out/` (ignored build output). `libs/` (vendored compile jars), `tools/` (dev-time CLI oracles), `apks/` (ignored local fixtures), `THIRD-PARTY.md` (versions/licenses). No build tool; plain `javac` only.
 - Verify (compiles main + tests with `--release 14`, runs tests, runs `aine.Main`):
   - Windows: `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`
   - Mac/Linux: `sh scripts/verify.sh`
@@ -32,3 +32,8 @@
 
 ## Commits
 - Conventional Commits required (`feat:`, `fix:`, `chore:`, etc.). No other convention is defined.
+
+## Third-party policy
+- Reuse-first: prefer OSS/AOSP over hand-rolled (dexlib2 for DEX, baksmali/apktool CLIs as decode oracles, dex2jar/Enjarify as translation oracles, LWJGL3 for windowing/GLES, AOSP ART/Skia as reference only).
+- Vendor binary jars under `libs/` (compile deps) and CLI oracles under `tools/` (never on the runtime classpath); record version + URL + license in `THIRD-PARTY.md`. No Maven/Gradle until dep count justifies it; verify scripts put `libs/*.jar` on the classpath instead.
+- Only permissive licenses in the runtime path (Apache-2.0/BSD/MIT); keep license texts, never strip copyrights. Our sources stay `--release 14` regardless of what a vendored jar targets.
