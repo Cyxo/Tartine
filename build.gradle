@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+}
+
+group = 'aine'
+version = '0.1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.smali:dexlib2:2.5.2'
+    implementation 'com.google.guava:guava:27.1-android'
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
+}
+
+// Java 14 language/API level on every compile; never use source/target instead.
+tasks.withType(JavaCompile).configureEach {
+    options.release = 14
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+}

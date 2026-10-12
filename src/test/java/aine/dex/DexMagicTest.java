@@ -1,29 +1,33 @@
 package aine.dex;
 
-/**
- * Hand-rolled test for {@link DexMagic}. Plain {@code main} on purpose:
- * no test dependencies yet (Java-only stack).
- */
-public final class DexMagicTest {
-    private DexMagicTest() {
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class DexMagicTest {
+    @Test
+    void acceptsDex035Magic() {
+        assertTrue(DexMagic.hasDexMagic(new byte[]{0x64, 0x65, 0x78, 0x0A, '0', '3', '5', 0}));
     }
 
-    public static void main(String[] args) {
-        check(DexMagic.hasDexMagic(new byte[]{0x64, 0x65, 0x78, 0x0A, '0', '3', '5', 0}),
-                "035 magic accepted");
-        check(DexMagic.hasDexMagic(new byte[]{0x64, 0x65, 0x78, 0x0A, '0', '3', '9', 0}),
-                "039 magic accepted");
-        check(!DexMagic.hasDexMagic(new byte[]{0x50, 0x4B, 0x03, 0x04, 0, 0, 0, 0}),
-                "ZIP header rejected");
-        check(!DexMagic.hasDexMagic(new byte[]{0x64, 0x65, 0x78}),
-                "truncated input rejected");
-        check(!DexMagic.hasDexMagic(null), "null rejected");
-        System.out.println("DexMagicTest: PASS");
+    @Test
+    void acceptsDex039Magic() {
+        assertTrue(DexMagic.hasDexMagic(new byte[]{0x64, 0x65, 0x78, 0x0A, '0', '3', '9', 0}));
     }
 
-    private static void check(boolean condition, String name) {
-        if (!condition) {
-            throw new AssertionError("FAILED: " + name);
-        }
+    @Test
+    void rejectsZipHeader() {
+        assertFalse(DexMagic.hasDexMagic(new byte[]{0x50, 0x4B, 0x03, 0x04, 0, 0, 0, 0}));
+    }
+
+    @Test
+    void rejectsTruncatedInput() {
+        assertFalse(DexMagic.hasDexMagic(new byte[]{0x64, 0x65, 0x78}));
+    }
+
+    @Test
+    void rejectsNull() {
+        assertFalse(DexMagic.hasDexMagic(null));
     }
 }

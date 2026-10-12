@@ -12,79 +12,101 @@ import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
 import aine.dex.DexMagic;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
- * Hand-rolled test for {@link ApkReader} and {@link BinaryXml}.
- *
- * <p>Builds a synthetic APK (including a hand-encoded binary manifest, so
- * this test covers our AXML <em>reader</em> against an independent
- * <em>writer</em>) and asserts entry listing, DEX ordering, ABI routing,
- * and manifest decoding. Real-APK cross-checks against apktool live outside
- * this test; see THIRD-PARTY.md.
+ * Tests {@link ApkReader} and {@link BinaryXml} against a synthetic APK
+ * (including a hand-encoded binary manifest, so this covers our AXML
+ * <em>reader</em> against an independent <em>writer</em>).
+ * Real-APK cross-checks against apktool live outside this suite; see
+ * THIRD-PARTY.md.
  */
-public final class ApkReaderTest {
+class ApkReaderTest {
     private static final String ANDROID_NS = "http://schemas.android.com/apk/res/android";
 
-    private ApkReaderTest() {
+    @TempDir
+    private Path tempDir;
+
+    private Path apk;
+
+    @BeforeEach
+    void buildFixture() throws Exception {
+        apk = tempDir.resolve("test.apk");
+        buildTestApk(apk);
     }
 
-    public static void main(String[] args) throws Exception {
-        Path apk = Files.createTempFile("aine-step1-", ".apk");
-        try {
-            buildTestApk(apk);
-            try (ApkReader reader = ApkReader.open(apk)) {
-                check(reader.entries().equals(Arrays.asList(
-                        "AndroidManifest.xml",
-                        "META-INF/CERT.SF",
-                        "assets/data.bin",
-                        "classes.dex",
-                        "classes2.dex",
-                        "lib/armeabi-v7a/libfoo.so",
-                        "lib/x86_64/libfoo.so",
-                        "res/layout/main.xml",
-                        "resources.arsc")), "entry listing");
-                check(reader.hasManifest(), "has manifest");
-                check(reader.hasResources(), "has resources");
-                check(reader.dexEntries().equals(Arrays.asList("classes.dex", "classes2.dex")),
-                        "dex order");
-                check(DexMagic.hasDexMagic(reader.readEntry("classes.dex")), "dex magic");
-                check(reader.nativeAbis().equals(
-                        new TreeSet<>(Arrays.asList("armeabi-v7a", "x86_64"))), "abi set");
-                String host = Abi.hostAbi();
-                String expectedPick = reader.nativeAbis().contains(host) ? host : "armeabi-v7a";
-                check(expectedPick.equals(Abi.pickBest(reader.nativeAbis())), "abi pick");
-
-                BinaryXml.Element root = reader.manifest();
-                check(root.name.equals("manifest") && root.namespaceUri.isEmpty(), "root");
-                check("com.example.test".equals(root.attr("package")), "package");
-                check("3".equals(root.attr("versionCode")), "versionCode");
-                check(root.children.size() == 2, "child count");
-                BinaryXml.Element app = root.child("application");
-                check(app != null, "application child");
-                String label = null;
-                String labelNs = null;
-                for (BinaryXml.Attribute attr : app.attributes) {
-                    if (attr.name.equals("label")) {
-                        label = attr.value;
-                        labelNs = attr.namespaceUri;
-                    }
-                }
-                check("TestApp".equals(label), "label value");
-                check(ANDROID_NS.equals(labelNs), "label namespace");
-                check("true".equals(app.attr("debuggable")), "debuggable");
-                BinaryXml.Element sdk = root.child("uses-sdk");
-                check(sdk != null && "21".equals(sdk.attr("minSdkVersion")), "minSdk");
-            }
-            System.out.println("ApkReaderTest: PASS");
-        } finally {
-            Files.deleteIfExists(apk);
+    @Test
+    void listsEntriesSorted() throws Exception {
+        try (ApkReader reader = ApkReader.open(apk)) {
+            assertEquals(Arrays.asList(
+                    "AndroidManifest.xml",
+                    "META-INF/CERT.SF",
+                    "assets/data.bin",
+                    "classes.dex",
+                    "classes2.dex",
+                    "lib/armeabi-v7a/libfoo.so",
+                    "lib/x86_64/libfoo.so",
+                    "res/layout/main.xml",
+                    "resources.arsc"), reader.entries());
         }
     }
 
-    private static void check(boolean condition, String name) {
-        if (!condition) {
-            throw new AssertionError("FAILED: " + name);
+    @Test
+    void ordersDexEntriesNumerically() throws Exception {
+        try (ApkReader reader = ApkReader.open(apk)) {
+            assertEquals(Arrays.asList("classes.dex", "classes2.dex"), reader.dexEntries());
+            assertTrue(DexMagic.hasDexMagic(reader.readEntry("classes.dex")));
+        }
+    }
+
+    @Test
+    void routesNativeAbis() throws Exception {
+        try (ApkReader reader = ApkReader.open(apk)) {
+            assertEquals(new TreeSet<>(Arrays.asList("armeabi-v7a", "x86_64")),
+                    reader.nativeAbis());
+            String host = Abi.hostAbi();
+            String expected = reader.nativeAbis().contains(host) ? host : "armeabi-v7a";
+            assertEquals(expected, Abi.pickBest(reader.nativeAbis()));
+        }
+    }
+
+    @Test
+    void decodesManifest() throws Exception {
+        try (ApkReader reader = ApkReader.open(apk)) {
+            assertTrue(reader.hasManifest());
+            assertTrue(reader.hasResources());
+            BinaryXml.Element root = reader.manifest();
+            assertEquals("manifest", root.name);
+            assertTrue(root.namespaceUri.isEmpty());
+            assertEquals("com.example.test", root.attr("package"));
+            assertEquals("3", root.attr("versionCode"));
+            assertEquals(2, root.children.size());
+
+            BinaryXml.Element app = root.child("application");
+            assertNotNull(app);
+            String label = null;
+            String labelNs = null;
+            for (BinaryXml.Attribute attr : app.attributes) {
+                if (attr.name.equals("label")) {
+                    label = attr.value;
+                    labelNs = attr.namespaceUri;
+                }
+            }
+            assertEquals("TestApp", label);
+            assertEquals(ANDROID_NS, labelNs);
+            assertEquals("true", app.attr("debuggable"));
+
+            BinaryXml.Element sdk = root.child("uses-sdk");
+            assertNotNull(sdk);
+            assertEquals("21", sdk.attr("minSdkVersion"));
         }
     }
 

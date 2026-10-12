@@ -1,25 +1,19 @@
 package aine.dex;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
- * Proves the vendored dexlib2 jar is on the compile and runtime classpath.
- * References dexlib2 types directly so both `javac -cp libs/*` and
- * `java -cp ...libs/*` are exercised. See THIRD-PARTY.md.
+ * Proves the dexlib2 dependency is on the compile and runtime classpath.
+ * See THIRD-PARTY.md.
  */
-public final class DexLibPresenceTest {
-    private DexLibPresenceTest() {
-    }
-
-    public static void main(String[] args) {
-        check(org.jf.dexlib2.DexFileFactory.class.getName().equals("org.jf.dexlib2.DexFileFactory"),
-                "DexFileFactory linked");
-        check(org.jf.dexlib2.Opcodes.class.getName().equals("org.jf.dexlib2.Opcodes"),
-                "Opcodes linked");
-        System.out.println("DexLibPresenceTest: PASS");
-    }
-
-    private static void check(boolean condition, String name) {
-        if (!condition) {
-            throw new AssertionError("FAILED: " + name);
-        }
+class DexLibPresenceTest {
+    @Test
+    void dexlib2TypesLink() {
+        assertEquals("org.jf.dexlib2.DexFileFactory",
+                org.jf.dexlib2.DexFileFactory.class.getName());
+        assertEquals("org.jf.dexlib2.Opcodes",
+                org.jf.dexlib2.Opcodes.class.getName());
     }
 }

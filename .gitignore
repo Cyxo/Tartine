@@ -1,7 +1,9 @@
 out/
+build/
+.gradle/
 *.class
 *.jar
-!libs/*.jar
 !tools/*.jar
+!gradle/wrapper/*.jar
 .DS_Store
 apks/

@@ -7,17 +7,19 @@ See `AGENTS.md` for the APK-to-execution pipeline and graphics mapping.
 
 ## Prerequisites
 
-- JDK 18 (`java -version` should report 18). Code must stay compatible
-  with Java 14: always compile with `javac --release 14`.
+- [mise](https://mise.jdx.dev/). JDK 18 and Gradle install automatically
+  from `mise.toml` on first verify (`mise install` is idempotent).
+  No manual toolchain setup. Code must stay compatible with Java 14:
+  `build.gradle` enforces `options.release = 14`.
 
 ## Layout
 
-- `src/main/java/aine/` — `Main` entrypoint, `dex/`, `runtime/`, `graphics/`
-- `src/test/java/` — hand-rolled `main`-based tests (no test dependencies yet)
-- `scripts/` — `verify.ps1` (Windows) / `verify.sh` (Mac/Linux)
-- `libs/` / `tools/` — vendored jars / dev-time CLI oracles (see `THIRD-PARTY.md`)
+- `src/main/java/aine/` — `Main` entrypoint, `apk/`, `dex/`, `runtime/`, `graphics/`
+- `src/test/java/` — JUnit 5 suite
+- `settings.gradle` / `build.gradle` + `gradlew` wrapper
+- `tools/` — dev-time CLI oracles (see `THIRD-PARTY.md`)
 - `apks/` — local test fixtures, gitignored
-- `out/` — build output (ignored by git)
+- `build/` — Gradle output (ignored by git)
 
 ## Verify
 
@@ -33,5 +35,9 @@ Mac/Linux:
 sh scripts/verify.sh
 ```
 
-Both scripts compile main + tests with `javac --release 14`, run the
-tests, and run `aine.Main`.
+Both trust + install toolchains via mise, then run `gradle test`.
+Single test/class:
+
+```sh
+mise exec -- gradle test --tests "aine.apk.*"
+```

@@ -1,22 +1,28 @@
 # Third-party components
 
-Reuse-first per `AGENTS.md`. All jars below were SHA1-verified against
-Maven Central at vendoring time. `libs/` = compile/runtime deps (on the
-verify-script classpath). `tools/` = dev-time CLI oracles, never on the
-runtime classpath. `apks/` (gitignored) holds local test fixtures only.
+Reuse-first per `AGENTS.md`. Compile deps are declared in `build.gradle`
+and resolve from Maven Central. `tools/` holds dev-time CLI oracles
+(vendored, never on the runtime classpath). `apks/` (gitignored) holds
+local test fixtures only. Build/test toolchain pins live in `mise.toml`
+(Java, Gradle) and `build.gradle` (JUnit).
 
-## Runtime path (`libs/`)
+## Runtime path (via Gradle / Maven Central)
 
-| Artifact | Version | Role | Source | License |
-|---|---|---|---|---|
-| `dexlib2-2.5.2.jar` | 2.5.2 | DEX parse model (frontend for Step 2) | `https://repo1.maven.org/maven2/org/smali/dexlib2/2.5.2/` | BSD 3-Clause |
-| `dexlib2-2.5.2-sources.jar` | 2.5.2 | Debugging sources for dexlib2 | same as above | BSD 3-Clause |
-| `guava-27.1-android.jar` | 27.1-android | dexlib2 runtime dep | `https://repo1.maven.org/maven2/com/google/guava/guava/27.1-android/` | Apache-2.0 |
-| `jsr305-3.0.2.jar` | 3.0.2 | dexlib2 runtime dep (annotations) | `https://repo1.maven.org/maven2/com/google/code/findbugs/jsr305/3.0.2/` | Apache-2.0 |
+| Artifact | Version | Role | License |
+|---|---|---|---|
+| `org.smali:dexlib2` | 2.5.2 | DEX parse model (frontend for Step 2) | BSD 3-Clause |
+| `com.google.guava:guava` (android flavor) | 27.1-android | dexlib2 runtime dep | Apache-2.0 |
+| `com.google.code.findbugs:jsr305` | 3.0.2 | dexlib2 runtime dep (annotations) | Apache-2.0 |
 
 dexlib2 2.5.2 reads DEX up to version 039 (verified: fixture `classes*.dex`
 are 039 and disassemble cleanly). DEX 040+ needs smali 3.x, which publishes
 no Maven artifacts — revisit if a fixture requires it.
+
+## Test path (via Gradle / Maven Central)
+
+| Artifact | Version | Role | License |
+|---|---|---|---|
+| `org.junit.jupiter:junit-jupiter` | 5.14.4 | JUnit 5 suite (`src/test/java`) | EPL-2.0 |
 
 ## Dev-time oracles (`tools/`)
 

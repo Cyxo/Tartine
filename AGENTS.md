@@ -1,15 +1,13 @@
 # AGENTS.md
 
 ## Stack
-- Java only. Compile with JDK 18, compatibility floor Java 14.
-- Use `javac --release 14` (not just `source`/`target`) so APIs newer than 14 fail the build.
-- Do not use language features or JDK APIs introduced after Java 14. Verify with `javap -verbose` / `jdeps` if unsure.
+- Java only. Toolchains via mise (`mise.toml`: Corretto 18 + Gradle); run everything through `mise exec -- gradle ...` so the pinned JDK is used.
+- Java 14 compatibility floor, enforced as `options.release = 14` in `build.gradle`. Do not use language features or JDK APIs introduced after Java 14. Verify with `javap -verbose` / `jdeps` if unsure.
 
 ## Repo state
-- Layout: `src/main/java/aine/` (`Main`, `apk/`, `dex/`, `runtime/`, `graphics/`), `src/test/java/` (hand-rolled `main`-based tests, no test deps), `scripts/`, `out/` (ignored build output). `libs/` (vendored compile jars), `tools/` (dev-time CLI oracles), `apks/` (ignored local fixtures), `THIRD-PARTY.md` (versions/licenses). No build tool; plain `javac` only.
-- Verify (compiles main + tests with `--release 14`, runs tests, runs `aine.Main`):
-  - Windows: `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`
-  - Mac/Linux: `sh scripts/verify.sh`
+- Layout: `src/main/java/aine/` (`Main`, `apk/`, `dex/`, `runtime/`, `graphics/`), `src/test/java/` (JUnit 5 suite), `settings.gradle`/`build.gradle` + wrapper, `build/` (ignored output). `tools/` (dev-time CLI oracles), `apks/` (ignored local fixtures), `THIRD-PARTY.md` (versions/licenses). Deps resolve from Maven Central via Gradle; nothing vendored under `libs/`.
+- Verify: `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` (Windows) or `sh scripts/verify.sh` (Mac/Linux). Both run `mise install` (idempotent) then `gradle test`.
+- Single test: `mise exec -- gradle test --tests "aine.apk.*"`.
 
 ## Goal
 - Run Android APKs natively on desktop (Windows/Mac/Linux): no QEMU, no container/VM image (i.e. not Anbox/Waydroid/Emulator). Wine-like translation layer instead.
@@ -35,5 +33,5 @@
 
 ## Third-party policy
 - Reuse-first: prefer OSS/AOSP over hand-rolled (dexlib2 for DEX, baksmali/apktool CLIs as decode oracles, dex2jar/Enjarify as translation oracles, LWJGL3 for windowing/GLES, AOSP ART/Skia as reference only).
-- Vendor binary jars under `libs/` (compile deps) and CLI oracles under `tools/` (never on the runtime classpath); record version + URL + license in `THIRD-PARTY.md`. No Maven/Gradle until dep count justifies it; verify scripts put `libs/*.jar` on the classpath instead.
+- Vendor CLI oracles under `tools/` (never on the runtime classpath); record version + URL + license in `THIRD-PARTY.md`. Compile deps are declared in `build.gradle` (Maven Central), not vendored.
 - Only permissive licenses in the runtime path (Apache-2.0/BSD/MIT); keep license texts, never strip copyrights. Our sources stay `--release 14` regardless of what a vendored jar targets.
