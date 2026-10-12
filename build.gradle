@@ -30,3 +30,14 @@ tasks.named('test', Test) {
 application {
     mainClass = 'tartine.Main'
 }
+
+// Absolute dependency jars, one per line, for the direct-java launchers
+// (mise-tasks/*). Refresh with `mise run build`; never hand-edit.
+tasks.register('writeClasspath') {
+    def outFile = layout.buildDirectory.file('runtime-classpath.txt')
+    outputs.file(outFile)
+    doLast {
+        outFile.get().asFile.text = sourceSets.main.runtimeClasspath.files
+                .findAll { it.name.endsWith('.jar') }.join('\n') + '\n'
+    }
+}

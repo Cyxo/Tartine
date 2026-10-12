@@ -2,4 +2,4 @@
 set -eu
 mise trust
 mise install
-mise exec -- gradle test
+mise run test

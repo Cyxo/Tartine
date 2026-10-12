@@ -1,3 +1,30 @@
 [tools]
 java = "corretto-18.0.2.9.1"
 gradle = "9.8.1"
+powershell = "7.6.6"
+
+[tasks.build]
+description = "Incremental compile + refresh launch classpath"
+run = "gradle compileTestJava writeClasspath"
+
+[tasks.test]
+description = "Run the JUnit suite"
+run = "gradle test"
+
+[tasks.apk]
+description = "APK summary: manifest, code, libraries (headless)"
+depends = ["build"]
+usage = 'arg "[apk]" default="apks/app-debug.apk" help="APK file to inspect"'
+run = "pwsh -File scripts/apk.ps1"
+
+[tasks.run]
+description = "Headless probe: run launcher onCreate until the first gap"
+depends = ["build"]
+usage = 'arg "[apk]" default="apks/app-debug.apk" help="APK file to probe"'
+run = "pwsh -File scripts/run.ps1"
+
+[tasks.dump]
+description = "Print the instruction dump of one dex file"
+depends = ["build"]
+usage = 'arg "<dex>" help="Dex file to dump"'
+run = "pwsh -File scripts/dump.ps1"

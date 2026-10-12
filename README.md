@@ -7,10 +7,12 @@ See `AGENTS.md` for the APK-to-execution pipeline and graphics mapping.
 
 ## Prerequisites
 
-- [mise](https://mise.jdx.dev/). JDK 18 and Gradle install automatically
-  from `mise.toml` on first verify (`mise install` is idempotent).
-  No manual toolchain setup. Code must stay compatible with Java 14:
-  `build.gradle` enforces `options.release = 14`.
+- [mise](https://mise.jdx.dev/). JDK 18, Gradle, and PowerShell install
+  automatically from `mise.toml` on first verify (`mise install` is
+  idempotent). No manual toolchain setup. Code must stay compatible with
+  Java 14: `build.gradle` enforces `options.release = 14`.
+- After editing `mise.toml`, run `mise trust` (mise distrusts modified
+  configs).
 
 ## Layout
 
@@ -44,14 +46,12 @@ mise exec -- gradle test --tests "tartine.apk.*"
 
 ## Headless APK probes (no GUI yet)
 
-Against a local APK in `apks/` (gitignored):
-
 ```sh
-mise exec -- gradle run --args="apk apks/app-debug.apk"
-mise exec -- gradle run --args="run apks/app-debug.apk"
-mise exec -- gradle run --args="dump out/fixture-classes2.dex"
+mise run apk [apks/app-debug.apk]   # manifest, code, and library summary
+mise run run [apks/app-debug.apk]   # launcher onCreate until the first gap
+mise run dump <file.dex>            # instruction dump of one dex file
 ```
 
-`apk` prints manifest, code, and library summary. `run` executes the
-launcher `onCreate` until the first gap and reports it with the step
-count. `dump` prints the instruction dump of one dex file.
+`mise tasks ls` lists everything; `mise run <task> --help` shows args.
+Launchers reuse the last `mise run build` output via direct `java`
+(no recompile when unchanged).

@@ -7,6 +7,7 @@
 ## Repo state
 - Layout: `src/main/java/tartine/` (`Main`, `apk/`, `dex/`, `vm/`, `runtime/`, `graphics/`), `src/test/java/` (JUnit 5 suite), `settings.gradle`/`build.gradle` + wrapper, `build/` (ignored output). `tools/` (dev-time CLI oracles), `apks/` (ignored local fixtures), `THIRD-PARTY.md` (versions/licenses). Deps resolve from Maven Central via Gradle; nothing vendored under `libs/`.
 - Verify: `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` (Windows) or `sh scripts/verify.sh` (Mac/Linux). Both run `mise install` (idempotent) then `gradle test`.
+- Prefer `mise run <task>` (`test`/`build`/`apk`/`run`/`dump`, see `mise tasks ls`): `apk`/`run`/`dump` launch the last build via direct `java`, no recompile when unchanged. Run `mise trust` after editing `mise.toml` (edits revoke trust).
 - Single test: `mise exec -- gradle test --tests "tartine.apk.*"`.
 
 ## Goal
