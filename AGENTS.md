@@ -6,7 +6,7 @@
 - Do not use language features or JDK APIs introduced after Java 14. Verify with `javap -verbose` / `jdeps` if unsure.
 
 ## Repo state
-- Layout: `src/main/java/aine/` (`Main`, `dex/`, `runtime/`, `graphics/`), `src/test/java/` (hand-rolled `main`-based tests, no test deps), `scripts/`, `out/` (ignored build output). `libs/` (vendored compile jars), `tools/` (dev-time CLI oracles), `apks/` (ignored local fixtures), `THIRD-PARTY.md` (versions/licenses). No build tool; plain `javac` only.
+- Layout: `src/main/java/aine/` (`Main`, `apk/`, `dex/`, `runtime/`, `graphics/`), `src/test/java/` (hand-rolled `main`-based tests, no test deps), `scripts/`, `out/` (ignored build output). `libs/` (vendored compile jars), `tools/` (dev-time CLI oracles), `apks/` (ignored local fixtures), `THIRD-PARTY.md` (versions/licenses). No build tool; plain `javac` only.
 - Verify (compiles main + tests with `--release 14`, runs tests, runs `aine.Main`):
   - Windows: `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`
   - Mac/Linux: `sh scripts/verify.sh`

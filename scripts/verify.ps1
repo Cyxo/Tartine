@@ -7,4 +7,5 @@ $testSources = Get-ChildItem -Recurse -Filter *.java -Path src/test/java | ForEa
 javac --release 14 -cp "out;libs/*" -d out $testSources
 java -cp "out;libs/*" aine.dex.DexMagicTest
 java -cp "out;libs/*" aine.dex.DexLibPresenceTest
+java -cp "out;libs/*" aine.apk.ApkReaderTest
 java -cp "out;libs/*" aine.Main

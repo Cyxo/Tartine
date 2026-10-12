@@ -25,6 +25,7 @@ no Maven artifacts — revisit if a fixture requires it.
 | `baksmali-2.5.2.jar` | 2.5.2 | Golden disassembly oracle | Maven Central `org/smali/baksmali/2.5.2/` | BSD 3-Clause |
 | `util-2.5.2.jar` | 2.5.2 | baksmali runtime dep | Maven Central `org/smali/util/2.5.2/` | BSD 3-Clause |
 | `jcommander-1.64.jar` | 1.64 | baksmali runtime dep (CLI parsing) | Maven Central `com/beust/jcommander/1.64/` | Apache-2.0 |
+| `apktool_3.0.3.jar` | 3.0.3 | Manifest/resource decode oracle (Step 1 cross-check) | `https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_3.0.3.jar` (no published checksum; size 15478013 bytes matched, `version` + fixture decode smoke-tested) | Apache-2.0 |
 
 Example (Windows; `out/` is gitignored scratch):
 
@@ -35,7 +36,7 @@ java -cp "tools/baksmali-2.5.2.jar;tools/util-2.5.2.jar;tools/jcommander-1.64.ja
 
 ## Deferred (do not vendor yet)
 
-- **apktool** (Apache-2.0) — manifest/resource decode oracle for Step 1.
+- **apktool** (Apache-2.0) — vendored as manifest/resource decode oracle.
 - **dex2jar** (Apache-2.0) / **Enjarify** (Apache-2.0, pure Python 3,
   archived; successor `Storyyeller/enjarify`) — translation oracles for
   Step 3. Enjarify needs a dev-time Python 3, never a runtime dep.
