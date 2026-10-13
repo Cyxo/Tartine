@@ -47,6 +47,8 @@ public final class Interpreter {
     private FwIndex framework;
     private long steps = 0;
     private long maxSteps = Long.MAX_VALUE;
+    private VmLooper mainLooper;
+    private VmQueue mainQueue;
 
     public Interpreter(DexSet dexes) {
         this.dexes = dexes;
@@ -1105,32 +1107,33 @@ public final class Interpreter {
         if (descriptor.equals("Ljava/lang/String;")) {
             return "";
         }
-        if (descriptor.startsWith("Ljava/lang/")) {
-            Class<?> clazz = hostThrowable(descriptor);
-            if (clazz != null) {
-                String superDesc = "Ljava/lang/Throwable;";
-                if (framework != null) {
-                    FwIndex.FwClass fw = framework.find(descriptor);
-                    if (fw != null && fw.superclass != null) {
-                        superDesc = fw.superclass;
-                    }
-                }
-                VmObject placeholder = new VmObject(new DexClass(descriptor, superDesc,
-                        new ArrayList<String>(), new ArrayList<DexMethod>()));
-                throwables.put(placeholder, new PendingThrowable(clazz));
-                return placeholder;
-            }
+        FwIndex.FwClass fw = framework == null ? null : framework.find(descriptor);
+        Class<?> throwable = descriptor.startsWith("Ljava/lang/")
+                ? hostThrowable(descriptor) : null;
+        if (fw == null && throwable == null) {
+            return null;
         }
+        VmObject placeholder = newPlaceholder(descriptor);
+        if (throwable != null) {
+            throwables.put(placeholder, new PendingThrowable(throwable));
+        }
+        return placeholder;
+    }
+
+    private VmObject newPlaceholder(String descriptor) {
+        String superDesc = "Ljava/lang/Object;";
+        List<String> ifaces = new ArrayList<>();
         if (framework != null) {
             FwIndex.FwClass fw = framework.find(descriptor);
             if (fw != null) {
-                // Placeholder: modeled for casts/dispatch, never initialized.
-                // Framework <init> bodies run as no-ops (see runSpecial).
-                return new VmObject(new DexClass(descriptor, fw.superclass,
-                        fw.interfaces, new ArrayList<DexMethod>()));
+                if (fw.superclass != null) {
+                    superDesc = fw.superclass;
+                }
+                ifaces = fw.interfaces;
             }
         }
-        return null;
+        return new VmObject(
+                new DexClass(descriptor, superDesc, ifaces, new ArrayList<DexMethod>()));
     }
 
     /** Host {@link Throwable} subclass for a framework descriptor, else null. */
@@ -1341,6 +1344,12 @@ public final class Interpreter {
             }
             if (value instanceof LazyHolder) {
                 return target.equals("Lkotlin/Lazy;");
+            }
+            if (value instanceof VmLooper) {
+                return target.equals("Landroid/os/Looper;");
+            }
+            if (value instanceof VmQueue) {
+                return target.equals("Landroid/os/MessageQueue;");
             }
             return hostAssignable(target, value.getClass());
         }
@@ -2126,6 +2135,121 @@ public final class Interpreter {
         builtin("Landroid/os/SystemClock;->elapsedRealtimeNanos()J",
                 (receiver, args) -> System.nanoTime());
 
+        builtin("Landroid/os/Looper;->getMainLooper()Landroid/os/Looper;",
+                (receiver, args) -> mainLooper());
+        builtin("Landroid/os/Looper;->myLooper()Landroid/os/Looper;",
+                (receiver, args) -> mainLooper());
+        builtin("Landroid/os/Looper;->myQueue()Landroid/os/MessageQueue;",
+                (receiver, args) -> mainQueue());
+        builtin("Landroid/os/Looper;->prepare()V",
+                (receiver, args) -> {
+                    mainLooper();
+                    return null;
+                });
+        builtin("Landroid/os/Looper;->prepareMainLooper()V",
+                (receiver, args) -> {
+                    mainLooper();
+                    return null;
+                });
+        // Deviation: the real loop() blocks forever pumping; ours drains
+        // nothing (posts run inline) and returns so probes terminate.
+        builtin("Landroid/os/Looper;->loop()V",
+                (receiver, args) -> null);
+        builtin("Landroid/os/Looper;->getQueue()Landroid/os/MessageQueue;",
+                (receiver, args) -> mainQueue());
+        builtin("Landroid/os/Looper;->getThread()Ljava/lang/Thread;",
+                (receiver, args) -> Thread.currentThread());
+        builtin("Landroid/os/Looper;->quit()V",
+                (receiver, args) -> null);
+        builtin("Landroid/os/Looper;->quitSafely()V",
+                (receiver, args) -> null);
+
+        builtin("Landroid/os/Handler;-><init>()V",
+                (receiver, args) -> {
+                    initHandler((VmObject) receiver, mainLooper(), null);
+                    return null;
+                });
+        builtin("Landroid/os/Handler;-><init>(Landroid/os/Looper;)V",
+                (receiver, args) -> {
+                    initHandler((VmObject) receiver, args[0], null);
+                    return null;
+                });
+        builtin("Landroid/os/Handler;-><init>(Landroid/os/Handler$Callback;)V",
+                (receiver, args) -> {
+                    initHandler((VmObject) receiver, mainLooper(), args[0]);
+                    return null;
+                });
+        builtin("Landroid/os/Handler;-><init>(Landroid/os/Looper;"
+                + "Landroid/os/Handler$Callback;)V",
+                (receiver, args) -> {
+                    initHandler((VmObject) receiver, args[0], args[1]);
+                    return null;
+                });
+        builtin("Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z",
+                (receiver, args) -> {
+                    VmTask.runnable(this, args[0], "run").call();
+                    return 1;
+                });
+        builtin("Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z",
+                (receiver, args) -> {
+                    VmTask.runnable(this, args[0], "run").call();
+                    return 1;
+                });
+        builtin("Landroid/os/Handler;->postAtTime(Ljava/lang/Runnable;J)Z",
+                (receiver, args) -> {
+                    VmTask.runnable(this, args[0], "run").call();
+                    return 1;
+                });
+        builtin("Landroid/os/Handler;->postAtFrontOfQueue(Ljava/lang/Runnable;)Z",
+                (receiver, args) -> {
+                    VmTask.runnable(this, args[0], "run").call();
+                    return 1;
+                });
+        builtin("Landroid/os/Handler;->sendMessage(Landroid/os/Message;)Z",
+                (receiver, args) -> {
+                    dispatchMessage((VmObject) receiver, args[0]);
+                    return 1;
+                });
+        builtin("Landroid/os/Handler;->sendEmptyMessage(I)Z",
+                (receiver, args) -> {
+                    dispatchMessage((VmObject) receiver, message(argInt(args, 0)));
+                    return 1;
+                });
+        builtin("Landroid/os/Handler;->sendMessageDelayed(Landroid/os/Message;J)Z",
+                (receiver, args) -> {
+                    dispatchMessage((VmObject) receiver, args[0]);
+                    return 1;
+                });
+        builtin("Landroid/os/Handler;->sendEmptyMessageDelayed(IJ)Z",
+                (receiver, args) -> {
+                    dispatchMessage((VmObject) receiver, message(argInt(args, 0)));
+                    return 1;
+                });
+        builtin("Landroid/os/Handler;->obtainMessage()Landroid/os/Message;",
+                (receiver, args) -> messageTarget(newPlaceholder("Landroid/os/Message;"),
+                        receiver));
+        builtin("Landroid/os/Handler;->obtainMessage(I)Landroid/os/Message;",
+                (receiver, args) -> {
+                    VmObject message = messageTarget(newPlaceholder("Landroid/os/Message;"),
+                            receiver);
+                    message.putField("Landroid/os/Message;.what", argInt(args, 0));
+                    return message;
+                });
+        builtin("Landroid/os/Handler;->getLooper()Landroid/os/Looper;",
+                (receiver, args) -> {
+                    Object looper = ((VmObject) receiver)
+                            .getField("Landroid/os/Handler;.mLooper");
+                    return looper == null ? mainLooper() : looper;
+                });
+        builtin("Landroid/os/Handler;->hasMessages(I)Z",
+                (receiver, args) -> 0);
+        builtin("Landroid/os/Handler;->removeMessages(I)V",
+                (receiver, args) -> null);
+        builtin("Landroid/os/Handler;->removeCallbacks(Ljava/lang/Runnable;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/os/Message;->obtain()Landroid/os/Message;",
+                (receiver, args) -> newPlaceholder("Landroid/os/Message;"));
+
         builtin("Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->newUpdater("
                 + "Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)"
                 + "Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;",
@@ -2291,6 +2415,36 @@ public final class Interpreter {
                 (receiver, args) -> bool(
                         ((java.util.concurrent.Future<Object>) receiver)
                                 .cancel(argInt(args, 0) != 0)));
+
+        builtin("Ljava/lang/Enum;->name()Ljava/lang/String;",
+                (receiver, args) -> ((Enum<?>) receiver).name());
+
+        builtin("Ljava/lang/Thread;->currentThread()Ljava/lang/Thread;",
+                (receiver, args) -> Thread.currentThread());
+        builtin("Ljava/lang/Thread;->getName()Ljava/lang/String;",
+                (receiver, args) -> ((Thread) receiver).getName());
+        builtin("Ljava/lang/Thread;->setName(Ljava/lang/String;)V",
+                (receiver, args) -> {
+                    ((Thread) receiver).setName(argString(args, 0));
+                    return null;
+                });
+        builtin("Ljava/lang/Thread;->getId()J",
+                (receiver, args) -> ((Thread) receiver).getId());
+        builtin("Ljava/lang/Thread;->isAlive()Z",
+                (receiver, args) -> bool(((Thread) receiver).isAlive()));
+        builtin("Ljava/lang/Thread;->isInterrupted()Z",
+                (receiver, args) -> bool(((Thread) receiver).isInterrupted()));
+        builtin("Ljava/lang/Thread;->interrupted()Z",
+                (receiver, args) -> bool(Thread.interrupted()));
+        builtin("Ljava/lang/Thread;->getPriority()I",
+                (receiver, args) -> ((Thread) receiver).getPriority());
+        builtin("Ljava/lang/Thread;->setPriority(I)V",
+                (receiver, args) -> {
+                    ((Thread) receiver).setPriority(argInt(args, 0));
+                    return null;
+                });
+        builtin("Ljava/lang/Thread;->getState()Ljava/lang/Thread$State;",
+                (receiver, args) -> ((Thread) receiver).getState());
     }
 
     private Runnable wrapTask(Object task, String method) {
@@ -2354,6 +2508,48 @@ public final class Interpreter {
         } else {
             for (int i = 0; i < length; i++) {
                 dst.set(dstPos + i, src.get(srcPos + i));
+            }
+        }
+    }
+
+    private VmLooper mainLooper() {
+        if (mainLooper == null) {
+            mainLooper = new VmLooper();
+        }
+        return mainLooper;
+    }
+
+    private VmQueue mainQueue() {
+        if (mainQueue == null) {
+            mainQueue = new VmQueue();
+        }
+        return mainQueue;
+    }
+
+    private void initHandler(VmObject handler, Object looper, Object callback) {
+        handler.putField("Landroid/os/Handler;.mLooper",
+                looper == null ? mainLooper() : looper);
+        handler.putField("Landroid/os/Handler;.mCallback", callback);
+    }
+
+    private VmObject message(int what) {
+        VmObject message = newPlaceholder("Landroid/os/Message;");
+        message.putField("Landroid/os/Message;.what", what);
+        return message;
+    }
+
+    private static VmObject messageTarget(VmObject message, Object target) {
+        message.putField("Landroid/os/Message;.target", target);
+        return message;
+    }
+
+    /** Runs {@code handleMessage} when the receiver defines it (else no-op). */
+    private void dispatchMessage(VmObject handler, Object message) {
+        for (DexMethod candidate : handler.type.methods) {
+            if (candidate.name.equals("handleMessage")
+                    && candidate.parameterTypes.size() == 1) {
+                execute(handler.type, candidate, handler, new Object[]{message});
+                return;
             }
         }
     }

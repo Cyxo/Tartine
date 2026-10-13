@@ -913,6 +913,107 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), execImpl);
 
+        // MyHandler with handleMessage storing msg.what in Hello.flag.
+        MutableMethodImplementation handlerInitImpl = new MutableMethodImplementation(1);
+        handlerInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, objectInit));
+        handlerInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod handlerInit = builder.internMethod("Ltest/MyHandler;", "<init>",
+                Collections.<ImmutableMethodParameter>emptyList(), "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(),
+                Collections.emptySet(), Collections.emptySet(), handlerInitImpl);
+        MutableMethodImplementation handleImpl = new MutableMethodImplementation(2);
+        handleImpl.addInstruction(new BuilderInstruction22c(Opcode.IGET, 0, 1,
+                builder.internFieldReference(new ImmutableFieldReference(
+                        "Landroid/os/Message;", "what", "I"))));
+        handleImpl.addInstruction(new BuilderInstruction21c(Opcode.SPUT, 0,
+                builder.internFieldReference(new ImmutableFieldReference(HELLO, "flag", "I"))));
+        handleImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod handleMessage = builder.internMethod("Ltest/MyHandler;", "handleMessage",
+                Collections.singletonList(
+                        new ImmutableMethodParameter("Landroid/os/Message;",
+                                Collections.emptySet(), "msg")),
+                "V",
+                AccessFlags.PUBLIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), handleImpl);
+        builder.internClassDef("Ltest/MyHandler;", AccessFlags.PUBLIC.getValue(),
+                "Ljava/lang/Object;",
+                Collections.<String>emptyList(), "MyHandler.java",
+                Collections.emptySet(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Arrays.asList(handlerInit, handleMessage));
+
+        // postDemo(): handler.post(new Job()) runs inline; return flag.
+        MutableMethodImplementation postImpl = new MutableMethodImplementation(2);
+        postImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ltest/MyHandler;")));
+        postImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        postImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference("Ltest/MyHandler;",
+                        "<init>", Collections.<String>emptyList(), "V"))));
+        postImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Ltest/Job;")));
+        postImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        postImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 1, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference("Ltest/Job;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        postImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Handler;", "post",
+                        Collections.singletonList("Ljava/lang/Runnable;"), "Z"))));
+        postImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        postImpl.addInstruction(new BuilderInstruction21c(Opcode.SGET, 1,
+                builder.internFieldReference(new ImmutableFieldReference(HELLO, "flag", "I"))));
+        postImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 1));
+        BuilderMethod postDemo = builder.internMethod(HELLO, "postDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), postImpl);
+
+        // handlerDemo(): handler.sendEmptyMessage(42) dispatches; return flag.
+        MutableMethodImplementation dispatchImpl = new MutableMethodImplementation(2);
+        dispatchImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ltest/MyHandler;")));
+        dispatchImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        dispatchImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference("Ltest/MyHandler;",
+                        "<init>", Collections.<String>emptyList(), "V"))));
+        dispatchImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Handler;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        dispatchImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 1, 42));
+        dispatchImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Handler;", "sendEmptyMessage",
+                        Collections.singletonList("I"), "Z"))));
+        dispatchImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        dispatchImpl.addInstruction(new BuilderInstruction21c(Opcode.SGET, 1,
+                builder.internFieldReference(new ImmutableFieldReference(HELLO, "flag", "I"))));
+        dispatchImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 1));
+        BuilderMethod handlerDemo = builder.internMethod(HELLO, "handlerDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), dispatchImpl);
+
+        // threadDemo(): Thread.currentThread().getName().
+        MutableMethodImplementation threadImpl = new MutableMethodImplementation(1);
+        threadImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Thread;", "currentThread",
+                        Collections.<String>emptyList(), "Ljava/lang/Thread;"))));
+        threadImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        threadImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Thread;", "getName",
+                        Collections.<String>emptyList(), "Ljava/lang/String;"))));
+        threadImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        threadImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod threadDemo = builder.internMethod(HELLO, "threadDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/String;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), threadImpl);
+
         builder.internClassDef(HELLO,
                 AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "Hello.java",
@@ -923,7 +1024,8 @@ public final class FixtureDex {
                         appendableCast, badCast, stringOps, mathMax, missing, vis, sdk, fwCast,
                         fwGhost, fwInit, activityStub, nops, covarOk, covarPrim, constClass,
                         clazzIsInstance, updater, sysClock, longArith, floatArith, doubleArith,
-                        lazyDemo, lazyIsInstance, executorDemo));
+                        lazyDemo, lazyIsInstance, executorDemo, postDemo, handlerDemo,
+                        threadDemo));
         builder.writeTo(new FileDataStore(dexFile.toFile()));
     }
 

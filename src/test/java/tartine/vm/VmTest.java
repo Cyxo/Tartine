@@ -169,6 +169,22 @@ class VmTest {
     }
 
     @Test
+    void postRunsInline() {
+        assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "postDemo"));
+    }
+
+    @Test
+    void handlerDispatchesMessage() {
+        assertEquals(Integer.valueOf(42), interpreter.call(FixtureDex.HELLO, "handlerDemo"));
+    }
+
+    @Test
+    void threadDemoNames() {
+        Object result = interpreter.call(FixtureDex.HELLO, "threadDemo");
+        assertTrue(result instanceof String);
+    }
+
+    @Test
     void stepsWereExecuted() {
         interpreter.call(FixtureDex.HELLO, "twice", 21);
         assertTrue(interpreter.steps() > 0);

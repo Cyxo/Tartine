@@ -31,11 +31,11 @@ class DexFrontendTest {
 
     @Test
     void loadsClassesAndMethods() {
-        assertEquals(11, dex.classes().size());
+        assertEquals(12, dex.classes().size());
         DexClass cls = dex.findClass(FixtureDex.HELLO);
         assertNotNull(cls);
         assertNull(dex.findClass("Ltest/Missing;"));
-        assertEquals(42, cls.methods.size());
+        assertEquals(45, cls.methods.size());
         assertNotNull(cls.method("<init>"));
         assertNotNull(cls.method("twice"));
         assertNotNull(dex.findClass(FixtureDex.COUNTER));
@@ -217,6 +217,16 @@ class DexFrontendTest {
                 + "method greet()Ljava/lang/String; regs=1\n"
                 + "  0: const-string v0, hi\n"
                 + "  2: return-object v0\n"
+                + "method handlerDemo()I regs=2\n"
+                + "  0: new-instance v0, Ltest/MyHandler;\n"
+                + "  2: move-result-object v0\n"
+                + "  3: invoke-direct v0, Ltest/MyHandler;-><init>()V\n"
+                + "  6: invoke-direct v0, v0, Landroid/os/Handler;-><init>()V\n"
+                + "  9: const-16 v1, #42\n"
+                + "  11: invoke-virtual v0, v1, Landroid/os/Handler;->sendEmptyMessage(I)Z\n"
+                + "  14: move-result v1\n"
+                + "  15: sget v1, Ltest/Hello;->flag:I\n"
+                + "  17: return v1\n"
                 + "method id(I)I regs=2\n"
                 + "  0: move v0, v1\n"
                 + "  1: return v0\n"
@@ -284,6 +294,17 @@ class DexFrontendTest {
                 + "method nullCast()V regs=1\n"
                 + "  0: check-cast v0, Ltest/Counter;\n"
                 + "  2: return-void\n"
+                + "method postDemo()I regs=2\n"
+                + "  0: new-instance v0, Ltest/MyHandler;\n"
+                + "  2: move-result-object v0\n"
+                + "  3: invoke-direct v0, Ltest/MyHandler;-><init>()V\n"
+                + "  6: new-instance v1, Ltest/Job;\n"
+                + "  8: move-result-object v1\n"
+                + "  9: invoke-direct v1, Ltest/Job;-><init>()V\n"
+                + "  12: invoke-virtual v0, v1, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z\n"
+                + "  15: move-result v1\n"
+                + "  16: sget v1, Ltest/Hello;->flag:I\n"
+                + "  18: return v1\n"
                 + "method safely()I regs=1\n"
                 + "  0: const-string v0, boom\n"
                 + "  2: throw v0\n"
@@ -341,6 +362,12 @@ class DexFrontendTest {
                 + "  0: invoke-static, Landroid/os/SystemClock;->uptimeMillis()J\n"
                 + "  3: move-result-wide v0\n"
                 + "  4: return-wide v0\n"
+                + "method threadDemo()Ljava/lang/String; regs=1\n"
+                + "  0: invoke-static, Ljava/lang/Thread;->currentThread()Ljava/lang/Thread;\n"
+                + "  3: move-result-object v0\n"
+                + "  4: invoke-virtual v0, Ljava/lang/Thread;->getName()Ljava/lang/String;\n"
+                + "  7: move-result-object v0\n"
+                + "  8: return-object v0\n"
                 + "method throwCatch()Ljava/lang/String; regs=2\n"
                 + "  0: new-instance v0, Ljava/lang/IllegalStateException;\n"
                 + "  2: move-result-object v0\n"
@@ -386,6 +413,14 @@ class DexFrontendTest {
                 + "  0: const-4 v1, #7\n"
                 + "  1: sput v1, Ltest/Hello;->flag:I\n"
                 + "  3: return-void\n"
+                + "class Ltest/MyHandler;\n"
+                + "method <init>()V regs=1\n"
+                + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
+                + "  3: return-void\n"
+                + "method handleMessage(Landroid/os/Message;)V regs=2\n"
+                + "  0: iget v0, v1, Landroid/os/Message;->what:I\n"
+                + "  2: sput v0, Ltest/Hello;->flag:I\n"
+                + "  4: return-void\n"
                 + "class Ltest/Orphan;\n"
                 + "method <init>()V regs=1\n"
                 + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
