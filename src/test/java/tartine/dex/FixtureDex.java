@@ -1526,6 +1526,105 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), mapPutImpl);
 
+        // repeatDemo(): "ab".repeat(3), purely reflective (no table entry).
+        MutableMethodImplementation repeatImpl = new MutableMethodImplementation(2);
+        repeatImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("ab")));
+        repeatImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 3));
+        repeatImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/String;", "repeat",
+                        Collections.singletonList("I"), "Ljava/lang/String;"))));
+        repeatImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        repeatImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod repeatDemo = builder.internMethod(HELLO, "repeatDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/String;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), repeatImpl);
+
+        // emptyDemo(): Collections.EMPTY_LIST (reflective field) is empty.
+        MutableMethodImplementation emptyImpl = new MutableMethodImplementation(2);
+        emptyImpl.addInstruction(new BuilderInstruction21c(Opcode.SGET_OBJECT, 0,
+                builder.internFieldReference(new ImmutableFieldReference(
+                        "Ljava/util/Collections;", "EMPTY_LIST", "Ljava/util/List;"))));
+        emptyImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/List;", "isEmpty",
+                        Collections.<String>emptyList(), "Z"))));
+        emptyImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        emptyImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 1));
+        BuilderMethod emptyDemo = builder.internMethod(HELLO, "emptyDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), emptyImpl);
+
+        // strictSqrt(): StrictMath.sqrt(16.0), reflective static.
+        MutableMethodImplementation strictImpl = new MutableMethodImplementation(2);
+        strictImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 0, 16));
+        strictImpl.addInstruction(new BuilderInstruction12x(Opcode.INT_TO_DOUBLE, 0, 0));
+        strictImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/StrictMath;", "sqrt",
+                        Collections.singletonList("D"), "D"))));
+        strictImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_WIDE, 0));
+        strictImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_WIDE, 0));
+        BuilderMethod strictSqrt = builder.internMethod(HELLO, "strictSqrt",
+                Collections.<ImmutableMethodParameter>emptyList(), "D",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), strictImpl);
+
+        // linkedMapDemo(): reflectively allocated LinkedHashMap round-trip.
+        MutableMethodImplementation linkedImpl = new MutableMethodImplementation(4);
+        linkedImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ljava/util/LinkedHashMap;")));
+        linkedImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        linkedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/LinkedHashMap;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        linkedImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("k")));
+        linkedImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 2, 42));
+        linkedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 2, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "valueOf",
+                        Collections.singletonList("I"), "Ljava/lang/Integer;"))));
+        linkedImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        linkedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 1, 2, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Map;", "put",
+                        Arrays.asList("Ljava/lang/Object;", "Ljava/lang/Object;"),
+                        "Ljava/lang/Object;"))));
+        linkedImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 3));
+        linkedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Map;", "get",
+                        Collections.singletonList("Ljava/lang/Object;"),
+                        "Ljava/lang/Object;"))));
+        linkedImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        linkedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 2, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "intValue",
+                        Collections.<String>emptyList(), "I"))));
+        linkedImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        linkedImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        BuilderMethod linkedMapDemo = builder.internMethod(HELLO, "linkedMapDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), linkedImpl);
+
+        // blockedExec(): Runtime.getRuntime stays denied.
+        MutableMethodImplementation blockedImpl = new MutableMethodImplementation(1);
+        blockedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Runtime;", "getRuntime",
+                        Collections.<String>emptyList(), "Ljava/lang/Runtime;"))));
+        blockedImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod blockedExec = builder.internMethod(HELLO, "blockedExec",
+                Collections.<ImmutableMethodParameter>emptyList(), "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), blockedImpl);
+
         builder.internClassDef(HELLO,
                 AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "Hello.java",
@@ -1539,7 +1638,8 @@ public final class FixtureDex {
                         lazyDemo, lazyIsInstance, executorDemo, postDemo, handlerDemo,
                         threadDemo, mapDemo, listDemo, setDemo, iterDemo, nullish, nullRecv,
                         boolStr, charStr, weakGet, weakClear, colorCmp, colorName,
-                        colorValueOf, mapDefaults, mapPutAbsent));
+                        colorValueOf, mapDefaults, mapPutAbsent, repeatDemo, emptyDemo,
+                        strictSqrt, linkedMapDemo, blockedExec));
         builder.writeTo(new FileDataStore(dexFile.toFile()));
     }
 

@@ -962,13 +962,31 @@ public final class Interpreter {
                             break;
                         }
                         if (resolved.builtin != null) {
-                            Object result = resolved.builtin.invoke(null,
-                                    readRefArgs(ref, g, 0, regs));
+                            Object result;
+                            try {
+                                result = resolved.builtin.invoke(null,
+                                        readRefArgs(ref, g, 0, regs));
+                            } catch (ClassCastException e) {
+                                throw new VmException("bridge mismatch: " + insn.reference, e);
+                            }
                             if (ref.returnType.equals("V")) {
                                 pending = null;
                                 hasPending = false;
                             } else {
                                 pending = result;
+                                hasPending = true;
+                            }
+                            pc++;
+                            break;
+                        }
+                        ReflectResult reflected = reflectCall(null, ref,
+                                readRefArgs(ref, g, 0, regs), true);
+                        if (reflected.hit) {
+                            if (ref.returnType.equals("V")) {
+                                pending = null;
+                                hasPending = false;
+                            } else {
+                                pending = reflected.value;
                                 hasPending = true;
                             }
                             pc++;
@@ -1057,7 +1075,12 @@ public final class Interpreter {
                         }
                         if (resolved.builtin != null) {
                             Object[] callArgs = readRefArgs(ref, g, 1, regs);
-                            Object result = resolved.builtin.invoke(receiver, callArgs);
+                            Object result;
+                            try {
+                                result = resolved.builtin.invoke(receiver, callArgs);
+                            } catch (ClassCastException e) {
+                                throw new VmException("bridge mismatch: " + insn.reference, e);
+                            }
                             if (ref.returnType.equals("V")) {
                                 pending = null;
                                 hasPending = false;
@@ -1072,6 +1095,30 @@ public final class Interpreter {
                         if (special.handled) {
                             pending = special.hasValue ? special.value : null;
                             hasPending = special.hasValue;
+                            pc++;
+                            break;
+                        }
+                        if (ref.name.equals("<init>")) {
+                            ReflectResult constructed = reflectConstruct(ref,
+                                    readRefArgs(ref, g, 1, regs));
+                            if (constructed.hit) {
+                                regs[g.get(0)] = constructed.value;
+                                pending = null;
+                                hasPending = false;
+                                pc++;
+                                break;
+                            }
+                        }
+                        ReflectResult reflected = reflectCall(receiver, ref,
+                                readRefArgs(ref, g, 1, regs), false);
+                        if (reflected.hit) {
+                            if (ref.returnType.equals("V")) {
+                                pending = null;
+                                hasPending = false;
+                            } else {
+                                pending = reflected.value;
+                                hasPending = true;
+                            }
                             pc++;
                             break;
                         }
@@ -1129,6 +1176,17 @@ public final class Interpreter {
         }
         if (descriptor.equals("Ljava/util/HashSet;")) {
             return new java.util.HashSet<Object>();
+        }
+        if (descriptor.startsWith("Ljava/")) {
+            Class<?> host = hostClass(descriptor);
+            if (host != null && !host.isInterface() && !host.isArray() && !host.isEnum()
+                    && !Modifier.isAbstract(host.getModifiers())) {
+                try {
+                    return host.getConstructor().newInstance();
+                } catch (ReflectiveOperationException | LinkageError | RuntimeException e) {
+                    // fall through to placeholder
+                }
+            }
         }
         FwIndex.FwClass fw = framework == null ? null : framework.find(descriptor);
         Class<?> throwable = descriptor.startsWith("Ljava/lang/")
@@ -1206,7 +1264,11 @@ public final class Interpreter {
             return;
         }
         if (framework == null || framework.find(ref.definingClass) == null) {
-            throw new VmException("unimplemented: " + fieldReference);
+            if (hostClass(ref.definingClass) == null) {
+                throw new VmException("unimplemented: " + fieldReference);
+            }
+            // Host class: <clinit> runs implicitly on reflective access.
+            return;
         }
         // Framework class: no <clinit> to run; constants served without init.
     }
@@ -1221,10 +1283,15 @@ public final class Interpreter {
         if (constant instanceof Number) {
             return ((Number) constant).intValue();
         }
-        if (constant != null || !isDexClass(fieldReference)) {
-            throw new VmException("unimplemented: " + fieldReference);
+        if (constant == null && isDexClass(fieldReference)) {
+            return 0;
         }
-        return 0;
+        FieldRef ref = FieldRef.parse(fieldReference);
+        ReflectResult reflected = reflectStaticField(ref.definingClass, ref.name);
+        if (reflected.hit && reflected.value instanceof Number) {
+            return ((Number) reflected.value).intValue();
+        }
+        throw new VmException("unimplemented: " + fieldReference);
     }
 
     private Object staticLong(String fieldReference) {
@@ -1237,10 +1304,15 @@ public final class Interpreter {
         if (constant instanceof Number) {
             return ((Number) constant).longValue();
         }
-        if (constant != null || !isDexClass(fieldReference)) {
-            throw new VmException("unimplemented: " + fieldReference);
+        if (constant == null && isDexClass(fieldReference)) {
+            return 0L;
         }
-        return 0L;
+        FieldRef ref = FieldRef.parse(fieldReference);
+        ReflectResult reflected = reflectStaticField(ref.definingClass, ref.name);
+        if (reflected.hit && reflected.value instanceof Number) {
+            return ((Number) reflected.value).longValue();
+        }
+        throw new VmException("unimplemented: " + fieldReference);
     }
 
     private Object staticRef(String fieldReference) {
@@ -1256,15 +1328,34 @@ public final class Interpreter {
         if (isDexClass(fieldReference)) {
             return null;
         }
+        FieldRef ref = FieldRef.parse(fieldReference);
+        ReflectResult reflected = reflectStaticField(ref.definingClass, ref.name);
+        if (reflected.hit) {
+            return reflected.value;
+        }
         throw new VmException("unimplemented: " + fieldReference);
     }
 
     private void staticPut(String fieldReference, Object value) {
         ensureInitFor(fieldReference);
-        if (!isDexClass(fieldReference)) {
-            throw new VmException("unimplemented: " + fieldReference);
+        if (isDexClass(fieldReference)) {
+            statics.put(staticKey(fieldReference), value);
+            return;
         }
-        statics.put(staticKey(fieldReference), value);
+        FieldRef ref = FieldRef.parse(fieldReference);
+        Class<?> host = hostClass(ref.definingClass);
+        if (host != null) {
+            try {
+                java.lang.reflect.Field field = host.getField(ref.name);
+                if (!Modifier.isFinal(field.getModifiers())) {
+                    field.set(null, toHost(field.getType(), value));
+                    return;
+                }
+            } catch (NoSuchFieldException | IllegalAccessException | LinkageError e) {
+                // fall through to gap
+            }
+        }
+        throw new VmException("unimplemented: " + fieldReference);
     }
 
     private boolean isDexClass(String fieldReference) {
@@ -1653,6 +1744,10 @@ public final class Interpreter {
         return key.append(')').append(ref.returnType).toString();
     }
 
+    // Reflective bridge: fallback for java.* calls the table does not cover.
+    // Precedence everywhere is dex, table, special rules, reflection, gaps.
+    // Only host objects (or none, for static) cross; model objects never do.
+
     /** Classes never touched by reflection (process/thread control, loaders). */
     private static final Set<String> REFLECT_DENY;
     static {
@@ -1864,15 +1959,14 @@ public final class Interpreter {
             }
             candidates.add(candidate);
         }
-        Method exact = null;
+        Method selected = null;
         String wanted = dexDescriptor(ref);
         for (Method candidate : candidates) {
             if (methodDescriptor(candidate).equals(wanted)) {
-                exact = candidate;
+                selected = candidate;
                 break;
             }
         }
-        Method selected = exact;
         if (selected == null) {
             candidates.sort((left, right) ->
                     methodDescriptor(left).compareTo(methodDescriptor(right)));
@@ -1954,6 +2048,64 @@ public final class Interpreter {
         } catch (NoSuchFieldException | IllegalAccessException | LinkageError e) {
             return ReflectResult.MISS;
         }
+    }
+
+    private ReflectResult reflectConstruct(MethodRef ref, Object[] args) {
+        Class<?> host = hostClass(ref.definingClass);
+        if (host == null || host.isInterface() || host.isArray() || host.isEnum()
+                || Modifier.isAbstract(host.getModifiers())) {
+            return ReflectResult.MISS;
+        }
+        List<java.lang.reflect.Constructor<?>> candidates = new ArrayList<>();
+        for (java.lang.reflect.Constructor<?> candidate : host.getConstructors()) {
+            if (candidate.getParameterCount() == ref.parameters.size()
+                    && !candidate.isSynthetic()) {
+                candidates.add(candidate);
+            }
+        }
+        candidates.sort((left, right) -> {
+            StringBuilder l = new StringBuilder("(");
+            for (Class<?> p : left.getParameterTypes()) {
+                l.append(hostDescriptor(p));
+            }
+            StringBuilder r = new StringBuilder("(");
+            for (Class<?> p : right.getParameterTypes()) {
+                r.append(hostDescriptor(p));
+            }
+            return l.toString().compareTo(r.toString());
+        });
+        for (java.lang.reflect.Constructor<?> candidate : candidates) {
+            Class<?>[] params = candidate.getParameterTypes();
+            boolean ok = true;
+            for (int i = 0; i < params.length; i++) {
+                if (!argAssignable(params[i], args[i])) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (!ok) {
+                continue;
+            }
+            Object[] hostArgs = new Object[args.length];
+            for (int i = 0; i < args.length; i++) {
+                hostArgs[i] = toHost(params[i], args[i]);
+            }
+            try {
+                return new ReflectResult(true, candidate.newInstance(hostArgs));
+            } catch (InstantiationException | IllegalAccessException e) {
+                return ReflectResult.MISS;
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof RuntimeException) {
+                    throw (RuntimeException) cause;
+                }
+                if (cause instanceof Error) {
+                    throw (Error) cause;
+                }
+                throw new VmThrow(cause);
+            }
+        }
+        return ReflectResult.MISS;
     }
 
     private VmException gapMessage(String defineDesc, MethodRef ref, String reference,
@@ -2181,9 +2333,10 @@ public final class Interpreter {
                 object.putField("Ljava/lang/Enum;.ordinal", args[1]);
                 return Outcome.empty();
             }
-            // Framework constructors have no DEX body: no-op. Applies to
-            // placeholder receivers and to in-dex receivers calling a
-            // framework super constructor (e.g. Activity.<init>).
+            // Framework constructors have no DEX body: argless ones are
+            // no-ops (fields default). Argument-carrying ones fall through
+            // to reflective construction or a gap, so values are not
+            // silently dropped.
             boolean frameworkCtor = dexes.findClass(ref.definingClass) == null
                     && framework != null && framework.find(ref.definingClass) != null;
             if (isPlaceholder(receiver) || frameworkCtor) {
@@ -2193,8 +2346,10 @@ public final class Interpreter {
                     pending.message = argString(args, 0);
                     return Outcome.empty();
                 }
-                // Framework construction initializes nothing; fields default.
-                return Outcome.empty();
+                if (noArgs) {
+                    return Outcome.empty();
+                }
+                return Outcome.MISS;
             }
             return Outcome.MISS;
         }
@@ -2625,6 +2780,14 @@ public final class Interpreter {
 
         // PROBE STUBS: framework behavior deferred; each no-op is repaid later.
         builtin("Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/app/Activity;->registerActivityLifecycleCallbacks("
+                + "Landroid/app/Application$ActivityLifecycleCallbacks;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/app/Activity;->getFragmentManager()Landroid/app/FragmentManager;",
+                (receiver, args) -> newPlaceholder("Landroid/app/FragmentManager;"));
+        builtin("Landroid/app/FragmentManager;->findFragmentByTag(Ljava/lang/String;)"
+                + "Landroid/app/Fragment;",
                 (receiver, args) -> null);
         builtin("Landroid/os/SystemClock;->uptimeMillis()J",
                 (receiver, args) -> System.nanoTime() / 1000000L);

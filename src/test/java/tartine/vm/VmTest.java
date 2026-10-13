@@ -281,6 +281,33 @@ class VmTest {
     }
 
     @Test
+    void repeatDemoReflects() {
+        assertEquals("ababab", interpreter.call(FixtureDex.HELLO, "repeatDemo"));
+    }
+
+    @Test
+    void emptyDemoReflectsField() {
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "emptyDemo"));
+    }
+
+    @Test
+    void strictSqrtReflectsStatic() {
+        assertEquals(Double.valueOf(4.0), interpreter.call(FixtureDex.HELLO, "strictSqrt"));
+    }
+
+    @Test
+    void linkedMapDemoAllocatesReflectively() {
+        assertEquals(Integer.valueOf(42), interpreter.call(FixtureDex.HELLO, "linkedMapDemo"));
+    }
+
+    @Test
+    void blockedExecStaysDenied() {
+        VmException e = assertThrows(VmException.class,
+                () -> interpreter.call(FixtureDex.HELLO, "blockedExec"));
+        assertTrue(e.getMessage().contains("unimplemented"), e.getMessage());
+    }
+
+    @Test
     void stepsWereExecuted() {
         interpreter.call(FixtureDex.HELLO, "twice", 21);
         assertTrue(interpreter.steps() > 0);

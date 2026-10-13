@@ -9,4 +9,8 @@ public class VmException extends RuntimeException {
     public VmException(String message) {
         super(message);
     }
+
+    public VmException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
