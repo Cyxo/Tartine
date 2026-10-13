@@ -2804,6 +2804,10 @@ public final class Interpreter {
                 (receiver, args) -> null);
         builtin("Landroid/view/Window;->setNavigationBarColor(I)V",
                 (receiver, args) -> null);
+        builtin("Landroid/view/Window;->setStatusBarContrastEnforced(Z)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/Window;->setNavigationBarContrastEnforced(Z)V",
+                (receiver, args) -> null);
         builtin("Landroid/app/Activity;->registerActivityLifecycleCallbacks("
                 + "Landroid/app/Application$ActivityLifecycleCallbacks;)V",
                 (receiver, args) -> null);
