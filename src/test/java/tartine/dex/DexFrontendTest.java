@@ -35,7 +35,7 @@ class DexFrontendTest {
         DexClass cls = dex.findClass(FixtureDex.HELLO);
         assertNotNull(cls);
         assertNull(dex.findClass("Ltest/Missing;"));
-        assertEquals(69, cls.methods.size());
+        assertEquals(70, cls.methods.size());
         assertNotNull(cls.method("<init>"));
         assertNotNull(cls.method("twice"));
         assertNotNull(dex.findClass(FixtureDex.COUNTER));
@@ -633,6 +633,17 @@ class DexFrontendTest {
                 + "  27: move-result-object v2\n"
                 + "  28: add-int v2, v4, v2\n"
                 + "  30: return v2\n"
+                + "method viewVis()I regs=2\n"
+                + "  0: new-instance v0, Landroid/view/View;\n"
+                + "  2: move-result-object v0\n"
+                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
+                + "  6: invoke-virtual v0, Landroid/view/View;->getVisibility()I\n"
+                + "  9: move-result v1\n"
+                + "  10: const-16 v1, #8\n"
+                + "  12: invoke-virtual v0, v1, Landroid/view/View;->setVisibility(I)V\n"
+                + "  15: invoke-virtual v0, Landroid/view/View;->getVisibility()I\n"
+                + "  18: move-result v0\n"
+                + "  19: return v0\n"
                 + "method vis()I regs=1\n"
                 + "  0: sget v0, Landroid/view/View;->VISIBLE:I\n"
                 + "  2: return v0\n"

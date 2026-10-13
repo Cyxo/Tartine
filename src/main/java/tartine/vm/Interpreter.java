@@ -2791,6 +2791,30 @@ public final class Interpreter {
                 (receiver, args) -> null);
         builtin("Landroid/view/View;->findViewById(I)Landroid/view/View;",
                 (receiver, args) -> null);
+        builtin("Landroid/view/View;->getSystemUiVisibility()I",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/view/View;.mSystemUiVisibility");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/view/View;->setSystemUiVisibility(I)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/view/View;.mSystemUiVisibility",
+                            asInt(args[0]));
+                    return null;
+                });
+        builtin("Landroid/view/View;->getVisibility()I",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/view/View;.mVisibility");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/view/View;->setVisibility(I)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/view/View;.mVisibility",
+                            asInt(args[0]));
+                    return null;
+                });
         builtin("Landroid/view/Window;->getWindowManager()Landroid/view/WindowManager;",
                 (receiver, args) -> newPlaceholder("Landroid/view/WindowManager;"));
         builtin("Landroid/view/View;->getResources()Landroid/content/res/Resources;",
@@ -2807,6 +2831,11 @@ public final class Interpreter {
         builtin("Landroid/view/Window;->setStatusBarContrastEnforced(Z)V",
                 (receiver, args) -> null);
         builtin("Landroid/view/Window;->setNavigationBarContrastEnforced(Z)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/Window;->getInsetsController()"
+                + "Landroid/view/WindowInsetsController;",
+                (receiver, args) -> newPlaceholder("Landroid/view/WindowInsetsController;"));
+        builtin("Landroid/view/WindowInsetsController;->setSystemBarsAppearance(II)V",
                 (receiver, args) -> null);
         builtin("Landroid/app/Activity;->registerActivityLifecycleCallbacks("
                 + "Landroid/app/Application$ActivityLifecycleCallbacks;)V",

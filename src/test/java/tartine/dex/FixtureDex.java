@@ -1701,6 +1701,36 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), windowImpl);
 
+        // viewVis(): View visibility round-trips through fields, default VISIBLE.
+        MutableMethodImplementation viewVisImpl = new MutableMethodImplementation(2);
+        viewVisImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/View;")));
+        viewVisImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        viewVisImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        viewVisImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "getVisibility",
+                        Collections.<String>emptyList(), "I"))));
+        viewVisImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        viewVisImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 1, 8));
+        viewVisImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "setVisibility",
+                        Collections.singletonList("I"), "V"))));
+        viewVisImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "getVisibility",
+                        Collections.<String>emptyList(), "I"))));
+        viewVisImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        viewVisImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod viewVis = builder.internMethod(HELLO, "viewVis",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), viewVisImpl);
+
         builder.internClassDef(HELLO,
                 AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "Hello.java",
@@ -1716,7 +1746,7 @@ public final class FixtureDex {
                         boolStr, charStr, weakGet, weakClear, colorCmp, colorName,
                         colorValueOf, mapDefaults, mapPutAbsent, repeatDemo, emptyDemo,
                         strictSqrt, linkedMapDemo, blockedExec, txChain, argbDemo,
-                        parseDemo, activityWindow));
+                        parseDemo, activityWindow, viewVis));
         builder.writeTo(new FileDataStore(dexFile.toFile()));
     }
 

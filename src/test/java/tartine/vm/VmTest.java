@@ -330,6 +330,12 @@ class VmTest {
     }
 
     @Test
+    void viewVisRoundTrips() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(8), interpreter.call(FixtureDex.HELLO, "viewVis"));
+    }
+
+    @Test
     void stepsWereExecuted() {
         interpreter.call(FixtureDex.HELLO, "twice", 21);
         assertTrue(interpreter.steps() > 0);
