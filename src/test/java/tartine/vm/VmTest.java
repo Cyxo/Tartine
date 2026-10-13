@@ -17,6 +17,7 @@ import tartine.fw.FwIndex.FwClass;
 import tartine.fw.FwIndex.FwField;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -185,6 +186,101 @@ class VmTest {
     }
 
     @Test
+    void eqComparesIntsByValue() {
+        assertTrue(Interpreter.eq(Integer.valueOf(1000000), Integer.valueOf(1000000)));
+    }
+
+    @Test
+    void eqComparesRefsByIdentity() {
+        assertFalse(Interpreter.eq(new String("a"), new String("a")));
+        assertTrue(Interpreter.eq(null, null));
+        assertFalse(Interpreter.eq(null, "a"));
+        Object same = new Object();
+        assertTrue(Interpreter.eq(same, same));
+    }
+
+    @Test
+    void mapDemoStores() {
+        assertEquals(Integer.valueOf(42), interpreter.call(FixtureDex.HELLO, "mapDemo"));
+    }
+
+    @Test
+    void listDemoIndexes() {
+        assertEquals(Integer.valueOf(8), interpreter.call(FixtureDex.HELLO, "listDemo"));
+    }
+
+    @Test
+    void setDemoDedupes() {
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "setDemo"));
+    }
+
+    @Test
+    void iterDemoWalks() {
+        assertEquals(Integer.valueOf(5), interpreter.call(FixtureDex.HELLO, "iterDemo"));
+    }
+
+    @Test
+    void nullishCastsLikeNull() {
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "nullish"));
+    }
+
+    @Test
+    void nullRecvFailsLikeNull() {
+        assertThrows(NullPointerException.class,
+                () -> interpreter.call(FixtureDex.HELLO, "nullRecv"));
+    }
+
+    @Test
+    void boolStrBoxes() {
+        assertEquals("true", interpreter.call(FixtureDex.HELLO, "boolStr"));
+    }
+
+    @Test
+    void charStrBoxes() {
+        assertEquals("A", interpreter.call(FixtureDex.HELLO, "charStr"));
+    }
+
+    @Test
+    void weakGetReadsReferent() {
+        interpreter.setFramework(framework());
+        assertEquals("x", interpreter.call(FixtureDex.HELLO, "weakGet"));
+    }
+
+    @Test
+    void weakClearEmpties() {
+        interpreter.setFramework(framework());
+        assertNull(interpreter.call(FixtureDex.HELLO, "weakClear"));
+    }
+
+    @Test
+    void colorCmpComparesOrdinals() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(-1), interpreter.call(FixtureDex.HELLO, "colorCmp"));
+    }
+
+    @Test
+    void colorNameReads() {
+        interpreter.setFramework(framework());
+        assertEquals("RED", interpreter.call(FixtureDex.HELLO, "colorName"));
+    }
+
+    @Test
+    void colorValueOfFinds() {
+        interpreter.setFramework(framework());
+        assertEquals("BLUE", interpreter.call(FixtureDex.HELLO, "colorValueOf"));
+    }
+
+    @Test
+    void mapDefaultsEmulates() {
+        assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "mapDefaults"));
+    }
+
+    @Test
+    void mapPutAbsentShortCircuits() {
+        assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "mapPutAbsent"));
+    }
+
+    @Test
     void stepsWereExecuted() {
         interpreter.call(FixtureDex.HELLO, "twice", 21);
         assertTrue(interpreter.steps() > 0);
@@ -326,6 +422,21 @@ class VmTest {
                 Collections.<FwIndex.FwField>emptyList(),
                 Collections.<String, Object>emptyMap()));
         index.put(new FwClass("Landroid/app/Activity;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Ljava/lang/ref/Reference;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Ljava/lang/ref/WeakReference;", "Ljava/lang/ref/Reference;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Ljava/lang/Enum;", "Ljava/lang/Object;",
                 Collections.<String>emptyList(),
                 Collections.<FwIndex.FwMethod>emptyList(),
                 Collections.<FwIndex.FwField>emptyList(),

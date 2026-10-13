@@ -1,7 +1,12 @@
 package tartine.vm;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -49,6 +54,8 @@ public final class Interpreter {
     private long maxSteps = Long.MAX_VALUE;
     private VmLooper mainLooper;
     private VmQueue mainQueue;
+    private final String[] trace = new String[16];
+    private int traceAt = 0;
 
     public Interpreter(DexSet dexes) {
         this.dexes = dexes;
@@ -83,6 +90,16 @@ public final class Interpreter {
     /** Aborts execution past this many steps (infinite-loop guard for probes). */
     public void setMaxSteps(long maxSteps) {
         this.maxSteps = maxSteps;
+    }
+
+    /** Last executed instructions, oldest first (ring for gap diagnosis). */
+    public List<String> lastTrace() {
+        List<String> out = new ArrayList<>();
+        int count = Math.min(traceAt, trace.length);
+        for (int i = 0; i < count; i++) {
+            out.add(trace[(traceAt - count + i) & (trace.length - 1)]);
+        }
+        return out;
     }
 
     /**
@@ -169,6 +186,10 @@ public final class Interpreter {
                 if (steps > maxSteps) {
                     throw new VmException("step budget exceeded");
                 }
+                trace[traceAt & (trace.length - 1)] = (method.owner == null ? "?"
+                        : method.owner) + "." + method.signature()
+                        + "@" + insn.codeOffset + ":" + insn.opcode;
+                traceAt++;
                 String op = insn.opcode;
                 List<Integer> g = insn.registers;
                 boolean consumesPending = op.startsWith("move-result") || op.equals("move-exception");
@@ -710,13 +731,15 @@ public final class Interpreter {
                     }
                     case "check-cast": {
                         Object value = regs[g.get(0)];
-                        if (value != null && !isInstance(value, insn.reference)) {
-                            throw new ClassCastException(insn.reference);
+                        if (!isNullish(value) && !isInstance(value, insn.reference)) {
+                            throw new ClassCastException(
+                                    insn.reference + " <- " + valueType(value));
                         }
                         pc++;
                         break;
-                    }                    case "instance-of":
-                        regs[g.get(0)] = toInt(isInstance(regs[g.get(1)], insn.reference));
+                    }
+                    case "instance-of":
+                        regs[g.get(0)] = toInt(instanceOf(regs[g.get(1)], insn.reference));
                         pc++;
                         break;
                     case "array-length": {
@@ -893,7 +916,7 @@ public final class Interpreter {
                         break;
                     case "throw": {
                         Object value = regs[g.get(0)];
-                        if (value == null) {
+                        if (isNullish(value)) {
                             throw new NullPointerException("throw null");
                         }
                         throw new VmThrow(value);
@@ -905,16 +928,16 @@ public final class Interpreter {
                     case "invoke-static":
                     case "invoke-static-range": {
                         MethodRef ref = MethodRef.parse(insn.reference);
-                        DexClass target = dexes.findClass(ref.definingClass);
-                        DexMethod callee = target == null ? null : findMethod(target, ref);
-                        if (callee != null) {
-                            if ((callee.accessFlags & ACC_STATIC) == 0) {
+                        Resolved resolved = resolve(null, ref.definingClass, ref, true);
+                        if (resolved.dexMethod != null) {
+                            if ((resolved.dexMethod.accessFlags & ACC_STATIC) == 0) {
                                 throw new VmException("static mismatch: " + insn.reference);
                             }
-                            ensureInit(target);
-                            Object[] callArgs = readArgs(callee, g, 0, regs);
-                            Object result = execute(target, callee, null, callArgs);
-                            if (callee.returnType.equals("V")) {
+                            ensureInit(resolved.dexHome);
+                            Object[] callArgs = readArgs(resolved.dexMethod, g, 0, regs);
+                            Object result = execute(resolved.dexHome, resolved.dexMethod, null,
+                                    callArgs);
+                            if (resolved.dexMethod.returnType.equals("V")) {
                                 pending = null;
                                 hasPending = false;
                             } else {
@@ -938,9 +961,9 @@ public final class Interpreter {
                             pc++;
                             break;
                         }
-                        HostMethod builtin = builtins.get(builtinKey(ref));
-                        if (builtin != null) {
-                            Object result = builtin.invoke(null, readRefArgs(ref, g, 0, regs));
+                        if (resolved.builtin != null) {
+                            Object result = resolved.builtin.invoke(null,
+                                    readRefArgs(ref, g, 0, regs));
                             if (ref.returnType.equals("V")) {
                                 pending = null;
                                 hasPending = false;
@@ -951,7 +974,7 @@ public final class Interpreter {
                             pc++;
                             break;
                         }
-                        throw frameworkGap(ref.definingClass, ref, insn.reference);
+                        throw gapMessage(ref.definingClass, ref, insn.reference, resolved);
                     }
                     case "invoke-direct":
                     case "invoke-direct-range":
@@ -970,7 +993,8 @@ public final class Interpreter {
                             break;
                         }
                         Object receiver = regs[g.get(0)];
-                        if (receiver == null) {
+                        if (receiver == null
+                                || (isNullish(receiver) && !isWrapperCall(ref))) {
                             throw new NullPointerException(
                                     "null receiver: " + insn.reference);
                         }
@@ -1005,32 +1029,23 @@ public final class Interpreter {
                             pc++;
                             break;
                         }
-                        DexMethod callee = null;
-                        DexClass home = null;
+                        Resolved resolved;
                         if (op.startsWith("invoke-direct")) {
-                            home = dexes.findClass(ref.definingClass);
-                            if (home != null) {
-                                callee = findMethod(home, ref);
-                            }
+                            resolved = resolve(null, ref.definingClass, ref, false);
                         } else if (op.startsWith("invoke-super")) {
-                            home = superOf(lexical);
-                            if (home != null) {
-                                callee = lookupUp(home, ref);
-                            }
+                            resolved = resolve(superOf(lexical), ref.definingClass, ref, true);
                         } else {
-                            DexClass runtime = runtimeClass(receiver);
-                            home = runtime;
-                            if (runtime != null) {
-                                callee = lookupUp(runtime, ref);
-                            }
+                            resolved = resolve(runtimeClass(receiver), ref.definingClass, ref,
+                                    true);
                         }
-                        if (callee != null) {
-                            if ((callee.accessFlags & ACC_STATIC) != 0) {
+                        if (resolved.dexMethod != null) {
+                            if ((resolved.dexMethod.accessFlags & ACC_STATIC) != 0) {
                                 throw new VmException("static mismatch: " + insn.reference);
                             }
-                            Object[] callArgs = readArgs(callee, g, 1, regs);
-                            Object result = execute(home, callee, receiver, callArgs);
-                            if (callee.returnType.equals("V")) {
+                            Object[] callArgs = readArgs(resolved.dexMethod, g, 1, regs);
+                            Object result = execute(resolved.dexHome, resolved.dexMethod,
+                                    receiver, callArgs);
+                            if (resolved.dexMethod.returnType.equals("V")) {
                                 pending = null;
                                 hasPending = false;
                             } else {
@@ -1040,10 +1055,9 @@ public final class Interpreter {
                             pc++;
                             break;
                         }
-                        HostMethod builtin = builtins.get(builtinKey(ref));
-                        if (builtin != null) {
+                        if (resolved.builtin != null) {
                             Object[] callArgs = readRefArgs(ref, g, 1, regs);
-                            Object result = builtin.invoke(receiver, callArgs);
+                            Object result = resolved.builtin.invoke(receiver, callArgs);
                             if (ref.returnType.equals("V")) {
                                 pending = null;
                                 hasPending = false;
@@ -1061,7 +1075,7 @@ public final class Interpreter {
                             pc++;
                             break;
                         }
-                        throw frameworkGap(ref.definingClass, ref, insn.reference);
+                        throw gapMessage(ref.definingClass, ref, insn.reference, resolved);
                     }
                     default:
                         throw new VmException("unsupported opcode: " + op);
@@ -1106,6 +1120,15 @@ public final class Interpreter {
         }
         if (descriptor.equals("Ljava/lang/String;")) {
             return "";
+        }
+        if (descriptor.equals("Ljava/util/HashMap;")) {
+            return new java.util.HashMap<Object, Object>();
+        }
+        if (descriptor.equals("Ljava/util/ArrayList;")) {
+            return new java.util.ArrayList<Object>();
+        }
+        if (descriptor.equals("Ljava/util/HashSet;")) {
+            return new java.util.HashSet<Object>();
         }
         FwIndex.FwClass fw = framework == null ? null : framework.find(descriptor);
         Class<?> throwable = descriptor.startsWith("Ljava/lang/")
@@ -1323,7 +1346,21 @@ public final class Interpreter {
         return reference.substring(1);
     }
 
-    /** Null is never an instance; otherwise BFS over supers and interfaces. */
+    /**
+     * {@code instanceof} with the zero-bits heuristic: null (and zero-bits)
+     * is never an instance, except that zero-bits tests true against its own
+     * wrapper (the overwhelmingly common real-value case).
+     */
+    private boolean instanceOf(Object value, String target) {
+        if (value == null) {
+            return false;
+        }
+        if (isNullish(value)) {
+            return target.equals("Ljava/lang/Integer;")
+                    || target.equals("Ljava/lang/Object;");
+        }
+        return isInstance(value, target);
+    }
     private boolean isInstance(Object value, String target) {
         if (value == null) {
             return false;
@@ -1481,6 +1518,16 @@ public final class Interpreter {
         return type.startsWith("L") || type.startsWith("[");
     }
 
+    private static String valueType(Object value) {
+        if (value instanceof VmObject) {
+            return ((VmObject) value).type.type;
+        }
+        if (value instanceof VmArray) {
+            return "[" + ((VmArray) value).elementType;
+        }
+        return String.valueOf(value.getClass());
+    }
+
     private static int toInt(boolean value) {
         return value ? 1 : 0;
     }
@@ -1500,16 +1547,428 @@ public final class Interpreter {
     }
 
     /** Exact signature match, walking superclasses for virtual dispatch. */
-    private DexMethod lookupUp(DexClass start, MethodRef ref) {
-        DexClass current = start;
-        while (current != null) {
-            DexMethod found = findMethod(current, ref);
-            if (found != null) {
-                return found;
+    /** Ordered resolution across the dex/framework boundary. */
+    private static final class Resolved {
+        DexMethod dexMethod;
+        DexClass dexHome;
+        HostMethod builtin;
+        boolean exists;
+        String unknownSuper;
+    }
+
+    /**
+     * Resolution in precedence order: dex bodies anywhere beat host
+     * builtins anywhere, which beat mere existence. Unknown supers stop
+     * their branch. `hierarchy` false means exact (direct calls) only.
+     */
+    private Resolved resolve(DexClass hint, String defineDesc, MethodRef ref,
+            boolean hierarchy) {
+        Resolved out = new Resolved();
+        // Phase 1: dex bodies, most-derived first.
+        Deque<String> queue = new ArrayDeque<>();
+        Set<String> seen = new HashSet<>();
+        queue.add(hint == null ? defineDesc : hint.type);
+        while (!queue.isEmpty()) {
+            String current = queue.removeFirst();
+            if (!seen.add(current)) {
+                continue;
             }
-            current = superOf(current);
+            DexClass dex = dexes.findClass(current);
+            if (dex == null) {
+                continue;
+            }
+            DexMethod found = findMethod(dex, ref);
+            if (found != null) {
+                out.dexMethod = found;
+                out.dexHome = dex;
+                return out;
+            }
+            if (!hierarchy) {
+                return out;
+            }
+            // Object terminates every walk; it is never a gap.
+            if (dex.superclass != null
+                    && !dex.superclass.equals("Ljava/lang/Object;")) {
+                queue.add(dex.superclass);
+            }
+            queue.addAll(dex.interfaces);
         }
-        return null;
+        if (!hierarchy) {
+            HostMethod builtin = builtins.get(keyFor(ref, defineDesc));
+            if (builtin != null) {
+                out.builtin = builtin;
+            }
+            return out;
+        }
+        // Phase 2: host builtins, most-derived first (exact table included).
+        queue.clear();
+        seen.clear();
+        queue.add(defineDesc);
+        while (!queue.isEmpty()) {
+            String current = queue.removeFirst();
+            if (!seen.add(current)) {
+                continue;
+            }
+            HostMethod builtin = builtins.get(keyFor(ref, current));
+            if (builtin != null) {
+                out.builtin = builtin;
+                return out;
+            }
+            DexClass dex = dexes.findClass(current);
+            if (dex != null) {
+                if (dex.superclass != null
+                        && !dex.superclass.equals("Ljava/lang/Object;")) {
+                    queue.add(dex.superclass);
+                }
+                queue.addAll(dex.interfaces);
+                continue;
+            }
+            if (framework != null) {
+                FwIndex.FwClass fw = framework.find(current);
+                if (fw != null) {
+                    if (fw.hasMethod(ref.name, ref.parameters, ref.returnType)) {
+                        out.exists = true;
+                    }
+                    if (fw.superclass != null
+                            && !fw.superclass.equals("Ljava/lang/Object;")) {
+                        queue.add(fw.superclass);
+                    }
+                    queue.addAll(fw.interfaces);
+                    continue;
+                }
+            }
+            if (out.unknownSuper == null) {
+                out.unknownSuper = current;
+            }
+        }
+        return out;
+    }
+
+    private static String keyFor(MethodRef ref, String definingClass) {
+        StringBuilder key = new StringBuilder(definingClass).append("->")
+                .append(ref.name).append('(');
+        for (String param : ref.parameters) {
+            key.append(param);
+        }
+        return key.append(')').append(ref.returnType).toString();
+    }
+
+    /** Classes never touched by reflection (process/thread control, loaders). */
+    private static final Set<String> REFLECT_DENY;
+    static {
+        Set<String> deny = new HashSet<>();
+        deny.add("Ljava/lang/Runtime;");
+        deny.add("Ljava/lang/ProcessBuilder;");
+        deny.add("Ljava/lang/Process;");
+        deny.add("Ljava/lang/System;");
+        deny.add("Ljava/lang/Thread;");
+        deny.add("Ljava/lang/ThreadGroup;");
+        deny.add("Ljava/lang/ClassLoader;");
+        deny.add("Ljava/lang/Compiler;");
+        deny.add("Ljava/lang/SecurityManager;");
+        REFLECT_DENY = Collections.unmodifiableSet(deny);
+    }
+
+    private final Map<String, Class<?>> hostClasses = new HashMap<>();
+    private final Map<String, Method> hostMethods = new HashMap<>();
+
+    private static boolean isReflectable(String descriptor) {
+        return descriptor.startsWith("Ljava/") && !REFLECT_DENY.contains(descriptor);
+    }
+
+    private Class<?> hostClass(String descriptor) {
+        if (hostClasses.containsKey(descriptor)) {
+            return hostClasses.get(descriptor);
+        }
+        Class<?> resolved = null;
+        if (isReflectable(descriptor)) {
+            String binary = descriptor.substring(1, descriptor.length() - 1).replace('/', '.');
+            try {
+                resolved = Class.forName(binary);
+            } catch (ClassNotFoundException | LinkageError e) {
+                resolved = null;
+            }
+        }
+        hostClasses.put(descriptor, resolved);
+        return resolved;
+    }
+
+    /** Miss-or-value carrier for reflective calls. */
+    private static final class ReflectResult {
+        static final ReflectResult MISS = new ReflectResult(false, null);
+        final boolean hit;
+        final Object value;
+
+        ReflectResult(boolean hit, Object value) {
+            this.hit = hit;
+            this.value = value;
+        }
+    }
+
+    private static String argKey(Object arg) {
+        if (arg == null) {
+            return "null";
+        }
+        if (arg instanceof VmObject) {
+            return "dex:" + ((VmObject) arg).type.type;
+        }
+        if (arg instanceof VmArray) {
+            return "dex:[" + ((VmArray) arg).elementType;
+        }
+        return "host:" + arg.getClass().getName();
+    }
+
+    private static boolean argAssignable(Class<?> host, Object arg) {
+        if (arg == null) {
+            return !host.isPrimitive();
+        }
+        if (host.isPrimitive()) {
+            if (host == boolean.class) {
+                return arg instanceof Boolean || arg instanceof Integer;
+            }
+            if (host == char.class) {
+                return arg instanceof Character || arg instanceof Integer;
+            }
+            if (host == byte.class) {
+                return arg instanceof Byte || arg instanceof Integer;
+            }
+            if (host == short.class) {
+                return arg instanceof Short || arg instanceof Integer;
+            }
+            if (host == int.class) {
+                return arg instanceof Integer;
+            }
+            if (host == long.class) {
+                return arg instanceof Long;
+            }
+            if (host == float.class) {
+                return arg instanceof Float;
+            }
+            if (host == double.class) {
+                return arg instanceof Double;
+            }
+            return false;
+        }
+        if (host.isArray()) {
+            return arg instanceof VmArray || arg.getClass().isArray();
+        }
+        if (arg instanceof VmObject || arg instanceof VmArray || arg instanceof LazyHolder
+                || arg instanceof VmClass || arg instanceof FieldUpdater) {
+            return host == Object.class;
+        }
+        return host.isInstance(arg);
+    }
+
+    private static Object toHost(Class<?> host, Object arg) {
+        if (arg == null) {
+            return null;
+        }
+        if (!host.isPrimitive()) {
+            if (host.isArray() && arg instanceof VmArray) {
+                return toHostArray(host.getComponentType(), (VmArray) arg);
+            }
+            return arg;
+        }
+        if (host == boolean.class) {
+            return arg instanceof Boolean ? arg : asInt(arg) != 0;
+        }
+        if (host == char.class) {
+            return (char) (arg instanceof Character ? ((Character) arg).charValue()
+                    : asInt(arg));
+        }
+        if (host == byte.class) {
+            return (byte) (arg instanceof Byte ? ((Byte) arg).byteValue() : asInt(arg));
+        }
+        if (host == short.class) {
+            return (short) (arg instanceof Short ? ((Short) arg).shortValue() : asInt(arg));
+        }
+        if (host == int.class) {
+            return asInt(arg);
+        }
+        if (host == long.class) {
+            return asLong(arg);
+        }
+        if (host == float.class) {
+            return asFloat(arg);
+        }
+        return asDouble(arg);
+    }
+
+    private static Object toHostArray(Class<?> component, VmArray array) {
+        Object out = Array.newInstance(component, array.length());
+        for (int i = 0; i < array.length(); i++) {
+            Array.set(out, i, toHost(component, array.get(i)));
+        }
+        return out;
+    }
+
+    private static Object boxReturn(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Boolean) {
+            return ((Boolean) value) ? 1 : 0;
+        }
+        if (value instanceof Character) {
+            return (int) ((Character) value).charValue();
+        }
+        if (value instanceof Byte || value instanceof Short || value instanceof Integer) {
+            return ((Number) value).intValue();
+        }
+        if (value.getClass().isArray()) {
+            int length = Array.getLength(value);
+            VmArray out = new VmArray(
+                    hostDescriptor(value.getClass().getComponentType()), length);
+            for (int i = 0; i < length; i++) {
+                out.set(i, boxReturn(Array.get(value, i)));
+            }
+            return out;
+        }
+        return value;
+    }
+
+    private static String methodDescriptor(Method method) {
+        StringBuilder out = new StringBuilder("(");
+        for (Class<?> param : method.getParameterTypes()) {
+            out.append(hostDescriptor(param));
+        }
+        return out.append(')').append(hostDescriptor(method.getReturnType())).toString();
+    }
+
+    private static String dexDescriptor(MethodRef ref) {
+        StringBuilder out = new StringBuilder("(");
+        for (String param : ref.parameters) {
+            out.append(param);
+        }
+        return out.append(')').append(ref.returnType).toString();
+    }
+
+    private Method selectMethod(Class<?> host, MethodRef ref, Object[] args,
+            boolean wantStatic) {
+        StringBuilder key = new StringBuilder(host.getName()).append('#').append(ref.name)
+                .append('#').append(ref.parameters.size()).append(wantStatic ? 'S' : 'I');
+        for (Object arg : args) {
+            key.append('#').append(argKey(arg));
+        }
+        String cacheKey = key.toString();
+        if (hostMethods.containsKey(cacheKey)) {
+            return hostMethods.get(cacheKey);
+        }
+        List<Method> candidates = new ArrayList<>();
+        for (Method candidate : host.getMethods()) {
+            if (!candidate.getName().equals(ref.name)
+                    || Modifier.isStatic(candidate.getModifiers()) != wantStatic
+                    || candidate.isBridge() || candidate.isSynthetic()
+                    || candidate.getParameterCount() != ref.parameters.size()) {
+                continue;
+            }
+            candidates.add(candidate);
+        }
+        Method exact = null;
+        String wanted = dexDescriptor(ref);
+        for (Method candidate : candidates) {
+            if (methodDescriptor(candidate).equals(wanted)) {
+                exact = candidate;
+                break;
+            }
+        }
+        Method selected = exact;
+        if (selected == null) {
+            candidates.sort((left, right) ->
+                    methodDescriptor(left).compareTo(methodDescriptor(right)));
+            for (Method candidate : candidates) {
+                Class<?>[] params = candidate.getParameterTypes();
+                boolean ok = true;
+                for (int i = 0; i < params.length; i++) {
+                    if (!argAssignable(params[i], args[i])) {
+                        ok = false;
+                        break;
+                    }
+                }
+                if (ok) {
+                    selected = candidate;
+                    break;
+                }
+            }
+        }
+        hostMethods.put(cacheKey, selected);
+        return selected;
+    }
+
+    /**
+     * Reflective fallback for {@code java.*} calls the table does not cover.
+     * Host receivers (or none, for static) only; model objects never cross.
+     */
+    private ReflectResult reflectCall(Object receiver, MethodRef ref, Object[] args,
+            boolean wantStatic) {
+        Class<?> host;
+        if (receiver == null) {
+            host = hostClass(ref.definingClass);
+            if (host == null) {
+                return ReflectResult.MISS;
+            }
+        } else {
+            if (receiver instanceof VmObject || receiver instanceof VmArray
+                    || receiver instanceof LazyHolder || receiver instanceof VmClass
+                    || receiver instanceof FieldUpdater) {
+                return ReflectResult.MISS;
+            }
+            host = receiver.getClass();
+            Class<?> declared = hostClass(ref.definingClass);
+            if (declared != null && !declared.isInstance(receiver)) {
+                return ReflectResult.MISS;
+            }
+        }
+        Method method = selectMethod(host, ref, args, wantStatic);
+        if (method == null) {
+            return ReflectResult.MISS;
+        }
+        Class<?>[] params = method.getParameterTypes();
+        Object[] hostArgs = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            hostArgs[i] = toHost(params[i], args[i]);
+        }
+        try {
+            return new ReflectResult(true, boxReturn(method.invoke(receiver, hostArgs)));
+        } catch (IllegalAccessException e) {
+            return ReflectResult.MISS;
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            }
+            if (cause instanceof Error) {
+                throw (Error) cause;
+            }
+            throw new VmThrow(cause);
+        }
+    }
+
+    private ReflectResult reflectStaticField(String definingClass, String name) {
+        Class<?> host = hostClass(definingClass);
+        if (host == null) {
+            return ReflectResult.MISS;
+        }
+        try {
+            return new ReflectResult(true, boxReturn(host.getField(name).get(null)));
+        } catch (NoSuchFieldException | IllegalAccessException | LinkageError e) {
+            return ReflectResult.MISS;
+        }
+    }
+
+    private VmException gapMessage(String defineDesc, MethodRef ref, String reference,
+            Resolved resolved) {
+        if (resolved.exists) {
+            return new VmException("unimplemented: " + reference);
+        }
+        if (resolved.unknownSuper != null && !resolved.unknownSuper.equals(defineDesc)) {
+            return new VmException("unimplemented class: " + resolved.unknownSuper);
+        }
+        if (dexes.findClass(defineDesc) != null
+                || framework != null && framework.find(defineDesc) != null) {
+            return new VmException("no such method: " + reference);
+        }
+        return new VmException("unimplemented: " + reference);
     }
 
     private static DexMethod findMethod(DexClass cls, MethodRef ref) {
@@ -1541,25 +2000,6 @@ public final class Interpreter {
         return ref.name.equals("isInitialized") && ref.parameters.isEmpty();
     }
 
-    private static String builtinKey(MethodRef ref) {        StringBuilder key = new StringBuilder(ref.definingClass).append("->")
-                .append(ref.name).append('(');
-        for (String param : ref.parameters) {
-            key.append(param);
-        }
-        return key.append(')').append(ref.returnType).toString();
-    }
-
-    private VmException frameworkGap(String definingClass, MethodRef ref, String reference) {
-        FwIndex.FwClass fw = framework == null ? null : framework.find(definingClass);
-        if (fw != null && fw.hasMethod(ref.name, ref.parameters, ref.returnType)) {
-            return new VmException("unimplemented: " + reference);
-        }
-        if (dexes.findClass(definingClass) != null || fw != null) {
-            return new VmException("no such method: " + reference);
-        }
-        return new VmException("unimplemented: " + reference);
-    }
-
     private static Object[] readArgs(DexMethod callee, List<Integer> slots, int first,
             Object[] regs) {
         Object[] callArgs = new Object[callee.parameterTypes.size()];
@@ -1580,6 +2020,33 @@ public final class Interpreter {
             slot += Descriptors.isWide(ref.parameters.get(i)) ? 2 : 1;
         }
         return callArgs;
+    }
+
+    /**
+     * Runs a method on a DEX-implemented object without builtins or
+     * defaults (for emulating interface default methods). Framework
+     * bodies cannot run, so the walk stops at the dex boundary.
+     */
+    private Object dispatchDex(Object receiver, String name, List<String> params, String ret,
+            Object[] args) {
+        VmObject object = (VmObject) receiver;
+        String current = object.type.type;
+        Set<String> seen = new HashSet<>();
+        while (current != null && seen.add(current)
+                && !current.equals("Ljava/lang/Object;")) {
+            DexClass dex = dexes.findClass(current);
+            if (dex == null) {
+                break;
+            }
+            for (DexMethod candidate : dex.methods) {
+                if (candidate.name.equals(name) && candidate.parameterTypes.equals(params)
+                        && candidate.returnType.equals(ret)) {
+                    return execute(dex, candidate, receiver, args);
+                }
+            }
+            current = dex.superclass;
+        }
+        throw new VmException("unimplemented: " + object.type.type + "->" + name);
     }
 
     private boolean catches(String handlerType, Object value) {
@@ -1648,6 +2115,14 @@ public final class Interpreter {
         return array;
     }
 
+    private static VmArray objectArray(Object[] values) {
+        VmArray array = new VmArray("Ljava/lang/Object;", values.length);
+        for (int i = 0; i < values.length; i++) {
+            array.set(i, values[i]);
+        }
+        return array;
+    }
+
     /** Outcome of a name-based default rule (see {@link #runSpecial}). */
     static final class Outcome {
         static final Outcome MISS = new Outcome(false, null, false);
@@ -1696,6 +2171,16 @@ public final class Interpreter {
             if (receiver instanceof String && noArgs) {
                 return Outcome.empty();
             }
+            // Enum construction records name and ordinal for compareTo,
+            // name, valueOf and toString.
+            if (ref.definingClass.equals("Ljava/lang/Enum;")
+                    && ref.parameters.size() == 2
+                    && receiver instanceof VmObject) {
+                VmObject object = (VmObject) receiver;
+                object.putField("Ljava/lang/Enum;.name", args[0]);
+                object.putField("Ljava/lang/Enum;.ordinal", args[1]);
+                return Outcome.empty();
+            }
             // Framework constructors have no DEX body: no-op. Applies to
             // placeholder receivers and to in-dex receivers calling a
             // framework super constructor (e.g. Activity.<init>).
@@ -1722,6 +2207,10 @@ public final class Interpreter {
                 if (pending != null) {
                     return Outcome.value(pending.message == null ? name
                             : name + ": " + pending.message);
+                }
+                Object enumName = object.getField("Ljava/lang/Enum;.name");
+                if (enumName != null) {
+                    return Outcome.value(enumName);
                 }
                 return Outcome.value(defaultToString(object));
             }
@@ -1970,18 +2459,23 @@ public final class Interpreter {
                 (receiver, args) -> Double.compare(argDouble(args, 0), argDouble(args, 1)));
 
         builtin("Ljava/lang/Boolean;->valueOf(Z)Ljava/lang/Boolean;",
-                (receiver, args) -> argInt(args, 0) != 0 ? 1 : 0);
+                (receiver, args) -> Boolean.valueOf(argInt(args, 0) != 0));
         builtin("Ljava/lang/Boolean;->booleanValue()Z",
-                (receiver, args) -> argInt(new Object[]{receiver}, 0));
+                (receiver, args) -> receiver instanceof Boolean
+                        ? (((Boolean) receiver) ? 1 : 0) : argInt(new Object[]{receiver}, 0));
         builtin("Ljava/lang/Boolean;->parseBoolean(Ljava/lang/String;)Z",
                 (receiver, args) -> bool(Boolean.parseBoolean(argString(args, 0))));
         builtin("Ljava/lang/Boolean;->toString(Z)Ljava/lang/String;",
                 (receiver, args) -> Boolean.toString(argInt(args, 0) != 0));
 
         builtin("Ljava/lang/Character;->valueOf(C)Ljava/lang/Character;",
-                (receiver, args) -> argInt(args, 0));
+                (receiver, args) -> Character.valueOf((char) argInt(args, 0)));
         builtin("Ljava/lang/Character;->charValue()C",
-                (receiver, args) -> argInt(new Object[]{receiver}, 0));
+                (receiver, args) -> receiver instanceof Character
+                        ? (int) ((Character) receiver).charValue()
+                        : argInt(new Object[]{receiver}, 0));
+        builtin("Ljava/lang/Character;->toString()Ljava/lang/String;",
+                (receiver, args) -> receiver.toString());
         builtin("Ljava/lang/Character;->isDigit(C)Z",
                 (receiver, args) -> bool(Character.isDigit((char) argInt(args, 0))));
         builtin("Ljava/lang/Character;->isLetter(C)Z",
@@ -2002,17 +2496,21 @@ public final class Interpreter {
                 (receiver, args) -> Character.getNumericValue((char) argInt(args, 0)));
 
         builtin("Ljava/lang/Byte;->valueOf(B)Ljava/lang/Byte;",
-                (receiver, args) -> argInt(args, 0));
+                (receiver, args) -> Byte.valueOf((byte) argInt(args, 0)));
         builtin("Ljava/lang/Byte;->byteValue()B",
-                (receiver, args) -> argInt(new Object[]{receiver}, 0));
+                (receiver, args) -> receiver instanceof Byte
+                        ? (int) ((Byte) receiver).byteValue()
+                        : argInt(new Object[]{receiver}, 0));
         builtin("Ljava/lang/Byte;->parseByte(Ljava/lang/String;)B",
                 (receiver, args) -> (int) Byte.parseByte(argString(args, 0)));
         builtin("Ljava/lang/Byte;->parseByte(Ljava/lang/String;I)B",
                 (receiver, args) -> (int) Byte.parseByte(argString(args, 0), argInt(args, 1)));
         builtin("Ljava/lang/Short;->valueOf(S)Ljava/lang/Short;",
-                (receiver, args) -> argInt(args, 0));
+                (receiver, args) -> Short.valueOf((short) argInt(args, 0)));
         builtin("Ljava/lang/Short;->shortValue()S",
-                (receiver, args) -> argInt(new Object[]{receiver}, 0));
+                (receiver, args) -> receiver instanceof Short
+                        ? (int) ((Short) receiver).shortValue()
+                        : argInt(new Object[]{receiver}, 0));
         builtin("Ljava/lang/Short;->parseShort(Ljava/lang/String;)S",
                 (receiver, args) -> (int) Short.parseShort(argString(args, 0)));
         builtin("Ljava/lang/Short;->parseShort(Ljava/lang/String;I)S",
@@ -2336,6 +2834,38 @@ public final class Interpreter {
                     }
                     throw new VmThrow(new ClassNotFoundException(binary));
                 });
+        builtin("Ljava/lang/Enum;->name()Ljava/lang/String;",
+                (receiver, args) -> {
+                    Object name = ((VmObject) receiver).getField("Ljava/lang/Enum;.name");
+                    if (name == null) {
+                        throw new VmException("enum without name");
+                    }
+                    return name;
+                });
+        builtin("Ljava/lang/Enum;->compareTo(Ljava/lang/Enum;)I",
+                (receiver, args) -> {
+                    Object left = ((VmObject) receiver).getField("Ljava/lang/Enum;.ordinal");
+                    Object right = ((VmObject) args[0]).getField("Ljava/lang/Enum;.ordinal");
+                    if (left == null || right == null) {
+                        throw new VmException("enum without ordinal");
+                    }
+                    return Integer.compare(asInt(left), asInt(right));
+                });
+        builtin("Ljava/lang/Enum;->valueOf(Ljava/lang/Class;Ljava/lang/String;)"
+                + "Ljava/lang/Object;",
+                (receiver, args) -> {
+                    VmClass cls = (VmClass) args[0];
+                    String name = argString(args, 1);
+                    DexClass dc = dexes.findClass(cls.descriptor);
+                    if (dc != null) {
+                        ensureInit(dc);
+                    }
+                    Object value = statics.get(cls.descriptor + "." + name);
+                    if (value == null) {
+                        throw new IllegalArgumentException(name);
+                    }
+                    return value;
+                });
 
         builtin("Ljava/util/concurrent/Executors;->defaultThreadFactory()"
                 + "Ljava/util/concurrent/ThreadFactory;",
@@ -2416,9 +2946,6 @@ public final class Interpreter {
                         ((java.util.concurrent.Future<Object>) receiver)
                                 .cancel(argInt(args, 0) != 0)));
 
-        builtin("Ljava/lang/Enum;->name()Ljava/lang/String;",
-                (receiver, args) -> ((Enum<?>) receiver).name());
-
         builtin("Ljava/lang/Thread;->currentThread()Ljava/lang/Thread;",
                 (receiver, args) -> Thread.currentThread());
         builtin("Ljava/lang/Thread;->getName()Ljava/lang/String;",
@@ -2443,8 +2970,464 @@ public final class Interpreter {
                     ((Thread) receiver).setPriority(argInt(args, 0));
                     return null;
                 });
-        builtin("Ljava/lang/Thread;->getState()Ljava/lang/Thread$State;",
-                (receiver, args) -> ((Thread) receiver).getState());
+        // Reference referents live under one shared key: subclasses share
+        // the base implementation without redeclaring the field.
+        builtin("Ljava/lang/ref/Reference;->get()Ljava/lang/Object;",
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Ljava/lang/ref/Reference;.referent"));
+        builtin("Ljava/lang/ref/Reference;->clear()V",
+                (receiver, args) -> {
+                    ((VmObject) receiver)
+                            .putField("Ljava/lang/ref/Reference;.referent", null);
+                    return null;
+                });
+        builtin("Ljava/lang/ref/Reference;->isEnqueued()Z",
+                (receiver, args) -> 0);
+        builtin("Ljava/lang/ref/ReferenceQueue;->poll()Ljava/lang/ref/Reference;",
+                (receiver, args) -> null);
+        builtin("Ljava/lang/ref/WeakReference;-><init>(Ljava/lang/Object;)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Ljava/lang/ref/Reference;.referent", args[0]);
+                    return null;
+                });
+        builtin("Ljava/lang/ref/SoftReference;-><init>(Ljava/lang/Object;)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Ljava/lang/ref/Reference;.referent", args[0]);
+                    return null;
+                });
+        builtin("Ljava/lang/ref/PhantomReference;-><init>(Ljava/lang/Object;"
+                + "Ljava/lang/ref/ReferenceQueue;)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Ljava/lang/ref/Reference;.referent", args[0]);
+                    return null;
+                });
+
+        builtin("Ljava/util/HashMap;-><init>()V",
+                (receiver, args) -> null);
+        builtin("Ljava/util/HashMap;-><init>(I)V",
+                (receiver, args) -> null);
+        builtin("Ljava/util/HashMap;-><init>(IF)V",
+                (receiver, args) -> null);
+        builtin("Ljava/util/HashMap;-><init>(Ljava/util/Map;)V",
+                (receiver, args) -> {
+                    ((java.util.HashMap<Object, Object>) receiver)
+                            .putAll((java.util.Map<Object, Object>) args[0]);
+                    return null;
+                });
+        builtin("Ljava/util/HashMap;->put(Ljava/lang/Object;Ljava/lang/Object;)"
+                + "Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.HashMap<Object, Object>) receiver)
+                        .put(args[0], args[1]));
+        builtin("Ljava/util/HashMap;->get(Ljava/lang/Object;)Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.HashMap<Object, Object>) receiver)
+                        .get(args[0]));
+        builtin("Ljava/util/HashMap;->remove(Ljava/lang/Object;)Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.HashMap<Object, Object>) receiver)
+                        .remove(args[0]));
+        builtin("Ljava/util/HashMap;->containsKey(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(
+                        ((java.util.HashMap<Object, Object>) receiver).containsKey(args[0])));
+        builtin("Ljava/util/HashMap;->containsValue(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(
+                        ((java.util.HashMap<Object, Object>) receiver).containsValue(args[0])));
+        builtin("Ljava/util/HashMap;->size()I",
+                (receiver, args) -> ((java.util.HashMap<Object, Object>) receiver).size());
+        builtin("Ljava/util/HashMap;->isEmpty()Z",
+                (receiver, args) -> bool(
+                        ((java.util.HashMap<Object, Object>) receiver).isEmpty()));
+        builtin("Ljava/util/HashMap;->clear()V",
+                (receiver, args) -> {
+                    ((java.util.HashMap<Object, Object>) receiver).clear();
+                    return null;
+                });
+        builtin("Ljava/util/HashMap;->keySet()Ljava/util/Set;",
+                (receiver, args) -> ((java.util.HashMap<Object, Object>) receiver).keySet());
+        builtin("Ljava/util/HashMap;->values()Ljava/util/Collection;",
+                (receiver, args) -> ((java.util.HashMap<Object, Object>) receiver).values());
+        builtin("Ljava/util/HashMap;->entrySet()Ljava/util/Set;",
+                (receiver, args) -> ((java.util.HashMap<Object, Object>) receiver).entrySet());
+        builtin("Ljava/util/HashMap;->putAll(Ljava/util/Map;)V",
+                (receiver, args) -> {
+                    ((java.util.HashMap<Object, Object>) receiver)
+                            .putAll((java.util.Map<Object, Object>) args[0]);
+                    return null;
+                });
+        builtin("Ljava/util/HashMap;->getOrDefault(Ljava/lang/Object;Ljava/lang/Object;)"
+                + "Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.HashMap<Object, Object>) receiver)
+                        .getOrDefault(args[0], args[1]));
+        builtin("Ljava/util/HashMap;->putIfAbsent(Ljava/lang/Object;Ljava/lang/Object;)"
+                + "Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.HashMap<Object, Object>) receiver)
+                        .putIfAbsent(args[0], args[1]));
+        builtin("Ljava/util/HashMap;->clone()Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.HashMap<Object, Object>) receiver).clone());
+
+        builtin("Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.Map<Object, Object>) receiver).get(args[0]));
+        builtin("Ljava/util/Map;->put(Ljava/lang/Object;Ljava/lang/Object;)"
+                + "Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.Map<Object, Object>) receiver)
+                        .put(args[0], args[1]));
+        builtin("Ljava/util/Map;->remove(Ljava/lang/Object;)Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.Map<Object, Object>) receiver).remove(args[0]));
+        builtin("Ljava/util/Map;->containsKey(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(
+                        ((java.util.Map<Object, Object>) receiver).containsKey(args[0])));
+        builtin("Ljava/util/Map;->containsValue(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(
+                        ((java.util.Map<Object, Object>) receiver).containsValue(args[0])));
+        builtin("Ljava/util/Map;->size()I",
+                (receiver, args) -> ((java.util.Map<Object, Object>) receiver).size());
+        builtin("Ljava/util/Map;->isEmpty()Z",
+                (receiver, args) -> bool(((java.util.Map<Object, Object>) receiver).isEmpty()));
+        builtin("Ljava/util/Map;->clear()V",
+                (receiver, args) -> {
+                    ((java.util.Map<Object, Object>) receiver).clear();
+                    return null;
+                });
+        builtin("Ljava/util/Map;->keySet()Ljava/util/Set;",
+                (receiver, args) -> ((java.util.Map<Object, Object>) receiver).keySet());
+        builtin("Ljava/util/Map;->values()Ljava/util/Collection;",
+                (receiver, args) -> ((java.util.Map<Object, Object>) receiver).values());
+        builtin("Ljava/util/Map;->entrySet()Ljava/util/Set;",
+                (receiver, args) -> ((java.util.Map<Object, Object>) receiver).entrySet());
+        builtin("Ljava/util/Map;->putAll(Ljava/util/Map;)V",
+                (receiver, args) -> {
+                    ((java.util.Map<Object, Object>) receiver)
+                            .putAll((java.util.Map<Object, Object>) args[0]);
+                    return null;
+                });
+        builtin("Ljava/util/Map;->getOrDefault(Ljava/lang/Object;Ljava/lang/Object;)"
+                + "Ljava/lang/Object;",
+                (receiver, args) -> {
+                    if (receiver instanceof VmObject) {
+                        Object hit = dispatchDex(receiver, "containsKey",
+                                Collections.singletonList("Ljava/lang/Object;"), "Z",
+                                new Object[]{args[0]});
+                        if (asInt(hit) != 0) {
+                            return dispatchDex(receiver, "get",
+                                    Collections.singletonList("Ljava/lang/Object;"),
+                                    "Ljava/lang/Object;", new Object[]{args[0]});
+                        }
+                        return args[1];
+                    }
+                    return ((java.util.Map<Object, Object>) receiver)
+                            .getOrDefault(args[0], args[1]);
+                });
+        builtin("Ljava/util/Map;->putIfAbsent(Ljava/lang/Object;Ljava/lang/Object;)"
+                + "Ljava/lang/Object;",
+                (receiver, args) -> {
+                    if (receiver instanceof VmObject) {
+                        Object current = dispatchDex(receiver, "get",
+                                Collections.singletonList("Ljava/lang/Object;"),
+                                "Ljava/lang/Object;", new Object[]{args[0]});
+                        if (current != null) {
+                            return current;
+                        }
+                        return dispatchDex(receiver, "put",
+                                Arrays.asList("Ljava/lang/Object;", "Ljava/lang/Object;"),
+                                "Ljava/lang/Object;", new Object[]{args[0], args[1]});
+                    }
+                    return ((java.util.Map<Object, Object>) receiver)
+                            .putIfAbsent(args[0], args[1]);
+                });
+
+        builtin("Ljava/util/ArrayList;-><init>()V",
+                (receiver, args) -> null);
+        builtin("Ljava/util/ArrayList;-><init>(I)V",
+                (receiver, args) -> null);
+        builtin("Ljava/util/ArrayList;-><init>(Ljava/util/Collection;)V",
+                (receiver, args) -> {
+                    ((java.util.ArrayList<Object>) receiver)
+                            .addAll((java.util.Collection<Object>) args[0]);
+                    return null;
+                });
+        builtin("Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(
+                        ((java.util.ArrayList<Object>) receiver).add(args[0])));
+        builtin("Ljava/util/ArrayList;->add(ILjava/lang/Object;)V",
+                (receiver, args) -> {
+                    ((java.util.ArrayList<Object>) receiver).add(argInt(args, 0), args[1]);
+                    return null;
+                });
+        builtin("Ljava/util/ArrayList;->get(I)Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.ArrayList<Object>) receiver).get(argInt(args, 0)));
+        builtin("Ljava/util/ArrayList;->set(ILjava/lang/Object;)Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.ArrayList<Object>) receiver)
+                        .set(argInt(args, 0), args[1]));
+        builtin("Ljava/util/ArrayList;->remove(I)Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.ArrayList<Object>) receiver)
+                        .remove(argInt(args, 0)));
+        builtin("Ljava/util/ArrayList;->remove(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(
+                        ((java.util.ArrayList<Object>) receiver).remove(args[0])));
+        builtin("Ljava/util/ArrayList;->size()I",
+                (receiver, args) -> ((java.util.ArrayList<Object>) receiver).size());
+        builtin("Ljava/util/ArrayList;->isEmpty()Z",
+                (receiver, args) -> bool(
+                        ((java.util.ArrayList<Object>) receiver).isEmpty()));
+        builtin("Ljava/util/ArrayList;->clear()V",
+                (receiver, args) -> {
+                    ((java.util.ArrayList<Object>) receiver).clear();
+                    return null;
+                });
+        builtin("Ljava/util/ArrayList;->contains(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(
+                        ((java.util.ArrayList<Object>) receiver).contains(args[0])));
+        builtin("Ljava/util/ArrayList;->indexOf(Ljava/lang/Object;)I",
+                (receiver, args) -> ((java.util.ArrayList<Object>) receiver).indexOf(args[0]));
+        builtin("Ljava/util/ArrayList;->lastIndexOf(Ljava/lang/Object;)I",
+                (receiver, args) -> ((java.util.ArrayList<Object>) receiver)
+                        .lastIndexOf(args[0]));
+        builtin("Ljava/util/ArrayList;->toArray()[Ljava/lang/Object;",
+                (receiver, args) -> objectArray(
+                        ((java.util.ArrayList<Object>) receiver).toArray()));
+        builtin("Ljava/util/ArrayList;->iterator()Ljava/util/Iterator;",
+                (receiver, args) -> ((java.util.ArrayList<Object>) receiver).iterator());
+        builtin("Ljava/util/ArrayList;->listIterator()Ljava/util/ListIterator;",
+                (receiver, args) -> ((java.util.ArrayList<Object>) receiver).listIterator());
+        builtin("Ljava/util/ArrayList;->subList(II)Ljava/util/List;",
+                (receiver, args) -> ((java.util.ArrayList<Object>) receiver)
+                        .subList(argInt(args, 0), argInt(args, 1)));
+        builtin("Ljava/util/ArrayList;->trimToSize()V",
+                (receiver, args) -> {
+                    ((java.util.ArrayList<Object>) receiver).trimToSize();
+                    return null;
+                });
+        builtin("Ljava/util/ArrayList;->ensureCapacity(I)V",
+                (receiver, args) -> {
+                    ((java.util.ArrayList<Object>) receiver).ensureCapacity(argInt(args, 0));
+                    return null;
+                });
+
+        builtin("Ljava/util/List;->add(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(((java.util.List<Object>) receiver).add(args[0])));
+        builtin("Ljava/util/List;->add(ILjava/lang/Object;)V",
+                (receiver, args) -> {
+                    ((java.util.List<Object>) receiver).add(argInt(args, 0), args[1]);
+                    return null;
+                });
+        builtin("Ljava/util/List;->get(I)Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.List<Object>) receiver).get(argInt(args, 0)));
+        builtin("Ljava/util/List;->set(ILjava/lang/Object;)Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.List<Object>) receiver)
+                        .set(argInt(args, 0), args[1]));
+        builtin("Ljava/util/List;->remove(I)Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.List<Object>) receiver).remove(argInt(args, 0)));
+        builtin("Ljava/util/List;->remove(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(((java.util.List<Object>) receiver).remove(args[0])));
+        builtin("Ljava/util/List;->size()I",
+                (receiver, args) -> ((java.util.List<Object>) receiver).size());
+        builtin("Ljava/util/List;->isEmpty()Z",
+                (receiver, args) -> bool(((java.util.List<Object>) receiver).isEmpty()));
+        builtin("Ljava/util/List;->clear()V",
+                (receiver, args) -> {
+                    ((java.util.List<Object>) receiver).clear();
+                    return null;
+                });
+        builtin("Ljava/util/List;->contains(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(((java.util.List<Object>) receiver).contains(args[0])));
+        builtin("Ljava/util/List;->indexOf(Ljava/lang/Object;)I",
+                (receiver, args) -> ((java.util.List<Object>) receiver).indexOf(args[0]));
+        builtin("Ljava/util/List;->lastIndexOf(Ljava/lang/Object;)I",
+                (receiver, args) -> ((java.util.List<Object>) receiver).lastIndexOf(args[0]));
+        builtin("Ljava/util/List;->toArray()[Ljava/lang/Object;",
+                (receiver, args) -> objectArray(((java.util.List<Object>) receiver).toArray()));
+        builtin("Ljava/util/List;->iterator()Ljava/util/Iterator;",
+                (receiver, args) -> ((java.util.List<Object>) receiver).iterator());
+        builtin("Ljava/util/List;->listIterator()Ljava/util/ListIterator;",
+                (receiver, args) -> ((java.util.List<Object>) receiver).listIterator());
+        builtin("Ljava/util/List;->subList(II)Ljava/util/List;",
+                (receiver, args) -> ((java.util.List<Object>) receiver)
+                        .subList(argInt(args, 0), argInt(args, 1)));
+
+        builtin("Ljava/util/HashSet;-><init>()V",
+                (receiver, args) -> null);
+        builtin("Ljava/util/HashSet;-><init>(I)V",
+                (receiver, args) -> null);
+        builtin("Ljava/util/HashSet;-><init>(IF)V",
+                (receiver, args) -> null);
+        builtin("Ljava/util/HashSet;-><init>(Ljava/util/Collection;)V",
+                (receiver, args) -> {
+                    ((java.util.HashSet<Object>) receiver)
+                            .addAll((java.util.Collection<Object>) args[0]);
+                    return null;
+                });
+        builtin("Ljava/util/HashSet;->add(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(((java.util.HashSet<Object>) receiver).add(args[0])));
+        builtin("Ljava/util/HashSet;->remove(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(((java.util.HashSet<Object>) receiver).remove(args[0])));
+        builtin("Ljava/util/HashSet;->contains(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(
+                        ((java.util.HashSet<Object>) receiver).contains(args[0])));
+        builtin("Ljava/util/HashSet;->size()I",
+                (receiver, args) -> ((java.util.HashSet<Object>) receiver).size());
+        builtin("Ljava/util/HashSet;->isEmpty()Z",
+                (receiver, args) -> bool(((java.util.HashSet<Object>) receiver).isEmpty()));
+        builtin("Ljava/util/HashSet;->clear()V",
+                (receiver, args) -> {
+                    ((java.util.HashSet<Object>) receiver).clear();
+                    return null;
+                });
+        builtin("Ljava/util/HashSet;->iterator()Ljava/util/Iterator;",
+                (receiver, args) -> ((java.util.HashSet<Object>) receiver).iterator());
+
+        builtin("Ljava/util/Set;->add(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(((java.util.Set<Object>) receiver).add(args[0])));
+        builtin("Ljava/util/Set;->remove(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(((java.util.Set<Object>) receiver).remove(args[0])));
+        builtin("Ljava/util/Set;->contains(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(((java.util.Set<Object>) receiver).contains(args[0])));
+        builtin("Ljava/util/Set;->size()I",
+                (receiver, args) -> ((java.util.Set<Object>) receiver).size());
+        builtin("Ljava/util/Set;->isEmpty()Z",
+                (receiver, args) -> bool(((java.util.Set<Object>) receiver).isEmpty()));
+        builtin("Ljava/util/Set;->clear()V",
+                (receiver, args) -> {
+                    ((java.util.Set<Object>) receiver).clear();
+                    return null;
+                });
+        builtin("Ljava/util/Set;->iterator()Ljava/util/Iterator;",
+                (receiver, args) -> ((java.util.Set<Object>) receiver).iterator());
+
+        builtin("Ljava/util/Collection;->iterator()Ljava/util/Iterator;",
+                (receiver, args) -> ((java.util.Collection<Object>) receiver).iterator());
+        builtin("Ljava/util/Collection;->size()I",
+                (receiver, args) -> ((java.util.Collection<Object>) receiver).size());
+        builtin("Ljava/util/Collection;->isEmpty()Z",
+                (receiver, args) -> bool(((java.util.Collection<Object>) receiver).isEmpty()));
+        builtin("Ljava/util/Collection;->clear()V",
+                (receiver, args) -> {
+                    ((java.util.Collection<Object>) receiver).clear();
+                    return null;
+                });
+        builtin("Ljava/util/Collection;->contains(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(
+                        ((java.util.Collection<Object>) receiver).contains(args[0])));
+        builtin("Ljava/util/Collection;->toArray()[Ljava/lang/Object;",
+                (receiver, args) -> objectArray(
+                        ((java.util.Collection<Object>) receiver).toArray()));
+
+        builtin("Ljava/util/Iterator;->hasNext()Z",
+                (receiver, args) -> bool(((java.util.Iterator<Object>) receiver).hasNext()));
+        builtin("Ljava/util/Iterator;->next()Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.Iterator<Object>) receiver).next());
+        builtin("Ljava/util/Iterator;->remove()V",
+                (receiver, args) -> {
+                    ((java.util.Iterator<Object>) receiver).remove();
+                    return null;
+                });
+        builtin("Ljava/util/ListIterator;->hasNext()Z",
+                (receiver, args) -> bool(((java.util.ListIterator<Object>) receiver).hasNext()));
+        builtin("Ljava/util/ListIterator;->next()Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.ListIterator<Object>) receiver).next());
+        builtin("Ljava/util/ListIterator;->remove()V",
+                (receiver, args) -> {
+                    ((java.util.ListIterator<Object>) receiver).remove();
+                    return null;
+                });
+        builtin("Ljava/util/ListIterator;->hasPrevious()Z",
+                (receiver, args) -> bool(
+                        ((java.util.ListIterator<Object>) receiver).hasPrevious()));
+        builtin("Ljava/util/ListIterator;->previous()Ljava/lang/Object;",
+                (receiver, args) -> ((java.util.ListIterator<Object>) receiver).previous());
+        builtin("Ljava/util/ListIterator;->previousIndex()I",
+                (receiver, args) -> ((java.util.ListIterator<Object>) receiver).previousIndex());
+        builtin("Ljava/util/ListIterator;->nextIndex()I",
+                (receiver, args) -> ((java.util.ListIterator<Object>) receiver).nextIndex());
+
+        builtin("Ljava/util/Collections;->emptyList()Ljava/util/List;",
+                (receiver, args) -> java.util.Collections.emptyList());
+        builtin("Ljava/util/Collections;->emptySet()Ljava/util/Set;",
+                (receiver, args) -> java.util.Collections.emptySet());
+        builtin("Ljava/util/Collections;->emptyMap()Ljava/util/Map;",
+                (receiver, args) -> java.util.Collections.emptyMap());
+        builtin("Ljava/util/Collections;->singleton(Ljava/lang/Object;)Ljava/util/Set;",
+                (receiver, args) -> java.util.Collections.singleton(args[0]));
+        builtin("Ljava/util/Collections;->singletonList(Ljava/lang/Object;)Ljava/util/List;",
+                (receiver, args) -> java.util.Collections.singletonList(args[0]));
+        builtin("Ljava/util/Collections;->singletonMap(Ljava/lang/Object;Ljava/lang/Object;)"
+                + "Ljava/util/Map;",
+                (receiver, args) -> java.util.Collections.singletonMap(args[0], args[1]));
+        builtin("Ljava/util/Collections;->unmodifiableList(Ljava/util/List;)Ljava/util/List;",
+                (receiver, args) -> java.util.Collections
+                        .unmodifiableList((java.util.List<Object>) args[0]));
+        builtin("Ljava/util/Collections;->unmodifiableSet(Ljava/util/Set;)Ljava/util/Set;",
+                (receiver, args) -> java.util.Collections
+                        .unmodifiableSet((java.util.Set<Object>) args[0]));
+        builtin("Ljava/util/Collections;->unmodifiableMap(Ljava/util/Map;)Ljava/util/Map;",
+                (receiver, args) -> java.util.Collections
+                        .unmodifiableMap((java.util.Map<Object, Object>) args[0]));
+        builtin("Ljava/util/Collections;->synchronizedList(Ljava/util/List;)Ljava/util/List;",
+                (receiver, args) -> java.util.Collections
+                        .synchronizedList((java.util.List<Object>) args[0]));
+        builtin("Ljava/util/Collections;->synchronizedSet(Ljava/util/Set;)Ljava/util/Set;",
+                (receiver, args) -> java.util.Collections
+                        .synchronizedSet((java.util.Set<Object>) args[0]));
+        builtin("Ljava/util/Collections;->synchronizedMap(Ljava/util/Map;)Ljava/util/Map;",
+                (receiver, args) -> java.util.Collections
+                        .synchronizedMap((java.util.Map<Object, Object>) args[0]));
+        builtin("Ljava/util/Collections;->sort(Ljava/util/List;)V",
+                (receiver, args) -> {
+                    java.util.Collections.sort((java.util.List<Comparable<Object>>) args[0]);
+                    return null;
+                });
+        builtin("Ljava/util/Collections;->reverse(Ljava/util/List;)V",
+                (receiver, args) -> {
+                    java.util.Collections.reverse((java.util.List<Object>) args[0]);
+                    return null;
+                });
+        builtin("Ljava/util/Collections;->shuffle(Ljava/util/List;)V",
+                (receiver, args) -> {
+                    java.util.Collections.shuffle((java.util.List<Object>) args[0]);
+                    return null;
+                });
+        builtin("Ljava/util/Collections;->binarySearch(Ljava/util/List;Ljava/lang/Object;)I",
+                (receiver, args) -> java.util.Collections.binarySearch(
+                        (java.util.List<Comparable<Object>>) args[0], args[1]));
+        builtin("Ljava/util/Collections;->fill(Ljava/util/List;Ljava/lang/Object;)V",
+                (receiver, args) -> {
+                    java.util.Collections.fill((java.util.List<Object>) args[0], args[1]);
+                    return null;
+                });
+        builtin("Ljava/util/Collections;->copy(Ljava/util/List;Ljava/util/List;)V",
+                (receiver, args) -> {
+                    java.util.Collections.copy((java.util.List<Object>) args[0],
+                            (java.util.List<Object>) args[1]);
+                    return null;
+                });
+        builtin("Ljava/util/Collections;->swap(Ljava/util/List;II)V",
+                (receiver, args) -> {
+                    java.util.Collections.swap((java.util.List<Object>) args[0],
+                            argInt(args, 1), argInt(args, 2));
+                    return null;
+                });
+        builtin("Ljava/util/Collections;->nCopies(ILjava/lang/Object;)Ljava/util/List;",
+                (receiver, args) -> java.util.Collections.nCopies(argInt(args, 0), args[1]));
+        builtin("Ljava/util/Collections;->min(Ljava/util/Collection;)Ljava/lang/Object;",
+                (receiver, args) -> java.util.Collections
+                        .min((java.util.Collection<Comparable<Object>>) args[0]));
+        builtin("Ljava/util/Collections;->max(Ljava/util/Collection;)Ljava/lang/Object;",
+                (receiver, args) -> java.util.Collections
+                        .max((java.util.Collection<Comparable<Object>>) args[0]));
+
+        builtin("Ljava/util/Arrays;->asList([Ljava/lang/Object;)Ljava/util/List;",
+                (receiver, args) -> {
+                    Object array = args[0];
+                    if (array instanceof VmArray) {
+                        VmArray vm = (VmArray) array;
+                        Object[] values = new Object[vm.length()];
+                        for (int i = 0; i < values.length; i++) {
+                            values[i] = vm.get(i);
+                        }
+                        return java.util.Arrays.asList(values);
+                    }
+                    return java.util.Arrays.asList((Object[]) array);
+                });
     }
 
     private Runnable wrapTask(Object task, String method) {
@@ -2576,9 +3559,21 @@ public final class Interpreter {
         return taken ? jump(addresses, insn) : pc + 1;
     }
 
-    /** Reference equality, with value equality for boxed primitives and strings. */
-    private static boolean eq(Object left, Object right) {
-        return left == right || (left != null && left.equals(right));
+    /**
+     * Dalvik {@code if-eq/if-ne}: value compare for the int family (all
+     * normalized to {@link Integer}); reference identity otherwise, with
+     * null and zero-bits equivalent (both are null at runtime).
+     */
+    static boolean eq(Object left, Object right) {
+        if (left instanceof Integer && right instanceof Integer) {
+            return left.equals(right);
+        }
+        return left == right || (isNullish(left) && isNullish(right));
+    }
+
+    /** True for null and for zero-bits (Dalvik cannot tell them apart). */
+    static boolean isNullish(Object value) {
+        return value == null || Integer.valueOf(0).equals(value);
     }
 
     private static boolean isZero(Object value) {
@@ -2636,6 +3631,15 @@ public final class Interpreter {
             return new FieldRef(reference.substring(0, arrow),
                     reference.substring(arrow + 2, colon), reference.substring(colon + 1));
         }
+    }
+
+    /** Primitive-wrapper calls accept zero-boxed receivers as values. */
+    private static boolean isWrapperCall(MethodRef ref) {
+        String def = ref.definingClass;
+        return def.equals("Ljava/lang/Integer;") || def.equals("Ljava/lang/Long;")
+                || def.equals("Ljava/lang/Float;") || def.equals("Ljava/lang/Double;")
+                || def.equals("Ljava/lang/Boolean;") || def.equals("Ljava/lang/Character;")
+                || def.equals("Ljava/lang/Byte;") || def.equals("Ljava/lang/Short;");
     }
 
     /** Smali-like method reference: {@code Lpkg/Cls;->name(params)return}. */

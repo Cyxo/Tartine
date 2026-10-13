@@ -174,11 +174,19 @@ public final class Main {
             } catch (VmException blocked) {
                 System.out.println("blocked after " + interpreter.steps() + " steps at: "
                         + blocked.getMessage());
+                printTrace(interpreter);
             } catch (RuntimeException bug) {
                 System.out.println("failed after " + interpreter.steps() + " steps with "
                         + bug);
+                printTrace(interpreter);
                 bug.printStackTrace(System.err);
             }
+        }
+    }
+
+    private static void printTrace(Interpreter interpreter) {
+        for (String line : interpreter.lastTrace()) {
+            System.out.println("  at " + line);
         }
     }
 

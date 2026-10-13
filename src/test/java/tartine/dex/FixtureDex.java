@@ -1014,6 +1014,518 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), threadImpl);
 
+        // mapDemo(): map.put("k", 42); return map.get("k").
+        MutableMethodImplementation mapImpl = new MutableMethodImplementation(4);
+        mapImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ljava/util/HashMap;")));
+        mapImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        mapImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/HashMap;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        mapImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("k")));
+        mapImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 2, 42));
+        mapImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 2, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "valueOf",
+                        Collections.singletonList("I"), "Ljava/lang/Integer;"))));
+        mapImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        mapImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 1, 2, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/HashMap;", "put",
+                        Arrays.asList("Ljava/lang/Object;", "Ljava/lang/Object;"),
+                        "Ljava/lang/Object;"))));
+        mapImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 3));
+        mapImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Map;", "get",
+                        Collections.singletonList("Ljava/lang/Object;"),
+                        "Ljava/lang/Object;"))));
+        mapImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        mapImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 2, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "intValue",
+                        Collections.<String>emptyList(), "I"))));
+        mapImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        mapImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        BuilderMethod mapDemo = builder.internMethod(HELLO, "mapDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), mapImpl);
+
+        // listDemo(): [7, 8][1].
+        MutableMethodImplementation listImpl = new MutableMethodImplementation(2);
+        listImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ljava/util/ArrayList;")));
+        listImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        listImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/ArrayList;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        listImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 1, 7));
+        listImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 1, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "valueOf",
+                        Collections.singletonList("I"), "Ljava/lang/Integer;"))));
+        listImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        listImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/ArrayList;", "add",
+                        Collections.singletonList("Ljava/lang/Object;"), "Z"))));
+        listImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        listImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 1, 8));
+        listImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 1, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "valueOf",
+                        Collections.singletonList("I"), "Ljava/lang/Integer;"))));
+        listImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        listImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/ArrayList;", "add",
+                        Collections.singletonList("Ljava/lang/Object;"), "Z"))));
+        listImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        listImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 1));
+        listImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/ArrayList;", "get",
+                        Collections.singletonList("I"), "Ljava/lang/Object;"))));
+        listImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        listImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 1, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "intValue",
+                        Collections.<String>emptyList(), "I"))));
+        listImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        listImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 1));
+        BuilderMethod listDemo = builder.internMethod(HELLO, "listDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), listImpl);
+
+        // setDemo(): add(x) + add(x) again.
+        MutableMethodImplementation setImpl = new MutableMethodImplementation(3);
+        setImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ljava/util/HashSet;")));
+        setImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        setImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/HashSet;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        setImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 2,
+                builder.internStringReference("x")));
+        setImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 2, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/HashSet;", "add",
+                        Collections.singletonList("Ljava/lang/Object;"), "Z"))));
+        setImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        setImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 2, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/HashSet;", "add",
+                        Collections.singletonList("Ljava/lang/Object;"), "Z"))));
+        setImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        setImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 1, 1, 2));
+        setImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 1));
+        BuilderMethod setDemo = builder.internMethod(HELLO, "setDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), setImpl);
+
+        // iterDemo(): first element via List.iterator().
+        MutableMethodImplementation iterImpl = new MutableMethodImplementation(3);
+        iterImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ljava/util/ArrayList;")));
+        iterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        iterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/ArrayList;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        iterImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 2, 5));
+        iterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 2, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "valueOf",
+                        Collections.singletonList("I"), "Ljava/lang/Integer;"))));
+        iterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        iterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 2, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/ArrayList;", "add",
+                        Collections.singletonList("Ljava/lang/Object;"), "Z"))));
+        iterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        iterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/List;", "iterator",
+                        Collections.<String>emptyList(), "Ljava/util/Iterator;"))));
+        iterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        iterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 1, 1, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Iterator;", "hasNext",
+                        Collections.<String>emptyList(), "Z"))));
+        iterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        iterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 1, 1, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Iterator;", "next",
+                        Collections.<String>emptyList(), "Ljava/lang/Object;"))));
+        iterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        iterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 2, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "intValue",
+                        Collections.<String>emptyList(), "I"))));
+        iterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        iterImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        BuilderMethod iterDemo = builder.internMethod(HELLO, "iterDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), iterImpl);
+
+        // nullish(): const-4 0 behaves as null for casts, as Integer for self.
+        MutableMethodImplementation nullishImpl = new MutableMethodImplementation(3);
+        nullishImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 0));
+        nullishImpl.addInstruction(new BuilderInstruction21c(Opcode.CHECK_CAST, 0,
+                builder.internTypeReference(COUNTER)));
+        nullishImpl.addInstruction(new BuilderInstruction22c(Opcode.INSTANCE_OF, 1, 0,
+                builder.internTypeReference(COUNTER)));
+        nullishImpl.addInstruction(new BuilderInstruction22c(Opcode.INSTANCE_OF, 2, 0,
+                builder.internTypeReference("Ljava/lang/Integer;")));
+        nullishImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 1, 1, 2));
+        nullishImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 1));
+        BuilderMethod nullish = builder.internMethod(HELLO, "nullish",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), nullishImpl);
+
+        // nullRecv(): calling a method on zero-bits fails like null.
+        MutableMethodImplementation nullRecvImpl = new MutableMethodImplementation(1);
+        nullRecvImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 0));
+        nullRecvImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/String;", "length",
+                        Collections.<String>emptyList(), "I"))));
+        nullRecvImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod nullRecv = builder.internMethod(HELLO, "nullRecv",
+                Collections.<ImmutableMethodParameter>emptyList(), "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), nullRecvImpl);
+
+        // boolStr(): String.valueOf(Boolean.valueOf(true)).
+        MutableMethodImplementation boolImpl = new MutableMethodImplementation(1);
+        boolImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 1));
+        boolImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Boolean;", "valueOf",
+                        Collections.singletonList("Z"), "Ljava/lang/Boolean;"))));
+        boolImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        boolImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/String;", "valueOf",
+                        Collections.singletonList("Ljava/lang/Object;"),
+                        "Ljava/lang/String;"))));
+        boolImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        boolImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod boolStr = builder.internMethod(HELLO, "boolStr",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/String;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), boolImpl);
+
+        // charStr(): Character.valueOf(65).toString().
+        MutableMethodImplementation charImpl = new MutableMethodImplementation(1);
+        charImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 0, 65));
+        charImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Character;", "valueOf",
+                        Collections.singletonList("C"), "Ljava/lang/Character;"))));
+        charImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        charImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Character;", "toString",
+                        Collections.<String>emptyList(), "Ljava/lang/String;"))));
+        charImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        charImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod charStr = builder.internMethod(HELLO, "charStr",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/String;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), charImpl);
+
+        // weakGet(): new WeakReference("x").get().
+        MutableMethodImplementation weakGetImpl = new MutableMethodImplementation(2);
+        weakGetImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ljava/lang/ref/WeakReference;")));
+        weakGetImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        weakGetImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("x")));
+        weakGetImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/ref/WeakReference;", "<init>",
+                        Collections.singletonList("Ljava/lang/Object;"), "V"))));
+        weakGetImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/ref/WeakReference;", "get",
+                        Collections.<String>emptyList(), "Ljava/lang/Object;"))));
+        weakGetImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        weakGetImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod weakGet = builder.internMethod(HELLO, "weakGet",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), weakGetImpl);
+
+        // weakClear(): get, clear, get -> null.
+        MutableMethodImplementation weakClearImpl = new MutableMethodImplementation(2);
+        weakClearImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ljava/lang/ref/WeakReference;")));
+        weakClearImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        weakClearImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("x")));
+        weakClearImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/ref/WeakReference;", "<init>",
+                        Collections.singletonList("Ljava/lang/Object;"), "V"))));
+        weakClearImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/ref/WeakReference;", "get",
+                        Collections.<String>emptyList(), "Ljava/lang/Object;"))));
+        weakClearImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        weakClearImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/ref/WeakReference;", "clear",
+                        Collections.<String>emptyList(), "V"))));
+        weakClearImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/ref/WeakReference;", "get",
+                        Collections.<String>emptyList(), "Ljava/lang/Object;"))));
+        weakClearImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        weakClearImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod weakClear = builder.internMethod(HELLO, "weakClear",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), weakClearImpl);
+
+        // Color enum with RED(0) and BLUE(1); <init> delegates to Enum.<init>.
+        MutableMethodImplementation colorInitImpl = new MutableMethodImplementation(3);
+        colorInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 3, 0, 1, 2, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Enum;", "<init>",
+                        Arrays.asList("Ljava/lang/String;", "I"), "V"))));
+        colorInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod colorInit = builder.internMethod("Ltest/Color;", "<init>",
+                Arrays.asList(
+                        new ImmutableMethodParameter("Ljava/lang/String;",
+                                Collections.emptySet(), "name"),
+                        new ImmutableMethodParameter("I", Collections.emptySet(), "ordinal")),
+                "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(),
+                Collections.emptySet(), Collections.emptySet(), colorInitImpl);
+        MutableMethodImplementation colorClinitImpl = new MutableMethodImplementation(3);
+        colorClinitImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ltest/Color;")));
+        colorClinitImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        colorClinitImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("RED")));
+        colorClinitImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
+        colorClinitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 3, 0, 1, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference("Ltest/Color;",
+                        "<init>",
+                        Arrays.asList("Ljava/lang/String;", "I"), "V"))));
+        colorClinitImpl.addInstruction(new BuilderInstruction21c(Opcode.SPUT_OBJECT, 0,
+                builder.internFieldReference(new ImmutableFieldReference("Ltest/Color;", "RED",
+                        "Ltest/Color;"))));
+        colorClinitImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ltest/Color;")));
+        colorClinitImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        colorClinitImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("BLUE")));
+        colorClinitImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 1));
+        colorClinitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 3, 0, 1, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference("Ltest/Color;",
+                        "<init>",
+                        Arrays.asList("Ljava/lang/String;", "I"), "V"))));
+        colorClinitImpl.addInstruction(new BuilderInstruction21c(Opcode.SPUT_OBJECT, 0,
+                builder.internFieldReference(new ImmutableFieldReference("Ltest/Color;", "BLUE",
+                        "Ltest/Color;"))));
+        colorClinitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod colorClinit = builder.internMethod("Ltest/Color;", "<clinit>",
+                Collections.<ImmutableMethodParameter>emptyList(), "V",
+                AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), colorClinitImpl);
+        builder.internClassDef("Ltest/Color;", AccessFlags.PUBLIC.getValue(), "Ljava/lang/Enum;",
+                Collections.<String>emptyList(), "Color.java",
+                Collections.emptySet(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Arrays.asList(colorInit, colorClinit));
+
+        // colorCmp(): RED.compareTo(BLUE).
+        MutableMethodImplementation colorCmpImpl = new MutableMethodImplementation(2);
+        colorCmpImpl.addInstruction(new BuilderInstruction21c(Opcode.SGET_OBJECT, 0,
+                builder.internFieldReference(new ImmutableFieldReference("Ltest/Color;", "RED",
+                        "Ltest/Color;"))));
+        colorCmpImpl.addInstruction(new BuilderInstruction21c(Opcode.SGET_OBJECT, 1,
+                builder.internFieldReference(new ImmutableFieldReference("Ltest/Color;", "BLUE",
+                        "Ltest/Color;"))));
+        colorCmpImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference("Ltest/Color;",
+                        "compareTo",
+                        Collections.singletonList("Ljava/lang/Enum;"), "I"))));
+        colorCmpImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        colorCmpImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod colorCmp = builder.internMethod(HELLO, "colorCmp",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), colorCmpImpl);
+
+        // colorName(): RED.name().
+        MutableMethodImplementation colorNameImpl = new MutableMethodImplementation(1);
+        colorNameImpl.addInstruction(new BuilderInstruction21c(Opcode.SGET_OBJECT, 0,
+                builder.internFieldReference(new ImmutableFieldReference("Ltest/Color;", "RED",
+                        "Ltest/Color;"))));
+        colorNameImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference("Ltest/Color;",
+                        "name", Collections.<String>emptyList(), "Ljava/lang/String;"))));
+        colorNameImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        colorNameImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod colorName = builder.internMethod(HELLO, "colorName",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/String;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), colorNameImpl);
+
+        // colorValueOf(): Color.valueOf("BLUE").toString().
+        MutableMethodImplementation colorValueImpl = new MutableMethodImplementation(2);
+        colorValueImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference("Ltest/Color;")));
+        colorValueImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("BLUE")));
+        colorValueImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 2, 0, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Enum;", "valueOf",
+                        Arrays.asList("Ljava/lang/Class;", "Ljava/lang/String;"),
+                        "Ljava/lang/Object;"))));
+        colorValueImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        colorValueImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ltest/Color;", "toString",
+                        Collections.<String>emptyList(), "Ljava/lang/String;"))));
+        colorValueImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        colorValueImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod colorValueOf = builder.internMethod(HELLO, "colorValueOf",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/String;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), colorValueImpl);
+
+        // FlagMap: constant map (get -> 7, containsKey -> true, put -> null).
+        MutableMethodImplementation flagInitImpl = new MutableMethodImplementation(1);
+        flagInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, objectInit));
+        flagInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod flagInit = builder.internMethod("Ltest/FlagMap;", "<init>",
+                Collections.<ImmutableMethodParameter>emptyList(), "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(),
+                Collections.emptySet(), Collections.emptySet(), flagInitImpl);
+        MutableMethodImplementation flagGetImpl = new MutableMethodImplementation(2);
+        flagGetImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 1, 7));
+        flagGetImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 1, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "valueOf",
+                        Collections.singletonList("I"), "Ljava/lang/Integer;"))));
+        flagGetImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        flagGetImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 1));
+        BuilderMethod flagGet = builder.internMethod("Ltest/FlagMap;", "get",
+                Collections.singletonList(
+                        new ImmutableMethodParameter("Ljava/lang/Object;",
+                                Collections.emptySet(), "k")),
+                "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), flagGetImpl);
+        MutableMethodImplementation flagContainsImpl = new MutableMethodImplementation(2);
+        flagContainsImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 1));
+        flagContainsImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 1));
+        BuilderMethod flagContains = builder.internMethod("Ltest/FlagMap;", "containsKey",
+                Collections.singletonList(
+                        new ImmutableMethodParameter("Ljava/lang/Object;",
+                                Collections.emptySet(), "k")),
+                "Z",
+                AccessFlags.PUBLIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), flagContainsImpl);
+        MutableMethodImplementation flagPutImpl = new MutableMethodImplementation(3);
+        flagPutImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 0));
+        flagPutImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 1));
+        BuilderMethod flagPut = builder.internMethod("Ltest/FlagMap;", "put",
+                Arrays.asList(
+                        new ImmutableMethodParameter("Ljava/lang/Object;",
+                                Collections.emptySet(), "k"),
+                        new ImmutableMethodParameter("Ljava/lang/Object;",
+                                Collections.emptySet(), "v")),
+                "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), flagPutImpl);
+        builder.internClassDef("Ltest/FlagMap;", AccessFlags.PUBLIC.getValue(),
+                "Ljava/lang/Object;",
+                Collections.<String>emptyList(), "FlagMap.java",
+                Collections.emptySet(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Arrays.asList(flagInit, flagGet, flagContains, flagPut));
+
+        // mapDefaults(): getOrDefault("k", 99) on a dex-implemented map.
+        MutableMethodImplementation mapDefImpl = new MutableMethodImplementation(3);
+        mapDefImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ltest/FlagMap;")));
+        mapDefImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        mapDefImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference("Ltest/FlagMap;",
+                        "<init>", Collections.<String>emptyList(), "V"))));
+        mapDefImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("k")));
+        mapDefImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 2, 99));
+        mapDefImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 2, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "valueOf",
+                        Collections.singletonList("I"), "Ljava/lang/Integer;"))));
+        mapDefImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        mapDefImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 3, 0, 1, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Map;", "getOrDefault",
+                        Arrays.asList("Ljava/lang/Object;", "Ljava/lang/Object;"),
+                        "Ljava/lang/Object;"))));
+        mapDefImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        mapDefImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 2, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "intValue",
+                        Collections.<String>emptyList(), "I"))));
+        mapDefImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        mapDefImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        BuilderMethod mapDefaults = builder.internMethod(HELLO, "mapDefaults",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), mapDefImpl);
+
+        // mapPutAbsent(): putIfAbsent on a present key returns it.
+        MutableMethodImplementation mapPutImpl = new MutableMethodImplementation(3);
+        mapPutImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ltest/FlagMap;")));
+        mapPutImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        mapPutImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference("Ltest/FlagMap;",
+                        "<init>", Collections.<String>emptyList(), "V"))));
+        mapPutImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("k")));
+        mapPutImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 2, 5));
+        mapPutImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 2, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "valueOf",
+                        Collections.singletonList("I"), "Ljava/lang/Integer;"))));
+        mapPutImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        mapPutImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 3, 0, 1, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Map;", "putIfAbsent",
+                        Arrays.asList("Ljava/lang/Object;", "Ljava/lang/Object;"),
+                        "Ljava/lang/Object;"))));
+        mapPutImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        mapPutImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 2, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Integer;", "intValue",
+                        Collections.<String>emptyList(), "I"))));
+        mapPutImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        mapPutImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        BuilderMethod mapPutAbsent = builder.internMethod(HELLO, "mapPutAbsent",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), mapPutImpl);
+
         builder.internClassDef(HELLO,
                 AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "Hello.java",
@@ -1025,7 +1537,9 @@ public final class FixtureDex {
                         fwGhost, fwInit, activityStub, nops, covarOk, covarPrim, constClass,
                         clazzIsInstance, updater, sysClock, longArith, floatArith, doubleArith,
                         lazyDemo, lazyIsInstance, executorDemo, postDemo, handlerDemo,
-                        threadDemo));
+                        threadDemo, mapDemo, listDemo, setDemo, iterDemo, nullish, nullRecv,
+                        boolStr, charStr, weakGet, weakClear, colorCmp, colorName,
+                        colorValueOf, mapDefaults, mapPutAbsent));
         builder.writeTo(new FileDataStore(dexFile.toFile()));
     }
 
