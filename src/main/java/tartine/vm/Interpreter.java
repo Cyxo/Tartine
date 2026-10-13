@@ -46,6 +46,7 @@ public final class Interpreter {
     private final Map<VmObject, PendingThrowable> throwables = new IdentityHashMap<>();
     private FwIndex framework;
     private long steps = 0;
+    private long maxSteps = Long.MAX_VALUE;
 
     public Interpreter(DexSet dexes) {
         this.dexes = dexes;
@@ -77,6 +78,11 @@ public final class Interpreter {
         return steps;
     }
 
+    /** Aborts execution past this many steps (infinite-loop guard for probes). */
+    public void setMaxSteps(long maxSteps) {
+        this.maxSteps = maxSteps;
+    }
+
     /**
      * Calls a static method by name, matched on argument count (ambiguous or
      * missing targets throw).
@@ -103,9 +109,9 @@ public final class Interpreter {
         return execute(cls, target, null, args);
     }
 
-    /** Invokes a resolved method with an explicit receiver (null for static). */
+    /** Invokes a resolved method with an explicit receiver (null for static).
+     * Steps accumulate across calls; {@link #call} resets the counter. */
     public Object invoke(DexClass cls, DexMethod method, Object receiver, Object... args) {
-        steps = 0;
         return execute(cls, method, receiver, args);
     }
 
@@ -158,6 +164,9 @@ public final class Interpreter {
             try {
                 Insn insn = code.get(pc);
                 steps++;
+                if (steps > maxSteps) {
+                    throw new VmException("step budget exceeded");
+                }
                 String op = insn.opcode;
                 List<Integer> g = insn.registers;
                 boolean consumesPending = op.startsWith("move-result") || op.equals("move-exception");
@@ -168,7 +177,12 @@ public final class Interpreter {
                     hasPending = false;
                 }
                 switch (op) {
-                    case "const-4":
+                    // A real nop is one code unit. Payload tables arrive as
+                    // distinct opcodes (packed-switch-payload, ...) and never
+                    // execute: switches read them as data, a later step.
+                    case "nop":
+                        pc++;
+                        break;                    case "const-4":
                     case "const-16":
                     case "const":
                         regs[g.get(0)] = (int) insn.literal;
@@ -183,6 +197,10 @@ public final class Interpreter {
                     case "const-string":
                     case "const-string-jumbo":
                         regs[g.get(0)] = insn.reference;
+                        pc++;
+                        break;
+                    case "const-class":
+                        regs[g.get(0)] = new VmClass(insn.reference);
                         pc++;
                         break;
                     case "move":
@@ -300,6 +318,190 @@ public final class Interpreter {
                         break;
                     case "ushr-int-2addr":
                         regs[g.get(0)] = asInt(regs[g.get(0)]) >>> asInt(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "add-long":
+                        regs[g.get(0)] = asLong(regs[g.get(1)]) + asLong(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "sub-long":
+                        regs[g.get(0)] = asLong(regs[g.get(1)]) - asLong(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "mul-long":
+                        regs[g.get(0)] = asLong(regs[g.get(1)]) * asLong(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "div-long":
+                        regs[g.get(0)] = asLong(regs[g.get(1)]) / asLong(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "rem-long":
+                        regs[g.get(0)] = asLong(regs[g.get(1)]) % asLong(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "and-long":
+                        regs[g.get(0)] = asLong(regs[g.get(1)]) & asLong(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "or-long":
+                        regs[g.get(0)] = asLong(regs[g.get(1)]) | asLong(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "xor-long":
+                        regs[g.get(0)] = asLong(regs[g.get(1)]) ^ asLong(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "shl-long":
+                        regs[g.get(0)] = asLong(regs[g.get(1)]) << asInt(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "shr-long":
+                        regs[g.get(0)] = asLong(regs[g.get(1)]) >> asInt(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "ushr-long":
+                        regs[g.get(0)] = asLong(regs[g.get(1)]) >>> asInt(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "add-long-2addr":
+                        regs[g.get(0)] = asLong(regs[g.get(0)]) + asLong(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "sub-long-2addr":
+                        regs[g.get(0)] = asLong(regs[g.get(0)]) - asLong(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "mul-long-2addr":
+                        regs[g.get(0)] = asLong(regs[g.get(0)]) * asLong(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "div-long-2addr":
+                        regs[g.get(0)] = asLong(regs[g.get(0)]) / asLong(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "rem-long-2addr":
+                        regs[g.get(0)] = asLong(regs[g.get(0)]) % asLong(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "and-long-2addr":
+                        regs[g.get(0)] = asLong(regs[g.get(0)]) & asLong(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "or-long-2addr":
+                        regs[g.get(0)] = asLong(regs[g.get(0)]) | asLong(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "xor-long-2addr":
+                        regs[g.get(0)] = asLong(regs[g.get(0)]) ^ asLong(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "shl-long-2addr":
+                        regs[g.get(0)] = asLong(regs[g.get(0)]) << asInt(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "shr-long-2addr":
+                        regs[g.get(0)] = asLong(regs[g.get(0)]) >> asInt(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "ushr-long-2addr":
+                        regs[g.get(0)] = asLong(regs[g.get(0)]) >>> asInt(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "add-float":
+                        regs[g.get(0)] = asFloat(regs[g.get(1)]) + asFloat(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "sub-float":
+                        regs[g.get(0)] = asFloat(regs[g.get(1)]) - asFloat(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "mul-float":
+                        regs[g.get(0)] = asFloat(regs[g.get(1)]) * asFloat(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "div-float":
+                        regs[g.get(0)] = asFloat(regs[g.get(1)]) / asFloat(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "rem-float":
+                        regs[g.get(0)] = asFloat(regs[g.get(1)]) % asFloat(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "add-float-2addr":
+                        regs[g.get(0)] = asFloat(regs[g.get(0)]) + asFloat(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "sub-float-2addr":
+                        regs[g.get(0)] = asFloat(regs[g.get(0)]) - asFloat(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "mul-float-2addr":
+                        regs[g.get(0)] = asFloat(regs[g.get(0)]) * asFloat(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "div-float-2addr":
+                        regs[g.get(0)] = asFloat(regs[g.get(0)]) / asFloat(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "rem-float-2addr":
+                        regs[g.get(0)] = asFloat(regs[g.get(0)]) % asFloat(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "add-double":
+                        regs[g.get(0)] = asDouble(regs[g.get(1)]) + asDouble(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "sub-double":
+                        regs[g.get(0)] = asDouble(regs[g.get(1)]) - asDouble(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "mul-double":
+                        regs[g.get(0)] = asDouble(regs[g.get(1)]) * asDouble(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "div-double":
+                        regs[g.get(0)] = asDouble(regs[g.get(1)]) / asDouble(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "rem-double":
+                        regs[g.get(0)] = asDouble(regs[g.get(1)]) % asDouble(regs[g.get(2)]);
+                        pc++;
+                        break;
+                    case "add-double-2addr":
+                        regs[g.get(0)] = asDouble(regs[g.get(0)]) + asDouble(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "sub-double-2addr":
+                        regs[g.get(0)] = asDouble(regs[g.get(0)]) - asDouble(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "mul-double-2addr":
+                        regs[g.get(0)] = asDouble(regs[g.get(0)]) * asDouble(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "div-double-2addr":
+                        regs[g.get(0)] = asDouble(regs[g.get(0)]) / asDouble(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "rem-double-2addr":
+                        regs[g.get(0)] = asDouble(regs[g.get(0)]) % asDouble(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "neg-long":
+                        regs[g.get(0)] = -asLong(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "not-long":
+                        regs[g.get(0)] = ~asLong(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "neg-float":
+                        regs[g.get(0)] = -asFloat(regs[g.get(1)]);
+                        pc++;
+                        break;
+                    case "neg-double":
+                        regs[g.get(0)] = -asDouble(regs[g.get(1)]);
                         pc++;
                         break;
                     case "add-int-lit8":
@@ -720,6 +922,20 @@ public final class Interpreter {
                             pc++;
                             break;
                         }
+                        if (isKotlinLazy(ref)) {
+                            Object[] callArgs = readRefArgs(ref, g, 0, regs);
+                            Object function = callArgs[callArgs.length - 1];
+                            if (function == null) {
+                                throw new NullPointerException("null initializer");
+                            }
+                            if (!(function instanceof VmObject)) {
+                                throw new VmException("not a function: " + insn.reference);
+                            }
+                            pending = new LazyHolder((VmObject) function);
+                            hasPending = true;
+                            pc++;
+                            break;
+                        }
                         HostMethod builtin = builtins.get(builtinKey(ref));
                         if (builtin != null) {
                             Object result = builtin.invoke(null, readRefArgs(ref, g, 0, regs));
@@ -755,6 +971,37 @@ public final class Interpreter {
                         if (receiver == null) {
                             throw new NullPointerException(
                                     "null receiver: " + insn.reference);
+                        }
+                        if (receiver instanceof LazyHolder && runLazy(ref)) {
+                            LazyHolder holder = (LazyHolder) receiver;
+                            if (ref.name.equals("getValue")) {
+                                if (!holder.initialized) {
+                                    DexClass fnClass = holder.function.type;
+                                    DexMethod invoke = null;
+                                    for (DexMethod candidate : fnClass.methods) {
+                                        if (candidate.name.equals("invoke")
+                                                && candidate.parameterTypes.isEmpty()) {
+                                            invoke = candidate;
+                                            break;
+                                        }
+                                    }
+                                    if (invoke == null) {
+                                        throw new VmException(
+                                                "unimplemented: Function0.invoke");
+                                    }
+                                    holder.value = execute(fnClass, invoke, holder.function,
+                                            new Object[0]);
+                                    holder.initialized = true;
+                                }
+                                pending = holder.value;
+                                hasPending = true;
+                                pc++;
+                                break;
+                            }
+                            pending = holder.initialized ? 1 : 0;
+                            hasPending = true;
+                            pc++;
+                            break;
                         }
                         DexMethod callee = null;
                         DexClass home = null;
@@ -872,6 +1119,15 @@ public final class Interpreter {
                         new ArrayList<String>(), new ArrayList<DexMethod>()));
                 throwables.put(placeholder, new PendingThrowable(clazz));
                 return placeholder;
+            }
+        }
+        if (framework != null) {
+            FwIndex.FwClass fw = framework.find(descriptor);
+            if (fw != null) {
+                // Placeholder: modeled for casts/dispatch, never initialized.
+                // Framework <init> bodies run as no-ops (see runSpecial).
+                return new VmObject(new DexClass(descriptor, fw.superclass,
+                        fw.interfaces, new ArrayList<DexMethod>()));
             }
         }
         return null;
@@ -1076,17 +1332,46 @@ public final class Interpreter {
             if (!target.startsWith("[")) {
                 return false;
             }
-            String want = target.substring(1);
-            String have = ((VmArray) value).elementType;
-            return want.equals(have)
-                    || (want.equals("Ljava/lang/Object;") && isRefType(have));
+            return arrayComponentAssignable(target.substring(1),
+                    ((VmArray) value).elementType);
         }
         if (!(value instanceof VmObject)) {
+            if (value instanceof VmClass) {
+                return target.equals("Ljava/lang/Class;");
+            }
+            if (value instanceof LazyHolder) {
+                return target.equals("Lkotlin/Lazy;");
+            }
             return hostAssignable(target, value.getClass());
         }
+        return typeAssignable(target, ((VmObject) value).type.type);
+    }
+
+    /** Array covariance: identical, Object destination, or hierarchy walk. */
+    private boolean arrayComponentAssignable(String want, String have) {
+        if (want.equals(have)) {
+            return true;
+        }
+        if (want.equals("Ljava/lang/Object;")) {
+            return isRefType(have);
+        }
+        if (!isRefType(want) || !isRefType(have)) {
+            return false;
+        }
+        if (have.startsWith("[")) {
+            if (!want.startsWith("[")) {
+                return false;
+            }
+            return arrayComponentAssignable(want.substring(1), have.substring(1));
+        }
+        return typeAssignable(want, have);
+    }
+
+    /** Hierarchy walk over both universes; unknown classes fail loudly. */
+    private boolean typeAssignable(String target, String haveType) {
         Deque<String> queue = new ArrayDeque<>();
         Set<String> seen = new HashSet<>();
-        queue.add(((VmObject) value).type.type);
+        queue.add(haveType);
         while (!queue.isEmpty()) {
             String current = queue.removeFirst();
             if (current.equals(target)) {
@@ -1229,8 +1514,25 @@ public final class Interpreter {
         return null;
     }
 
-    private static String builtinKey(MethodRef ref) {
-        StringBuilder key = new StringBuilder(ref.definingClass).append("->")
+    /** Kotlin {@code LazyKt.lazy(...)} (R8 may strip the real body). */
+    private static boolean isKotlinLazy(MethodRef ref) {
+        if (!ref.definingClass.equals("Lkotlin/LazyKt;") || !ref.name.equals("lazy")
+                || !ref.returnType.equals("Lkotlin/Lazy;")) {
+            return false;
+        }
+        int params = ref.parameters.size();
+        return params == 1 || params == 2;
+    }
+
+    /** Kotlin {@code Lazy.getValue/isInitialized} on a holder. */
+    private static boolean runLazy(MethodRef ref) {
+        if (ref.name.equals("getValue") && ref.parameters.size() == 2) {
+            return true;
+        }
+        return ref.name.equals("isInitialized") && ref.parameters.isEmpty();
+    }
+
+    private static String builtinKey(MethodRef ref) {        StringBuilder key = new StringBuilder(ref.definingClass).append("->")
                 .append(ref.name).append('(');
         for (String param : ref.parameters) {
             key.append(param);
@@ -1385,19 +1687,20 @@ public final class Interpreter {
             if (receiver instanceof String && noArgs) {
                 return Outcome.empty();
             }
-            if (isPlaceholder(receiver)) {
-                if (noArgs) {
+            // Framework constructors have no DEX body: no-op. Applies to
+            // placeholder receivers and to in-dex receivers calling a
+            // framework super constructor (e.g. Activity.<init>).
+            boolean frameworkCtor = dexes.findClass(ref.definingClass) == null
+                    && framework != null && framework.find(ref.definingClass) != null;
+            if (isPlaceholder(receiver) || frameworkCtor) {
+                PendingThrowable pending = throwables.get(receiver);
+                if (pending != null && ref.parameters.size() == 1
+                        && ref.parameters.get(0).equals("Ljava/lang/String;")) {
+                    pending.message = argString(args, 0);
                     return Outcome.empty();
                 }
-                if (ref.parameters.size() == 1
-                        && ref.parameters.get(0).equals("Ljava/lang/String;")) {
-                    PendingThrowable pending = throwables.get(receiver);
-                    if (pending != null) {
-                        pending.message = argString(args, 0);
-                        return Outcome.empty();
-                    }
-                }
-                return Outcome.MISS;
+                // Framework construction initializes nothing; fields default.
+                return Outcome.empty();
             }
             return Outcome.MISS;
         }
@@ -1812,6 +2115,223 @@ public final class Interpreter {
         builtin("Ljava/util/Objects;->toString(Ljava/lang/Object;Ljava/lang/String;)"
                 + "Ljava/lang/String;",
                 (receiver, args) -> java.util.Objects.toString(args[0], argString(args, 1)));
+
+        // PROBE STUBS: framework behavior deferred; each no-op is repaid later.
+        builtin("Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/os/SystemClock;->uptimeMillis()J",
+                (receiver, args) -> System.nanoTime() / 1000000L);
+        builtin("Landroid/os/SystemClock;->elapsedRealtime()J",
+                (receiver, args) -> System.nanoTime() / 1000000L);
+        builtin("Landroid/os/SystemClock;->elapsedRealtimeNanos()J",
+                (receiver, args) -> System.nanoTime());
+
+        builtin("Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->newUpdater("
+                + "Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)"
+                + "Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;",
+                (receiver, args) -> new FieldUpdater(
+                        ((VmClass) args[0]).descriptor, argString(args, 2)));
+        builtin("Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->compareAndSet("
+                + "Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(updaterCas((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), args[1], args[2])));
+        builtin("Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->weakCompareAndSet("
+                + "Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(updaterCas((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), args[1], args[2])));
+        builtin("Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->set("
+                + "Ljava/lang/Object;Ljava/lang/Object;)V",
+                (receiver, args) -> {
+                    FieldUpdater.checkedTarget(args[0])
+                            .putField(((FieldUpdater) receiver).key(), args[1]);
+                    return null;
+                });
+        builtin("Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->get("
+                + "Ljava/lang/Object;)Ljava/lang/Object;",
+                (receiver, args) -> FieldUpdater.checkedTarget(args[0])
+                        .getField(((FieldUpdater) receiver).key()));
+        builtin("Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->getAndSet("
+                + "Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+                (receiver, args) -> {
+                    VmObject target = FieldUpdater.checkedTarget(args[0]);
+                    Object old = target.getField(((FieldUpdater) receiver).key());
+                    target.putField(((FieldUpdater) receiver).key(), args[1]);
+                    return old;
+                });
+        builtin("Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->lazySet("
+                + "Ljava/lang/Object;Ljava/lang/Object;)V",
+                (receiver, args) -> {
+                    FieldUpdater.checkedTarget(args[0])
+                            .putField(((FieldUpdater) receiver).key(), args[1]);
+                    return null;
+                });
+
+        builtin("Ljava/lang/Class;->getName()Ljava/lang/String;",
+                (receiver, args) -> classNameOf(((VmClass) receiver).descriptor));
+        builtin("Ljava/lang/Class;->toString()Ljava/lang/String;",
+                (receiver, args) -> "class " + classNameOf(((VmClass) receiver).descriptor));
+        builtin("Ljava/lang/Class;->getSimpleName()Ljava/lang/String;",
+                (receiver, args) -> {
+                    String name = classNameOf(((VmClass) receiver).descriptor);
+                    int dot = name.lastIndexOf('.');
+                    if (dot >= 0) {
+                        name = name.substring(dot + 1);
+                    }
+                    int inner = name.lastIndexOf('$');
+                    if (inner >= 0) {
+                        name = name.substring(inner + 1);
+                    }
+                    return name;
+                });
+        builtin("Ljava/lang/Class;->isInstance(Ljava/lang/Object;)Z",
+                (receiver, args) -> bool(isInstance(args[0],
+                        ((VmClass) receiver).descriptor)));
+        builtin("Ljava/lang/Class;->cast(Ljava/lang/Object;)Ljava/lang/Object;",
+                (receiver, args) -> {
+                    String descriptor = ((VmClass) receiver).descriptor;
+                    if (!isInstance(args[0], descriptor)) {
+                        throw new ClassCastException(descriptor);
+                    }
+                    return args[0];
+                });
+        builtin("Ljava/lang/Class;->getSuperclass()Ljava/lang/Class;",
+                (receiver, args) -> {
+                    Supers supers = supersOf(((VmClass) receiver).descriptor);
+                    return supers.superclass == null ? null : new VmClass(supers.superclass);
+                });
+        builtin("Ljava/lang/Class;->isAssignableFrom(Ljava/lang/Class;)Z",
+                (receiver, args) -> bool(typeAssignable(((VmClass) receiver).descriptor,
+                        ((VmClass) args[0]).descriptor)));
+        builtin("Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;",
+                (receiver, args) -> {
+                    String binary = argString(args, 0);
+                    String descriptor = "L" + binary.replace('.', '/') + ";";
+                    if (dexes.findClass(descriptor) != null
+                            || framework != null && framework.find(descriptor) != null) {
+                        return new VmClass(descriptor);
+                    }
+                    throw new VmThrow(new ClassNotFoundException(binary));
+                });
+
+        builtin("Ljava/util/concurrent/Executors;->defaultThreadFactory()"
+                + "Ljava/util/concurrent/ThreadFactory;",
+                (receiver, args) -> java.util.concurrent.Executors.defaultThreadFactory());
+        builtin("Ljava/util/concurrent/Executors;->newFixedThreadPool(I)"
+                + "Ljava/util/concurrent/ExecutorService;",
+                (receiver, args) -> new VmTask.DirectExecutorService());
+        builtin("Ljava/util/concurrent/Executors;->newFixedThreadPool(ILjava/util/concurrent/"
+                + "ThreadFactory;)Ljava/util/concurrent/ExecutorService;",
+                (receiver, args) -> new VmTask.DirectExecutorService());
+        builtin("Ljava/util/concurrent/Executor;->execute(Ljava/lang/Runnable;)V",
+                (receiver, args) -> {
+                    directPool(receiver).execute(wrapTask(args[0], "run"));
+                    return null;
+                });
+        builtin("Ljava/util/concurrent/ExecutorService;->submit(Ljava/util/concurrent/Callable;)"
+                + "Ljava/util/concurrent/Future;",
+                (receiver, args) -> {
+                    VmTask.DirectExecutorService pool = directPool(receiver);
+                    if (args[0] instanceof VmObject) {
+                        VmTask job = VmTask.runnable(Interpreter.this, args[0], "call");
+                        Object value = null;
+                        Throwable failure = null;
+                        try {
+                            value = job.call();
+                        } catch (RuntimeException | Error e) {
+                            failure = e;
+                        }
+                        return new VmTask.DoneFuture(value, failure);
+                    }
+                    return pool.submit((java.util.concurrent.Callable<Object>) args[0]);
+                });
+        builtin("Ljava/util/concurrent/ExecutorService;->submit(Ljava/lang/Runnable;)"
+                + "Ljava/util/concurrent/Future;",
+                (receiver, args) -> submitInline(receiver, args[0], null));
+        builtin("Ljava/util/concurrent/ExecutorService;->submit(Ljava/lang/Runnable;"
+                + "Ljava/lang/Object;)Ljava/util/concurrent/Future;",
+                (receiver, args) -> submitInline(receiver, args[0], args[1]));
+        builtin("Ljava/util/concurrent/Future;->get()Ljava/lang/Object;",
+                (receiver, args) -> {
+                    try {
+                        return ((java.util.concurrent.Future<Object>) receiver).get();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new VmException("interrupted");
+                    } catch (java.util.concurrent.ExecutionException e) {
+                        Throwable cause = e.getCause();
+                        if (cause instanceof RuntimeException) {
+                            throw (RuntimeException) cause;
+                        }
+                        throw new VmException("task failed: " + cause);
+                    }
+                });
+        builtin("Ljava/util/concurrent/Future;->get(JLjava/util/concurrent/TimeUnit;)"
+                + "Ljava/lang/Object;",
+                (receiver, args) -> {
+                    try {
+                        return ((java.util.concurrent.Future<Object>) receiver).get();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new VmException("interrupted");
+                    } catch (java.util.concurrent.ExecutionException e) {
+                        Throwable cause = e.getCause();
+                        if (cause instanceof RuntimeException) {
+                            throw (RuntimeException) cause;
+                        }
+                        throw new VmException("task failed: " + cause);
+                    }
+                });
+        builtin("Ljava/util/concurrent/Future;->isDone()Z",
+                (receiver, args) -> bool(
+                        ((java.util.concurrent.Future<Object>) receiver).isDone()));
+        builtin("Ljava/util/concurrent/Future;->isCancelled()Z",
+                (receiver, args) -> bool(
+                        ((java.util.concurrent.Future<Object>) receiver).isCancelled()));
+        builtin("Ljava/util/concurrent/Future;->cancel(Z)Z",
+                (receiver, args) -> bool(
+                        ((java.util.concurrent.Future<Object>) receiver)
+                                .cancel(argInt(args, 0) != 0)));
+    }
+
+    private Runnable wrapTask(Object task, String method) {
+        if (task instanceof Runnable) {
+            return (Runnable) task;
+        }
+        return VmTask.runnable(this, task, method);
+    }
+
+    private VmTask.DirectExecutorService directPool(Object receiver) {
+        if (!(receiver instanceof VmTask.DirectExecutorService)) {
+            throw new VmException("threaded pools unsupported");
+        }
+        return (VmTask.DirectExecutorService) receiver;
+    }
+
+    private Object submitInline(Object receiver, Object task, Object preset) {
+        VmTask.DirectExecutorService pool = directPool(receiver);
+        if (task instanceof VmObject) {
+            VmTask job = VmTask.runnable(this, task, "run");
+            try {
+                job.call();
+                return new VmTask.DoneFuture(preset, null);
+            } catch (RuntimeException | Error e) {
+                return new VmTask.DoneFuture(null, e);
+            }
+        }
+        if (preset == null) {
+            return pool.submit((Runnable) task);
+        }
+        return pool.submit((Runnable) task, preset);
+    }
+
+    private static String classNameOf(String descriptor) {
+        if (descriptor.startsWith("L") && descriptor.endsWith(";")) {
+            return dots(descriptor);
+        }
+        if (descriptor.startsWith("[")) {
+            return "[" + classNameOf(descriptor.substring(1));
+        }
+        return descriptor;
     }
 
     private static void arrayCopy(Object[] args) {
@@ -1836,6 +2356,16 @@ public final class Interpreter {
                 dst.set(dstPos + i, src.get(srcPos + i));
             }
         }
+    }
+
+    private static boolean updaterCas(FieldUpdater updater, VmObject target,
+            Object expect, Object update) {
+        Object current = target.getField(updater.key());
+        if (current == expect) {
+            target.putField(updater.key(), update);
+            return true;
+        }
+        return false;
     }
 
     private static int jump(Map<Integer, Integer> addresses, Insn insn) {

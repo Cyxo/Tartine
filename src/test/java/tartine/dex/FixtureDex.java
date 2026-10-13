@@ -44,6 +44,7 @@ public final class FixtureDex {
     public static final String SUB2 = "Ltest/Sub2;";
     public static final String ORPHAN = "Ltest/Orphan;";
     public static final String FW_BASE = "Lfw/Base;";
+    public static final String FW_SUB = "Lfw/Sub;";
     public static final String FW_GHOST = "Lfw/Ghost;";
 
     private FixtureDex() {
@@ -558,6 +559,360 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), fwGhostImpl);
 
+        // fwInit(): new Lfw/Sub() (framework placeholder, needs an index).
+        MutableMethodImplementation fwInitImpl = new MutableMethodImplementation(1);
+        fwInitImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference(FW_SUB)));
+        fwInitImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        fwInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(FW_SUB, "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        fwInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod fwInit = builder.internMethod(HELLO, "fwInit",
+                Collections.<ImmutableMethodParameter>emptyList(), "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), fwInitImpl);
+
+        // activityStub(): new Activity() + onCreate(null) via product stubs.
+        MutableMethodImplementation stubImpl = new MutableMethodImplementation(2);
+        stubImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        stubImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        stubImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        stubImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "onCreate",
+                        Collections.singletonList("Landroid/os/Bundle;"), "V"))));
+        stubImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod activityStub = builder.internMethod(HELLO, "activityStub",
+                Collections.<ImmutableMethodParameter>emptyList(), "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), stubImpl);
+
+        // nops(): nop; return 9.
+        MutableMethodImplementation nopImpl = new MutableMethodImplementation(1);
+        nopImpl.addInstruction(new BuilderInstruction10x(Opcode.NOP));
+        nopImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 7));
+        nopImpl.addInstruction(new BuilderInstruction22b(Opcode.ADD_INT_LIT8, 0, 0, 2));
+        nopImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod nops = builder.internMethod(HELLO, "nops",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), nopImpl);
+
+        // covarOk(): (Object[]) new Counter[1] instanceof Counter[].
+        MutableMethodImplementation covarImpl = new MutableMethodImplementation(2);
+        covarImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 1));
+        covarImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 0, 0,
+                builder.internTypeReference("[Ltest/Counter;")));
+        covarImpl.addInstruction(new BuilderInstruction21c(Opcode.CHECK_CAST, 0,
+                builder.internTypeReference("[Ljava/lang/Object;")));
+        covarImpl.addInstruction(new BuilderInstruction22c(Opcode.INSTANCE_OF, 1, 0,
+                builder.internTypeReference("[Ltest/Counter;")));
+        covarImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 1));
+        BuilderMethod covarOk = builder.internMethod(HELLO, "covarOk",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), covarImpl);
+
+        // covarPrim(): (Object[]) new int[2] must fail.
+        MutableMethodImplementation covarPrimImpl = new MutableMethodImplementation(1);
+        covarPrimImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 2));
+        covarPrimImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 0, 0,
+                builder.internTypeReference("[I")));
+        covarPrimImpl.addInstruction(new BuilderInstruction21c(Opcode.CHECK_CAST, 0,
+                builder.internTypeReference("[Ljava/lang/Object;")));
+        covarPrimImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod covarPrim = builder.internMethod(HELLO, "covarPrim",
+                Collections.<ImmutableMethodParameter>emptyList(), "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), covarPrimImpl);
+
+        // constClass(): Ltest.Counter.class.getName().
+        MutableMethodImplementation constImpl = new MutableMethodImplementation(1);
+        constImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference(COUNTER)));
+        constImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "getName",
+                        Collections.<String>emptyList(), "Ljava/lang/String;"))));
+        constImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        constImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod constClass = builder.internMethod(HELLO, "constClass",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/String;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), constImpl);
+
+        // clazzIsInstance(): Ltest.Counter.class.isInstance(new Counter()).
+        MutableMethodImplementation clazzImpl = new MutableMethodImplementation(3);
+        clazzImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference(COUNTER)));
+        clazzImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        clazzImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(COUNTER, "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        clazzImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 1,
+                builder.internTypeReference(COUNTER)));
+        clazzImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 1, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "isInstance",
+                        Collections.singletonList("Ljava/lang/Object;"), "Z"))));
+        clazzImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        clazzImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        BuilderMethod clazzIsInstance = builder.internMethod(HELLO, "clazzIsInstance",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), clazzImpl);
+
+        // updater(): AtomicReferenceFieldUpdater over Counter.count.
+        MutableMethodImplementation updaterImpl = new MutableMethodImplementation(5);
+        updaterImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference(COUNTER)));
+        updaterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        updaterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(COUNTER, "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        updaterImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 1,
+                builder.internTypeReference(COUNTER)));
+        updaterImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 2,
+                builder.internTypeReference("Ljava/lang/Object;")));
+        updaterImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 3,
+                builder.internStringReference("count")));
+        updaterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 3, 1, 2, 3, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;", "newUpdater",
+                        Arrays.asList("Ljava/lang/Class;", "Ljava/lang/Class;",
+                                "Ljava/lang/String;"),
+                        "Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;"))));
+        updaterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        updaterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 4, 1, 0, 4, 4,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;",
+                        "compareAndSet",
+                        Arrays.asList("Ljava/lang/Object;", "Ljava/lang/Object;",
+                                "Ljava/lang/Object;"),
+                        "Z"))));
+        updaterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 4));
+        updaterImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 7));
+        updaterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 1, 0, 2, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;", "set",
+                        Arrays.asList("Ljava/lang/Object;", "Ljava/lang/Object;"), "V"))));
+        updaterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 1, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;", "get",
+                        Collections.singletonList("Ljava/lang/Object;"),
+                        "Ljava/lang/Object;"))));
+        updaterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        updaterImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 2, 4, 2));
+        updaterImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        BuilderMethod updater = builder.internMethod(HELLO, "updater",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), updaterImpl);
+
+        // sysClock(): SystemClock.uptimeMillis().
+        MutableMethodImplementation clockImpl = new MutableMethodImplementation(2);
+        clockImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/SystemClock;", "uptimeMillis",
+                        Collections.<String>emptyList(), "J"))));
+        clockImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_WIDE, 0));
+        clockImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_WIDE, 0));
+        BuilderMethod sysClock = builder.internMethod(HELLO, "sysClock",
+                Collections.<ImmutableMethodParameter>emptyList(), "J",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), clockImpl);
+
+        // longArith(): ((100 + 7 - 7) * 7 / 7) as longs.
+        MutableMethodImplementation longImpl = new MutableMethodImplementation(6);
+        longImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_WIDE_16, 0, 100));
+        longImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_WIDE_16, 2, 7));
+        longImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_LONG, 4, 0, 2));
+        longImpl.addInstruction(new BuilderInstruction12x(Opcode.SUB_LONG_2ADDR, 4, 2));
+        longImpl.addInstruction(new BuilderInstruction12x(Opcode.MUL_LONG_2ADDR, 4, 2));
+        longImpl.addInstruction(new BuilderInstruction12x(Opcode.DIV_LONG_2ADDR, 4, 2));
+        longImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_WIDE, 4));
+        BuilderMethod longArith = builder.internMethod(HELLO, "longArith",
+                Collections.<ImmutableMethodParameter>emptyList(), "J",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), longImpl);
+
+        // floatArith(): 7f / 2f + 2f.
+        MutableMethodImplementation floatImpl = new MutableMethodImplementation(3);
+        floatImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 7));
+        floatImpl.addInstruction(new BuilderInstruction12x(Opcode.INT_TO_FLOAT, 0, 0));
+        floatImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 2));
+        floatImpl.addInstruction(new BuilderInstruction12x(Opcode.INT_TO_FLOAT, 1, 1));
+        floatImpl.addInstruction(new BuilderInstruction23x(Opcode.DIV_FLOAT, 2, 0, 1));
+        floatImpl.addInstruction(new BuilderInstruction12x(Opcode.ADD_FLOAT_2ADDR, 2, 1));
+        floatImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        BuilderMethod floatArith = builder.internMethod(HELLO, "floatArith",
+                Collections.<ImmutableMethodParameter>emptyList(), "F",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), floatImpl);
+
+        // doubleArith(): 7.0 / 2.0.
+        MutableMethodImplementation doubleImpl = new MutableMethodImplementation(3);
+        doubleImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 7));
+        doubleImpl.addInstruction(new BuilderInstruction12x(Opcode.INT_TO_DOUBLE, 0, 0));
+        doubleImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 2));
+        doubleImpl.addInstruction(new BuilderInstruction12x(Opcode.INT_TO_DOUBLE, 1, 1));
+        doubleImpl.addInstruction(new BuilderInstruction23x(Opcode.DIV_DOUBLE, 2, 0, 1));
+        doubleImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_WIDE, 2));
+        BuilderMethod doubleArith = builder.internMethod(HELLO, "doubleArith",
+                Collections.<ImmutableMethodParameter>emptyList(), "D",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), doubleImpl);
+
+        // Kotlin-shaped helpers (LazyKt has NO methods: tests the dex-miss path).
+        builder.internClassDef("Lkotlin/Lazy;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.INTERFACE.getValue()
+                        | AccessFlags.ABSTRACT.getValue(),
+                "Ljava/lang/Object;", Collections.<String>emptyList(), "Lazy.kt",
+                Collections.emptySet(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderMethod>emptyList());
+        builder.internClassDef("Lkotlin/LazyKt;",
+                AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
+                Collections.<String>emptyList(), "LazyKt.kt",
+                Collections.emptySet(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderMethod>emptyList());
+        builder.internClassDef("Lkotlin/jvm/functions/Function0;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.INTERFACE.getValue()
+                        | AccessFlags.ABSTRACT.getValue(),
+                "Ljava/lang/Object;", Collections.<String>emptyList(), "Function0.kt",
+                Collections.emptySet(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderMethod>emptyList());
+        MutableMethodImplementation fnInitImpl = new MutableMethodImplementation(1);
+        fnInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                objectInit));
+        fnInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod fnInit = builder.internMethod("Ltest/Fn;", "<init>",
+                Collections.<ImmutableMethodParameter>emptyList(), "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(),
+                Collections.emptySet(), Collections.emptySet(), fnInitImpl);
+        MutableMethodImplementation fnInvokeImpl = new MutableMethodImplementation(1);
+        fnInvokeImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 0, 99));
+        fnInvokeImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod fnInvoke = builder.internMethod("Ltest/Fn;", "invoke",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), fnInvokeImpl);
+        builder.internClassDef("Ltest/Fn;", AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
+                Collections.singletonList("Lkotlin/jvm/functions/Function0;"), "Fn.java",
+                Collections.emptySet(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Arrays.asList(fnInit, fnInvoke));
+
+        // lazyDemo(): lazy { 99 }.getValue().
+        MutableMethodImplementation lazyImpl = new MutableMethodImplementation(2);
+        lazyImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ltest/Fn;")));
+        lazyImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        lazyImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference("Ltest/Fn;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        lazyImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference("Lkotlin/LazyKt;",
+                        "lazy", Collections.singletonList("Lkotlin/jvm/functions/Function0;"),
+                        "Lkotlin/Lazy;"))));
+        lazyImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        lazyImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference("Lkotlin/Lazy;",
+                        "getValue",
+                        Arrays.asList("Ljava/lang/Object;", "Ljava/lang/Object;"),
+                        "Ljava/lang/Object;"))));
+        lazyImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        lazyImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod lazyDemo = builder.internMethod(HELLO, "lazyDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), lazyImpl);
+
+        // lazyIsInstance(): lazy { 99 } instanceof Lazy.
+        MutableMethodImplementation lazyIsImpl = new MutableMethodImplementation(1);
+        lazyIsImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ltest/Fn;")));
+        lazyIsImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        lazyIsImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference("Ltest/Fn;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        lazyIsImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference("Lkotlin/LazyKt;",
+                        "lazy", Collections.singletonList("Lkotlin/jvm/functions/Function0;"),
+                        "Lkotlin/Lazy;"))));
+        lazyIsImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        lazyIsImpl.addInstruction(new BuilderInstruction22c(Opcode.INSTANCE_OF, 0, 0,
+                builder.internTypeReference("Lkotlin/Lazy;")));
+        lazyIsImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod lazyIsInstance = builder.internMethod(HELLO, "lazyIsInstance",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), lazyIsImpl);
+
+        // Job implements Runnable by flagging Hello.flag.
+        MutableMethodImplementation jobInitImpl = new MutableMethodImplementation(1);
+        jobInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, objectInit));
+        jobInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod jobInit = builder.internMethod("Ltest/Job;", "<init>",
+                Collections.<ImmutableMethodParameter>emptyList(), "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(),
+                Collections.emptySet(), Collections.emptySet(), jobInitImpl);
+        MutableMethodImplementation jobRunImpl = new MutableMethodImplementation(2);
+        jobRunImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 7));
+        jobRunImpl.addInstruction(new BuilderInstruction21c(Opcode.SPUT, 1,
+                builder.internFieldReference(new ImmutableFieldReference(HELLO, "flag", "I"))));
+        jobRunImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod jobRun = builder.internMethod("Ltest/Job;", "run",
+                Collections.<ImmutableMethodParameter>emptyList(), "V",
+                AccessFlags.PUBLIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), jobRunImpl);
+        builder.internClassDef("Ltest/Job;", AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
+                Collections.singletonList("Ljava/lang/Runnable;"), "Job.java",
+                Collections.emptySet(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Arrays.asList(jobInit, jobRun));
+
+        // executorDemo(): pool.execute(new Job()); return Hello.flag.
+        MutableMethodImplementation execImpl = new MutableMethodImplementation(3);
+        execImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ltest/Job;")));
+        execImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        execImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference("Ltest/Job;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        execImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/Executors;", "defaultThreadFactory",
+                        Collections.<String>emptyList(),
+                        "Ljava/util/concurrent/ThreadFactory;"))));
+        execImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        execImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 1));
+        execImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 2, 2, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/Executors;", "newFixedThreadPool",
+                        Arrays.asList("I", "Ljava/util/concurrent/ThreadFactory;"),
+                        "Ljava/util/concurrent/ExecutorService;"))));
+        execImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        execImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 2, 1, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/Executor;", "execute",
+                        Collections.singletonList("Ljava/lang/Runnable;"), "V"))));
+        execImpl.addInstruction(new BuilderInstruction21c(Opcode.SGET, 2,
+                builder.internFieldReference(new ImmutableFieldReference(HELLO, "flag", "I"))));
+        execImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        BuilderMethod executorDemo = builder.internMethod(HELLO, "executorDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), execImpl);
+
         builder.internClassDef(HELLO,
                 AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "Hello.java",
@@ -566,7 +921,9 @@ public final class FixtureDex {
                 Arrays.asList(init, id, twice, greet, make, sum, len, safely, clinit, boot,
                         nullCast, castOk, castFail, cmpTiny, sb, throwCatch, intBox, arrayCopy,
                         appendableCast, badCast, stringOps, mathMax, missing, vis, sdk, fwCast,
-                        fwGhost));
+                        fwGhost, fwInit, activityStub, nops, covarOk, covarPrim, constClass,
+                        clazzIsInstance, updater, sysClock, longArith, floatArith, doubleArith,
+                        lazyDemo, lazyIsInstance, executorDemo));
         builder.writeTo(new FileDataStore(dexFile.toFile()));
     }
 

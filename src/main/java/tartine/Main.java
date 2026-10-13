@@ -145,14 +145,29 @@ public final class Main {
                 System.out.println("no onCreate in " + activity);
                 return;
             }
-            // Probe: <init> skipped, receiver is uninitialized on purpose.
+            // Probe: run the real constructor chain (in-dex bodies execute,
+            // framework <init> bodies are no-ops), then onCreate.
             Interpreter interpreter = new Interpreter(dexes);
             FwIndex framework = loadFramework(manifest);
             if (framework != null) {
                 interpreter.setFramework(framework);
             }
+            DexMethod init = null;
+            for (DexMethod method : cls.methods) {
+                if (method.name.equals("<init>") && method.parameterTypes.isEmpty()) {
+                    init = method;
+                    break;
+                }
+            }
+            if (init == null) {
+                System.out.println("no default constructor in " + activity);
+                return;
+            }
+            VmObject receiver = new VmObject(cls);
+            interpreter.setMaxSteps(100000000L);
             try {
-                Object result = interpreter.invoke(cls, onCreate, new VmObject(cls),
+                interpreter.invoke(cls, init, receiver);
+                Object result = interpreter.invoke(cls, onCreate, receiver,
                         new Object[]{null});
                 System.out.println("onCreate returned after " + interpreter.steps()
                         + " steps: " + result);
