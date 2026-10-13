@@ -35,7 +35,7 @@ class DexFrontendTest {
         DexClass cls = dex.findClass(FixtureDex.HELLO);
         assertNotNull(cls);
         assertNull(dex.findClass("Ltest/Missing;"));
-        assertEquals(65, cls.methods.size());
+        assertEquals(69, cls.methods.size());
         assertNotNull(cls.method("<init>"));
         assertNotNull(cls.method("twice"));
         assertNotNull(dex.findClass(FixtureDex.COUNTER));
@@ -122,6 +122,13 @@ class DexFrontendTest {
                 + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
                 + "  6: invoke-virtual v0, v1, Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V\n"
                 + "  9: return-void\n"
+                + "method activityWindow()Ljava/lang/Object; regs=1\n"
+                + "  0: new-instance v0, Landroid/app/Activity;\n"
+                + "  2: move-result-object v0\n"
+                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
+                + "  6: invoke-virtual v0, Landroid/app/Activity;->getWindow()Landroid/view/Window;\n"
+                + "  9: move-result-object v0\n"
+                + "  10: return-object v0\n"
                 + "method appendableCast()I regs=2\n"
                 + "  0: new-instance v0, Ljava/lang/StringBuilder;\n"
                 + "  2: move-result-object v0\n"
@@ -129,6 +136,14 @@ class DexFrontendTest {
                 + "  6: check-cast v0, Ljava/lang/Appendable;\n"
                 + "  8: instance-of v1, v0, Ljava/lang/CharSequence;\n"
                 + "  10: return v1\n"
+                + "method argbDemo()I regs=4\n"
+                + "  0: const-16 v0, #255\n"
+                + "  2: const-4 v1, #1\n"
+                + "  3: const-4 v2, #2\n"
+                + "  4: const-4 v3, #3\n"
+                + "  5: invoke-static v0, v1, v2, v3, Landroid/graphics/Color;->argb(IIII)I\n"
+                + "  8: move-result v0\n"
+                + "  9: return v0\n"
                 + "method arrayCopy()I regs=5\n"
                 + "  0: const-4 v3, #3\n"
                 + "  1: new-array v0, v3, [I\n"
@@ -473,6 +488,11 @@ class DexFrontendTest {
                 + "  5: instance-of v2, v0, Ljava/lang/Integer;\n"
                 + "  7: add-int v1, v1, v2\n"
                 + "  9: return v1\n"
+                + "method parseDemo()I regs=1\n"
+                + "  0: const-string v0, #ff010203\n"
+                + "  2: invoke-static v0, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I\n"
+                + "  5: move-result v0\n"
+                + "  6: return v0\n"
                 + "method postDemo()I regs=2\n"
                 + "  0: new-instance v0, Ltest/MyHandler;\n"
                 + "  2: move-result-object v0\n"
@@ -587,6 +607,15 @@ class DexFrontendTest {
                 + "  3: move-result v0\n"
                 + "  4: add-int-2addr v0, v0\n"
                 + "  5: return v0\n"
+                + "method txChain()I regs=3\n"
+                + "  0: const-string v0, tx\n"
+                + "  2: const-4 v1, #1\n"
+                + "  3: const-string v2, frag\n"
+                + "  5: invoke-virtual v0, v1, v2, Landroid/app/FragmentTransaction;->add(ILandroid/app/Fragment;)Landroid/app/FragmentTransaction;\n"
+                + "  8: move-result-object v0\n"
+                + "  9: invoke-virtual v0, Landroid/app/FragmentTransaction;->commit()I\n"
+                + "  12: move-result v0\n"
+                + "  13: return v0\n"
                 + "method updater()I regs=5\n"
                 + "  0: new-instance v0, Ltest/Counter;\n"
                 + "  2: move-result-object v0\n"

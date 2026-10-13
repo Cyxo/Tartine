@@ -1625,6 +1625,82 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), blockedImpl);
 
+        // txChain(): pass-through chaining on framework stubs.
+        MutableMethodImplementation txImpl = new MutableMethodImplementation(3);
+        txImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("tx")));
+        txImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 1));
+        txImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 2,
+                builder.internStringReference("frag")));
+        txImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 1, 2, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/FragmentTransaction;", "add",
+                        Arrays.asList("I", "Landroid/app/Fragment;"),
+                        "Landroid/app/FragmentTransaction;"))));
+        txImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        txImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/FragmentTransaction;", "commit",
+                        Collections.<String>emptyList(), "I"))));
+        txImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        txImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod txChain = builder.internMethod(HELLO, "txChain",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), txImpl);
+
+        // argbDemo(): Color.argb(255, 1, 2, 3).
+        MutableMethodImplementation argbImpl = new MutableMethodImplementation(4);
+        argbImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 0, 255));
+        argbImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 1));
+        argbImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 2));
+        argbImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 3, 3));
+        argbImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 4, 0, 1, 2, 3, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/graphics/Color;", "argb",
+                        Arrays.asList("I", "I", "I", "I"), "I"))));
+        argbImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        argbImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod argbDemo = builder.internMethod(HELLO, "argbDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), argbImpl);
+
+        // parseDemo(): Color.parseColor("#ff010203").
+        MutableMethodImplementation parseImpl = new MutableMethodImplementation(1);
+        parseImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("#ff010203")));
+        parseImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/graphics/Color;", "parseColor",
+                        Collections.singletonList("Ljava/lang/String;"), "I"))));
+        parseImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        parseImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod parseDemo = builder.internMethod(HELLO, "parseDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), parseImpl);
+
+        // activityWindow(): new Activity().getWindow() is a placeholder.
+        MutableMethodImplementation windowImpl = new MutableMethodImplementation(1);
+        windowImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        windowImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        windowImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        windowImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "getWindow",
+                        Collections.<String>emptyList(), "Landroid/view/Window;"))));
+        windowImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        windowImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod activityWindow = builder.internMethod(HELLO, "activityWindow",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), windowImpl);
+
         builder.internClassDef(HELLO,
                 AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "Hello.java",
@@ -1639,7 +1715,8 @@ public final class FixtureDex {
                         threadDemo, mapDemo, listDemo, setDemo, iterDemo, nullish, nullRecv,
                         boolStr, charStr, weakGet, weakClear, colorCmp, colorName,
                         colorValueOf, mapDefaults, mapPutAbsent, repeatDemo, emptyDemo,
-                        strictSqrt, linkedMapDemo, blockedExec));
+                        strictSqrt, linkedMapDemo, blockedExec, txChain, argbDemo,
+                        parseDemo, activityWindow));
         builder.writeTo(new FileDataStore(dexFile.toFile()));
     }
 

@@ -2781,6 +2781,29 @@ public final class Interpreter {
         // PROBE STUBS: framework behavior deferred; each no-op is repaid later.
         builtin("Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V",
                 (receiver, args) -> null);
+        builtin("Landroid/app/Activity;->getWindow()Landroid/view/Window;",
+                (receiver, args) -> newPlaceholder("Landroid/view/Window;"));
+        builtin("Landroid/view/Window;->getDecorView()Landroid/view/View;",
+                (receiver, args) -> newPlaceholder("Landroid/view/View;"));
+        builtin("Landroid/view/Window;->findViewById(I)Landroid/view/View;",
+                (receiver, args) -> null);
+        builtin("Landroid/app/Activity;->findViewById(I)Landroid/view/View;",
+                (receiver, args) -> null);
+        builtin("Landroid/view/View;->findViewById(I)Landroid/view/View;",
+                (receiver, args) -> null);
+        builtin("Landroid/view/Window;->getWindowManager()Landroid/view/WindowManager;",
+                (receiver, args) -> newPlaceholder("Landroid/view/WindowManager;"));
+        builtin("Landroid/view/View;->getResources()Landroid/content/res/Resources;",
+                (receiver, args) -> newPlaceholder("Landroid/content/res/Resources;"));
+        builtin("Landroid/content/res/Resources;->getConfiguration()"
+                + "Landroid/content/res/Configuration;",
+                (receiver, args) -> newPlaceholder("Landroid/content/res/Configuration;"));
+        builtin("Landroid/view/Window;->setDecorFitsSystemWindows(Z)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/Window;->setStatusBarColor(I)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/Window;->setNavigationBarColor(I)V",
+                (receiver, args) -> null);
         builtin("Landroid/app/Activity;->registerActivityLifecycleCallbacks("
                 + "Landroid/app/Application$ActivityLifecycleCallbacks;)V",
                 (receiver, args) -> null);
@@ -2789,6 +2812,74 @@ public final class Interpreter {
         builtin("Landroid/app/FragmentManager;->findFragmentByTag(Ljava/lang/String;)"
                 + "Landroid/app/Fragment;",
                 (receiver, args) -> null);
+        builtin("Landroid/app/FragmentManager;->beginTransaction()"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> newPlaceholder("Landroid/app/FragmentTransaction;"));
+        builtin("Landroid/app/FragmentTransaction;->add(ILandroid/app/Fragment;)"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->add(Landroid/app/Fragment;"
+                + "Ljava/lang/String;)Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->replace(ILandroid/app/Fragment;)"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->replace(ILandroid/app/Fragment;"
+                + "Ljava/lang/String;)Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->remove(Landroid/app/Fragment;)"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->hide(Landroid/app/Fragment;)"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->show(Landroid/app/Fragment;)"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->detach(Landroid/app/Fragment;)"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->attach(Landroid/app/Fragment;)"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->addToBackStack(Ljava/lang/String;)"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->setCustomAnimations(II)"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->setCustomAnimations(IIII)"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->setTransition(I)"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->setTransitionStyle(I)"
+                + "Landroid/app/FragmentTransaction;",
+                (receiver, args) -> receiver);
+        builtin("Landroid/app/FragmentTransaction;->commit()I",
+                (receiver, args) -> 0);
+        builtin("Landroid/app/FragmentTransaction;->commitAllowingStateLoss()I",
+                (receiver, args) -> 0);
+        builtin("Landroid/app/FragmentManager;->executePendingTransactions()Z",
+                (receiver, args) -> 0);
+        // Color math is plain bit packing (no host counterpart exists).
+        builtin("Landroid/graphics/Color;->argb(IIII)I",
+                (receiver, args) -> (argInt(args, 0) << 24) | (argInt(args, 1) << 16)
+                        | (argInt(args, 2) << 8) | argInt(args, 3));
+        builtin("Landroid/graphics/Color;->rgb(III)I",
+                (receiver, args) -> 0xFF000000 | (argInt(args, 0) << 16)
+                        | (argInt(args, 1) << 8) | argInt(args, 2));
+        builtin("Landroid/graphics/Color;->alpha(I)I",
+                (receiver, args) -> argInt(args, 0) >>> 24);
+        builtin("Landroid/graphics/Color;->red(I)I",
+                (receiver, args) -> (argInt(args, 0) >> 16) & 0xFF);
+        builtin("Landroid/graphics/Color;->green(I)I",
+                (receiver, args) -> (argInt(args, 0) >> 8) & 0xFF);
+        builtin("Landroid/graphics/Color;->blue(I)I",
+                (receiver, args) -> argInt(args, 0) & 0xFF);
+        builtin("Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I",
+                (receiver, args) -> parseColor(argString(args, 0)));
         builtin("Landroid/os/SystemClock;->uptimeMillis()J",
                 (receiver, args) -> System.nanoTime() / 1000000L);
         builtin("Landroid/os/SystemClock;->elapsedRealtime()J",
@@ -3708,6 +3799,67 @@ public final class Interpreter {
             return true;
         }
         return false;
+    }
+
+    private static int parseColor(String text) {
+        if (text.startsWith("#")) {
+            String hex = text.substring(1);
+            switch (hex.length()) {
+                case 3:
+                    return 0xFF000000 | duplicate(hex.charAt(0)) << 16
+                            | duplicate(hex.charAt(1)) << 8 | duplicate(hex.charAt(2));
+                case 4:
+                    return duplicate(hex.charAt(0)) << 24 | duplicate(hex.charAt(1)) << 16
+                            | duplicate(hex.charAt(2)) << 8 | duplicate(hex.charAt(3));
+                case 6:
+                    return (int) (0xFF000000L | Long.parseLong(hex, 16));
+                case 8:
+                    return (int) Long.parseLong(hex, 16);
+                default:
+                    throw new IllegalArgumentException("unknown color: " + text);
+            }
+        }
+        switch (text.toLowerCase(java.util.Locale.ROOT)) {
+            case "black":
+                return 0xFF000000;
+            case "blue":
+                return 0xFF0000FF;
+            case "cyan":
+                return 0xFF00FFFF;
+            case "dkgray":
+            case "darkgray":
+            case "darkgrey":
+                return 0xFF444444;
+            case "gray":
+            case "grey":
+                return 0xFF888888;
+            case "green":
+                return 0xFF00FF00;
+            case "lightgray":
+            case "lightgrey":
+            case "ltgray":
+                return 0xFFCCCCCC;
+            case "magenta":
+                return 0xFFFF00FF;
+            case "red":
+                return 0xFFFF0000;
+            case "transparent":
+                return 0;
+            case "white":
+                return 0xFFFFFFFF;
+            case "yellow":
+                return 0xFFFFFF00;
+            default:
+                throw new IllegalArgumentException("unknown color: " + text);
+        }
+    }
+
+    private static int duplicate(char hex) {
+        int nibble = Character.digit(hex, 16);
+        if (nibble < 0) {
+            throw new IllegalArgumentException("bad hex: " + hex);
+        }
+        return (nibble << 4) | nibble;
     }
 
     private static int jump(Map<Integer, Integer> addresses, Insn insn) {

@@ -18,6 +18,7 @@ import tartine.fw.FwIndex.FwField;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -305,6 +306,27 @@ class VmTest {
         VmException e = assertThrows(VmException.class,
                 () -> interpreter.call(FixtureDex.HELLO, "blockedExec"));
         assertTrue(e.getMessage().contains("unimplemented"), e.getMessage());
+    }
+
+    @Test
+    void txChainPassesThrough() {
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "txChain"));
+    }
+
+    @Test
+    void argbDemoPacks() {
+        assertEquals(Integer.valueOf(0xFF010203), interpreter.call(FixtureDex.HELLO, "argbDemo"));
+    }
+
+    @Test
+    void parseDemoParses() {
+        assertEquals(Integer.valueOf(0xFF010203), interpreter.call(FixtureDex.HELLO, "parseDemo"));
+    }
+
+    @Test
+    void activityWindowPlaceholds() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "activityWindow"));
     }
 
     @Test
