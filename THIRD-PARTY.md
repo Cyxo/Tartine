@@ -13,6 +13,7 @@ local test fixtures only. Build/test toolchain pins live in `mise.toml`
 | `org.smali:dexlib2` | 2.5.2 | DEX parse model (frontend for Step 2) | BSD 3-Clause |
 | `com.google.guava:guava` (android flavor) | 27.1-android | dexlib2 runtime dep | Apache-2.0 |
 | `com.google.code.findbugs:jsr305` | 3.0.2 | dexlib2 runtime dep (annotations) | Apache-2.0 |
+| `org.lwjgl:lwjgl` + `lwjgl-glfw` + `lwjgl-opengl` (+ natives for windows/linux/macos/macos-arm64) | 3.4.3 | Desktop windowing (GLFW) + GL context for the GUI step | BSD-3-Clause |
 
 dexlib2 2.5.2 reads DEX up to version 039 (verified: fixture `classes*.dex`
 are 039 and disassemble cleanly). DEX 040+ needs smali 3.x, which publishes
@@ -47,5 +48,4 @@ java -cp "tools/baksmali-2.5.2.jar;tools/util-2.5.2.jar;tools/jcommander-1.64.ja
   archived; successor `Storyyeller/enjarify`) — translation oracles.
   Both translated the Step 3 fixture cleanly (fetch on demand, scratch-only;
   not vendored).
-- **LWJGL3** (BSD) — windowing/GLES backend for the graphics steps.
 - **AOSP ART / Skia** — reference only, nothing to embed.

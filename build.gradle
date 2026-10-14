@@ -14,6 +14,18 @@ dependencies {
     implementation 'org.smali:dexlib2:2.5.2'
     implementation 'com.google.guava:guava:27.1-android'
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    // Desktop windowing (GLFW) + GL for the GUI step (BSD-3-Clause).
+    def lwjglVersion = '3.4.3'
+    for (name in ['lwjgl', 'lwjgl-glfw', 'lwjgl-opengl']) {
+        implementation "org.lwjgl:$name:$lwjglVersion"
+    }
+    // Natives for every desktop host; LWJGL picks its own at runtime.
+    for (platform in ['natives-windows', 'natives-linux', 'natives-macos',
+            'natives-macos-arm64']) {
+        for (name in ['lwjgl', 'lwjgl-glfw', 'lwjgl-opengl']) {
+            runtimeOnly "org.lwjgl:$name:$lwjglVersion:$platform"
+        }
+    }
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
 }

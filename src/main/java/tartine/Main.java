@@ -16,6 +16,7 @@ import tartine.dex.DexMethod;
 import tartine.dex.DexSet;
 import tartine.fw.FwIndex;
 import tartine.fw.Sdk;
+import tartine.graphics.DesktopWindow;
 import tartine.vm.Interpreter;
 import tartine.vm.VmException;
 import tartine.vm.VmObject;
@@ -27,6 +28,8 @@ import tartine.vm.VmObject;
  * <li>{@code apk <file.apk>} — headless APK summary: manifest, code, libraries.
  * <li>{@code run <file.apk>} — headless probe: executes the launcher
  * activity's {@code onCreate} until the first gap (no GUI yet).
+ * <li>{@code gui <file.apk> [timeoutSecs]} — headless {@code onCreate}, then
+ * shows the activity window on desktop (blank until composition runs).
  * <li>{@code dump <file.dex>} — prints our instruction dump of a dex file.
  * </ul>
  */
@@ -48,6 +51,11 @@ public final class Main {
                 case "run":
                     require(args, 2);
                     probeRun(new File(args[1]));
+                    break;
+                case "gui":
+                    require(args, 2);
+                    guiRun(new File(args[1]),
+                            args.length > 2 ? Long.parseLong(args[2]) : 0);
                     break;
                 case "dump":
                     require(args, 2);
@@ -118,13 +126,32 @@ public final class Main {
     }
 
     private static void probeRun(File apk) throws Exception {
+        runOnCreate(apk);
+    }
+
+    private static void guiRun(File apk, long timeoutSecs) throws Exception {
+        String activity = runOnCreate(apk);
+        if (activity == null) {
+            System.out.println("gui: onCreate did not return; no window");
+            return;
+        }
+        DesktopWindow.show(activity, timeoutSecs);
+        System.out.println("window closed");
+    }
+
+    /**
+     * Headless probe shared by {@code run} and {@code gui}: executes the
+     * launcher activity's {@code onCreate} until the first gap. Returns the
+     * activity name when onCreate returned, else null.
+     */
+    private static String runOnCreate(File apk) throws Exception {
         try (ApkReader reader = ApkReader.open(apk.toPath())) {
             BinaryXml.Element manifest = reader.manifest();
             String packageName = manifest.attr("package");
             String activity = findLauncher(manifest);
             if (activity == null) {
                 System.out.println("no launcher activity in manifest");
-                return;
+                return null;
             }
             activity = qualify(packageName, activity);
             System.out.println("launcher: " + activity);
@@ -132,7 +159,7 @@ public final class Main {
             DexClass cls = dexes.findClass("L" + activity.replace('.', '/') + ";");
             if (cls == null) {
                 System.out.println("class not in dex: " + activity);
-                return;
+                return null;
             }
             DexMethod onCreate = null;
             for (DexMethod method : cls.methods) {
@@ -143,7 +170,7 @@ public final class Main {
             }
             if (onCreate == null) {
                 System.out.println("no onCreate in " + activity);
-                return;
+                return null;
             }
             // Probe: run the real constructor chain (in-dex bodies execute,
             // framework <init> bodies are no-ops), then onCreate.
@@ -161,7 +188,7 @@ public final class Main {
             }
             if (init == null) {
                 System.out.println("no default constructor in " + activity);
-                return;
+                return null;
             }
             VmObject receiver = new VmObject(cls);
             interpreter.setMaxSteps(100000000L);
@@ -172,15 +199,18 @@ public final class Main {
                 System.out.println("onCreate returned after " + interpreter.steps()
                         + " steps: " + result);
                 assertContent(dexes, interpreter, receiver);
+                return activity;
             } catch (VmException blocked) {
                 System.out.println("blocked after " + interpreter.steps() + " steps at: "
                         + blocked.getMessage());
                 printTrace(interpreter);
+                return null;
             } catch (RuntimeException bug) {
                 System.out.println("failed after " + interpreter.steps() + " steps with "
                         + bug);
                 printTrace(interpreter);
                 bug.printStackTrace(System.err);
+                return null;
             }
         }
     }
