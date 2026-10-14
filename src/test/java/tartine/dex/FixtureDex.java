@@ -2063,6 +2063,9 @@ public final class FixtureDex {
                         Arrays.asList("Landroid/view/View;",
                                 "Landroid/view/ViewGroup$LayoutParams;"),
                         "V"))));
+        contentViewImpl.addInstruction(new BuilderInstruction22c(Opcode.IGET_OBJECT, 0, 0,
+                builder.internFieldReference(new ImmutableFieldReference(
+                        "Landroid/app/Activity;", "mContentView", "Landroid/view/View;"))));
         contentViewImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
         BuilderMethod contentViewDemo = builder.internMethod(HELLO, "contentViewDemo",
                 Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",

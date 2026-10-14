@@ -2821,12 +2821,21 @@ public final class Interpreter {
         builtin("Landroid/view/ViewTreeObserver;->addOnDrawListener("
                 + "Landroid/view/ViewTreeObserver$OnDrawListener;)V",
                 (receiver, args) -> null);
-        // Installing the content view only matters to a real window.
+        // Installing the content view only matters to a real window, but the
+        // view is retained so the probe can inspect the composed content.
         builtin("Landroid/app/Activity;->setContentView(Landroid/view/View;)V",
-                (receiver, args) -> null);
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/app/Activity;.mContentView",
+                            args[0]);
+                    return null;
+                });
         builtin("Landroid/app/Activity;->setContentView(Landroid/view/View;"
                 + "Landroid/view/ViewGroup$LayoutParams;)V",
-                (receiver, args) -> null);
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/app/Activity;.mContentView",
+                            args[0]);
+                    return null;
+                });
         // Attach listeners never fire headless; registration is a no-op.
         builtin("Landroid/view/View;->addOnAttachStateChangeListener("
                 + "Landroid/view/View$OnAttachStateChangeListener;)V",

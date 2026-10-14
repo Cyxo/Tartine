@@ -171,6 +171,7 @@ public final class Main {
                         new Object[]{null});
                 System.out.println("onCreate returned after " + interpreter.steps()
                         + " steps: " + result);
+                assertContent(dexes, interpreter, receiver);
             } catch (VmException blocked) {
                 System.out.println("blocked after " + interpreter.steps() + " steps at: "
                         + blocked.getMessage());
@@ -187,6 +188,58 @@ public final class Main {
     private static void printTrace(Interpreter interpreter) {
         for (String line : interpreter.lastTrace()) {
             System.out.println("  at " + line);
+        }
+    }
+
+    /**
+     * Proves {@code setContent} took effect: the activity retained the
+     * ComposeView, the deferred-composition flag is set, the content state
+     * exists, and (best effort) the stored lambda is the app's composable.
+     */
+    private static void assertContent(DexSet dexes, Interpreter interpreter,
+            VmObject activity) {
+        Object contentView = activity.getField("Landroid/app/Activity;.mContentView");
+        if (!(contentView instanceof VmObject)) {
+            System.out.println("content view: MISSING (nothing retained)");
+            return;
+        }
+        VmObject view = (VmObject) contentView;
+        System.out.println("content view: " + view.type.type);
+        Object deferred = view.getField("Landroidx/compose/ui/platform/ComposeView;"
+                + ".shouldCreateCompositionOnAttachedToWindow");
+        System.out.println("defer-composition flag: " + deferred
+                + (Integer.valueOf(1).equals(deferred) ? " (ok)" : " (UNEXPECTED)"));
+        Object state = view.getField(
+                "Landroidx/compose/ui/platform/ComposeView;.content");
+        if (!(state instanceof VmObject)) {
+            System.out.println("content state: MISSING");
+            return;
+        }
+        VmObject stateObject = (VmObject) state;
+        System.out.println("content state: " + stateObject.type.type);
+        try {
+            DexMethod getValue = null;
+            DexClass home = stateObject.type;
+            while (home != null && getValue == null) {
+                for (DexMethod candidate : home.methods) {
+                    if (candidate.name.equals("getValue")
+                            && candidate.parameterTypes.isEmpty()) {
+                        getValue = candidate;
+                        break;
+                    }
+                }
+                home = home.superclass == null ? null
+                        : dexes.findClass(home.superclass);
+            }
+            if (getValue == null) {
+                System.out.println("content lambda: no getValue to read it");
+                return;
+            }
+            Object lambda = interpreter.invoke(stateObject.type, getValue, stateObject);
+            System.out.println("content lambda: " + (lambda instanceof VmObject
+                    ? ((VmObject) lambda).type.type : lambda));
+        } catch (RuntimeException e) {
+            System.out.println("content lambda: unreadable (" + e.getMessage() + ")");
         }
     }
 
