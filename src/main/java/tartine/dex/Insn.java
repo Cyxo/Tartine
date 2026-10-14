@@ -11,9 +11,12 @@ import org.jf.dexlib2.iface.instruction.OffsetInstruction;
 import org.jf.dexlib2.iface.instruction.OneRegisterInstruction;
 import org.jf.dexlib2.iface.instruction.ReferenceInstruction;
 import org.jf.dexlib2.iface.instruction.RegisterRangeInstruction;
+import org.jf.dexlib2.iface.instruction.SwitchElement;
+import org.jf.dexlib2.iface.instruction.SwitchPayload;
 import org.jf.dexlib2.iface.instruction.ThreeRegisterInstruction;
 import org.jf.dexlib2.iface.instruction.TwoRegisterInstruction;
 import org.jf.dexlib2.iface.instruction.WideLiteralInstruction;
+import org.jf.dexlib2.iface.instruction.formats.ArrayPayload;
 
 /**
  * One Dalvik instruction in our own model, decoupled from dexlib2 types.
@@ -36,9 +39,18 @@ public final class Insn {
     public final int referenceType;
     /** Relative branch target in code units, or null when N/A. */
     public final Integer branchOffset;
+    /** Array-payload element width in bytes, or 0 when N/A. */
+    public final int elementWidth;
+    /** Array-payload elements as raw longs, or null when N/A. */
+    public final List<Long> payloadData;
+    /** Switch-payload keys, or null when N/A. */
+    public final List<Integer> payloadKeys;
+    /** Switch-payload targets, relative to the switch, or null when N/A. */
+    public final List<Integer> payloadTargets;
 
     Insn(int codeOffset, String opcode, List<Integer> registers, boolean hasLiteral, long literal,
-            String reference, int referenceType, Integer branchOffset) {
+            String reference, int referenceType, Integer branchOffset, int elementWidth,
+            List<Long> payloadData, List<Integer> payloadKeys, List<Integer> payloadTargets) {
         this.codeOffset = codeOffset;
         this.opcode = opcode;
         this.registers = Collections.unmodifiableList(new ArrayList<>(registers));
@@ -47,6 +59,13 @@ public final class Insn {
         this.reference = reference;
         this.referenceType = referenceType;
         this.branchOffset = branchOffset;
+        this.elementWidth = elementWidth;
+        this.payloadData = payloadData == null ? null
+                : Collections.unmodifiableList(new ArrayList<>(payloadData));
+        this.payloadKeys = payloadKeys == null ? null
+                : Collections.unmodifiableList(new ArrayList<>(payloadKeys));
+        this.payloadTargets = payloadTargets == null ? null
+                : Collections.unmodifiableList(new ArrayList<>(payloadTargets));
     }
 
     static Insn from(Instruction instruction, int offset) {
@@ -110,9 +129,32 @@ public final class Insn {
             branchOffset = ((OffsetInstruction) instruction).getCodeOffset();
         }
 
+        int elementWidth = 0;
+        List<Long> payloadData = null;
+        if (instruction instanceof ArrayPayload) {
+            ArrayPayload payload = (ArrayPayload) instruction;
+            elementWidth = payload.getElementWidth();
+            payloadData = new ArrayList<>();
+            for (Number element : payload.getArrayElements()) {
+                payloadData.add(element.longValue());
+            }
+        }
+        List<Integer> payloadKeys = null;
+        List<Integer> payloadTargets = null;
+        if (instruction instanceof SwitchPayload) {
+            payloadKeys = new ArrayList<>();
+            payloadTargets = new ArrayList<>();
+            for (SwitchElement element
+                    : ((SwitchPayload) instruction).getSwitchElements()) {
+                payloadKeys.add(element.getKey());
+                payloadTargets.add(element.getOffset());
+            }
+        }
+
         String opcode = instruction.getOpcode().name()
                 .toLowerCase(java.util.Locale.ROOT).replace('_', '-');
         return new Insn(offset, opcode, registers, hasLiteral, literal,
-                reference, referenceType, branchOffset);
+                reference, referenceType, branchOffset, elementWidth, payloadData,
+                payloadKeys, payloadTargets);
     }
 }

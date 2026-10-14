@@ -420,6 +420,168 @@ class VmTest {
     }
 
     @Test
+    void windowDemoPlaceholds() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "windowDemo"));
+    }
+
+    @Test
+    void parentLinkDemoLinks() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "parentLinkDemo"));
+    }
+
+    @Test
+    void attachLinkDemoAttaches() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(1),
+                interpreter.call(FixtureDex.HELLO, "attachLinkDemo"));
+    }
+
+    @Test
+    void choreoDemoPlaceholds() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "choreoDemo"));
+    }
+
+    @Test
+    void handlerAsyncCreates() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "handlerAsyncDemo"));
+    }
+
+    @Test
+    void high16DemoShifts() {
+        assertEquals(Integer.valueOf(0x3F800000),
+                interpreter.call(FixtureDex.HELLO, "high16Demo"));
+    }
+
+    @Test
+    void wideHigh16DemoShifts() {
+        assertEquals(Long.valueOf(0x3FF0000000000000L),
+                interpreter.call(FixtureDex.HELLO, "wideHigh16Demo"));
+    }
+
+    @Test
+    void fillDemoFills() {
+        assertEquals(Integer.valueOf(2), interpreter.call(FixtureDex.HELLO, "fillDemo"));
+    }
+
+    @Test
+    void runtimeDemoPositive() {
+        assertTrue((Long) interpreter.call(FixtureDex.HELLO, "runtimeDemo") > 0);
+    }
+
+    @Test
+    void cpuDemoPositive() {
+        assertTrue((Integer) interpreter.call(FixtureDex.HELLO, "cpuDemo") > 0);
+    }
+
+    @Test
+    void propDemoStaysNull() {
+        assertNull(interpreter.call(FixtureDex.HELLO, "propDemo"));
+    }
+
+    @Test
+    void parentIfDemoStaysNull() {
+        interpreter.setFramework(framework());
+        assertNull(interpreter.call(FixtureDex.HELLO, "parentIfDemo"));
+    }
+
+    @Test
+    void idDemoIsNoId() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(-1), interpreter.call(FixtureDex.HELLO, "idDemo"));
+    }
+
+    @Test
+    void viewHandlerDemoHandsHandler() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "viewHandlerDemo"));
+    }
+
+    @Test
+    void detachedHandlerDemoStaysNull() {
+        interpreter.setFramework(framework());
+        assertNull(interpreter.call(FixtureDex.HELLO, "detachedHandlerDemo"));
+    }
+
+    @Test
+    void reflectDemoInvokes() {
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "reflectDemo"));
+    }
+
+    @Test
+    void reflectMissDemoThrows() {
+        VmThrow thrown = assertThrows(VmThrow.class,
+                () -> interpreter.call(FixtureDex.HELLO, "reflectMissDemo"));
+        assertTrue(thrown.value instanceof NoSuchMethodException, String.valueOf(thrown.value));
+    }
+
+    @Test
+    void longUpdaterAdds() {
+        assertEquals(Long.valueOf(10L), interpreter.call(FixtureDex.HELLO, "longUpdaterDemo"));
+    }
+
+    @Test
+    void intUpdaterKeeps() {
+        assertEquals(Integer.valueOf(5), interpreter.call(FixtureDex.HELLO, "intUpdaterDemo"));
+    }
+
+    @Test
+    void cloneDemoCopies() {
+        assertEquals("a", interpreter.call(FixtureDex.HELLO, "cloneDemo"));
+    }
+
+    @Test
+    void ordinalDemoReadsOne() {
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "ordinalDemo"));
+    }
+
+    @Test
+    void switchDemoTakesCase() {
+        assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "switchDemo"));
+    }
+
+    @Test
+    void switchDefaultDemoFallsThrough() {
+        assertEquals(Integer.valueOf(99),
+                interpreter.call(FixtureDex.HELLO, "switchDefaultDemo"));
+    }
+
+    @Test
+    void copyDemoKeepsType() {
+        assertEquals("a", interpreter.call(FixtureDex.HELLO, "copyDemo"));
+    }
+
+    @Test
+    void loaderDemoPlaceholds() {
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "loaderDemo"));
+    }
+
+    @Test
+    void serviceDemoEmpty() {
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "serviceDemo"));
+    }
+
+    @Test
+    void sdkIntDemoReports() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(36), interpreter.call(FixtureDex.HELLO, "sdkIntDemo"));
+    }
+
+    @Test
+    void suppressedDemoRecords() {
+        Object result = interpreter.call(FixtureDex.HELLO, "suppressedDemo");
+        assertTrue(result instanceof VmArray);
+        VmArray array = (VmArray) result;
+        assertEquals(1, array.length());
+        assertTrue(array.get(0) instanceof VmObject);
+        assertEquals("Ltest/Boom;",
+                ((VmObject) array.get(0)).type.type);
+    }
+
+    @Test
     void stepsWereExecuted() {
         interpreter.call(FixtureDex.HELLO, "twice", 21);
         assertTrue(interpreter.steps() > 0);
@@ -574,6 +736,11 @@ class VmTest {
                 Collections.<String>emptyList(),
                 Collections.<FwIndex.FwMethod>emptyList(),
                 Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/os/Build$VERSION;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.singletonList(new FwField("SDK_INT", "I")),
                 Collections.<String, Object>emptyMap()));
         index.put(new FwClass("Ljava/lang/ref/Reference;", "Ljava/lang/Object;",
                 Collections.<String>emptyList(),

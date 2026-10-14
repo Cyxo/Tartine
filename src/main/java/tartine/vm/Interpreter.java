@@ -49,12 +49,17 @@ public final class Interpreter {
     private final Set<String> initializing = new HashSet<>();
     private final Map<String, HostMethod> builtins = new HashMap<>();
     private final Map<VmObject, PendingThrowable> throwables = new IdentityHashMap<>();
+    private final Map<Object, List<Object>> suppressed = new IdentityHashMap<>();
     private FwIndex framework;
     private long steps = 0;
     private long maxSteps = Long.MAX_VALUE;
     private VmLooper mainLooper;
     private VmQueue mainQueue;
-    private final String[] trace = new String[16];
+    private VmObject choreographer;
+    // Reported Android API level. Defaults to the modeled framework
+    // (android-36); Main overrides it from the APK manifest per app.
+    private int sdkInt = 36;
+    private final String[] trace = new String[256];
     private int traceAt = 0;
 
     public Interpreter(DexSet dexes) {
@@ -209,6 +214,16 @@ public final class Interpreter {
                     case "const-16":
                     case "const":
                         regs[g.get(0)] = (int) insn.literal;
+                        pc++;
+                        break;
+                    // Hat literals arrive pre-shifted from dexlib2
+                    // (narrow << 16, wide << 48: verified via javap).
+                    case "const-high16":
+                        regs[g.get(0)] = (int) insn.literal;
+                        pc++;
+                        break;
+                    case "const-wide-high16":
+                        regs[g.get(0)] = insn.literal;
                         pc++;
                         break;
                     case "const-wide-16":
@@ -713,6 +728,38 @@ public final class Interpreter {
                     case "if-lez":
                         pc = check(asInt(regs[g.get(0)]) <= 0, addresses, insn, pc);
                         break;
+                    case "packed-switch":
+                    case "sparse-switch": {
+                        int test = asInt(regs[g.get(0)]);
+                        Integer dest = addresses.get(insn.codeOffset + insn.branchOffset);
+                        if (dest == null) {
+                            throw new VmException("switch without payload");
+                        }
+                        Insn payload = code.get(dest);
+                        String want = op.equals("packed-switch") ? "packed-switch-payload"
+                                : "sparse-switch-payload";
+                        if (!payload.opcode.equals(want) || payload.payloadKeys == null
+                                || payload.payloadTargets == null) {
+                            throw new VmException("bad switch payload");
+                        }
+                        Integer go = null;
+                        for (int i = 0; i < payload.payloadKeys.size(); i++) {
+                            if (payload.payloadKeys.get(i) == test) {
+                                go = insn.codeOffset + payload.payloadTargets.get(i);
+                                break;
+                            }
+                        }
+                        if (go == null) {
+                            pc++;
+                            break;
+                        }
+                        Integer at = addresses.get(go);
+                        if (at == null) {
+                            throw new VmException("bad switch target");
+                        }
+                        pc = at;
+                        break;
+                    }
                     case "new-instance": {
                         Object created = createInstance(insn.reference);
                         if (created == null) {
@@ -776,6 +823,61 @@ public final class Interpreter {
                         }
                         pending = array;
                         hasPending = true;
+                        pc++;
+                        break;
+                    }
+                    case "fill-array-data": {
+                        VmArray array = checkedArray(regs[g.get(0)]);
+                        Integer dest = addresses.get(insn.codeOffset + insn.branchOffset);
+                        if (dest == null) {
+                            throw new VmException("fill without payload");
+                        }
+                        Insn payload = code.get(dest);
+                        if (!payload.opcode.equals("array-payload")
+                                || payload.payloadData == null) {
+                            throw new VmException("bad fill payload");
+                        }
+                        if (payload.payloadData.size() != array.length()) {
+                            throw new VmException("fill size mismatch: "
+                                    + payload.payloadData.size() + " into "
+                                    + array.length());
+                        }
+                        if (payload.elementWidth != fillWidth(array.elementType)) {
+                            throw new VmException("fill width mismatch: "
+                                    + payload.elementWidth + " into " + array.elementType);
+                        }
+                        for (int i = 0; i < array.length(); i++) {
+                            long raw = payload.payloadData.get(i);
+                            switch (array.elementType) {
+                                case "Z":
+                                    array.set(i, (int) raw & 1);
+                                    break;
+                                case "B":
+                                    array.set(i, (int) (byte) raw);
+                                    break;
+                                case "S":
+                                    array.set(i, (int) (short) raw);
+                                    break;
+                                case "C":
+                                    array.set(i, (int) (char) raw);
+                                    break;
+                                case "I":
+                                    array.set(i, (int) raw);
+                                    break;
+                                case "J":
+                                    array.set(i, raw);
+                                    break;
+                                case "F":
+                                    array.set(i, Float.intBitsToFloat((int) raw));
+                                    break;
+                                case "D":
+                                    array.set(i, Double.longBitsToDouble(raw));
+                                    break;
+                                default:
+                                    throw new VmException(
+                                            "fill into " + array.elementType);
+                            }
+                        }
                         pc++;
                         break;
                     }
@@ -1437,6 +1539,26 @@ public final class Interpreter {
         return reference.substring(1);
     }
 
+    /** Payload width a primitive array element expects, or -1. */
+    private static int fillWidth(String element) {
+        switch (element) {
+            case "Z":
+            case "B":
+                return 1;
+            case "S":
+            case "C":
+                return 2;
+            case "I":
+            case "F":
+                return 4;
+            case "J":
+            case "D":
+                return 8;
+            default:
+                return -1;
+        }
+    }
+
     /**
      * {@code instanceof} with the zero-bits heuristic: null (and zero-bits)
      * is never an instance, except that zero-bits tests true against its own
@@ -1800,6 +1922,42 @@ public final class Interpreter {
         }
     }
 
+    /**
+     * A resolved {@code java.lang.reflect.Method}: exactly one target kind.
+     * Invocation reuses the normal dispatch for that kind, so model objects
+     * never cross into host reflection and denied classes stay denied
+     * (they resolve to nothing and fail lookup with NoSuchMethodException).
+     */
+    private static final class MethodTarget {
+        DexMethod dexMethod;
+        DexClass dexHome;
+        HostMethod builtin;
+        List<String> parameters = new ArrayList<>();
+        Method hostMethod;
+        String label;
+    }
+
+    /**
+     * A resolved {@code java.lang.reflect.Field}. Values flow through the
+     * same stores as everything else (interpreter statics, VmObject fields,
+     * jar constants, host reflection), so reflective reads observe the same
+     * state direct access would.
+     */
+    private static final class FieldTarget {
+        String definingClass;
+        String name;
+        String type;
+        java.lang.reflect.Field hostField;
+    }
+
+    private static final String FIELD_TARGET = "Ljava/lang/reflect/Field;.target";
+    private static final String METHOD_TARGET = "Ljava/lang/reflect/Method;.target";
+
+    /** Overrides the reported API level (manifest targetSdk). */
+    public void setSdkInt(int sdkInt) {
+        this.sdkInt = sdkInt;
+    }
+
     private static String argKey(Object arg) {
         if (arg == null) {
             return "null";
@@ -2108,6 +2266,255 @@ public final class Interpreter {
         return ReflectResult.MISS;
     }
 
+    /** Resolves a declared method to exactly one dispatch target. */
+    private MethodTarget declaredMethod(String classDesc, String name,
+            List<String> parameters) {
+        MethodTarget target = new MethodTarget();
+        target.label = classDesc + "." + name;
+        target.parameters.addAll(parameters);
+        DexClass dex = dexes.findClass(classDesc);
+        if (dex != null) {
+            for (DexMethod candidate : dex.methods) {
+                if (candidate.name.equals(name)
+                        && candidate.parameterTypes.equals(parameters)) {
+                    target.dexMethod = candidate;
+                    target.dexHome = dex;
+                    return target;
+                }
+            }
+        }
+        StringBuilder prefix = new StringBuilder(classDesc).append("->")
+                .append(name).append('(');
+        for (String param : parameters) {
+            prefix.append(param);
+        }
+        prefix.append(')');
+        for (Map.Entry<String, HostMethod> entry : builtins.entrySet()) {
+            if (entry.getKey().startsWith(prefix.toString())) {
+                target.builtin = entry.getValue();
+                return target;
+            }
+        }
+        Class<?> host = isReflectable(classDesc) ? hostClass(classDesc) : null;
+        if (host != null) {
+            Class<?>[] params = new Class<?>[parameters.size()];
+            for (int i = 0; i < params.length; i++) {
+                try {
+                    params[i] = hostParamClass(parameters.get(i));
+                } catch (ClassNotFoundException | LinkageError e) {
+                    throw new VmThrow(new NoSuchMethodException(target.label));
+                }
+            }
+            try {
+                target.hostMethod = host.getDeclaredMethod(name, params);
+                return target;
+            } catch (NoSuchMethodException | SecurityException e) {
+                throw new VmThrow(new NoSuchMethodException(target.label));
+            }
+        }
+        throw new VmThrow(new NoSuchMethodException(target.label));
+    }
+
+    /** VmArray of VmClass to descriptors; null stays empty (no-arg). */
+    private static List<String> classArray(Object value) {
+        List<String> out = new ArrayList<>();
+        if (value instanceof VmArray) {
+            VmArray array = (VmArray) value;
+            for (int i = 0; i < array.length(); i++) {
+                Object element = array.get(i);
+                if (!(element instanceof VmClass)) {
+                    throw new VmException("not a class");
+                }
+                out.add(((VmClass) element).descriptor);
+            }
+        }
+        return out;
+    }
+
+    /** VmArray to length-exact values; null stays empty (no-arg). */
+    private static Object[] objectArray(Object value) {
+        if (!(value instanceof VmArray)) {
+            return new Object[0];
+        }
+        VmArray array = (VmArray) value;
+        Object[] out = new Object[array.length()];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = array.get(i);
+        }
+        return out;
+    }
+
+    /** Descriptor to host class for reflective parameter matching. */
+    private static Class<?> hostParamClass(String descriptor) throws ClassNotFoundException {
+        switch (descriptor) {
+            case "Z":
+                return boolean.class;
+            case "B":
+                return byte.class;
+            case "S":
+                return short.class;
+            case "C":
+                return char.class;
+            case "I":
+                return int.class;
+            case "J":
+                return long.class;
+            case "F":
+                return float.class;
+            case "D":
+                return double.class;
+            case "V":
+                return void.class;
+            default:
+                return Class.forName(
+                        descriptor.substring(1, descriptor.length() - 1).replace('/', '.'));
+        }
+    }
+
+    /** Invokes a resolved Method target through its own dispatch. */
+    private Object invokeTarget(MethodTarget target, Object receiver, Object[] callArgs) {
+        if (target.dexMethod != null) {
+            boolean isStatic = (target.dexMethod.accessFlags & ACC_STATIC) != 0;
+            Object thisRef = receiver;
+            if (isStatic) {
+                thisRef = null;
+                ensureInit(target.dexHome);
+            } else if (isNullish(receiver)) {
+                throw new NullPointerException("null receiver: " + target.label);
+            }
+            return execute(target.dexHome, target.dexMethod, thisRef, callArgs);
+        }
+        if (target.builtin != null) {
+            if (callArgs.length != target.parameters.size()) {
+                throw new IllegalArgumentException("arity: " + target.label);
+            }
+            try {
+                return target.builtin.invoke(isNullish(receiver) ? null : receiver,
+                        callArgs);
+            } catch (ClassCastException e) {
+                throw new VmException("bridge mismatch: " + target.label, e);
+            }
+        }
+        if (receiver instanceof VmObject || receiver instanceof VmArray
+                || receiver instanceof VmClass || receiver instanceof LazyHolder
+                || receiver instanceof FieldUpdater) {
+            throw new IllegalArgumentException("not a host receiver");
+        }
+        Method method = target.hostMethod;
+        Class<?>[] params = method.getParameterTypes();
+        if (callArgs.length != params.length) {
+            throw new IllegalArgumentException("arity: " + target.label);
+        }
+        Object[] hostArgs = new Object[callArgs.length];
+        for (int i = 0; i < callArgs.length; i++) {
+            hostArgs[i] = toHost(params[i], callArgs[i]);
+        }
+        try {
+            return boxReturn(method.invoke(isNullish(receiver) ? null : receiver,
+                    hostArgs));
+        } catch (IllegalAccessException e) {
+            throw new VmThrow(e);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            }
+            if (cause instanceof Error) {
+                throw (Error) cause;
+            }
+            throw new VmThrow(cause);
+        }
+    }
+
+    /** Resolves a field to exactly one read path. */
+    private FieldTarget declaredField(String classDesc, String name) {
+        FieldTarget target = new FieldTarget();
+        target.definingClass = classDesc;
+        target.name = name;
+        if (dexes.findClass(classDesc) != null) {
+            return target;
+        }
+        if (framework != null) {
+            String current = classDesc;
+            while (current != null) {
+                FwIndex.FwClass fw = framework.find(current);
+                if (fw == null) {
+                    break;
+                }
+                for (FwIndex.FwField field : fw.fields) {
+                    if (field.name.equals(name)) {
+                        target.type = field.type;
+                        return target;
+                    }
+                }
+                current = fw.superclass;
+            }
+        }
+        Class<?> host = isReflectable(classDesc) ? hostClass(classDesc) : null;
+        if (host != null) {
+            try {
+                target.hostField = host.getField(name);
+                return target;
+            } catch (NoSuchFieldException | SecurityException e) {
+                throw new VmThrow(new NoSuchFieldException(classDesc + "." + name));
+            }
+        }
+        throw new VmThrow(new NoSuchFieldException(classDesc + "." + name));
+    }
+
+    private static FieldTarget targetOf(Object receiver) {
+        if (!(receiver instanceof VmObject)) {
+            throw new VmException("not a field");
+        }
+        Object target = ((VmObject) receiver).getField(FIELD_TARGET);
+        if (!(target instanceof FieldTarget)) {
+            throw new VmException("not a field");
+        }
+        return (FieldTarget) target;
+    }
+
+    /** Reads through a resolved Field target. */
+    private Object fieldGet(FieldTarget target, Object receiver) {
+        if (target.hostField != null) {
+            Object hostRecv = null;
+            if (receiver != null && !isNullish(receiver)) {
+                if (receiver instanceof VmObject || receiver instanceof VmArray
+                        || receiver instanceof VmClass || receiver instanceof LazyHolder
+                        || receiver instanceof FieldUpdater) {
+                    throw new IllegalArgumentException("not a host receiver");
+                }
+                hostRecv = receiver;
+            }
+            try {
+                return boxReturn(target.hostField.get(hostRecv));
+            } catch (IllegalAccessException e) {
+                throw new VmThrow(e);
+            }
+        }
+        if (receiver != null && !isNullish(receiver)) {
+            if (!(receiver instanceof VmObject)) {
+                throw new IllegalArgumentException("not an instance");
+            }
+            return ((VmObject) receiver).getField(target.definingClass + "." + target.name);
+        }
+        String key = target.definingClass + "." + target.name;
+        if (statics.containsKey(key)) {
+            return statics.get(key);
+        }
+        if (target.type != null) {
+            Object constant = frameworkConstant(
+                    target.definingClass + "->" + target.name + ":" + target.type);
+            if (constant != null) {
+                return constant;
+            }
+        }
+        if (target.definingClass.equals("Landroid/os/Build$VERSION;")
+                && target.name.equals("SDK_INT")) {
+            return sdkInt;
+        }
+        return null;
+    }
+
     private VmException gapMessage(String defineDesc, MethodRef ref, String reference,
             Resolved resolved) {
         if (resolved.exists) {
@@ -2394,6 +2801,18 @@ public final class Interpreter {
                 return Outcome.value(System.identityHashCode(receiver));
             }
             return Outcome.value(receiver.hashCode());
+        }
+        if (ref.name.equals("clone") && noArgs
+                && ref.returnType.equals("Ljava/lang/Object;")) {
+            if (receiver instanceof VmArray) {
+                VmArray source = (VmArray) receiver;
+                VmArray copy = new VmArray(source.elementType, source.length());
+                for (int i = 0; i < copy.length(); i++) {
+                    copy.set(i, source.get(i));
+                }
+                return Outcome.value(copy);
+            }
+            return Outcome.MISS;
         }
         if (ref.name.equals("printStackTrace") && noArgs
                 && ref.returnType.equals("V")) {
@@ -2749,6 +3168,23 @@ public final class Interpreter {
                     arrayCopy(args);
                     return null;
                 });
+        // Runtime stays denied to reflection (exec/exit must not reach the
+        // host), but pure resource queries are safe numbers. getRuntime
+        // yields a placeholder; the queries below read the host JVM.
+        builtin("Ljava/lang/Runtime;->getRuntime()Ljava/lang/Runtime;",
+                (receiver, args) -> newPlaceholder("Ljava/lang/Runtime;"));
+        builtin("Ljava/lang/Runtime;->maxMemory()J",
+                (receiver, args) -> Runtime.getRuntime().maxMemory());
+        builtin("Ljava/lang/Runtime;->totalMemory()J",
+                (receiver, args) -> Runtime.getRuntime().totalMemory());
+        builtin("Ljava/lang/Runtime;->freeMemory()J",
+                (receiver, args) -> Runtime.getRuntime().freeMemory());
+        builtin("Ljava/lang/Runtime;->availableProcessors()I",
+                (receiver, args) -> Runtime.getRuntime().availableProcessors());
+        // System properties are unset headless (same as an Android runtime
+        // without them); callers null-check, and host values must not leak.
+        builtin("Ljava/lang/System;->getProperty(Ljava/lang/String;)Ljava/lang/String;",
+                (receiver, args) -> null);
 
         builtin("Ljava/util/Objects;->equals(Ljava/lang/Object;Ljava/lang/Object;)Z",
                 (receiver, args) -> bool(java.util.Objects.equals(args[0], args[1])));
@@ -2768,6 +3204,35 @@ public final class Interpreter {
                 });
         builtin("Ljava/util/Objects;->requireNonNull(Ljava/lang/Object;)Ljava/lang/Object;",
                 (receiver, args) -> java.util.Objects.requireNonNull(args[0]));
+        // copyOf/copyOfRange on reference arrays preserve the runtime
+        // component type (newArray semantics); the host-reflected generic
+        // overloads would erase it to Object[] and break check-cast.
+        builtin("Ljava/util/Arrays;->copyOf([Ljava/lang/Object;I)[Ljava/lang/Object;",
+                (receiver, args) -> {
+                    VmArray source = checkedArray(args[0]);
+                    int length = asInt(args[1]);
+                    VmArray out = new VmArray(source.elementType, length);
+                    int copy = Math.min(length, source.length());
+                    for (int i = 0; i < copy; i++) {
+                        out.set(i, source.get(i));
+                    }
+                    return out;
+                });
+        builtin("Ljava/util/Arrays;->copyOfRange([Ljava/lang/Object;II)[Ljava/lang/Object;",
+                (receiver, args) -> {
+                    VmArray source = checkedArray(args[0]);
+                    int from = asInt(args[1]);
+                    int to = asInt(args[2]);
+                    if (from < 0 || from > source.length()) {
+                        throw new ArrayIndexOutOfBoundsException(from);
+                    }
+                    VmArray out = new VmArray(source.elementType, to - from);
+                    int copy = Math.min(to, source.length()) - from;
+                    for (int i = 0; i < copy; i++) {
+                        out.set(i, source.get(from + i));
+                    }
+                    return out;
+                });
         builtin("Ljava/util/Objects;->requireNonNull(Ljava/lang/Object;Ljava/lang/String;)"
                 + "Ljava/lang/Object;",
                 (receiver, args) -> java.util.Objects.requireNonNull(args[0],
@@ -2782,18 +3247,21 @@ public final class Interpreter {
         builtin("Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V",
                 (receiver, args) -> null);
         builtin("Landroid/app/Activity;->getWindow()Landroid/view/Window;",
-                (receiver, args) -> newPlaceholder("Landroid/view/Window;"));
+                (receiver, args) -> cachedPlaceholder((VmObject) receiver,
+                        "Landroid/app/Activity;.mWindow", "Landroid/view/Window;"));
         builtin("Landroid/view/Window;->getDecorView()Landroid/view/View;",
-                (receiver, args) -> newPlaceholder("Landroid/view/View;"));
+                (receiver, args) -> cachedPlaceholder((VmObject) receiver,
+                        "Landroid/view/Window;.mDecor", "Landroid/view/View;"));
         builtin("Landroid/view/Window;->findViewById(I)Landroid/view/View;",
-                (receiver, args) -> findContent(args));
+                (receiver, args) -> findContent((VmObject) receiver, args));
         builtin("Landroid/app/Activity;->findViewById(I)Landroid/view/View;",
-                (receiver, args) -> findContent(args));
+                (receiver, args) -> findContent((VmObject) receiver, args));
         builtin("Landroid/view/View;->findViewById(I)Landroid/view/View;",
-                (receiver, args) -> findContent(args));
+                (receiver, args) -> findContent((VmObject) receiver, args));
         // The content frame is childless until setContentView installs one.
         builtin("Landroid/view/ViewGroup;->getChildAt(I)Landroid/view/View;",
-                (receiver, args) -> null);
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/view/ViewGroup;.mFirstChild"));
         // View construction bottoms out here: keep the context (getContext
         // is the reader half); attrs/defStyle have no headless consumer yet.
         builtin("Landroid/view/ViewGroup;-><init>(Landroid/content/Context;"
@@ -2809,31 +3277,70 @@ public final class Interpreter {
                 (receiver, args) -> null);
         builtin("Landroid/view/View;->setClipToPadding(Z)V",
                 (receiver, args) -> null);
-        // Headless views never attach to a window.
+        // Detached until setContentView joins the view to a window (which is
+        // also what re-triggers composition on device).
         builtin("Landroid/view/View;->isAttachedToWindow()Z",
-                (receiver, args) -> 0);
-        // ...and therefore have no parent.
+                (receiver, args) -> {
+                    Object marked = ((VmObject) receiver)
+                            .getField("Landroid/view/View;.mAttached");
+                    return marked == null ? 0 : asInt(marked);
+                });
+        // One Choreographer per interpreter (single display, single thread).
+        builtin("Landroid/view/Choreographer;->getInstance()Landroid/view/Choreographer;",
+                (receiver, args) -> {
+                    if (choreographer == null) {
+                        choreographer = newPlaceholder("Landroid/view/Choreographer;");
+                    }
+                    return choreographer;
+                });
+        // Parentless until setContentView links the content frame.
         builtin("Landroid/view/View;->getParent()Landroid/view/ViewParent;",
-                (receiver, args) -> null);
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/view/View;.mParent"));
+        // ViewParent receivers are always views here; same linkage.
+        builtin("Landroid/view/ViewParent;->getParent()Landroid/view/ViewParent;",
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/view/View;.mParent"));
+        // Headless views are never inflated nor setId'd: NO_ID (-1).
+        builtin("Landroid/view/View;->getId()I",
+                (receiver, args) -> -1);
+        // Attached views post to the main looper (inline, like Handler.post);
+        // detached views have no handler, as on device.
+        builtin("Landroid/view/View;->getHandler()Landroid/os/Handler;",
+                (receiver, args) -> {
+                    VmObject view = (VmObject) receiver;
+                    Object marked = view.getField("Landroid/view/View;.mAttached");
+                    if (marked == null || asInt(marked) == 0) {
+                        return null;
+                    }
+                    Object handler = view.getField("Landroid/view/View;.mHandler");
+                    if (!(handler instanceof VmObject)) {
+                        VmObject created = newPlaceholder("Landroid/os/Handler;");
+                        initHandler(created, mainLooper(), null);
+                        view.putField("Landroid/view/View;.mHandler", created);
+                        return created;
+                    }
+                    return handler;
+                });
         builtin("Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;",
                 (receiver, args) -> newPlaceholder("Landroid/view/ViewTreeObserver;"));
         // Observer callbacks never fire headless; registration is a no-op.
         builtin("Landroid/view/ViewTreeObserver;->addOnDrawListener("
                 + "Landroid/view/ViewTreeObserver$OnDrawListener;)V",
                 (receiver, args) -> null);
-        // Installing the content view only matters to a real window, but the
-        // view is retained so the probe can inspect the composed content.
+        // Installing the content view joins the window hierarchy: the view
+        // gains the content frame as parent (so ViewTree walks reach the
+        // decor tags), becomes the frame's first child, and attaches — the
+        // retained handle lets the probe inspect the composed content.
         builtin("Landroid/app/Activity;->setContentView(Landroid/view/View;)V",
                 (receiver, args) -> {
-                    ((VmObject) receiver).putField("Landroid/app/Activity;.mContentView",
-                            args[0]);
+                    joinWindow((VmObject) receiver, (VmObject) args[0]);
                     return null;
                 });
         builtin("Landroid/app/Activity;->setContentView(Landroid/view/View;"
                 + "Landroid/view/ViewGroup$LayoutParams;)V",
                 (receiver, args) -> {
-                    ((VmObject) receiver).putField("Landroid/app/Activity;.mContentView",
-                            args[0]);
+                    joinWindow((VmObject) receiver, (VmObject) args[0]);
                     return null;
                 });
         // Attach listeners never fire headless; registration is a no-op.
@@ -3059,6 +3566,21 @@ public final class Interpreter {
                     initHandler((VmObject) receiver, args[0], args[1]);
                     return null;
                 });
+        // createAsync is new Handler(looper[, callback]) with the async flag,
+        // which is unobservable while posts run inline.
+        builtin("Landroid/os/Handler;->createAsync(Landroid/os/Looper;)Landroid/os/Handler;",
+                (receiver, args) -> {
+                    VmObject handler = newPlaceholder("Landroid/os/Handler;");
+                    initHandler(handler, args[0], null);
+                    return handler;
+                });
+        builtin("Landroid/os/Handler;->createAsync(Landroid/os/Looper;"
+                + "Landroid/os/Handler$Callback;)Landroid/os/Handler;",
+                (receiver, args) -> {
+                    VmObject handler = newPlaceholder("Landroid/os/Handler;");
+                    initHandler(handler, args[0], args[1]);
+                    return handler;
+                });
         builtin("Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z",
                 (receiver, args) -> {
                     VmTask.runnable(this, args[0], "run").call();
@@ -3163,6 +3685,146 @@ public final class Interpreter {
                             .putField(((FieldUpdater) receiver).key(), args[1]);
                     return null;
                 });
+        // Long/Integer updaters share the model: plain field reads/writes
+        // (single thread, no volatility), longs compared by value.
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->newUpdater("
+                + "Ljava/lang/Class;Ljava/lang/String;)"
+                + "Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;",
+                (receiver, args) -> new FieldUpdater(
+                        ((VmClass) args[0]).descriptor, argString(args, 1)));
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->compareAndSet("
+                + "Ljava/lang/Object;JJ)Z",
+                (receiver, args) -> bool(longCas((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), argLong(args, 1),
+                        argLong(args, 2))));
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->weakCompareAndSet("
+                + "Ljava/lang/Object;JJ)Z",
+                (receiver, args) -> bool(longCas((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), argLong(args, 1),
+                        argLong(args, 2))));
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->set("
+                + "Ljava/lang/Object;J)V",
+                (receiver, args) -> {
+                    FieldUpdater.checkedTarget(args[0])
+                            .putField(((FieldUpdater) receiver).key(), args[1]);
+                    return null;
+                });
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->lazySet("
+                + "Ljava/lang/Object;J)V",
+                (receiver, args) -> {
+                    FieldUpdater.checkedTarget(args[0])
+                            .putField(((FieldUpdater) receiver).key(), args[1]);
+                    return null;
+                });
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->get("
+                + "Ljava/lang/Object;)J",
+                (receiver, args) -> {
+                    Object have = FieldUpdater.checkedTarget(args[0])
+                            .getField(((FieldUpdater) receiver).key());
+                    return have == null ? 0L : asLong(have);
+                });
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->getAndSet("
+                + "Ljava/lang/Object;J)J",
+                (receiver, args) -> {
+                    VmObject target = FieldUpdater.checkedTarget(args[0]);
+                    Object have = target.getField(((FieldUpdater) receiver).key());
+                    long old = have == null ? 0L : asLong(have);
+                    target.putField(((FieldUpdater) receiver).key(), args[1]);
+                    return old;
+                });
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->getAndAdd("
+                + "Ljava/lang/Object;J)J",
+                (receiver, args) -> longAdd((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), argLong(args, 1), false));
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->addAndGet("
+                + "Ljava/lang/Object;J)J",
+                (receiver, args) -> longAdd((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), argLong(args, 1), true));
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->getAndIncrement("
+                + "Ljava/lang/Object;)J",
+                (receiver, args) -> longAdd((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), 1L, false));
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->incrementAndGet("
+                + "Ljava/lang/Object;)J",
+                (receiver, args) -> longAdd((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), 1L, true));
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->getAndDecrement("
+                + "Ljava/lang/Object;)J",
+                (receiver, args) -> longAdd((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), -1L, false));
+        builtin("Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->decrementAndGet("
+                + "Ljava/lang/Object;)J",
+                (receiver, args) -> longAdd((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), -1L, true));
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->newUpdater("
+                + "Ljava/lang/Class;Ljava/lang/String;)"
+                + "Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;",
+                (receiver, args) -> new FieldUpdater(
+                        ((VmClass) args[0]).descriptor, argString(args, 1)));
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->compareAndSet("
+                + "Ljava/lang/Object;II)Z",
+                (receiver, args) -> bool(intCas((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), argInt(args, 1),
+                        argInt(args, 2))));
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->weakCompareAndSet("
+                + "Ljava/lang/Object;II)Z",
+                (receiver, args) -> bool(intCas((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), argInt(args, 1),
+                        argInt(args, 2))));
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->set("
+                + "Ljava/lang/Object;I)V",
+                (receiver, args) -> {
+                    FieldUpdater.checkedTarget(args[0])
+                            .putField(((FieldUpdater) receiver).key(), args[1]);
+                    return null;
+                });
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->lazySet("
+                + "Ljava/lang/Object;I)V",
+                (receiver, args) -> {
+                    FieldUpdater.checkedTarget(args[0])
+                            .putField(((FieldUpdater) receiver).key(), args[1]);
+                    return null;
+                });
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->get("
+                + "Ljava/lang/Object;)I",
+                (receiver, args) -> {
+                    Object have = FieldUpdater.checkedTarget(args[0])
+                            .getField(((FieldUpdater) receiver).key());
+                    return have == null ? 0 : asInt(have);
+                });
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->getAndSet("
+                + "Ljava/lang/Object;I)I",
+                (receiver, args) -> {
+                    VmObject target = FieldUpdater.checkedTarget(args[0]);
+                    Object have = target.getField(((FieldUpdater) receiver).key());
+                    int old = have == null ? 0 : asInt(have);
+                    target.putField(((FieldUpdater) receiver).key(), args[1]);
+                    return old;
+                });
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->getAndAdd("
+                + "Ljava/lang/Object;I)I",
+                (receiver, args) -> intAdd((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), argInt(args, 1), false));
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->addAndGet("
+                + "Ljava/lang/Object;I)I",
+                (receiver, args) -> intAdd((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), argInt(args, 1), true));
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->getAndIncrement("
+                + "Ljava/lang/Object;)I",
+                (receiver, args) -> intAdd((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), 1, false));
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->incrementAndGet("
+                + "Ljava/lang/Object;)I",
+                (receiver, args) -> intAdd((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), 1, true));
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->getAndDecrement("
+                + "Ljava/lang/Object;)I",
+                (receiver, args) -> intAdd((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), -1, false));
+        builtin("Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->decrementAndGet("
+                + "Ljava/lang/Object;)I",
+                (receiver, args) -> intAdd((FieldUpdater) receiver,
+                        FieldUpdater.checkedTarget(args[0]), -1, true));
 
         builtin("Ljava/lang/Class;->getName()Ljava/lang/String;",
                 (receiver, args) -> classNameOf(((VmClass) receiver).descriptor));
@@ -3210,6 +3872,120 @@ public final class Interpreter {
                     }
                     throw new VmThrow(new ClassNotFoundException(binary));
                 });
+        // There is one class universe (dex + framework + host), so its loader
+        // is a singleton placeholder; services resolve to nothing (no
+        // META-INF/services providers exist in that universe).
+        builtin("Ljava/lang/Class;->getClassLoader()Ljava/lang/ClassLoader;",
+                (receiver, args) -> newPlaceholder("Ljava/lang/ClassLoader;"));
+        builtin("Ljava/util/ServiceLoader;->load(Ljava/lang/Class;)Ljava/util/ServiceLoader;",
+                (receiver, args) -> newPlaceholder("Ljava/util/ServiceLoader;"));
+        builtin("Ljava/util/ServiceLoader;->load(Ljava/lang/Class;Ljava/lang/ClassLoader;)"
+                + "Ljava/util/ServiceLoader;",
+                (receiver, args) -> newPlaceholder("Ljava/util/ServiceLoader;"));
+        builtin("Ljava/util/ServiceLoader;->iterator()Ljava/util/Iterator;",
+                (receiver, args) -> java.util.Collections.emptyIterator());
+        // Reflective factories (e.g. coroutines' Handler.createAsync
+        // lookup) resolve through the model: the Method placeholder records
+        // its target, and invoke reuses the matching dispatch. Host
+        // reflection stays behind the deny list; missing methods fail lookup
+        // with NoSuchMethodException, as on device.
+        builtin("Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String;[Ljava/lang/Class;)"
+                + "Ljava/lang/reflect/Method;",
+                (receiver, args) -> {
+                    if (!(receiver instanceof VmClass)) {
+                        throw new VmException("not a class");
+                    }
+                    String classDesc = ((VmClass) receiver).descriptor;
+                    MethodTarget target = declaredMethod(classDesc, argString(args, 0),
+                            classArray(args[1]));
+                    VmObject method = newPlaceholder("Ljava/lang/reflect/Method;");
+                    method.putField(METHOD_TARGET, target);
+                    return method;
+                });
+        builtin("Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)"
+                + "Ljava/lang/Object;",
+                (receiver, args) -> {
+                    if (!(receiver instanceof VmObject)) {
+                        throw new VmException("not a method");
+                    }
+                    Object target = ((VmObject) receiver).getField(METHOD_TARGET);
+                    if (!(target instanceof MethodTarget)) {
+                        throw new VmException("not a method");
+                    }
+                    return invokeTarget((MethodTarget) target, args[0],
+                            objectArray(args[1]));
+                });
+        // Field reads observe the same stores as direct access (interpreter
+        // statics, object fields, jar constants, and the reported SDK_INT);
+        // missing fields fail lookup, as on device.
+        builtin("Ljava/lang/Class;->getField(Ljava/lang/String;)Ljava/lang/reflect/Field;",
+                (receiver, args) -> {
+                    if (!(receiver instanceof VmClass)) {
+                        throw new VmException("not a class");
+                    }
+                    FieldTarget target = declaredField(
+                            ((VmClass) receiver).descriptor, argString(args, 0));
+                    VmObject field = newPlaceholder("Ljava/lang/reflect/Field;");
+                    field.putField(FIELD_TARGET, target);
+                    return field;
+                });
+        builtin("Ljava/lang/reflect/Field;->get(Ljava/lang/Object;)Ljava/lang/Object;",
+                (receiver, args) -> fieldGet(targetOf(receiver), args[0]));
+        builtin("Ljava/lang/reflect/Field;->getInt(Ljava/lang/Object;)I",
+                (receiver, args) -> {
+                    Object value = fieldGet(targetOf(receiver), args[0]);
+                    return value == null ? 0 : asInt(value);
+                });
+        // Suppressed exceptions record per receiver. Host pairs delegate so
+        // stack traces stay complete; mixed pairs land in the side table
+        // (model objects cannot cross into host calls).
+        builtin("Ljava/lang/Throwable;->addSuppressed(Ljava/lang/Throwable;)V",
+                (receiver, args) -> {
+                    if (args[0] == null || isNullish(args[0])) {
+                        throw new NullPointerException("null suppressed");
+                    }
+                    if (receiver instanceof java.lang.Throwable
+                            && args[0] instanceof java.lang.Throwable) {
+                        ((java.lang.Throwable) receiver)
+                                .addSuppressed((java.lang.Throwable) args[0]);
+                        return null;
+                    }
+                    List<Object> list = suppressed.get(receiver);
+                    if (list == null) {
+                        list = new ArrayList<>();
+                        suppressed.put(receiver, list);
+                    }
+                    list.add(args[0]);
+                    return null;
+                });
+        builtin("Ljava/lang/Throwable;->getSuppressed()[Ljava/lang/Throwable;",
+                (receiver, args) -> {
+                    List<Object> extra = suppressed.get(receiver);
+                    if (receiver instanceof java.lang.Throwable) {
+                        Object[] host =
+                                ((java.lang.Throwable) receiver).getSuppressed();
+                        if (extra == null || extra.isEmpty()) {
+                            return boxReturn(host);
+                        }
+                        VmArray out = new VmArray("Ljava/lang/Throwable;",
+                                host.length + extra.size());
+                        for (int i = 0; i < host.length; i++) {
+                            out.set(i, host[i]);
+                        }
+                        for (int i = 0; i < extra.size(); i++) {
+                            out.set(host.length + i, extra.get(i));
+                        }
+                        return out;
+                    }
+                    if (extra == null) {
+                        return new VmArray("Ljava/lang/Throwable;", 0);
+                    }
+                    VmArray out = new VmArray("Ljava/lang/Throwable;", extra.size());
+                    for (int i = 0; i < extra.size(); i++) {
+                        out.set(i, extra.get(i));
+                    }
+                    return out;
+                });
         builtin("Ljava/lang/Enum;->name()Ljava/lang/String;",
                 (receiver, args) -> {
                     Object name = ((VmObject) receiver).getField("Ljava/lang/Enum;.name");
@@ -3226,6 +4002,15 @@ public final class Interpreter {
                         throw new VmException("enum without ordinal");
                     }
                     return Integer.compare(asInt(left), asInt(right));
+                });
+        builtin("Ljava/lang/Enum;->ordinal()I",
+                (receiver, args) -> {
+                    Object ordinal = ((VmObject) receiver)
+                            .getField("Ljava/lang/Enum;.ordinal");
+                    if (ordinal == null) {
+                        throw new VmException("enum without ordinal");
+                    }
+                    return asInt(ordinal);
                 });
         builtin("Ljava/lang/Enum;->valueOf(Ljava/lang/Class;Ljava/lang/String;)"
                 + "Ljava/lang/Object;",
@@ -3923,6 +4708,44 @@ public final class Interpreter {
         return false;
     }
 
+    private static boolean longCas(FieldUpdater updater, VmObject target, long expect,
+            long update) {
+        Object have = target.getField(updater.key());
+        long current = have == null ? 0L : asLong(have);
+        if (current != expect) {
+            return false;
+        }
+        target.putField(updater.key(), update);
+        return true;
+    }
+
+    private static long longAdd(FieldUpdater updater, VmObject target, long delta,
+            boolean retNew) {
+        Object have = target.getField(updater.key());
+        long old = have == null ? 0L : asLong(have);
+        target.putField(updater.key(), old + delta);
+        return retNew ? old + delta : old;
+    }
+
+    private static boolean intCas(FieldUpdater updater, VmObject target, int expect,
+            int update) {
+        Object have = target.getField(updater.key());
+        int current = have == null ? 0 : asInt(have);
+        if (current != expect) {
+            return false;
+        }
+        target.putField(updater.key(), update);
+        return true;
+    }
+
+    private static int intAdd(FieldUpdater updater, VmObject target, int delta,
+            boolean retNew) {
+        Object have = target.getField(updater.key());
+        int old = have == null ? 0 : asInt(have);
+        target.putField(updater.key(), old + delta);
+        return retNew ? old + delta : old;
+    }
+
     private static int parseColor(String text) {
         if (text.startsWith("#")) {
             String hex = text.substring(1);
@@ -3987,14 +4810,65 @@ public final class Interpreter {
     /**
      * PhoneWindow always installs the content frame ({@code android.R.id.content}),
      * so that id resolves even headless; every other id misses (no inflated
-     * hierarchy). Returned as a ViewGroup so the setContent check-cast holds.
+     * hierarchy). The frame is cached per view and parented to it, so
+     * ViewTree walks climb toward the decor tags. Returned as a ViewGroup so
+     * the setContent check-cast holds.
      */
-    private Object findContent(Object[] args) {
-        if (args.length > 0 && args[0] instanceof Number
-                && ((Number) args[0]).intValue() == 0x1020002) {
-            return newPlaceholder("Landroid/view/ViewGroup;");
+    private Object findContent(VmObject view, Object[] args) {
+        if (args.length == 0 || !(args[0] instanceof Number)
+                || ((Number) args[0]).intValue() != 0x1020002) {
+            return null;
         }
-        return null;
+        Object have = view.getField("Landroid/view/View;.mContentFrame");
+        if (have instanceof VmObject) {
+            return have;
+        }
+        VmObject frame = newPlaceholder("Landroid/view/ViewGroup;");
+        frame.putField("Landroid/view/View;.mParent", view);
+        view.putField("Landroid/view/View;.mContentFrame", frame);
+        return frame;
+    }
+
+    /** Read-or-create a cached placeholder child (stable framework identity). */
+    private VmObject cachedPlaceholder(VmObject owner, String key, String type) {
+        Object have = owner.getField(key);
+        if (have instanceof VmObject) {
+            return (VmObject) have;
+        }
+        VmObject created = newPlaceholder(type);
+        owner.putField(key, created);
+        return created;
+    }
+
+    /** The activity window's content frame, created on demand. */
+    private VmObject contentFrame(VmObject activity) {
+        VmObject window = cachedPlaceholder(activity, "Landroid/app/Activity;.mWindow",
+                "Landroid/view/Window;");
+        VmObject decor = cachedPlaceholder(window, "Landroid/view/Window;.mDecor",
+                "Landroid/view/View;");
+        Object have = decor.getField("Landroid/view/View;.mContentFrame");
+        if (have instanceof VmObject) {
+            return (VmObject) have;
+        }
+        VmObject frame = newPlaceholder("Landroid/view/ViewGroup;");
+        frame.putField("Landroid/view/View;.mParent", decor);
+        decor.putField("Landroid/view/View;.mContentFrame", frame);
+        return frame;
+    }
+
+    /**
+     * Joins the view to the window hierarchy: parented under the content
+     * frame (so ViewTree walks reach the decor tags), recorded as the
+     * frame's first child (so a later setContent reuses it, as on device),
+     * marked attached, and retained for the probe. Mirrors what
+     * Window.setContentView + addView achieve on device, minus drawing.
+     */
+    private void joinWindow(VmObject activity, VmObject view) {
+        activity.putField("Landroid/app/Activity;.mContentView", view);
+        VmObject frame = contentFrame(activity);
+        view.putField("Landroid/view/View;.mParent", frame);
+        frame.putField("Landroid/view/ViewGroup;.mFirstChild", view);
+        view.putField("Landroid/view/View;.mAttached", 1);
     }
 
     private static int jump(Map<Integer, Integer> addresses, Insn insn) {

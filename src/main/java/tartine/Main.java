@@ -20,6 +20,7 @@ import tartine.graphics.DesktopWindow;
 import tartine.vm.Interpreter;
 import tartine.vm.VmException;
 import tartine.vm.VmObject;
+import tartine.vm.VmThrow;
 
 /**
  * Entry point.
@@ -175,7 +176,7 @@ public final class Main {
             // Probe: run the real constructor chain (in-dex bodies execute,
             // framework <init> bodies are no-ops), then onCreate.
             Interpreter interpreter = new Interpreter(dexes);
-            FwIndex framework = loadFramework(manifest);
+            FwIndex framework = loadFramework(manifest, interpreter);
             if (framework != null) {
                 interpreter.setFramework(framework);
             }
@@ -208,6 +209,10 @@ public final class Main {
             } catch (RuntimeException bug) {
                 System.out.println("failed after " + interpreter.steps() + " steps with "
                         + bug);
+                if (bug instanceof VmThrow && ((VmThrow) bug).value instanceof VmObject) {
+                    System.out.println("thrown: "
+                            + ((VmObject) ((VmThrow) bug).value).type.type);
+                }
                 printTrace(interpreter);
                 bug.printStackTrace(System.err);
                 return null;
@@ -271,9 +276,64 @@ public final class Main {
         } catch (RuntimeException e) {
             System.out.println("content lambda: unreadable (" + e.getMessage() + ")");
         }
+        // setContentView joined the view to a window; on device
+        // onAttachedToWindow would now start composition. Drive it.
+        driveComposition(dexes, interpreter, view);
     }
 
-    private static FwIndex loadFramework(BinaryXml.Element manifest) {
+    /**
+     * Starts composition on a deferred ComposeView (the driver's equivalent
+     * of onAttachedToWindow) and reports the result. Gaps inside composition
+     * are the next worklist, not probe failures.
+     */
+    private static void driveComposition(DexSet dexes, Interpreter interpreter,
+            VmObject view) {
+        Object deferred = view.getField("Landroidx/compose/ui/platform/ComposeView;"
+                + ".shouldCreateCompositionOnAttachedToWindow");
+        if (!Integer.valueOf(1).equals(deferred)) {
+            return;
+        }
+        DexMethod create = null;
+        DexClass home = view.type;
+        while (home != null && create == null) {
+            for (DexMethod candidate : home.methods) {
+                if (candidate.name.equals("createComposition")
+                        && candidate.parameterTypes.isEmpty()
+                        && (candidate.accessFlags & 0x0008) == 0) {
+                    create = candidate;
+                    break;
+                }
+            }
+            if (create == null) {
+                home = home.superclass == null ? null : dexes.findClass(home.superclass);
+            }
+        }
+        if (create == null) {
+            System.out.println("composition: no createComposition to drive");
+            return;
+        }
+        try {
+            interpreter.invoke(view.type, create, view);
+            System.out.println("createComposition returned after " + interpreter.steps()
+                    + " steps");
+        } catch (RuntimeException e) {
+            System.out.println("composition blocked at: " + e.getMessage());
+            if (e instanceof VmThrow) {
+                System.out.println("thrown: " + describe(((VmThrow) e).value));
+            }
+            printTrace(interpreter);
+        }
+        System.out.println("composition: " + describe(view.getField(
+                "Landroidx/compose/ui/platform/AbstractComposeView;.composition")));
+    }
+
+    private static String describe(Object value) {
+        return value instanceof VmObject
+                ? ((VmObject) value).type.type : String.valueOf(value);
+    }
+
+    private static FwIndex loadFramework(BinaryXml.Element manifest,
+            Interpreter interpreter) {
         int targetSdk = -1;
         BinaryXml.Element usesSdk = manifest.child("uses-sdk");
         if (usesSdk != null) {
@@ -282,6 +342,9 @@ public final class Main {
             } catch (NumberFormatException | NullPointerException e) {
                 targetSdk = -1;
             }
+        }
+        if (targetSdk > 0) {
+            interpreter.setSdkInt(targetSdk);
         }
         java.nio.file.Path jar = Sdk.findJar(targetSdk);
         if (jar == null) {

@@ -15,13 +15,19 @@ import org.jf.dexlib2.builder.instruction.BuilderInstruction11n;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction11x;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction12x;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction21c;
+import org.jf.dexlib2.builder.instruction.BuilderInstruction21ih;
+import org.jf.dexlib2.builder.instruction.BuilderInstruction21lh;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction21s;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction21s;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction22b;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction22c;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction23x;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction31i;
+import org.jf.dexlib2.builder.instruction.BuilderInstruction31t;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction35c;
+import org.jf.dexlib2.builder.instruction.BuilderInstruction3rc;
+import org.jf.dexlib2.builder.instruction.BuilderArrayPayload;
+import org.jf.dexlib2.builder.instruction.BuilderPackedSwitchPayload;
 import org.jf.dexlib2.immutable.ImmutableMethodParameter;
 import org.jf.dexlib2.immutable.reference.ImmutableFieldReference;
 import org.jf.dexlib2.immutable.reference.ImmutableMethodReference;
@@ -116,6 +122,17 @@ public final class FixtureDex {
                 Collections.emptySet(),
                 Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
                 Collections.singletonList(orphanInit));
+
+        // Boom: a dex-defined throwable (stays a model object, unlike
+        // java.lang throwables which allocate as host exceptions).
+        BuilderMethod boomInit = trivialInit(builder, objectInit, "Ltest/Boom;",
+                "Ljava/lang/Exception;");
+        builder.internClassDef("Ltest/Boom;", AccessFlags.PUBLIC.getValue(),
+                "Ljava/lang/Exception;",
+                Collections.<String>emptyList(), "Boom.java",
+                Collections.emptySet(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.singletonList(boomInit));
 
         BuilderMethodReference helloId = builder.internMethodReference(
                 new ImmutableMethodReference(HELLO, "id",
@@ -1614,12 +1631,22 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), linkedImpl);
 
-        // blockedExec(): Runtime.getRuntime stays denied.
-        MutableMethodImplementation blockedImpl = new MutableMethodImplementation(1);
+        // blockedExec(): Runtime.exec stays denied (getRuntime itself is a
+        // harmless placeholder; only the escape hatch is blocked).
+        MutableMethodImplementation blockedImpl = new MutableMethodImplementation(2);
         blockedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0,
                 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Ljava/lang/Runtime;", "getRuntime",
                         Collections.<String>emptyList(), "Ljava/lang/Runtime;"))));
+        blockedImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        blockedImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("id")));
+        blockedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Runtime;", "exec",
+                        Collections.singletonList("Ljava/lang/String;"),
+                        "Ljava/lang/Process;"))));
+        blockedImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
         blockedImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
         BuilderMethod blockedExec = builder.internMethod(HELLO, "blockedExec",
                 Collections.<ImmutableMethodParameter>emptyList(), "V",
@@ -2072,6 +2099,660 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), contentViewImpl);
 
+        // choreoDemo(): Choreographer.getInstance() yields a singleton-ish.
+        MutableMethodImplementation choreoImpl = new MutableMethodImplementation(1);
+        choreoImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/Choreographer;", "getInstance",
+                        Collections.<String>emptyList(),
+                        "Landroid/view/Choreographer;"))));
+        choreoImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        choreoImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod choreoDemo = builder.internMethod(HELLO, "choreoDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), choreoImpl);
+
+        // handlerAsyncDemo(): Handler.createAsync(mainLooper) builds a handler.
+        MutableMethodImplementation handlerAsyncImpl = new MutableMethodImplementation(1);
+        handlerAsyncImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Looper;", "getMainLooper",
+                        Collections.<String>emptyList(), "Landroid/os/Looper;"))));
+        handlerAsyncImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        handlerAsyncImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Handler;", "createAsync",
+                        Collections.singletonList("Landroid/os/Looper;"),
+                        "Landroid/os/Handler;"))));
+        handlerAsyncImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        handlerAsyncImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod handlerAsyncDemo = builder.internMethod(HELLO, "handlerAsyncDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), handlerAsyncImpl);
+
+        // high16Demo(): const/high16 with the bits of float 1.0.
+        MutableMethodImplementation high16Impl = new MutableMethodImplementation(1);
+        high16Impl.addInstruction(
+                new BuilderInstruction21ih(Opcode.CONST_HIGH16, 0, 0x3F800000));
+        high16Impl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod high16Demo = builder.internMethod(HELLO, "high16Demo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), high16Impl);
+
+        // wideHigh16Demo(): const-wide/high16 with the bits of double 1.0.
+        MutableMethodImplementation wideHigh16Impl = new MutableMethodImplementation(1);
+        wideHigh16Impl.addInstruction(new BuilderInstruction21lh(Opcode.CONST_WIDE_HIGH16, 0,
+                0x3FF0000000000000L));
+        wideHigh16Impl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_WIDE, 0));
+        BuilderMethod wideHigh16Demo = builder.internMethod(HELLO, "wideHigh16Demo",
+                Collections.<ImmutableMethodParameter>emptyList(), "J",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), wideHigh16Impl);
+
+        // fillDemo(): new int[]{1,2,3} via fill-array-data; returns a[1].
+        // Labels bind to existing locations, so the payload is added first
+        // and the fill inserted before it (dexlib2 shifts the rest along).
+        MutableMethodImplementation fillImpl = new MutableMethodImplementation(2);
+        fillImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 3));
+        fillImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 0, 1,
+                builder.internTypeReference("[I")));
+        fillImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 1));
+        fillImpl.addInstruction(new BuilderInstruction23x(Opcode.AGET, 0, 0, 1));
+        fillImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        fillImpl.addInstruction(new BuilderArrayPayload(4, Arrays.asList(1, 2, 3)));
+        Label fillData = fillImpl.newLabelForIndex(5);
+        fillImpl.addInstruction(2,
+                new BuilderInstruction31t(Opcode.FILL_ARRAY_DATA, 0, fillData));
+        BuilderMethod fillDemo = builder.internMethod(HELLO, "fillDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), fillImpl);
+
+        // runtimeDemo(): Runtime.getRuntime().maxMemory() is positive.
+        MutableMethodImplementation runtimeImpl = new MutableMethodImplementation(1);
+        runtimeImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Runtime;", "getRuntime",
+                        Collections.<String>emptyList(), "Ljava/lang/Runtime;"))));
+        runtimeImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        runtimeImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Runtime;", "maxMemory",
+                        Collections.<String>emptyList(), "J"))));
+        runtimeImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_WIDE, 0));
+        runtimeImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_WIDE, 0));
+        BuilderMethod runtimeDemo = builder.internMethod(HELLO, "runtimeDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "J",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), runtimeImpl);
+
+        // cpuDemo(): Runtime.getRuntime().availableProcessors() is positive.
+        MutableMethodImplementation cpuImpl = new MutableMethodImplementation(1);
+        cpuImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Runtime;", "getRuntime",
+                        Collections.<String>emptyList(), "Ljava/lang/Runtime;"))));
+        cpuImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        cpuImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Runtime;", "availableProcessors",
+                        Collections.<String>emptyList(), "I"))));
+        cpuImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        cpuImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod cpuDemo = builder.internMethod(HELLO, "cpuDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), cpuImpl);
+
+        // propDemo(): unknown system properties stay null headless.
+        MutableMethodImplementation propImpl = new MutableMethodImplementation(1);
+        propImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("tartine.missing")));
+        propImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/System;", "getProperty",
+                        Collections.singletonList("Ljava/lang/String;"),
+                        "Ljava/lang/String;"))));
+        propImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        propImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod propDemo = builder.internMethod(HELLO, "propDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), propImpl);
+
+        // windowDemo(): Activity.getWindow() yields a window.
+        MutableMethodImplementation winImpl = new MutableMethodImplementation(1);
+        winImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        winImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        winImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        winImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "getWindow",
+                        Collections.<String>emptyList(), "Landroid/view/Window;"))));
+        winImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        winImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod windowDemo = builder.internMethod(HELLO, "windowDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), winImpl);
+
+        // parentLinkDemo(): setContentView parents the view under the frame.
+        MutableMethodImplementation parentLinkImpl = new MutableMethodImplementation(4);
+        parentLinkImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        parentLinkImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        parentLinkImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        parentLinkImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Landroid/view/View;")));
+        parentLinkImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        parentLinkImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        parentLinkImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 2,
+                builder.internTypeReference("Landroid/view/ViewGroup$LayoutParams;")));
+        parentLinkImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        parentLinkImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 3, -1));
+        parentLinkImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 3, 2, 3, 3,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/ViewGroup$LayoutParams;", "<init>",
+                        Arrays.asList("I", "I"), "V"))));
+        parentLinkImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 1, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "setContentView",
+                        Arrays.asList("Landroid/view/View;",
+                                "Landroid/view/ViewGroup$LayoutParams;"),
+                        "V"))));
+        parentLinkImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "getParent",
+                        Collections.<String>emptyList(), "Landroid/view/ViewParent;"))));
+        parentLinkImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        parentLinkImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod parentLinkDemo = builder.internMethod(HELLO, "parentLinkDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), parentLinkImpl);
+
+        // attachLinkDemo(): setContentView attaches the view to the window.
+        MutableMethodImplementation attachLinkImpl = new MutableMethodImplementation(2);
+        attachLinkImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        attachLinkImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        attachLinkImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        attachLinkImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Landroid/view/View;")));
+        attachLinkImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        attachLinkImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        attachLinkImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "setContentView",
+                        Collections.singletonList("Landroid/view/View;"), "V"))));
+        attachLinkImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "isAttachedToWindow",
+                        Collections.<String>emptyList(), "Z"))));
+        attachLinkImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        attachLinkImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 1));
+        BuilderMethod attachLinkDemo = builder.internMethod(HELLO, "attachLinkDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Z",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), attachLinkImpl);
+
+        // parentIfDemo(): ViewParent.getParent reads the same linkage.
+        MutableMethodImplementation parentIfImpl = new MutableMethodImplementation(1);
+        parentIfImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/View;")));
+        parentIfImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        parentIfImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        parentIfImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/ViewParent;", "getParent",
+                        Collections.<String>emptyList(), "Landroid/view/ViewParent;"))));
+        parentIfImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        parentIfImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod parentIfDemo = builder.internMethod(HELLO, "parentIfDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), parentIfImpl);
+
+        // idDemo(): headless views carry NO_ID.
+        MutableMethodImplementation viewIdImpl = new MutableMethodImplementation(1);
+        viewIdImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/View;")));
+        viewIdImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        viewIdImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        viewIdImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "getId",
+                        Collections.<String>emptyList(), "I"))));
+        viewIdImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        viewIdImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod idDemo = builder.internMethod(HELLO, "idDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), viewIdImpl);
+
+        // viewHandlerDemo(): attached views report a main-looper handler.
+        MutableMethodImplementation viewHandlerImpl = new MutableMethodImplementation(2);
+        viewHandlerImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        viewHandlerImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        viewHandlerImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        viewHandlerImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Landroid/view/View;")));
+        viewHandlerImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        viewHandlerImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        viewHandlerImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "setContentView",
+                        Collections.singletonList("Landroid/view/View;"), "V"))));
+        viewHandlerImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "getHandler",
+                        Collections.<String>emptyList(), "Landroid/os/Handler;"))));
+        viewHandlerImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        viewHandlerImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod viewHandlerDemo = builder.internMethod(HELLO, "viewHandlerDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), viewHandlerImpl);
+
+        // detachedHandlerDemo(): detached views have no handler.
+        MutableMethodImplementation detachedHandlerImpl = new MutableMethodImplementation(1);
+        detachedHandlerImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/View;")));
+        detachedHandlerImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        detachedHandlerImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0,
+                0, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        detachedHandlerImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0,
+                0, 0, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "getHandler",
+                        Collections.<String>emptyList(), "Landroid/os/Handler;"))));
+        detachedHandlerImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        detachedHandlerImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod detachedHandlerDemo = builder.internMethod(HELLO, "detachedHandlerDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), detachedHandlerImpl);
+
+        // reflectDemo(): Handler.createAsync via getDeclaredMethod + invoke.
+        MutableMethodImplementation reflectImpl = new MutableMethodImplementation(4);
+        reflectImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference("Landroid/os/Handler;")));
+        reflectImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 1,
+                builder.internTypeReference("Landroid/os/Looper;")));
+        reflectImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 1));
+        reflectImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 2, 2,
+                builder.internTypeReference("[Ljava/lang/Class;")));
+        reflectImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 3, 0));
+        reflectImpl.addInstruction(new BuilderInstruction23x(Opcode.APUT_OBJECT, 1, 2, 3));
+        reflectImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 3,
+                builder.internStringReference("createAsync")));
+        reflectImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 3, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "getDeclaredMethod",
+                        Arrays.asList("Ljava/lang/String;", "[Ljava/lang/Class;"),
+                        "Ljava/lang/reflect/Method;"))));
+        reflectImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        reflectImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Looper;", "getMainLooper",
+                        Collections.<String>emptyList(), "Landroid/os/Looper;"))));
+        reflectImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        reflectImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 1));
+        reflectImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 2, 2,
+                builder.internTypeReference("[Ljava/lang/Object;")));
+        reflectImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 3, 0));
+        reflectImpl.addInstruction(new BuilderInstruction23x(Opcode.APUT_OBJECT, 1, 2, 3));
+        reflectImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 0));
+        reflectImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 1, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/reflect/Method;", "invoke",
+                        Arrays.asList("Ljava/lang/Object;", "[Ljava/lang/Object;"),
+                        "Ljava/lang/Object;"))));
+        reflectImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        reflectImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod reflectDemo = builder.internMethod(HELLO, "reflectDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), reflectImpl);
+
+        // reflectMissDemo(): unknown methods fail lookup, not invoke.
+        MutableMethodImplementation reflectMissImpl = new MutableMethodImplementation(3);
+        reflectMissImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference("Ljava/lang/Object;")));
+        reflectMissImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 0));
+        reflectMissImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 1, 1,
+                builder.internTypeReference("[Ljava/lang/Class;")));
+        reflectMissImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 2,
+                builder.internStringReference("nope")));
+        reflectMissImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 2, 1,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "getDeclaredMethod",
+                        Arrays.asList("Ljava/lang/String;", "[Ljava/lang/Class;"),
+                        "Ljava/lang/reflect/Method;"))));
+        reflectMissImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        reflectMissImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod reflectMissDemo = builder.internMethod(HELLO, "reflectMissDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), reflectMissImpl);
+
+        // longUpdaterDemo(): set 7, cas 7->8, add 2 == 10 (model fields are
+        // untyped; the asLong normalization is what's tested). Wide args
+        // occupy doubled registers, so multi-wide calls use /range.
+        MutableMethodImplementation longUpdaterImpl = new MutableMethodImplementation(7);
+        longUpdaterImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 2,
+                builder.internTypeReference(COUNTER)));
+        longUpdaterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        longUpdaterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 2, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(COUNTER,
+                        "<init>", Collections.<String>emptyList(), "V"))));
+        longUpdaterImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference(COUNTER)));
+        longUpdaterImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 3,
+                builder.internStringReference("count")));
+        longUpdaterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 2, 0, 3, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;", "newUpdater",
+                        Arrays.asList("Ljava/lang/Class;", "Ljava/lang/String;"),
+                        "Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;"))));
+        longUpdaterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        longUpdaterImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_WIDE_16, 3, 7));
+        longUpdaterImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 4, 0));
+        longUpdaterImpl.addInstruction(new BuilderInstruction3rc(Opcode.INVOKE_VIRTUAL_RANGE, 1, 4,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;", "set",
+                        Arrays.asList("Ljava/lang/Object;", "J"), "V"))));
+        longUpdaterImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_WIDE_16, 3, 7));
+        longUpdaterImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 4, 0));
+        longUpdaterImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_WIDE_16, 5, 8));
+        longUpdaterImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 6, 0));
+        longUpdaterImpl.addInstruction(new BuilderInstruction3rc(Opcode.INVOKE_VIRTUAL_RANGE, 1, 6,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;", "compareAndSet",
+                        Arrays.asList("Ljava/lang/Object;", "J", "J"), "Z"))));
+        longUpdaterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 3));
+        longUpdaterImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_WIDE_16, 3, 2));
+        longUpdaterImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 4, 0));
+        longUpdaterImpl.addInstruction(new BuilderInstruction3rc(Opcode.INVOKE_VIRTUAL_RANGE, 1, 4,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;", "addAndGet",
+                        Arrays.asList("Ljava/lang/Object;", "J"), "J"))));
+        longUpdaterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_WIDE, 3));
+        longUpdaterImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_WIDE, 3));
+        BuilderMethod longUpdaterDemo = builder.internMethod(HELLO, "longUpdaterDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "J",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), longUpdaterImpl);
+
+        // intUpdaterDemo(): failed cas preserves the set value.
+        MutableMethodImplementation intUpdaterImpl = new MutableMethodImplementation(5);
+        intUpdaterImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference(COUNTER)));
+        intUpdaterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        intUpdaterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(COUNTER,
+                        "<init>", Collections.<String>emptyList(), "V"))));
+        intUpdaterImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 1,
+                builder.internTypeReference(COUNTER)));
+        intUpdaterImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 2,
+                builder.internStringReference("count")));
+        intUpdaterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 2, 1, 2, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;", "newUpdater",
+                        Arrays.asList("Ljava/lang/Class;", "Ljava/lang/String;"),
+                        "Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;"))));
+        intUpdaterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        intUpdaterImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 5));
+        intUpdaterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 1, 0, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;", "set",
+                        Arrays.asList("Ljava/lang/Object;", "I"), "V"))));
+        intUpdaterImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 6));
+        intUpdaterImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 3, 9));
+        intUpdaterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 4, 1, 0, 2,
+                3, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;",
+                        "compareAndSet",
+                        Arrays.asList("Ljava/lang/Object;", "I", "I"), "Z"))));
+        intUpdaterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 4));
+        intUpdaterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;", "get",
+                        Collections.singletonList("Ljava/lang/Object;"), "I"))));
+        intUpdaterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 4));
+        intUpdaterImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 4));
+        BuilderMethod intUpdaterDemo = builder.internMethod(HELLO, "intUpdaterDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), intUpdaterImpl);
+
+        // cloneDemo(): Object[].clone() copies contents.
+        MutableMethodImplementation cloneImpl = new MutableMethodImplementation(3);
+        cloneImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 2));
+        cloneImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 0, 1,
+                builder.internTypeReference("[Ljava/lang/Object;")));
+        cloneImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("a")));
+        cloneImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
+        cloneImpl.addInstruction(new BuilderInstruction23x(Opcode.APUT_OBJECT, 1, 0, 2));
+        cloneImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "[Ljava/lang/Object;", "clone",
+                        Collections.<String>emptyList(), "Ljava/lang/Object;"))));
+        cloneImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        cloneImpl.addInstruction(new BuilderInstruction23x(Opcode.AGET_OBJECT, 0, 0, 2));
+        cloneImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod cloneDemo = builder.internMethod(HELLO, "cloneDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), cloneImpl);
+
+        // ordinalDemo(): BLUE.ordinal() is 1.
+        MutableMethodImplementation ordinalImpl = new MutableMethodImplementation(1);
+        ordinalImpl.addInstruction(new BuilderInstruction21c(Opcode.SGET_OBJECT, 0,
+                builder.internFieldReference(new ImmutableFieldReference("Ltest/Color;", "BLUE",
+                        "Ltest/Color;"))));
+        ordinalImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Enum;", "ordinal",
+                        Collections.<String>emptyList(), "I"))));
+        ordinalImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        ordinalImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod ordinalDemo = builder.internMethod(HELLO, "ordinalDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), ordinalImpl);
+
+        // switchDemo(): packed-switch on 1 takes the case (7, not 99).
+        // Labels bind to existing locations, so cases and payload are added
+        // first and the switch inserted before them.
+        MutableMethodImplementation switchImpl = new MutableMethodImplementation(1);
+        switchImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 1));
+        switchImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 0, 99));
+        switchImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        switchImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 7));
+        switchImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        switchImpl.addInstruction(new BuilderPackedSwitchPayload(1,
+                Collections.singletonList(switchImpl.newLabelForIndex(3))));
+        Label switchData = switchImpl.newLabelForIndex(5);
+        switchImpl.addInstruction(1,
+                new BuilderInstruction31t(Opcode.PACKED_SWITCH, 0, switchData));
+        BuilderMethod switchDemo = builder.internMethod(HELLO, "switchDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), switchImpl);
+
+        // switchDefaultDemo(): packed-switch on 5 falls through (99).
+        MutableMethodImplementation switchDefaultImpl = new MutableMethodImplementation(1);
+        switchDefaultImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 5));
+        switchDefaultImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 0, 99));
+        switchDefaultImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        switchDefaultImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 7));
+        switchDefaultImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        switchDefaultImpl.addInstruction(new BuilderPackedSwitchPayload(1,
+                Collections.singletonList(switchDefaultImpl.newLabelForIndex(3))));
+        Label switchDefaultData = switchDefaultImpl.newLabelForIndex(5);
+        switchDefaultImpl.addInstruction(1,
+                new BuilderInstruction31t(Opcode.PACKED_SWITCH, 0, switchDefaultData));
+        BuilderMethod switchDefaultDemo = builder.internMethod(HELLO, "switchDefaultDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), switchDefaultImpl);
+
+        // copyDemo(): copyOfRange keeps String[] (check-cast passes).
+        MutableMethodImplementation copyRangeImpl = new MutableMethodImplementation(3);
+        copyRangeImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 2));
+        copyRangeImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 0, 1,
+                builder.internTypeReference("[Ljava/lang/String;")));
+        copyRangeImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("a")));
+        copyRangeImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
+        copyRangeImpl.addInstruction(new BuilderInstruction23x(Opcode.APUT_OBJECT, 1, 0, 2));
+        copyRangeImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("b")));
+        copyRangeImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 1));
+        copyRangeImpl.addInstruction(new BuilderInstruction23x(Opcode.APUT_OBJECT, 1, 0, 2));
+        copyRangeImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 0));
+        copyRangeImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 1));
+        copyRangeImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 3, 0, 1, 2, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Arrays;", "copyOfRange",
+                        Arrays.asList("[Ljava/lang/Object;", "I", "I"),
+                        "[Ljava/lang/Object;"))));
+        copyRangeImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        copyRangeImpl.addInstruction(new BuilderInstruction21c(Opcode.CHECK_CAST, 0,
+                builder.internTypeReference("[Ljava/lang/String;")));
+        copyRangeImpl.addInstruction(new BuilderInstruction23x(Opcode.AGET_OBJECT, 0, 0, 1));
+        copyRangeImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod copyDemo = builder.internMethod(HELLO, "copyDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), copyRangeImpl);
+
+        // loaderDemo(): classes report the singleton loader.
+        MutableMethodImplementation loaderImpl = new MutableMethodImplementation(1);
+        loaderImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference("Ljava/lang/Object;")));
+        loaderImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "getClassLoader",
+                        Collections.<String>emptyList(), "Ljava/lang/ClassLoader;"))));
+        loaderImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        loaderImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod loaderDemo = builder.internMethod(HELLO, "loaderDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), loaderImpl);
+
+        // serviceDemo(): service loading finds no providers.
+        MutableMethodImplementation serviceImpl = new MutableMethodImplementation(1);
+        serviceImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference("Ljava/lang/Object;")));
+        serviceImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/ServiceLoader;", "load",
+                        Collections.singletonList("Ljava/lang/Class;"),
+                        "Ljava/util/ServiceLoader;"))));
+        serviceImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        serviceImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/ServiceLoader;", "iterator",
+                        Collections.<String>emptyList(), "Ljava/util/Iterator;"))));
+        serviceImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        serviceImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Iterator;", "hasNext",
+                        Collections.<String>emptyList(), "Z"))));
+        serviceImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        serviceImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod serviceDemo = builder.internMethod(HELLO, "serviceDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Z",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), serviceImpl);
+
+        // sdkIntDemo(): Build.VERSION.SDK_INT reports the modeled API.
+        MutableMethodImplementation sdkIntImpl = new MutableMethodImplementation(2);
+        sdkIntImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference("Landroid/os/Build$VERSION;")));
+        sdkIntImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("SDK_INT")));
+        sdkIntImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "getField",
+                        Collections.singletonList("Ljava/lang/String;"),
+                        "Ljava/lang/reflect/Field;"))));
+        sdkIntImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        sdkIntImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 0));
+        sdkIntImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/reflect/Field;", "getInt",
+                        Collections.singletonList("Ljava/lang/Object;"), "I"))));
+        sdkIntImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        sdkIntImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod sdkIntDemo = builder.internMethod(HELLO, "sdkIntDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), sdkIntImpl);
+
+        // suppressedDemo(): model throwables record suppressed per receiver.
+        // (The host-receiver branch is defensive — host throwables only
+        // surface as caught values — and stays untested, like the host
+        // branches of the neighboring Throwable builtins.)
+        MutableMethodImplementation suppressedImpl = new MutableMethodImplementation(1);
+        suppressedImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ltest/Boom;")));
+        suppressedImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        suppressedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference("Ltest/Boom;",
+                        "<init>", Collections.<String>emptyList(), "V"))));
+        suppressedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Throwable;", "addSuppressed",
+                        Collections.singletonList("Ljava/lang/Throwable;"), "V"))));
+        suppressedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Throwable;", "getSuppressed",
+                        Collections.<String>emptyList(), "[Ljava/lang/Throwable;"))));
+        suppressedImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        suppressedImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod suppressedDemo = builder.internMethod(HELLO, "suppressedDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), suppressedImpl);
+
         builder.internClassDef(HELLO,
                 AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "Hello.java",
@@ -2090,7 +2771,14 @@ public final class FixtureDex {
                         parseDemo, activityWindow, viewVis, lpDemo, contentGroup,
                         missFind, contentChild, viewCtx, clipDemo, attachDemo,
                         tagDemo, tagMiss, attachedDemo, parentDemo, vtoDemo,
-                        drawDemo, contentViewDemo));
+                        drawDemo, contentViewDemo, choreoDemo, handlerAsyncDemo,
+                        high16Demo, wideHigh16Demo, fillDemo, runtimeDemo,
+                        cpuDemo, propDemo, windowDemo, parentLinkDemo,
+                        attachLinkDemo, parentIfDemo, idDemo, viewHandlerDemo,
+                        detachedHandlerDemo, reflectDemo, reflectMissDemo,
+                        longUpdaterDemo, intUpdaterDemo, cloneDemo, ordinalDemo,
+                        switchDemo, switchDefaultDemo, copyDemo, loaderDemo,
+                        serviceDemo, sdkIntDemo, suppressedDemo));
         builder.writeTo(new FileDataStore(dexFile.toFile()));
     }
 
