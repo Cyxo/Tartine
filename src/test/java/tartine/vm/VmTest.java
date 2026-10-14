@@ -336,6 +336,90 @@ class VmTest {
     }
 
     @Test
+    void layoutParamsKeepsSize() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(-1), interpreter.call(FixtureDex.HELLO, "lpDemo"));
+    }
+
+    @Test
+    void contentGroupResolves() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "contentGroup"));
+    }
+
+    @Test
+    void missFindStaysNull() {
+        interpreter.setFramework(framework());
+        assertNull(interpreter.call(FixtureDex.HELLO, "missFind"));
+    }
+
+    @Test
+    void contentChildStartsNull() {
+        interpreter.setFramework(framework());
+        assertNull(interpreter.call(FixtureDex.HELLO, "contentChild"));
+    }
+
+    @Test
+    void viewCtxKeepsContext() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "viewCtx"));
+    }
+
+    @Test
+    void clipDemoPassesThrough() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "clipDemo"));
+    }
+
+    @Test
+    void attachDemoIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "attachDemo"));
+    }
+
+    @Test
+    void tagDemoRoundTrips() {
+        interpreter.setFramework(framework());
+        assertEquals("seven", interpreter.call(FixtureDex.HELLO, "tagDemo"));
+    }
+
+    @Test
+    void tagMissStaysNull() {
+        interpreter.setFramework(framework());
+        assertNull(interpreter.call(FixtureDex.HELLO, "tagMiss"));
+    }
+
+    @Test
+    void attachedDemoStaysFalse() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "attachedDemo"));
+    }
+
+    @Test
+    void parentDemoStaysNull() {
+        interpreter.setFramework(framework());
+        assertNull(interpreter.call(FixtureDex.HELLO, "parentDemo"));
+    }
+
+    @Test
+    void vtoDemoPlaceholds() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "vtoDemo"));
+    }
+
+    @Test
+    void drawDemoIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "drawDemo"));
+    }
+
+    @Test
+    void contentViewDemoInstalls() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "contentViewDemo"));
+    }
+
+    @Test
     void stepsWereExecuted() {
         interpreter.call(FixtureDex.HELLO, "twice", 21);
         assertTrue(interpreter.steps() > 0);
@@ -477,6 +561,16 @@ class VmTest {
                 Collections.<FwIndex.FwField>emptyList(),
                 Collections.<String, Object>emptyMap()));
         index.put(new FwClass("Landroid/app/Activity;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/view/ViewGroup$LayoutParams;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/view/ViewGroup;", "Landroid/view/View;",
                 Collections.<String>emptyList(),
                 Collections.<FwIndex.FwMethod>emptyList(),
                 Collections.<FwIndex.FwField>emptyList(),

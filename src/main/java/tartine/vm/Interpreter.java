@@ -2786,11 +2786,75 @@ public final class Interpreter {
         builtin("Landroid/view/Window;->getDecorView()Landroid/view/View;",
                 (receiver, args) -> newPlaceholder("Landroid/view/View;"));
         builtin("Landroid/view/Window;->findViewById(I)Landroid/view/View;",
-                (receiver, args) -> null);
+                (receiver, args) -> findContent(args));
         builtin("Landroid/app/Activity;->findViewById(I)Landroid/view/View;",
-                (receiver, args) -> null);
+                (receiver, args) -> findContent(args));
         builtin("Landroid/view/View;->findViewById(I)Landroid/view/View;",
+                (receiver, args) -> findContent(args));
+        // The content frame is childless until setContentView installs one.
+        builtin("Landroid/view/ViewGroup;->getChildAt(I)Landroid/view/View;",
                 (receiver, args) -> null);
+        // View construction bottoms out here: keep the context (getContext
+        // is the reader half); attrs/defStyle have no headless consumer yet.
+        builtin("Landroid/view/ViewGroup;-><init>(Landroid/content/Context;"
+                + "Landroid/util/AttributeSet;I)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/view/View;.mContext", args[0]);
+                    return null;
+                });
+        builtin("Landroid/view/View;->getContext()Landroid/content/Context;",
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/view/View;.mContext"));
+        builtin("Landroid/view/View;->setClipChildren(Z)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/View;->setClipToPadding(Z)V",
+                (receiver, args) -> null);
+        // Headless views never attach to a window.
+        builtin("Landroid/view/View;->isAttachedToWindow()Z",
+                (receiver, args) -> 0);
+        // ...and therefore have no parent.
+        builtin("Landroid/view/View;->getParent()Landroid/view/ViewParent;",
+                (receiver, args) -> null);
+        builtin("Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;",
+                (receiver, args) -> newPlaceholder("Landroid/view/ViewTreeObserver;"));
+        // Observer callbacks never fire headless; registration is a no-op.
+        builtin("Landroid/view/ViewTreeObserver;->addOnDrawListener("
+                + "Landroid/view/ViewTreeObserver$OnDrawListener;)V",
+                (receiver, args) -> null);
+        // Installing the content view only matters to a real window.
+        builtin("Landroid/app/Activity;->setContentView(Landroid/view/View;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/app/Activity;->setContentView(Landroid/view/View;"
+                + "Landroid/view/ViewGroup$LayoutParams;)V",
+                (receiver, args) -> null);
+        // Attach listeners never fire headless; registration is a no-op.
+        builtin("Landroid/view/View;->addOnAttachStateChangeListener("
+                + "Landroid/view/View$OnAttachStateChangeListener;)V",
+                (receiver, args) -> null);
+        // ViewTree owners key lifecycle objects off integer tags.
+        builtin("Landroid/view/View;->getTag(I)Ljava/lang/Object;",
+                (receiver, args) -> {
+                    Object tags = ((VmObject) receiver)
+                            .getField("Landroid/view/View;.tags");
+                    if (!(tags instanceof Map)) {
+                        return null;
+                    }
+                    return ((Map<?, ?>) tags).get(asInt(args[0]));
+                });
+        builtin("Landroid/view/View;->setTag(ILjava/lang/Object;)V",
+                (receiver, args) -> {
+                    VmObject view = (VmObject) receiver;
+                    Object tags = view.getField("Landroid/view/View;.tags");
+                    Map<Integer, Object> map;
+                    if (tags instanceof Map) {
+                        map = (Map<Integer, Object>) tags;
+                    } else {
+                        map = new HashMap<>();
+                        view.putField("Landroid/view/View;.tags", map);
+                    }
+                    map.put(asInt(args[0]), args[1]);
+                    return null;
+                });
         builtin("Landroid/view/View;->getSystemUiVisibility()I",
                 (receiver, args) -> {
                     Object value = ((VmObject) receiver)
@@ -2835,6 +2899,22 @@ public final class Interpreter {
         builtin("Landroid/view/Window;->getInsetsController()"
                 + "Landroid/view/WindowInsetsController;",
                 (receiver, args) -> newPlaceholder("Landroid/view/WindowInsetsController;"));
+        builtin("Landroid/view/Window;->getAttributes()"
+                + "Landroid/view/WindowManager$LayoutParams;",
+                (receiver, args) -> newPlaceholder("Landroid/view/WindowManager$LayoutParams;"));
+        builtin("Landroid/view/Window;->setAttributes("
+                + "Landroid/view/WindowManager$LayoutParams;)V",
+                (receiver, args) -> null);
+        // LayoutParams(II) carries real values (read back by window code),
+        // so the ctor stores them instead of no-op'ing per the arg rule.
+        builtin("Landroid/view/ViewGroup$LayoutParams;-><init>(II)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/view/ViewGroup$LayoutParams;.width", asInt(args[0]));
+                    ((VmObject) receiver).putField(
+                            "Landroid/view/ViewGroup$LayoutParams;.height", asInt(args[1]));
+                    return null;
+                });
         builtin("Landroid/view/WindowInsetsController;->setSystemBarsAppearance(II)V",
                 (receiver, args) -> null);
         builtin("Landroid/app/Activity;->registerActivityLifecycleCallbacks("
@@ -3893,6 +3973,19 @@ public final class Interpreter {
             throw new IllegalArgumentException("bad hex: " + hex);
         }
         return (nibble << 4) | nibble;
+    }
+
+    /**
+     * PhoneWindow always installs the content frame ({@code android.R.id.content}),
+     * so that id resolves even headless; every other id misses (no inflated
+     * hierarchy). Returned as a ViewGroup so the setContent check-cast holds.
+     */
+    private Object findContent(Object[] args) {
+        if (args.length > 0 && args[0] instanceof Number
+                && ((Number) args[0]).intValue() == 0x1020002) {
+            return newPlaceholder("Landroid/view/ViewGroup;");
+        }
+        return null;
     }
 
     private static int jump(Map<Integer, Integer> addresses, Insn insn) {
