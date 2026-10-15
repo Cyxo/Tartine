@@ -1,6 +1,7 @@
 package tartine.vm;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -342,6 +343,125 @@ class VmTest {
     }
 
     @Test
+    void paintFlagsRoundTrip() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "paintDemo"));
+    }
+
+    @Test
+    void paintColorRoundTrips() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(0x0102), interpreter.call(FixtureDex.HELLO, "colorDemo"));
+    }
+
+    @Test
+    void paintStrokeRoundTrips() {
+        interpreter.setFramework(framework());
+        assertEquals(Float.valueOf(2.0f), interpreter.call(FixtureDex.HELLO, "strokeDemo"));
+    }
+
+    @Test
+    void frameworkEnumReportsOrdinal() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "styleDemo"));
+    }
+
+    @Test
+    void hostEnumKeepsBehavior() {
+        interpreter.setFramework(framework());
+        assertEquals(Long.valueOf(60_000_000_000L),
+                interpreter.call(FixtureDex.HELLO, "nanosDemo"));
+    }
+
+    @Test
+    void paintStyleRoundTrips() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(1),
+                interpreter.call(FixtureDex.HELLO, "styleRoundDemo"));
+    }
+
+    @Test
+    void sysServiceResolves() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "sysServiceDemo"));
+    }
+
+    @Test
+    void a11yListIsEmpty() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "a11yDemo"));
+    }
+
+    @Test
+    void sortDemoSortsRange() {
+        assertEquals(Integer.valueOf(13), interpreter.call(FixtureDex.HELLO, "sortDemo"));
+    }
+
+    @Test
+    void autofillServiceResolves() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "autofillDemo"));
+    }
+
+    @Test
+    void importantForAutofillIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "importantDemo"));
+    }
+
+    @Test
+    void clipboardServiceResolves() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "clipboardDemo"));
+    }
+
+    @Test
+    void treeSetBridgesComparator() {
+        assertEquals(Integer.valueOf(2), interpreter.call(FixtureDex.HELLO, "treeDemo"));
+    }
+
+    @Test
+    void ctorDemoConstructs() {
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "ctorDemo"));
+    }
+
+    @Test
+    void layoutDirDefaultsLtr() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "layoutDirDemo"));
+    }
+
+    @Test
+    void touchModeStaysFalse() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "touchModeDemo"));
+    }
+
+    @Test
+    void willNotDrawIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "willNotDrawDemo"));
+    }
+
+    @Test
+    void focusableIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "focusableDemo"));
+    }
+
+    @Test
+    void viewConfigResolves() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "viewConfigDemo"));
+    }
+
+    @Test
+    void appContextResolves() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "appCtxDemo"));
+    }
+
+    @Test
     void contentGroupResolves() {
         interpreter.setFramework(framework());
         assertNotNull(interpreter.call(FixtureDex.HELLO, "contentGroup"));
@@ -468,6 +588,12 @@ class VmTest {
     }
 
     @Test
+    void fillFloatDemoKeepsBits() {
+        assertEquals(Integer.valueOf(0x3F800000),
+                interpreter.call(FixtureDex.HELLO, "fillFloatDemo"));
+    }
+
+    @Test
     void runtimeDemoPositive() {
         assertTrue((Long) interpreter.call(FixtureDex.HELLO, "runtimeDemo") > 0);
     }
@@ -579,6 +705,80 @@ class VmTest {
         assertTrue(array.get(0) instanceof VmObject);
         assertEquals("Ltest/Boom;",
                 ((VmObject) array.get(0)).type.type);
+    }
+
+    @Test
+    void zeroCheckHeap() {
+        assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "zeroCheckDemo"));
+    }
+
+    @Test
+    void nullCheckBits() {
+        assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "nullCheckDemo"));
+    }
+
+    @Test
+    void frameIdDemoMatches() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(0x1020002), interpreter.call(FixtureDex.HELLO, "frameIdDemo"));
+    }
+
+    @Test
+    void frameCbDemoIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "frameCbDemo"));
+    }
+
+    @Test
+    void postCbDemoRecords() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "postCbDemo"));
+    }
+
+    @Test
+    void plusCollAdds() {
+        assertEquals(Integer.valueOf(2), interpreter.call(FixtureDex.HELLO, "plusCollDemo"));
+    }
+
+    @Test
+    void childAddKeeps() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "childAddDemo"));
+    }
+
+    @Test
+    void childRemoveClears() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "childRemoveDemo"));
+    }
+
+    @Test
+    void ctxDemoKeepsContext() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "ctxDemo"));
+    }
+
+    @Test
+    void resDemoPlaceholds() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "resDemo"));
+    }
+
+    @Test
+    void metricsDemoReadsDensity() {
+        interpreter.setFramework(framework());
+        assertEquals(Float.valueOf(1.0f), interpreter.call(FixtureDex.HELLO, "metricsDemo"));
+    }
+
+    @Test
+    void configDemoReadsFontScale() {
+        interpreter.setFramework(framework());
+        assertEquals(Float.valueOf(1.0f), interpreter.call(FixtureDex.HELLO, "configDemo"));
+    }
+
+    @Test
+    void hostFillDemoFills() {
+        assertEquals(Integer.valueOf(42), interpreter.call(FixtureDex.HELLO, "hostFillDemo"));
     }
 
     @Test
@@ -741,6 +941,19 @@ class VmTest {
                 Collections.<String>emptyList(),
                 Collections.<FwIndex.FwMethod>emptyList(),
                 Collections.singletonList(new FwField("SDK_INT", "I")),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/graphics/Paint;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/graphics/Paint$Style;", "Ljava/lang/Enum;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Arrays.asList(
+                        new FwField("FILL", "Landroid/graphics/Paint$Style;"),
+                        new FwField("STROKE", "Landroid/graphics/Paint$Style;"),
+                        new FwField("FILL_AND_STROKE", "Landroid/graphics/Paint$Style;")),
                 Collections.<String, Object>emptyMap()));
         index.put(new FwClass("Ljava/lang/ref/Reference;", "Ljava/lang/Object;",
                 Collections.<String>emptyList(),
