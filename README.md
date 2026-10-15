@@ -1,8 +1,12 @@
 # Tartine - Android Runtime
 
+<p align="center">
+  <img src="./logo.png" />
+</p>
+
 > **Tartine** *(noun)*: A slice of bread topped with sweet or savoury spreadable food such as butter, jam, honey, cream, or sauce.
 
-Tartine Android RunTime Is Not an Emulator.
+### Tartine Android RunTime Is Not an Emulator.
 
 Tartine is a tool to run Android apps on Desktop OSes natively, in a similar fashion to [Wine](https://www.winehq.org/).
 
