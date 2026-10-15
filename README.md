@@ -21,9 +21,9 @@ Tartine is a tool to run Android apps on Desktop OSes natively, in a similar fas
 
 ## Layout
 
-- `src/main/java/tartine/` — `Main` entrypoint, `apk/`, `dex/`, `vm/`, `runtime/`, `graphics/`
+- `src/main/java/tartine/` — `Main` entrypoint, `apk/`, `dex/`, `vm/`, `runtime/`, `graphics/`, `fw/`
 - `src/test/java/` — JUnit 5 suite
-- `settings.gradle` / `build.gradle` + `gradlew` wrapper
+- `settings.gradle` / `build.gradle` (mise manages the Gradle toolchain — no wrapper)
 - `tools/` — dev-time CLI oracles (see `THIRD-PARTY.md`)
 - `apks/` — local test fixtures, gitignored
 - `build/` — Gradle output (ignored by git)
