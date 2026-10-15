@@ -1,12 +1,12 @@
 # AGENTS.md
 
 ## Stack
-- Java only. Toolchains via mise (`mise.toml`: Corretto 18 + Gradle); run everything through `mise exec -- gradle ...` so the pinned JDK is used.
+- Java only. Toolchains via mise (`mise.toml`: Corretto 18 + Gradle); run everything through `mise exec -- gradle ...` so the pinned JDK is used. Scripts under `scripts/` are POSIX bash (work on Windows via mise's bash, Mac, Linux).
 - Java 14 compatibility floor, enforced as `options.release = 14` in `build.gradle`. Do not use language features or JDK APIs introduced after Java 14. Verify with `javap -verbose` / `jdeps` if unsure.
 
 ## Repo state
 - Layout: `src/main/java/tartine/` (`Main`, `apk/`, `dex/`, `vm/`, `runtime/`, `graphics/`, `fw/`), `src/test/java/` (JUnit 5 suite), `settings.gradle`/`build.gradle` (no wrapper — mise manages Gradle), `build/` (ignored output). `tools/` (dev-time CLI oracles, gitignored — fetch with `mise run fetch-tools`), `apks/` (ignored local fixtures), `THIRD-PARTY.md` (versions/licenses). Deps resolve from Maven Central via Gradle; nothing vendored under `libs/`.
-- Verify: `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` (Windows) or `sh scripts/verify.sh` (Mac/Linux). Both run `mise install` (idempotent) then `gradle test`.
+- Verify: `sh scripts/verify.sh` (all platforms). Runs `mise install` (idempotent) then `gradle test`.
 - Prefer `mise run <task>` (`fetch-tools`/`test`/`build`/`apk`/`run`/`gui`/`dump`, see `mise tasks ls`): `apk`/`run`/`gui`/`dump` launch the last build via direct `java`, no recompile when unchanged. Run `mise trust` after editing `mise.toml` (edits revoke trust).
 - Single test: `mise exec -- gradle test --tests "tartine.apk.*"`.
 

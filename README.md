@@ -21,9 +21,8 @@ Tartine is a tool to run Android apps on Desktop OSes natively, in a similar fas
 - **Dev-time oracle JARs** (baksmali, apktool) are not in the repo.
   Fetch them once after cloning:
 
-  ```powershell
-  mise run fetch-tools          # Windows
-  sh scripts/fetch-tools.sh     # Mac / Linux
+  ```sh
+  sh scripts/fetch-tools.sh
   ```
 
 ## Layout
@@ -37,19 +36,11 @@ Tartine is a tool to run Android apps on Desktop OSes natively, in a similar fas
 
 ## Verify
 
-Windows (PowerShell):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
-```
-
-Mac/Linux:
-
 ```sh
 sh scripts/verify.sh
 ```
 
-Both trust + install toolchains via mise, then run `gradle test`.
+Trusts + installs toolchains via mise, then runs `gradle test`.
 Single test/class:
 
 ```sh

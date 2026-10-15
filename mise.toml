@@ -1,11 +1,12 @@
 [tools]
 java = "corretto-18.0.2.9.1"
 gradle = "9.8.1"
-powershell = "7.6.6"
+powershell = { version = "7.6.6", os = ["windows"] }
 
 [tasks.fetch-tools]
 description = "Download dev-time oracle JARs into tools/ (idempotent)"
-run = "pwsh -File scripts/fetch-tools.ps1"
+run = "bash scripts/fetch-tools.sh"
+run_windows = "pwsh -File scripts/fetch-tools.ps1"
 
 [tasks.build]
 description = "Incremental compile + refresh launch classpath"
@@ -19,23 +20,27 @@ run = "gradle test"
 description = "APK summary: manifest, code, libraries (headless)"
 depends = ["build"]
 usage = 'arg "[apk]" default="apks/app-debug.apk" help="APK file to inspect"'
-run = "pwsh -File scripts/apk.ps1"
+run = "bash scripts/apk.sh"
+run_windows = "pwsh -File scripts/apk.ps1"
 
 [tasks.run]
 description = "Headless probe: run launcher onCreate until the first gap"
 depends = ["build"]
 usage = 'arg "[apk]" default="apks/app-debug.apk" help="APK file to probe"'
-run = "pwsh -File scripts/run.ps1"
+run = "bash scripts/run.sh"
+run_windows = "pwsh -File scripts/run.ps1"
 
 [tasks.gui]
 description = "GUI probe: headless onCreate, then show the activity window"
 depends = ["build"]
 usage = '''arg "[apk]" default="apks/app-debug.apk" help="APK file to show"
   arg "[timeout]" default="0" help="Auto-close after N seconds (0 = stay open)"'''
-run = "pwsh -File scripts/gui.ps1"
+run = "bash scripts/gui.sh"
+run_windows = "pwsh -File scripts/gui.ps1"
 
 [tasks.dump]
 description = "Print the instruction dump of one dex file"
 depends = ["build"]
 usage = 'arg "<dex>" help="Dex file to dump"'
-run = "pwsh -File scripts/dump.ps1"
+run = "bash scripts/dump.sh"
+run_windows = "pwsh -File scripts/dump.ps1"
