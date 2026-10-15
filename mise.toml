@@ -3,6 +3,10 @@ java = "corretto-18.0.2.9.1"
 gradle = "9.8.1"
 powershell = "7.6.6"
 
+[tasks.fetch-tools]
+description = "Download dev-time oracle JARs into tools/ (idempotent)"
+run = "pwsh -File scripts/fetch-tools.ps1"
+
 [tasks.build]
 description = "Incremental compile + refresh launch classpath"
 run = "gradle compileTestJava writeClasspath"

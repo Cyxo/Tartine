@@ -5,9 +5,9 @@
 - Java 14 compatibility floor, enforced as `options.release = 14` in `build.gradle`. Do not use language features or JDK APIs introduced after Java 14. Verify with `javap -verbose` / `jdeps` if unsure.
 
 ## Repo state
-- Layout: `src/main/java/tartine/` (`Main`, `apk/`, `dex/`, `vm/`, `runtime/`, `graphics/`), `src/test/java/` (JUnit 5 suite), `settings.gradle`/`build.gradle` + wrapper, `build/` (ignored output). `tools/` (dev-time CLI oracles), `apks/` (ignored local fixtures), `THIRD-PARTY.md` (versions/licenses). Deps resolve from Maven Central via Gradle; nothing vendored under `libs/`.
+- Layout: `src/main/java/tartine/` (`Main`, `apk/`, `dex/`, `vm/`, `runtime/`, `graphics/`, `fw/`), `src/test/java/` (JUnit 5 suite), `settings.gradle`/`build.gradle` (no wrapper — mise manages Gradle), `build/` (ignored output). `tools/` (dev-time CLI oracles, gitignored — fetch with `mise run fetch-tools`), `apks/` (ignored local fixtures), `THIRD-PARTY.md` (versions/licenses). Deps resolve from Maven Central via Gradle; nothing vendored under `libs/`.
 - Verify: `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` (Windows) or `sh scripts/verify.sh` (Mac/Linux). Both run `mise install` (idempotent) then `gradle test`.
-- Prefer `mise run <task>` (`test`/`build`/`apk`/`run`/`dump`, see `mise tasks ls`): `apk`/`run`/`dump` launch the last build via direct `java`, no recompile when unchanged. Run `mise trust` after editing `mise.toml` (edits revoke trust).
+- Prefer `mise run <task>` (`fetch-tools`/`test`/`build`/`apk`/`run`/`gui`/`dump`, see `mise tasks ls`): `apk`/`run`/`gui`/`dump` launch the last build via direct `java`, no recompile when unchanged. Run `mise trust` after editing `mise.toml` (edits revoke trust).
 - Single test: `mise exec -- gradle test --tests "tartine.apk.*"`.
 
 ## Goal
@@ -33,5 +33,5 @@
 
 ## Third-party policy
 - Reuse-first: prefer OSS/AOSP over hand-rolled (dexlib2 for DEX, baksmali/apktool CLIs as decode oracles, dex2jar/Enjarify as translation oracles, LWJGL3 for windowing/GLES, AOSP ART/Skia as reference only).
-- Vendor CLI oracles under `tools/` (never on the runtime classpath); record version + URL + license in `THIRD-PARTY.md`. Compile deps are declared in `build.gradle` (Maven Central), not vendored.
+- Download CLI oracles into `tools/` via `mise run fetch-tools` (gitignored, never on the runtime classpath); record version + URL + license in `THIRD-PARTY.md`. Compile deps are declared in `build.gradle` (Maven Central), not vendored.
 - Only permissive licenses in the runtime path (Apache-2.0/BSD/MIT); keep license texts, never strip copyrights. Our sources stay `--release 14` regardless of what a vendored jar targets.

@@ -4,6 +4,5 @@ build/
 gradle/
 *.class
 *.jar
-!tools/*.jar
 .DS_Store
 apks/

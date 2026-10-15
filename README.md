@@ -18,6 +18,13 @@ Tartine is a tool to run Android apps on Desktop OSes natively, in a similar fas
   Java 14: `build.gradle` enforces `options.release = 14`.
 - After editing `mise.toml`, run `mise trust` (mise distrusts modified
   configs).
+- **Dev-time oracle JARs** (baksmali, apktool) are not in the repo.
+  Fetch them once after cloning:
+
+  ```powershell
+  mise run fetch-tools          # Windows
+  sh scripts/fetch-tools.sh     # Mac / Linux
+  ```
 
 ## Layout
 
@@ -52,9 +59,10 @@ mise exec -- gradle test --tests "tartine.apk.*"
 ## Headless APK probes (no GUI yet)
 
 ```sh
-mise run apk [apks/app-debug.apk]   # manifest, code, and library summary
-mise run run [apks/app-debug.apk]   # launcher onCreate until the first gap
-mise run dump <file.dex>            # instruction dump of one dex file
+mise run apk [apks/app-debug.apk]              # manifest, code, and library summary
+mise run run [apks/app-debug.apk]              # launcher onCreate until the first gap
+mise run gui [apks/app-debug.apk] [timeout]   # GUI probe: show the activity window
+mise run dump <file.dex>                       # instruction dump of one dex file
 ```
 
 `mise tasks ls` lists everything; `mise run <task> --help` shows args.

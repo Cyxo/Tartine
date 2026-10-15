@@ -2,9 +2,10 @@
 
 Reuse-first per `AGENTS.md`. Compile deps are declared in `build.gradle`
 and resolve from Maven Central. `tools/` holds dev-time CLI oracles
-(vendored, never on the runtime classpath). `apks/` (gitignored) holds
-local test fixtures only. Build/test toolchain pins live in `mise.toml`
-(Java, Gradle) and `build.gradle` (JUnit).
+(downloaded on demand via `mise run fetch-tools`, gitignored, never on
+the runtime classpath). `apks/` (gitignored) holds local test fixtures
+only. Build/test toolchain pins live in `mise.toml` (Java, Gradle) and
+`build.gradle` (JUnit).
 
 ## Runtime path (via Gradle / Maven Central)
 
@@ -27,25 +28,27 @@ no Maven artifacts — revisit if a fixture requires it.
 
 ## Dev-time oracles (`tools/`)
 
+Fetched by `mise run fetch-tools` (or `sh scripts/fetch-tools.sh` on Mac/Linux).
+Files land in `tools/` which is gitignored. Size is verified on download.
+
 | Artifact | Version | Role | Source | License |
 |---|---|---|---|---|
 | `baksmali-2.5.2.jar` | 2.5.2 | Golden disassembly oracle | Maven Central `org/smali/baksmali/2.5.2/` | BSD 3-Clause |
 | `util-2.5.2.jar` | 2.5.2 | baksmali runtime dep | Maven Central `org/smali/util/2.5.2/` | BSD 3-Clause |
 | `jcommander-1.64.jar` | 1.64 | baksmali runtime dep (CLI parsing) | Maven Central `com/beust/jcommander/1.64/` | Apache-2.0 |
-| `apktool_3.0.3.jar` | 3.0.3 | Manifest/resource decode oracle (Step 1 cross-check) | `https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_3.0.3.jar` (no published checksum; size 15478013 bytes matched, `version` + fixture decode smoke-tested) | Apache-2.0 |
+| `apktool_3.0.3.jar` | 3.0.3 | Manifest/resource decode oracle (Step 1 cross-check) | `https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_3.0.3.jar` (no published checksum; size 15 478 013 bytes matched, `version` + fixture decode smoke-tested) | Apache-2.0 |
 
 Example (Windows; `out/` is gitignored scratch):
 
 ```powershell
-java -cp "tools/baksmali-2.5.2.jar;tools/util-2.5.2.jar;tools/jcommander-1.64.jar;libs/*" `
+java -cp "tools/baksmali-2.5.2.jar;tools/util-2.5.2.jar;tools/jcommander-1.64.jar" `
   org.jf.baksmali.Main d out/fixture-classes2.dex -o out/baksmali-smoke
 ```
 
-## Deferred (do not vendor yet)
+## Deferred (do not include yet)
 
-- **apktool** (Apache-2.0) — vendored as manifest/resource decode oracle.
 - **dex2jar** (Apache-2.0) / **Enjarify** (Apache-2.0, pure Python 3,
   archived; successor `Storyyeller/enjarify`) — translation oracles.
   Both translated the Step 3 fixture cleanly (fetch on demand, scratch-only;
-  not vendored).
+  not included).
 - **AOSP ART / Skia** — reference only, nothing to embed.
