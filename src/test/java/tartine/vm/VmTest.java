@@ -393,6 +393,12 @@ class VmTest {
     }
 
     @Test
+    void a11yManagerDisabled() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "a11yEnabledDemo"));
+    }
+
+    @Test
     void sortDemoSortsRange() {
         assertEquals(Integer.valueOf(13), interpreter.call(FixtureDex.HELLO, "sortDemo"));
     }
@@ -447,6 +453,52 @@ class VmTest {
     void focusableIgnores() {
         interpreter.setFramework(framework());
         assertNotNull(interpreter.call(FixtureDex.HELLO, "focusableDemo"));
+    }
+
+    @Test
+    void a11yImportantRoundTrips() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "a11yImportantDemo"));
+    }
+
+    @Test
+    void a11yDelegateIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "a11yDelegateDemo"));
+    }
+
+    @Test
+    void dragListenerIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "dragDemo"));
+    }
+
+    @Test
+    void getClassReportsDexType() {
+        assertEquals("test.Counter", interpreter.call(FixtureDex.HELLO, "getClassDemo"));
+    }
+
+    @Test
+    void getClassReportsHostType() {
+        assertEquals("java.lang.String",
+                interpreter.call(FixtureDex.HELLO, "getClassHostDemo"));
+    }
+
+    @Test
+    void dexSubclassConstructsAsHostSuper() {
+        assertEquals(Integer.valueOf(3), interpreter.call(FixtureDex.HELLO, "subDemo"));
+    }
+
+    @Test
+    void layoutRequestRoundTrips() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "layoutDemo"));
+    }
+
+    @Test
+    void forceDarkIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "forceDarkDemo"));
     }
 
     @Test
@@ -928,6 +980,11 @@ class VmTest {
                 Collections.<FwIndex.FwField>emptyList(),
                 Collections.<String, Object>emptyMap()));
         index.put(new FwClass("Landroid/view/ViewGroup$LayoutParams;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/view/View$AccessibilityDelegate;", "Ljava/lang/Object;",
                 Collections.<String>emptyList(),
                 Collections.<FwIndex.FwMethod>emptyList(),
                 Collections.<FwIndex.FwField>emptyList(),

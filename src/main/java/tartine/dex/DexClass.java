@@ -4,24 +4,51 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.iface.ClassDef;
+import org.jf.dexlib2.iface.Field;
 import org.jf.dexlib2.iface.Method;
 
 /** One class in our own model. */
 public final class DexClass {
+    /** One field: instance state lives here; statics live in interpreter statics. */
+    public static final class DexField {
+        public final String name;
+        public final String type;
+        public final int accessFlags;
+
+        public DexField(String name, String type, int accessFlags) {
+            this.name = name;
+            this.type = type;
+            this.accessFlags = accessFlags;
+        }
+    }
+
     /** Type descriptor, e.g. {@code Ltest/Hello;}. */
     public final String type;
     /** Superclass descriptor, or null (only {@code Ljava/lang/Object;}). */
     public final String superclass;
     public final List<String> interfaces;
     public final List<DexMethod> methods;
+    public final List<DexField> fields;
 
     public DexClass(String type, String superclass, List<String> interfaces,
-            List<DexMethod> methods) {
+            List<DexMethod> methods, List<DexField> fields) {
         this.type = type;
         this.superclass = superclass;
         this.interfaces = Collections.unmodifiableList(new ArrayList<>(interfaces));
         this.methods = Collections.unmodifiableList(new ArrayList<>(methods));
+        this.fields = Collections.unmodifiableList(new ArrayList<>(fields));
+    }
+
+    /** True when any field is per-instance state (not static). */
+    public boolean hasInstanceFields() {
+        for (DexField field : fields) {
+            if ((field.accessFlags & AccessFlags.STATIC.getValue()) == 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** First method with the given name, or null. */
@@ -40,6 +67,12 @@ public final class DexClass {
             methods.add(DexMethod.from(classDef, method));
         }
         List<String> interfaces = new ArrayList<>(classDef.getInterfaces());
-        return new DexClass(classDef.getType(), classDef.getSuperclass(), interfaces, methods);
+        List<DexField> fields = new ArrayList<>();
+        for (Field field : classDef.getFields()) {
+            fields.add(new DexField(field.getName(), field.getType(),
+                    field.getAccessFlags()));
+        }
+        return new DexClass(classDef.getType(), classDef.getSuperclass(), interfaces, methods,
+                fields);
     }
 }

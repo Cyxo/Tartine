@@ -1185,6 +1185,23 @@ public final class Interpreter {
                             pc++;
                             break;
                         }
+                        // Dex subclasses of concrete host classes with no
+                        // instance state (e.g. Compose's TreeSet over
+                        // java.util.TreeSet) construct as the host
+                        // superclass, so constructor args configure the
+                        // live object. Misses run the dex body as usual.
+                        if (ref.name.equals("<init>") && receiver instanceof VmObject) {
+                            Object[] initArgs = readRefArgs(ref, g, 1, regs);
+                            ReflectResult hostSuper = hostSuperConstruct(
+                                    (VmObject) receiver, ref, initArgs);
+                            if (hostSuper.hit) {
+                                regs[g.get(0)] = hostSuper.value;
+                                pending = null;
+                                hasPending = false;
+                                pc++;
+                                break;
+                            }
+                        }
                         Resolved resolved;
                         if (op.startsWith("invoke-direct")) {
                             resolved = resolve(null, ref.definingClass, ref, false);
@@ -1352,7 +1369,8 @@ public final class Interpreter {
             }
         }
         return new VmObject(
-                new DexClass(descriptor, superDesc, ifaces, new ArrayList<DexMethod>()));
+                new DexClass(descriptor, superDesc, ifaces, new ArrayList<DexMethod>(),
+                        new ArrayList<DexClass.DexField>()));
     }
 
     /** Host {@link Throwable} subclass for a framework descriptor, else null. */
@@ -2577,6 +2595,37 @@ public final class Interpreter {
         return ReflectResult.MISS;
     }
 
+    /**
+     * Dex subclasses of concrete host classes with no instance state of
+     * their own (e.g. Compose's {@code TreeSet} over
+     * {@code java.util.TreeSet}) store everything in the host superclass:
+     * construction re-targets to its constructor so args (like
+     * comparators) configure the live object instead of a discarded
+     * super-call copy. {@code Object} (the universal base),
+     * non-reflectable hosts (threads, loaders), and Throwables (own
+     * exception model) are excluded; misses keep normal dex execution.
+     * Skips the dex body on hit, so bodies doing more than delegating
+     * (beyond statics) would need their effects replayed.
+     */
+    private ReflectResult hostSuperConstruct(VmObject receiver, MethodRef ref,
+            Object[] args) {
+        DexClass dex = dexes.findClass(ref.definingClass);
+        if (dex == null || dex.superclass == null
+                || dex.superclass.equals("Ljava/lang/Object;")
+                || dexes.findClass(dex.superclass) != null
+                || dex.hasInstanceFields()
+                || !isReflectable(dex.superclass)) {
+            return ReflectResult.MISS;
+        }
+        Class<?> host = hostClass(dex.superclass);
+        if (host == null || Throwable.class.isAssignableFrom(host)) {
+            return ReflectResult.MISS;
+        }
+        return reflectConstruct(
+                new MethodRef(dex.superclass, ref.name, ref.parameters, ref.returnType),
+                args);
+    }
+
     /** Resolves a declared method to exactly one dispatch target. */
     private MethodTarget declaredMethod(String classDesc, String name,
             List<String> parameters) {
@@ -2796,6 +2845,12 @@ public final class Interpreter {
         if (target.dexMethod != null) {
             ensureInit(target.dexHome);
             VmObject instance = new VmObject(target.dexHome);
+            ReflectResult hostSuper = hostSuperConstruct(instance,
+                    new MethodRef(target.classDesc, "<init>", target.parameters, "V"),
+                    callArgs);
+            if (hostSuper.hit) {
+                return hostSuper.value;
+            }
             execute(target.dexHome, target.dexMethod, instance, callArgs);
             return instance;
         }
@@ -3968,11 +4023,52 @@ public final class Interpreter {
                     }
                     return systemServiceClass(((VmClass) args[0]).descriptor);
                 });
+        // No accessibility services run headless: default AUTO (0), stored
+        // when set so get observes it.
+        builtin("Landroid/view/View;->getImportantForAccessibility()I",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/view/View;.mImportantForAccessibility");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/view/View;->setImportantForAccessibility(I)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/view/View;.mImportantForAccessibility",
+                            asInt(args[0]));
+                    return null;
+                });
+        // No accessibility services run headless; delegates never fire.
+        builtin("Landroid/view/View;->setAccessibilityDelegate("
+                + "Landroid/view/View$AccessibilityDelegate;)V",
+                (receiver, args) -> null);
+        // No drag input occurs headless; listeners never fire.
+        builtin("Landroid/view/View;->setOnDragListener(Landroid/view/View$OnDragListener;)V",
+                (receiver, args) -> null);
+        // Layout never runs headless: requestLayout records the request
+        // (dispatch is a no-op), isLayoutRequested observes it.
+        builtin("Landroid/view/View;->requestLayout()V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/view/View;.mLayoutRequested", 1);
+                    return null;
+                });
+        builtin("Landroid/view/View;->isLayoutRequested()Z",
+                (receiver, args) -> {
+                    Object marked = ((VmObject) receiver)
+                            .getField("Landroid/view/View;.mLayoutRequested");
+                    return marked == null ? 0 : asInt(marked);
+                });
+        // Force-dark is a display feature with no headless effect.
+        builtin("Landroid/view/View;->setForceDarkAllowed(Z)V",
+                (receiver, args) -> null);
         // No accessibility services run headless: empty but mutable, like
         // the device list when nothing is enabled.
         builtin("Landroid/view/accessibility/AccessibilityManager;->"
                 + "getEnabledAccessibilityServiceList(I)Ljava/util/List;",
                 (receiver, args) -> new java.util.ArrayList<>());
+        // No accessibility services run headless, so the manager is disabled.
+        builtin("Landroid/view/accessibility/AccessibilityManager;->isEnabled()Z",
+                (receiver, args) -> 0);
         builtin("Landroid/content/res/Resources;->getConfiguration()"
                 + "Landroid/content/res/Configuration;",
                 (receiver, args) -> {
@@ -4478,6 +4574,24 @@ public final class Interpreter {
 
         builtin("Ljava/lang/Class;->getName()Ljava/lang/String;",
                 (receiver, args) -> classNameOf(((VmClass) receiver).descriptor));
+        // getClass observes the model type: dex objects report their class,
+        // arrays their array descriptor, host values their host descriptor.
+        builtin("Ljava/lang/Object;->getClass()Ljava/lang/Class;",
+                (receiver, args) -> {
+                    if (receiver == null) {
+                        throw new NullPointerException("null.getClass()");
+                    }
+                    if (receiver instanceof VmObject) {
+                        return new VmClass(((VmObject) receiver).type.type);
+                    }
+                    if (receiver instanceof VmArray) {
+                        return new VmClass("[" + ((VmArray) receiver).elementType);
+                    }
+                    if (receiver instanceof VmClass) {
+                        return new VmClass("Ljava/lang/Class;");
+                    }
+                    return new VmClass(hostDescriptor(receiver.getClass()));
+                });
         builtin("Ljava/lang/Class;->toString()Ljava/lang/String;",
                 (receiver, args) -> "class " + classNameOf(((VmClass) receiver).descriptor));
         builtin("Ljava/lang/Class;->getSimpleName()Ljava/lang/String;",
