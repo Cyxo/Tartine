@@ -177,6 +177,32 @@ class VmTest {
     }
 
     @Test
+    void postSubRunsInherited() {
+        assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "postSubDemo"));
+    }
+
+    @Test
+    void casNullExpectationMatches() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "casDemo"));
+    }
+
+    @Test
+    void loadClassResolves() {
+        assertEquals("test.Counter", interpreter.call(FixtureDex.HELLO, "loadClassDemo"));
+    }
+
+    @Test
+    void publicLookupFindsInherited() {
+        assertEquals("base", interpreter.call(FixtureDex.HELLO, "reflectPubDemo"));
+    }
+
+    @Test
+    void modelMethodsCarryNoAnnotations() {
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "annoDemo"));
+    }
+
+    @Test
     void handlerDispatchesMessage() {
         assertEquals(Integer.valueOf(42), interpreter.call(FixtureDex.HELLO, "handlerDemo"));
     }
@@ -438,6 +464,18 @@ class VmTest {
     }
 
     @Test
+    void configurationCopyPreserves() {
+        interpreter.setFramework(framework());
+        Object copy = interpreter.call(FixtureDex.HELLO, "configCopyDemo");
+        assertTrue(copy instanceof VmObject);
+        VmObject config = (VmObject) copy;
+        assertEquals(Integer.valueOf(160), config.getField(
+                "Landroid/content/res/Configuration;.densityDpi"));
+        assertEquals(Float.valueOf(1.0f),
+                config.getField("Landroid/content/res/Configuration;.fontScale"));
+    }
+
+    @Test
     void touchModeStaysFalse() {
         interpreter.setFramework(framework());
         assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "touchModeDemo"));
@@ -499,6 +537,149 @@ class VmTest {
     void forceDarkIgnores() {
         interpreter.setFramework(framework());
         assertNotNull(interpreter.call(FixtureDex.HELLO, "forceDarkDemo"));
+    }
+
+    @Test
+    void translationCallbackIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "translationDemo"));
+    }
+
+    @Test
+    void stackTraceSynthesizesDexFrames() {
+        Object length = interpreter.call(FixtureDex.HELLO, "stackDemo");
+        assertTrue(length instanceof Integer && (Integer) length >= 2);
+    }
+
+    @Test
+    void traceSectionsIgnore() {
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "traceDemo"));
+    }
+
+    @Test
+    void retainedInstanceIsNull() {
+        interpreter.setFramework(framework());
+        assertNull(interpreter.call(FixtureDex.HELLO, "retainedDemo"));
+    }
+
+    @Test
+    void bundleStringRoundTrips() {
+        assertEquals("v", interpreter.call(FixtureDex.HELLO, "bundleDemo"));
+    }
+
+    @Test
+    void bundleIntRoundTrips() {
+        assertEquals(Integer.valueOf(711),
+                interpreter.call(FixtureDex.HELLO, "bundleIntDemo"));
+    }
+
+    @Test
+    void applicationResolves() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "applicationDemo"));
+    }
+
+    @Test
+    void intentResolves() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "intentDemo"));
+    }
+
+    @Test
+    void intentExtrasAreNull() {
+        interpreter.setFramework(framework());
+        assertNull(interpreter.call(FixtureDex.HELLO, "intentExtrasDemo"));
+    }
+
+    @Test
+    void iterableIteratorIsEmpty() {
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "iterableDemo"));
+    }
+
+    @Test
+    void mapEntryExposesKey() {
+        assertEquals("k", interpreter.call(FixtureDex.HELLO, "entryDemo"));
+    }
+
+    @Test
+    void primitiveCheckReadsDescriptor() {
+        assertEquals(Integer.valueOf(10),
+                interpreter.call(FixtureDex.HELLO, "classPrimDemo"));
+    }
+
+    @Test
+    void contentResolverResolves() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "resolverDemo"));
+    }
+
+    @Test
+    void settingsUriBuilds() {
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "settingsUriDemo"));
+    }
+
+    @Test
+    void contentObserverIgnoresHandler() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "contentObserverDemo"));
+    }
+
+    @Test
+    void resolverObserverIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "resolverObsDemo"));
+    }
+
+    @Test
+    void themeResolves() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "themeDemo"));
+    }
+
+    @Test
+    void resourceColorsReadZero() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "resColorDemo"));
+    }
+
+    @Test
+    void contentCaptureSessionIsNull() {
+        interpreter.setFramework(framework());
+        assertNull(interpreter.call(FixtureDex.HELLO, "captureDemo"));
+    }
+
+    @Test
+    void settingsFloatFallsBackToDefault() {
+        interpreter.setFramework(framework());
+        assertEquals(Float.valueOf(7.5f),
+                interpreter.call(FixtureDex.HELLO, "settingsFloatDemo"));
+    }
+
+    @Test
+    void windowFocusHeld() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(1),
+                interpreter.call(FixtureDex.HELLO, "windowFocusDemo"));
+    }
+
+    @Test
+    void viewFocusNeverHeld() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(10),
+                interpreter.call(FixtureDex.HELLO, "focusCheckDemo"));
+    }
+
+    @Test
+    void autofillCallbackIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "autofillCbDemo"));
+    }
+
+    @Test
+    void attachPropagatesToChildren() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(11),
+                interpreter.call(FixtureDex.HELLO, "attachPropDemo"));
     }
 
     @Test
@@ -583,6 +764,24 @@ class VmTest {
     void drawDemoIgnores() {
         interpreter.setFramework(framework());
         assertNotNull(interpreter.call(FixtureDex.HELLO, "drawDemo"));
+    }
+
+    @Test
+    void vtoLayoutIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "vtoLayoutDemo"));
+    }
+
+    @Test
+    void vtoScrollIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "vtoScrollDemo"));
+    }
+
+    @Test
+    void vtoClusterIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "vtoClusterDemo"));
     }
 
     @Test
@@ -979,12 +1178,34 @@ class VmTest {
                 Collections.<FwIndex.FwMethod>emptyList(),
                 Collections.<FwIndex.FwField>emptyList(),
                 Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroidx/activity/ComponentActivity;",
+                "Landroid/app/Activity;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
         index.put(new FwClass("Landroid/view/ViewGroup$LayoutParams;", "Ljava/lang/Object;",
                 Collections.<String>emptyList(),
                 Collections.<FwIndex.FwMethod>emptyList(),
                 Collections.<FwIndex.FwField>emptyList(),
                 Collections.<String, Object>emptyMap()));
         index.put(new FwClass("Landroid/view/View$AccessibilityDelegate;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/database/ContentObserver;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/content/res/Configuration;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Ljava/util/concurrent/atomic/AtomicReferenceArray;",
+                "Ljava/lang/Object;",
                 Collections.<String>emptyList(),
                 Collections.<FwIndex.FwMethod>emptyList(),
                 Collections.<FwIndex.FwField>emptyList(),

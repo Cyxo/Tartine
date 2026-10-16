@@ -1332,6 +1332,12 @@ public final class Interpreter {
         if (descriptor.equals("Ljava/util/HashSet;")) {
             return new java.util.HashSet<Object>();
         }
+        // Bundles are string-keyed value maps; a host map carries the
+        // semantics (casts against Bundle stay approximate, as with
+        // other host-allocated model types).
+        if (descriptor.equals("Landroid/os/Bundle;")) {
+            return new java.util.HashMap<Object, Object>();
+        }
         if (descriptor.startsWith("Ljava/")) {
             Class<?> host = hostClass(descriptor);
             if (host != null && !host.isInterface() && !host.isArray() && !host.isEnum()
@@ -2181,9 +2187,41 @@ public final class Interpreter {
     private static final String METHOD_TARGET = "Ljava/lang/reflect/Method;.target";
     private static final String CTOR_TARGET = "Ljava/lang/reflect/Constructor;.target";
 
+    /** Dex class lookup for host-side dispatch helpers (see VmTask). */
+    public DexClass findClass(String type) {
+        return dexes.findClass(type);
+    }
+
     /** Overrides the reported API level (manifest targetSdk). */
     public void setSdkInt(int sdkInt) {
         this.sdkInt = sdkInt;
+    }
+
+    /**
+     * Reads a static field the way {@code sget} would (running class
+     * init, then interpreter statics and framework constants). Lets the
+     * driver fetch enum values and constants without a dex round-trip.
+     */
+    public Object staticField(String classDesc, String name, String type) {
+        ensureInitFor(classDesc + "->" + name + ":" + type);
+        return staticRead(classDesc, name, type);
+    }
+
+    /**
+     * Frame callbacks posted but never fired headless. The driver pumps
+     * them as the VSync equivalent; callbacks may re-post, so callers
+     * bound the pump.
+     */
+    public List<Object> frameCallbacks() {
+        if (choreographer == null) {
+            return Collections.emptyList();
+        }
+        Object held = choreographer
+                .getField("Landroid/view/Choreographer;.frameCallbacks");
+        if (!(held instanceof List)) {
+            return Collections.emptyList();
+        }
+        return new ArrayList<>((List<?>) held);
     }
 
     private static String argKey(Object arg) {
@@ -2249,7 +2287,15 @@ public final class Interpreter {
     private static Object toHost(Class<?> host, Object arg) {
         if (arg == null) {
             return null;
-        }        if (!host.isPrimitive()) {
+        }
+        if (!host.isPrimitive()) {
+            // Zero-bits are null in reference positions (Dalvik cannot
+            // tell them apart); only the designated heap zero survives
+            // as an object. Without this, host identity checks (like
+            // AtomicReferenceArray CAS against null) can never match.
+            if (isNullish(arg) && !(arg instanceof BoxedZero)) {
+                return null;
+            }
             if (host.isArray() && arg instanceof VmArray) {
                 return toHostArray(host.getComponentType(), (VmArray) arg);
             }
@@ -2643,6 +2689,51 @@ public final class Interpreter {
                 }
             }
         }
+        return finishMethodTarget(target, classDesc, name, parameters, false);
+    }
+
+    /**
+     * Public method lookup walks the dex hierarchy (most-derived first),
+     * then shares the builtin/host tail with declared lookup (host uses
+     * the inheriting getMethod instead of getDeclaredMethod).
+     */
+    private MethodTarget publicMethod(String classDesc, String name,
+            List<String> parameters) {
+        MethodTarget target = new MethodTarget();
+        target.label = classDesc + "." + name;
+        target.parameters.addAll(parameters);
+        Deque<String> queue = new ArrayDeque<>();
+        Set<String> seen = new HashSet<>();
+        queue.add(classDesc);
+        while (!queue.isEmpty()) {
+            String current = queue.removeFirst();
+            if (!seen.add(current)) {
+                continue;
+            }
+            DexClass dex = dexes.findClass(current);
+            if (dex == null) {
+                continue;
+            }
+            for (DexMethod candidate : dex.methods) {
+                if (candidate.name.equals(name)
+                        && candidate.parameterTypes.equals(parameters)) {
+                    target.dexMethod = candidate;
+                    target.dexHome = dex;
+                    return target;
+                }
+            }
+            if (dex.superclass != null
+                    && !dex.superclass.equals("Ljava/lang/Object;")) {
+                queue.add(dex.superclass);
+            }
+            queue.addAll(dex.interfaces);
+        }
+        return finishMethodTarget(target, classDesc, name, parameters, true);
+    }
+
+    /** Builtin-table/host tail shared by declared and public lookup. */
+    private MethodTarget finishMethodTarget(MethodTarget target, String classDesc, String name,
+            List<String> parameters, boolean publics) {
         StringBuilder prefix = new StringBuilder(classDesc).append("->")
                 .append(name).append('(');
         for (String param : parameters) {
@@ -2666,7 +2757,8 @@ public final class Interpreter {
                 }
             }
             try {
-                target.hostMethod = host.getDeclaredMethod(name, params);
+                target.hostMethod = publics ? host.getMethod(name, params)
+                        : host.getDeclaredMethod(name, params);
                 return target;
             } catch (NoSuchMethodException | SecurityException e) {
                 throw new VmThrow(new NoSuchMethodException(target.label));
@@ -2702,6 +2794,16 @@ public final class Interpreter {
             out[i] = array.get(i);
         }
         return out;
+    }
+
+    /** Single-universe class lookup shared by forName and loadClass. */
+    private VmClass lookupClass(String binary) {
+        String descriptor = "L" + binary.replace('.', '/') + ";";
+        if (dexes.findClass(descriptor) != null
+                || framework != null && framework.find(descriptor) != null) {
+            return new VmClass(descriptor);
+        }
+        throw new VmThrow(new ClassNotFoundException(binary));
     }
 
     /** Descriptor to host class for reflective parameter matching. */
@@ -3739,6 +3841,29 @@ public final class Interpreter {
                 (receiver, args) -> findContent((VmObject) receiver, args));
         builtin("Landroid/app/Activity;->findViewById(I)Landroid/view/View;",
                 (receiver, args) -> findContent((VmObject) receiver, args));
+        // Nothing is retained headless: no config change ever happened.
+        builtin("Landroidx/activity/ComponentActivity;->getLastNonConfigurationInstance()"
+                + "Ljava/lang/Object;",
+                (receiver, args) -> null);
+        // One application per activity, like the device singleton.
+        builtin("Landroidx/activity/ComponentActivity;->getApplication()"
+                + "Landroid/app/Application;",
+                (receiver, args) -> cachedPlaceholder((VmObject) receiver,
+                        "Landroidx/activity/ComponentActivity;.mApplication",
+                        "Landroid/app/Application;"));
+        // Headless launches carry no action, data, or extras: the Intent
+        // is stable per activity but empty.
+        builtin("Landroidx/activity/ComponentActivity;->getIntent()Landroid/content/Intent;",
+                (receiver, args) -> cachedPlaceholder((VmObject) receiver,
+                        "Landroidx/activity/ComponentActivity;.mIntent",
+                        "Landroid/content/Intent;"));
+        // Empty Intents carry no extras bundle.
+        builtin("Landroid/content/Intent;->getExtras()Landroid/os/Bundle;",
+                (receiver, args) -> {
+                    Object extras = ((VmObject) receiver)
+                            .getField("Landroid/content/Intent;.mExtras");
+                    return extras instanceof java.util.Map ? extras : null;
+                });
         builtin("Landroid/view/View;->findViewById(I)Landroid/view/View;",
                 (receiver, args) -> findContent((VmObject) receiver, args));
         // The content frame is childless until views are added.
@@ -3819,6 +3944,17 @@ public final class Interpreter {
         // Autofill mode has no headless effect; the manager path stays live.
         builtin("Landroid/view/View;->setImportantForAutofill(I)V",
                 (receiver, args) -> null);
+        // Content capture has no headless effect either.
+        builtin("Landroid/view/View;->setImportantForContentCapture(I)V",
+                (receiver, args) -> null);
+        // No capture session exists headless (as when capture is disabled).
+        builtin("Landroid/view/View;->getContentCaptureSession()"
+                + "Landroid/view/contentcapture/ContentCaptureSession;",
+                (receiver, args) -> null);
+        // No autofill service runs headless; callbacks never fire.
+        builtin("Landroid/view/autofill/AutofillManager;->registerCallback("
+                + "Landroid/view/autofill/AutofillManager$AutofillCallback;)V",
+                (receiver, args) -> null);
         // View configuration holds device constants (touch slop etc.);
         // per-context singleton like the framework cache.
         builtin("Landroid/view/ViewConfiguration;->get(Landroid/content/Context;)"
@@ -3839,6 +3975,35 @@ public final class Interpreter {
                             .getField("Landroid/view/View;.mAttached");
                     return marked == null ? 0 : asInt(marked);
                 });
+        // Attach marks the view; groups also mark recorded children.
+        // Child bodies do not run here (shallow dispatch): bodies run
+        // when the driver or interpreter reaches them.
+        builtin("Landroid/view/View;->onAttachedToWindow()V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/view/View;.mAttached", 1);
+                    return null;
+                });
+        builtin("Landroid/view/ViewGroup;->onAttachedToWindow()V",
+                (receiver, args) -> {
+                    VmObject group = (VmObject) receiver;
+                    group.putField("Landroid/view/View;.mAttached", 1);
+                    Object children = group.getField("Landroid/view/ViewGroup;.mChildren");
+                    if (children instanceof List) {
+                        for (Object child : (List<?>) children) {
+                            if (child instanceof VmObject) {
+                                ((VmObject) child)
+                                        .putField("Landroid/view/View;.mAttached", 1);
+                            }
+                        }
+                    }
+                    return null;
+                });
+        // Headless runs foreground: the window holds focus.
+        builtin("Landroid/view/View;->hasWindowFocus()Z",
+                (receiver, args) -> 1);
+        // Nothing takes focus headless (no input, focus setters no-op).
+        builtin("Landroid/view/View;->isFocused()Z",
+                (receiver, args) -> 0);
         // No input occurs headless, so touch mode is never entered.
         builtin("Landroid/view/View;->isInTouchMode()Z",
                 (receiver, args) -> 0);
@@ -3931,6 +4096,39 @@ public final class Interpreter {
         builtin("Landroid/view/ViewTreeObserver;->addOnDrawListener("
                 + "Landroid/view/ViewTreeObserver$OnDrawListener;)V",
                 (receiver, args) -> null);
+        builtin("Landroid/view/ViewTreeObserver;->addOnGlobalLayoutListener("
+                + "Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/ViewTreeObserver;->addOnScrollChangedListener("
+                + "Landroid/view/ViewTreeObserver$OnScrollChangedListener;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/ViewTreeObserver;->addOnTouchModeChangeListener("
+                + "Landroid/view/ViewTreeObserver$OnTouchModeChangeListener;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/ViewTreeObserver;->addOnPreDrawListener("
+                + "Landroid/view/ViewTreeObserver$OnPreDrawListener;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/ViewTreeObserver;->addOnWindowFocusChangeListener("
+                + "Landroid/view/ViewTreeObserver$OnWindowFocusChangeListener;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/ViewTreeObserver;->addOnWindowAttachListener("
+                + "Landroid/view/ViewTreeObserver$OnWindowAttachListener;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/ViewTreeObserver;->addOnComputeInternalInsetsListener("
+                + "Landroid/view/ViewTreeObserver$OnComputeInternalInsetsListener;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/ViewTreeObserver;->removeOnGlobalLayoutListener("
+                + "Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/ViewTreeObserver;->removeOnScrollChangedListener("
+                + "Landroid/view/ViewTreeObserver$OnScrollChangedListener;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/ViewTreeObserver;->removeOnPreDrawListener("
+                + "Landroid/view/ViewTreeObserver$OnPreDrawListener;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/ViewTreeObserver;->removeOnTouchModeChangeListener("
+                + "Landroid/view/ViewTreeObserver$OnTouchModeChangeListener;)V",
+                (receiver, args) -> null);
         // Installing the content view joins the window hierarchy: the view
         // gains the content frame as parent (so ViewTree walks reach the
         // decor tags), becomes the frame's first child, and attaches — the
@@ -4009,6 +4207,41 @@ public final class Interpreter {
                 (receiver, args) -> cachedPlaceholder((VmObject) receiver,
                         "Landroid/content/Context;.mApplication",
                         "Landroid/app/Application;"));
+        // No content providers run headless; observers never fire.
+        builtin("Landroid/database/ContentObserver;-><init>(Landroid/os/Handler;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/content/ContentResolver;->registerContentObserver("
+                + "Landroid/net/Uri;ZLandroid/database/ContentObserver;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/content/ContentResolver;->unregisterContentObserver("
+                + "Landroid/database/ContentObserver;)V",
+                (receiver, args) -> null);
+        // No content providers run headless; the resolver is a stable
+        // placeholder whose queries stay future gaps.
+        builtin("Landroid/content/Context;->getContentResolver()"
+                + "Landroid/content/ContentResolver;",
+                (receiver, args) -> cachedPlaceholder((VmObject) receiver,
+                        "Landroid/content/Context;.mContentResolver",
+                        "Landroid/content/ContentResolver;"));
+        // One theme per context; styled attributes stay future gaps.
+        builtin("Landroid/content/Context;->getTheme()Landroid/content/res/Resources$Theme;",
+                (receiver, args) -> cachedPlaceholder((VmObject) receiver,
+                        "Landroid/content/Context;.mTheme",
+                        "Landroid/content/res/Resources$Theme;"));
+        // No resources are parsed headless: color lookups read 0.
+        builtin("Landroid/content/res/Resources;->getColor(I)I",
+                (receiver, args) -> 0);
+        builtin("Landroid/content/res/Resources;->getColor(ILandroid/content/res/Resources$Theme;)I",
+                (receiver, args) -> 0);
+        // Settings URIs are pure names; values stay unread headless.
+        builtin("Landroid/provider/Settings$Global;->getUriFor(Ljava/lang/String;)"
+                + "Landroid/net/Uri;",
+                (receiver, args) -> newPlaceholder("Landroid/net/Uri;"));
+        // No settings provider runs headless: reads fall back to the
+        // caller-supplied default.
+        builtin("Landroid/provider/Settings$Global;->getFloat("
+                + "Landroid/content/ContentResolver;Ljava/lang/String;F)F",
+                (receiver, args) -> asFloatBits(args[2]));
         // System services dispatch by name; unknown names stay gaps so new
         // service needs surface as tasks instead of silent placeholders.
         builtin("Landroid/content/Context;->getSystemService(Ljava/lang/String;)"
@@ -4061,6 +4294,10 @@ public final class Interpreter {
         // Force-dark is a display feature with no headless effect.
         builtin("Landroid/view/View;->setForceDarkAllowed(Z)V",
                 (receiver, args) -> null);
+        // Content capture/translation has no headless effect.
+        builtin("Landroid/view/View;->setViewTranslationCallback("
+                + "Landroid/view/translation/ViewTranslationCallback;)V",
+                (receiver, args) -> null);
         // No accessibility services run headless: empty but mutable, like
         // the device list when nothing is enabled.
         builtin("Landroid/view/accessibility/AccessibilityManager;->"
@@ -4098,6 +4335,26 @@ public final class Interpreter {
         // Default locale is left-to-right; no RTL headless.
         builtin("Landroid/content/res/Configuration;->getLayoutDirection()I",
                 (receiver, args) -> 0);
+        // Copy construction clones the stored fields (density, font scale).
+        builtin("Landroid/content/res/Configuration;-><init>("
+                + "Landroid/content/res/Configuration;)V",
+                (receiver, args) -> {
+                    if (args[0] == null) {
+                        throw new NullPointerException("config copy of null");
+                    }
+                    ((VmObject) receiver).copyFieldsFrom((VmObject) args[0]);
+                    return null;
+                });
+        // setTo overwrites with another configuration's stored fields.
+        builtin("Landroid/content/res/Configuration;->setTo("
+                + "Landroid/content/res/Configuration;)V",
+                (receiver, args) -> {
+                    if (args[0] == null) {
+                        throw new NullPointerException("config setTo null");
+                    }
+                    ((VmObject) receiver).copyFieldsFrom((VmObject) args[0]);
+                    return null;
+                });
         builtin("Landroid/view/Window;->setDecorFitsSystemWindows(Z)V",
                 (receiver, args) -> null);
         builtin("Landroid/view/Window;->setStatusBarColor(I)V",
@@ -4574,6 +4831,13 @@ public final class Interpreter {
 
         builtin("Ljava/lang/Class;->getName()Ljava/lang/String;",
                 (receiver, args) -> classNameOf(((VmClass) receiver).descriptor));
+        // Primitive descriptors are the single-letter codes.
+        builtin("Ljava/lang/Class;->isPrimitive()Z",
+                (receiver, args) -> {
+                    String descriptor = ((VmClass) receiver).descriptor;
+                    return descriptor.length() == 1
+                            && "ZBSCIJFDV".indexOf(descriptor.charAt(0)) >= 0 ? 1 : 0;
+                });
         // getClass observes the model type: dex objects report their class,
         // arrays their array descriptor, host values their host descriptor.
         builtin("Ljava/lang/Object;->getClass()Ljava/lang/Class;",
@@ -4627,15 +4891,7 @@ public final class Interpreter {
                 (receiver, args) -> bool(typeAssignable(((VmClass) receiver).descriptor,
                         ((VmClass) args[0]).descriptor)));
         builtin("Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;",
-                (receiver, args) -> {
-                    String binary = argString(args, 0);
-                    String descriptor = "L" + binary.replace('.', '/') + ";";
-                    if (dexes.findClass(descriptor) != null
-                            || framework != null && framework.find(descriptor) != null) {
-                        return new VmClass(descriptor);
-                    }
-                    throw new VmThrow(new ClassNotFoundException(binary));
-                });
+                (receiver, args) -> lookupClass(argString(args, 0)));
         // There is one class universe (dex + framework + host), so its loader
         // is a singleton placeholder; services resolve to nothing (no
         // META-INF/services providers exist in that universe).
@@ -4666,6 +4922,30 @@ public final class Interpreter {
                     method.putField(METHOD_TARGET, target);
                     return method;
                 });
+        // Our model retains no annotations; host methods report their own.
+        builtin("Ljava/lang/reflect/Method;->getAnnotations()"
+                + "[Ljava/lang/annotation/Annotation;",
+                (receiver, args) -> {
+                    if (receiver instanceof java.lang.reflect.Method) {
+                        return boxReturn(
+                                ((java.lang.reflect.Method) receiver).getAnnotations());
+                    }
+                    return new VmArray("Ljava/lang/annotation/Annotation;", 0);
+                });
+        // getMethod inherits: same placeholder, hierarchy-walking lookup.
+        builtin("Ljava/lang/Class;->getMethod(Ljava/lang/String;[Ljava/lang/Class;)"
+                + "Ljava/lang/reflect/Method;",
+                (receiver, args) -> {
+                    if (!(receiver instanceof VmClass)) {
+                        throw new VmException("not a class");
+                    }
+                    String classDesc = ((VmClass) receiver).descriptor;
+                    MethodTarget target = publicMethod(classDesc, argString(args, 0),
+                            classArray(args[1]));
+                    VmObject method = newPlaceholder("Ljava/lang/reflect/Method;");
+                    method.putField(METHOD_TARGET, target);
+                    return method;
+                });
         builtin("Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)"
                 + "Ljava/lang/Object;",
                 (receiver, args) -> {
@@ -4683,15 +4963,12 @@ public final class Interpreter {
         // loader and initialize flags have no headless meaning.
         builtin("Ljava/lang/Class;->forName(Ljava/lang/String;ZLjava/lang/ClassLoader;)"
                 + "Ljava/lang/Class;",
-                (receiver, args) -> {
-                    String binary = argString(args, 0);
-                    String descriptor = "L" + binary.replace('.', '/') + ";";
-                    if (dexes.findClass(descriptor) != null
-                            || framework != null && framework.find(descriptor) != null) {
-                        return new VmClass(descriptor);
-                    }
-                    throw new VmThrow(new ClassNotFoundException(binary));
-                });
+                (receiver, args) -> lookupClass(argString(args, 0)));
+        // Loading is the same lookup through whichever loader instance
+        // dex code holds; the deny list still bars reflective access to
+        // loaders themselves.
+        builtin("Ljava/lang/ClassLoader;->loadClass(Ljava/lang/String;)Ljava/lang/Class;",
+                (receiver, args) -> lookupClass(argString(args, 0)));
         // Reflective construction mirrors Method handling: the Constructor
         // placeholder records its target, and newInstance allocates like
         // new-instance before running the body.
@@ -4937,6 +5214,46 @@ public final class Interpreter {
                     ((Thread) receiver).setPriority(argInt(args, 0));
                     return null;
                 });
+        // No systrace runs headless; sections are no-ops, tracing off.
+        builtin("Landroid/os/Trace;->beginSection(Ljava/lang/String;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/os/Trace;->endSection()V",
+                (receiver, args) -> null);
+        builtin("Landroid/os/Trace;->isEnabled()Z",
+                (receiver, args) -> 0);
+        // The host stack carries no DEX frames, so Kotlin's null-check
+        // message builder (which scans the stack for its own frames)
+        // would walk off the end. Synthesize the frames it needs from
+        // the trace ring — the Intrinsics hop plus the newest DEX
+        // frames — so the message names the true dex culprit instead
+        // of crashing.
+        builtin("Ljava/lang/Thread;->getStackTrace()[Ljava/lang/StackTraceElement;",
+                (receiver, args) -> {
+                    List<StackTraceElement> frames = new ArrayList<>();
+                    frames.add(new StackTraceElement("kotlin.jvm.internal.Intrinsics",
+                            "checkNotNullParameter", "Intrinsics.java", -1));
+                    List<String> ring = lastTrace();
+                    for (int i = ring.size() - 1; i >= 0 && frames.size() < 32; i--) {
+                        String line = ring.get(i);
+                        int dot = line.indexOf('.');
+                        int paren = line.indexOf('(', dot);
+                        if (dot < 1 || paren < 0) {
+                            continue;
+                        }
+                        String owner = line.substring(0, dot);
+                        if (!owner.startsWith("L") || !owner.endsWith(";")) {
+                            continue;
+                        }
+                        frames.add(new StackTraceElement(dots(owner),
+                                line.substring(dot + 1, paren), null, -1));
+                    }
+                    VmArray out = new VmArray("Ljava/lang/StackTraceElement;",
+                            frames.size());
+                    for (int i = 0; i < frames.size(); i++) {
+                        out.set(i, frames.get(i));
+                    }
+                    return out;
+                });
         // Reference referents live under one shared key: subclasses share
         // the base implementation without redeclaring the field.
         builtin("Ljava/lang/ref/Reference;->get()Ljava/lang/Object;",
@@ -5032,6 +5349,80 @@ public final class Interpreter {
                         .putIfAbsent(args[0], args[1]));
         builtin("Ljava/util/HashMap;->clone()Ljava/lang/Object;",
                 (receiver, args) -> ((java.util.HashMap<Object, Object>) receiver).clone());
+        // Bundles are string-keyed maps backed by a host HashMap (see
+        // createInstance); typed accessors default like the device.
+        builtin("Landroid/os/Bundle;-><init>()V",
+                (receiver, args) -> null);
+        builtin("Landroid/os/Bundle;-><init>(I)V",
+                (receiver, args) -> null);
+        builtin("Landroid/os/Bundle;-><init>(Landroid/os/Bundle;)V",
+                (receiver, args) -> {
+                    if (args[0] instanceof java.util.Map) {
+                        ((java.util.HashMap<Object, Object>) receiver)
+                                .putAll((java.util.Map<?, ?>) args[0]);
+                    }
+                    return null;
+                });
+        builtin("Landroid/os/Bundle;->putString(Ljava/lang/String;Ljava/lang/String;)V",
+                (receiver, args) -> {
+                    ((java.util.HashMap<Object, Object>) receiver)
+                            .put(argString(args, 0), argString(args, 1));
+                    return null;
+                });
+        builtin("Landroid/os/Bundle;->getString(Ljava/lang/String;)Ljava/lang/String;",
+                (receiver, args) -> {
+                    Object value = ((java.util.HashMap<Object, Object>) receiver)
+                            .get(argString(args, 0));
+                    return value == null ? null : (String) value;
+                });
+        builtin("Landroid/os/Bundle;->putInt(Ljava/lang/String;I)V",
+                (receiver, args) -> {
+                    ((java.util.HashMap<Object, Object>) receiver)
+                            .put(argString(args, 0), asInt(args[1]));
+                    return null;
+                });
+        builtin("Landroid/os/Bundle;->getInt(Ljava/lang/String;)I",
+                (receiver, args) -> {
+                    Object value = ((java.util.HashMap<Object, Object>) receiver)
+                            .get(argString(args, 0));
+                    return value == null ? 0 : ((Number) value).intValue();
+                });
+        builtin("Landroid/os/Bundle;->getInt(Ljava/lang/String;I)I",
+                (receiver, args) -> {
+                    Object value = ((java.util.HashMap<Object, Object>) receiver)
+                            .get(argString(args, 0));
+                    return value == null ? asInt(args[1]) : ((Number) value).intValue();
+                });
+        builtin("Landroid/os/Bundle;->putBoolean(Ljava/lang/String;Z)V",
+                (receiver, args) -> {
+                    ((java.util.HashMap<Object, Object>) receiver)
+                            .put(argString(args, 0), asInt(args[1]) != 0);
+                    return null;
+                });
+        builtin("Landroid/os/Bundle;->getBoolean(Ljava/lang/String;)Z",
+                (receiver, args) -> {
+                    Object value = ((java.util.HashMap<Object, Object>) receiver)
+                            .get(argString(args, 0));
+                    return value == null ? 0 : bool(Boolean.TRUE.equals(value));
+                });
+        builtin("Landroid/os/Bundle;->putBundle(Ljava/lang/String;Landroid/os/Bundle;)V",
+                (receiver, args) -> {
+                    ((java.util.HashMap<Object, Object>) receiver)
+                            .put(argString(args, 0), args[1]);
+                    return null;
+                });
+        builtin("Landroid/os/Bundle;->getBundle(Ljava/lang/String;)Landroid/os/Bundle;",
+                (receiver, args) -> ((java.util.HashMap<Object, Object>) receiver)
+                        .get(argString(args, 0)));
+        builtin("Landroid/os/Bundle;->containsKey(Ljava/lang/String;)Z",
+                (receiver, args) -> bool(((java.util.HashMap<Object, Object>) receiver)
+                        .containsKey(argString(args, 0))));
+        builtin("Landroid/os/Bundle;->remove(Ljava/lang/String;)V",
+                (receiver, args) -> {
+                    ((java.util.HashMap<Object, Object>) receiver)
+                            .remove(argString(args, 0));
+                    return null;
+                });
 
         builtin("Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;",
                 (receiver, args) -> ((java.util.Map<Object, Object>) receiver).get(args[0]));
@@ -5062,6 +5453,28 @@ public final class Interpreter {
                 (receiver, args) -> ((java.util.Map<Object, Object>) receiver).values());
         builtin("Ljava/util/Map;->entrySet()Ljava/util/Set;",
                 (receiver, args) -> ((java.util.Map<Object, Object>) receiver).entrySet());
+        // Entries live in package-private impls (HashMap$Node) that
+        // reflective invoke cannot reach; the table calls through the
+        // public interface instead, and model entries run their dex body.
+        builtin("Ljava/util/Map$Entry;->getKey()Ljava/lang/Object;",
+                (receiver, args) -> receiver instanceof VmObject
+                        ? dispatchDex(receiver, "getKey",
+                                Collections.<String>emptyList(), "Ljava/lang/Object;",
+                                new Object[0])
+                        : ((java.util.Map.Entry<Object, Object>) receiver).getKey());
+        builtin("Ljava/util/Map$Entry;->getValue()Ljava/lang/Object;",
+                (receiver, args) -> receiver instanceof VmObject
+                        ? dispatchDex(receiver, "getValue",
+                                Collections.<String>emptyList(), "Ljava/lang/Object;",
+                                new Object[0])
+                        : ((java.util.Map.Entry<Object, Object>) receiver).getValue());
+        builtin("Ljava/util/Map$Entry;->setValue(Ljava/lang/Object;)Ljava/lang/Object;",
+                (receiver, args) -> receiver instanceof VmObject
+                        ? dispatchDex(receiver, "setValue",
+                                Collections.singletonList("Ljava/lang/Object;"),
+                                "Ljava/lang/Object;", new Object[]{args[0]})
+                        : ((java.util.Map.Entry<Object, Object>) receiver)
+                                .setValue(args[0]));
         builtin("Ljava/util/Map;->putAll(Ljava/util/Map;)V",
                 (receiver, args) -> {
                     ((java.util.Map<Object, Object>) receiver)
@@ -5263,6 +5676,9 @@ public final class Interpreter {
 
         builtin("Ljava/util/Collection;->iterator()Ljava/util/Iterator;",
                 (receiver, args) -> ((java.util.Collection<Object>) receiver).iterator());
+        // Kotlin/stdlib code often types host lists as bare Iterable.
+        builtin("Ljava/lang/Iterable;->iterator()Ljava/util/Iterator;",
+                (receiver, args) -> ((java.lang.Iterable<Object>) receiver).iterator());
         builtin("Ljava/util/Collection;->size()I",
                 (receiver, args) -> ((java.util.Collection<Object>) receiver).size());
         builtin("Ljava/util/Collection;->isEmpty()Z",

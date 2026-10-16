@@ -25,4 +25,9 @@ public final class VmObject {
     public void putField(String key, Object value) {
         fields.put(key, value);
     }
+
+    /** Copies all stored fields from another instance (copy constructors). */
+    public void copyFieldsFrom(VmObject source) {
+        fields.putAll(source.fields);
+    }
 }

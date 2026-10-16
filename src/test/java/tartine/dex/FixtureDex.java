@@ -67,6 +67,14 @@ public final class FixtureDex {
 
         BuilderMethod counterInit = trivialInit(builder, objectInit, COUNTER, "Ljava/lang/Object;");
         BuilderMethod baseInit = trivialInit(builder, objectInit, BASE, "Ljava/lang/Object;");
+        MutableMethodImplementation baseWhoImpl = new MutableMethodImplementation(1);
+        baseWhoImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("base")));
+        baseWhoImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod baseWho = builder.internMethod(BASE, "who",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/String;",
+                AccessFlags.PUBLIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), baseWhoImpl);
         BuilderMethodReference baseInitRef = builder.internMethodReference(
                 new ImmutableMethodReference(BASE, "<init>",
                         Collections.<String>emptyList(), "V"));
@@ -87,7 +95,7 @@ public final class FixtureDex {
                 Collections.<String>emptyList(), "Base.java",
                 Collections.emptySet(),
                 Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
-                Collections.singletonList(baseInit));
+                Arrays.asList(baseInit, baseWho));
         builder.internClassDef(SUB, AccessFlags.PUBLIC.getValue(), BASE,
                 Collections.<String>emptyList(), "Sub.java",
                 Collections.emptySet(),
@@ -975,6 +983,15 @@ public final class FixtureDex {
                 Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
                 Arrays.asList(jobInit, jobRun));
 
+        // SubJob: inherits run() from Job (host task dispatch walks up).
+        BuilderMethod subJobInit = trivialInit(builder, objectInit, "Ltest/SubJob;",
+                "Ltest/Job;");
+        builder.internClassDef("Ltest/SubJob;", AccessFlags.PUBLIC.getValue(), "Ltest/Job;",
+                Collections.<String>emptyList(), "SubJob.java",
+                Collections.emptySet(),
+                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.singletonList(subJobInit));
+
         // executorDemo(): pool.execute(new Job()); return Hello.flag.
         MutableMethodImplementation execImpl = new MutableMethodImplementation(3);
         execImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
@@ -1064,6 +1081,59 @@ public final class FixtureDex {
                 Collections.<ImmutableMethodParameter>emptyList(), "I",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), postImpl);
+
+        // postSubDemo(): posting a Job subclass runs the inherited run().
+        MutableMethodImplementation postSubImpl = new MutableMethodImplementation(2);
+        postSubImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ltest/MyHandler;")));
+        postSubImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        postSubImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference("Ltest/MyHandler;",
+                        "<init>", Collections.<String>emptyList(), "V"))));
+        postSubImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Ltest/SubJob;")));
+        postSubImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        postSubImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 1, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference("Ltest/SubJob;",
+                        "<init>", Collections.<String>emptyList(), "V"))));
+        postSubImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Handler;", "post",
+                        Collections.singletonList("Ljava/lang/Runnable;"), "Z"))));
+        postSubImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        postSubImpl.addInstruction(new BuilderInstruction21c(Opcode.SGET, 1,
+                builder.internFieldReference(new ImmutableFieldReference(HELLO, "flag", "I"))));
+        postSubImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 1));
+        BuilderMethod postSubDemo = builder.internMethod(HELLO, "postSubDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), postSubImpl);
+
+        // casDemo(): CAS(null, "x") on a fresh cell succeeds (const zero
+        // crosses to host as null).
+        MutableMethodImplementation casImpl = new MutableMethodImplementation(3);
+        casImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ljava/util/concurrent/atomic/AtomicReferenceArray;")));
+        casImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        casImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 1));
+        casImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 0, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicReferenceArray;", "<init>",
+                        Collections.singletonList("I"), "V"))));
+        casImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("x")));
+        casImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
+        casImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 4, 0, 2, 2, 1,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/concurrent/atomic/AtomicReferenceArray;", "compareAndSet",
+                        Arrays.asList("I", "Ljava/lang/Object;", "Ljava/lang/Object;"),
+                        "Z"))));
+        casImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        casImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod casDemo = builder.internMethod(HELLO, "casDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Z",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), casImpl);
 
         // handlerDemo(): handler.sendEmptyMessage(42) dispatches; return flag.
         MutableMethodImplementation dispatchImpl = new MutableMethodImplementation(2);
@@ -2281,6 +2351,112 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), drawImpl);
 
+        // vtoLayoutDemo(): global-layout registration is a silent no-op.
+        MutableMethodImplementation vtoLayoutImpl = new MutableMethodImplementation(3);
+        vtoLayoutImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/View;")));
+        vtoLayoutImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        vtoLayoutImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        vtoLayoutImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "getViewTreeObserver",
+                        Collections.<String>emptyList(),
+                        "Landroid/view/ViewTreeObserver;"))));
+        vtoLayoutImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        vtoLayoutImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
+        vtoLayoutImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 1, 2, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/ViewTreeObserver;", "addOnGlobalLayoutListener",
+                        Collections.singletonList(
+                                "Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;"),
+                        "V"))));
+        vtoLayoutImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod vtoLayoutDemo = builder.internMethod(HELLO, "vtoLayoutDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), vtoLayoutImpl);
+
+        // vtoScrollDemo(): scroll-changed registration is a silent no-op.
+        MutableMethodImplementation vtoScrollImpl = new MutableMethodImplementation(3);
+        vtoScrollImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/View;")));
+        vtoScrollImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        vtoScrollImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        vtoScrollImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "getViewTreeObserver",
+                        Collections.<String>emptyList(),
+                        "Landroid/view/ViewTreeObserver;"))));
+        vtoScrollImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        vtoScrollImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
+        vtoScrollImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 1, 2, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/ViewTreeObserver;", "addOnScrollChangedListener",
+                        Collections.singletonList(
+                                "Landroid/view/ViewTreeObserver$OnScrollChangedListener;"),
+                        "V"))));
+        vtoScrollImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod vtoScrollDemo = builder.internMethod(HELLO, "vtoScrollDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), vtoScrollImpl);
+
+        // vtoClusterDemo(): the remaining observer registrations are silent
+        // no-ops (touch-mode, pre-draw, window focus/attach, insets, plus
+        // the matching removals).
+        MutableMethodImplementation vtoClusterImpl = new MutableMethodImplementation(3);
+        vtoClusterImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/View;")));
+        vtoClusterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        vtoClusterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        vtoClusterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "getViewTreeObserver",
+                        Collections.<String>emptyList(),
+                        "Landroid/view/ViewTreeObserver;"))));
+        vtoClusterImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        vtoClusterImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
+        String[][] clusterCalls = {
+                {"addOnTouchModeChangeListener",
+                        "Landroid/view/ViewTreeObserver$OnTouchModeChangeListener;"},
+                {"addOnPreDrawListener",
+                        "Landroid/view/ViewTreeObserver$OnPreDrawListener;"},
+                {"addOnWindowFocusChangeListener",
+                        "Landroid/view/ViewTreeObserver$OnWindowFocusChangeListener;"},
+                {"addOnWindowAttachListener",
+                        "Landroid/view/ViewTreeObserver$OnWindowAttachListener;"},
+                {"addOnComputeInternalInsetsListener",
+                        "Landroid/view/ViewTreeObserver$OnComputeInternalInsetsListener;"},
+                {"removeOnGlobalLayoutListener",
+                        "Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;"},
+                {"removeOnScrollChangedListener",
+                        "Landroid/view/ViewTreeObserver$OnScrollChangedListener;"},
+                {"removeOnPreDrawListener",
+                        "Landroid/view/ViewTreeObserver$OnPreDrawListener;"},
+                {"removeOnTouchModeChangeListener",
+                        "Landroid/view/ViewTreeObserver$OnTouchModeChangeListener;"},
+        };
+        for (String[] call : clusterCalls) {
+            vtoClusterImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 1,
+                    2, 0, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                            "Landroid/view/ViewTreeObserver;", call[0],
+                            Collections.singletonList(call[1]), "V"))));
+        }
+        vtoClusterImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod vtoClusterDemo = builder.internMethod(HELLO, "vtoClusterDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), vtoClusterImpl);
+
         // contentViewDemo(): setContentView installs silently headless.
         MutableMethodImplementation contentViewImpl = new MutableMethodImplementation(4);
         contentViewImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
@@ -2707,6 +2883,70 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), reflectMissImpl);
 
+        // reflectPubDemo(): Sub inherits who() from Base; getMethod finds it.
+        MutableMethodImplementation reflectPubImpl = new MutableMethodImplementation(4);
+        reflectPubImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference(SUB)));
+        reflectPubImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        reflectPubImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(SUB, "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        reflectPubImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 1,
+                builder.internTypeReference(SUB)));
+        reflectPubImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
+        reflectPubImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 2, 2,
+                builder.internTypeReference("[Ljava/lang/Class;")));
+        reflectPubImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 3,
+                builder.internStringReference("who")));
+        reflectPubImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 1, 3, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "getMethod",
+                        Arrays.asList("Ljava/lang/String;", "[Ljava/lang/Class;"),
+                        "Ljava/lang/reflect/Method;"))));
+        reflectPubImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        reflectPubImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
+        reflectPubImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 2, 2,
+                builder.internTypeReference("[Ljava/lang/Object;")));
+        reflectPubImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 1, 0, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/reflect/Method;", "invoke",
+                        Arrays.asList("Ljava/lang/Object;", "[Ljava/lang/Object;"),
+                        "Ljava/lang/Object;"))));
+        reflectPubImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        reflectPubImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod reflectPubDemo = builder.internMethod(HELLO, "reflectPubDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), reflectPubImpl);
+
+        // annoDemo(): model methods carry no annotations.
+        MutableMethodImplementation annoImpl = new MutableMethodImplementation(3);
+        annoImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference("Ljava/lang/Object;")));
+        annoImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 0));
+        annoImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 1, 1,
+                builder.internTypeReference("[Ljava/lang/Class;")));
+        annoImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 2,
+                builder.internStringReference("toString")));
+        annoImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 2, 1, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "getMethod",
+                        Arrays.asList("Ljava/lang/String;", "[Ljava/lang/Class;"),
+                        "Ljava/lang/reflect/Method;"))));
+        annoImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        annoImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/reflect/Method;", "getAnnotations",
+                        Collections.<String>emptyList(),
+                        "[Ljava/lang/annotation/Annotation;"))));
+        annoImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        annoImpl.addInstruction(new BuilderInstruction12x(Opcode.ARRAY_LENGTH, 0, 0));
+        annoImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod annoDemo = builder.internMethod(HELLO, "annoDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), annoImpl);
+
         // longUpdaterDemo(): set 7, cas 7->8, add 2 == 10 (model fields are
         // untyped; the asLong normalization is what's tested). Wide args
         // occupy doubled registers, so multi-wide calls use /range.
@@ -2914,6 +3154,34 @@ public final class FixtureDex {
                 Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), loaderImpl);
+
+        // loadClassDemo(): loading resolves through the single universe.
+        MutableMethodImplementation loadClassImpl = new MutableMethodImplementation(2);
+        loadClassImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference("Ljava/lang/Object;")));
+        loadClassImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "getClassLoader",
+                        Collections.<String>emptyList(), "Ljava/lang/ClassLoader;"))));
+        loadClassImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        loadClassImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("test.Counter")));
+        loadClassImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/ClassLoader;", "loadClass",
+                        Collections.singletonList("Ljava/lang/String;"),
+                        "Ljava/lang/Class;"))));
+        loadClassImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        loadClassImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "getName",
+                        Collections.<String>emptyList(), "Ljava/lang/String;"))));
+        loadClassImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        loadClassImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod loadClassDemo = builder.internMethod(HELLO, "loadClassDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), loadClassImpl);
 
         // serviceDemo(): service loading finds no providers.
         MutableMethodImplementation serviceImpl = new MutableMethodImplementation(1);
@@ -3172,6 +3440,59 @@ public final class FixtureDex {
                 Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), childAddImpl);
+
+        // attachPropDemo(): group.onAttachedToWindow marks group and child:
+        // returns childAttached * 10 + groupAttached = 11.
+        MutableMethodImplementation attachPropImpl = new MutableMethodImplementation(3);
+        attachPropImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/ViewGroup;")));
+        attachPropImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        attachPropImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        attachPropImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        attachPropImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        attachPropImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
+        attachPropImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 4, 0, 1, 2,
+                2, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/ViewGroup;", "<init>",
+                        Arrays.asList("Landroid/content/Context;",
+                                "Landroid/util/AttributeSet;", "I"),
+                        "V"))));
+        attachPropImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Landroid/view/View;")));
+        attachPropImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        attachPropImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        attachPropImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/ViewGroup;", "addView",
+                        Collections.singletonList("Landroid/view/View;"), "V"))));
+        attachPropImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/ViewGroup;", "onAttachedToWindow",
+                        Collections.<String>emptyList(), "V"))));
+        attachPropImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "isAttachedToWindow",
+                        Collections.<String>emptyList(), "Z"))));
+        attachPropImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        attachPropImpl.addInstruction(new BuilderInstruction22b(Opcode.MUL_INT_LIT8, 2, 2, 10));
+        attachPropImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/ViewGroup;", "isAttachedToWindow",
+                        Collections.<String>emptyList(), "Z"))));
+        attachPropImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        attachPropImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 2, 2, 1));
+        attachPropImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        BuilderMethod attachPropDemo = builder.internMethod(HELLO, "attachPropDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), attachPropImpl);
 
         // childRemoveDemo(): removeAllViews detaches and empties.
         MutableMethodImplementation childRemoveImpl = new MutableMethodImplementation(4);
@@ -3439,7 +3760,36 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), autofillImpl);
 
-        // importantDemo(): setImportantForAutofill is a silent no-op.
+        // autofillCbDemo(): registerCallback is a silent no-op.
+        MutableMethodImplementation autofillCbImpl = new MutableMethodImplementation(3);
+        autofillCbImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        autofillCbImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        autofillCbImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        autofillCbImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 1,
+                builder.internTypeReference("Landroid/view/autofill/AutofillManager;")));
+        autofillCbImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/Context;", "getSystemService",
+                        Collections.singletonList("Ljava/lang/Class;"),
+                        "Ljava/lang/Object;"))));
+        autofillCbImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        autofillCbImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 2, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/autofill/AutofillManager;", "registerCallback",
+                        Collections.singletonList(
+                                "Landroid/view/autofill/AutofillManager$AutofillCallback;"),
+                        "V"))));
+        autofillCbImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod autofillCbDemo = builder.internMethod(HELLO, "autofillCbDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), autofillCbImpl);
+
+        // importantDemo(): setImportantForAutofill/ContentCapture are no-ops.
         MutableMethodImplementation importantImpl = new MutableMethodImplementation(2);
         importantImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
                 builder.internTypeReference("Landroid/view/View;")));
@@ -3453,11 +3803,36 @@ public final class FixtureDex {
                 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/view/View;", "setImportantForAutofill",
                         Collections.singletonList("I"), "V"))));
+        importantImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "setImportantForContentCapture",
+                        Collections.singletonList("I"), "V"))));
         importantImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
         BuilderMethod importantDemo = builder.internMethod(HELLO, "importantDemo",
                 Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), importantImpl);
+
+        // captureDemo(): no content-capture session headless.
+        MutableMethodImplementation captureImpl = new MutableMethodImplementation(1);
+        captureImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/View;")));
+        captureImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        captureImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        captureImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "getContentCaptureSession",
+                        Collections.<String>emptyList(),
+                        "Landroid/view/contentcapture/ContentCaptureSession;"))));
+        captureImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        captureImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod captureDemo = builder.internMethod(HELLO, "captureDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), captureImpl);
 
         // metricsDemo(): DisplayMetrics carries baseline mdpi density.
         MutableMethodImplementation metricsImpl = new MutableMethodImplementation(1);
@@ -3550,6 +3925,54 @@ public final class FixtureDex {
                 Collections.<ImmutableMethodParameter>emptyList(), "I",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), layoutDirImpl);
+
+        // configCopyDemo(): copying a Configuration preserves its fields;
+        // setTo overwrites another instance with them.
+        MutableMethodImplementation configCopyImpl = new MutableMethodImplementation(3);
+        configCopyImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        configCopyImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        configCopyImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        configCopyImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/Context;", "getResources",
+                        Collections.<String>emptyList(),
+                        "Landroid/content/res/Resources;"))));
+        configCopyImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        configCopyImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/res/Resources;", "getConfiguration",
+                        Collections.<String>emptyList(),
+                        "Landroid/content/res/Configuration;"))));
+        configCopyImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        configCopyImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Landroid/content/res/Configuration;")));
+        configCopyImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        configCopyImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/res/Configuration;", "<init>",
+                        Collections.singletonList("Landroid/content/res/Configuration;"),
+                        "V"))));
+        configCopyImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 2,
+                builder.internTypeReference("Landroid/content/res/Configuration;")));
+        configCopyImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        configCopyImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 2, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/res/Configuration;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        configCopyImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 2, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/res/Configuration;", "setTo",
+                        Collections.singletonList("Landroid/content/res/Configuration;"),
+                        "V"))));
+        configCopyImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 2));
+        BuilderMethod configCopyDemo = builder.internMethod(HELLO, "configCopyDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), configCopyImpl);
 
         // touchModeDemo(): no touch input headless, so never in touch mode.
         MutableMethodImplementation touchModeImpl = new MutableMethodImplementation(1);
@@ -3746,6 +4169,566 @@ public final class FixtureDex {
                 Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), forceDarkImpl);
+
+        // translationDemo(): setViewTranslationCallback is a silent no-op.
+        MutableMethodImplementation translationImpl = new MutableMethodImplementation(2);
+        translationImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/View;")));
+        translationImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        translationImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        translationImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1,
+                0, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "setViewTranslationCallback",
+                        Collections.singletonList(
+                                "Landroid/view/translation/ViewTranslationCallback;"),
+                        "V"))));
+        translationImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod translationDemo = builder.internMethod(HELLO, "translationDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), translationImpl);
+
+        // windowFocusDemo(): headless runs foreground, so focus is held.
+        MutableMethodImplementation windowFocusImpl = new MutableMethodImplementation(1);
+        windowFocusImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/View;")));
+        windowFocusImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        windowFocusImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        windowFocusImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "hasWindowFocus",
+                        Collections.<String>emptyList(), "Z"))));
+        windowFocusImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        windowFocusImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod windowFocusDemo = builder.internMethod(HELLO, "windowFocusDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Z",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), windowFocusImpl);
+
+        // focusCheckDemo(): window focus is held, view focus never is.
+        MutableMethodImplementation focusCheckImpl = new MutableMethodImplementation(3);
+        focusCheckImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/View;")));
+        focusCheckImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        focusCheckImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        focusCheckImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "hasWindowFocus",
+                        Collections.<String>emptyList(), "Z"))));
+        focusCheckImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        focusCheckImpl.addInstruction(new BuilderInstruction22b(Opcode.MUL_INT_LIT8, 1, 1, 10));
+        focusCheckImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "isFocused",
+                        Collections.<String>emptyList(), "Z"))));
+        focusCheckImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        focusCheckImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 1, 1, 2));
+        focusCheckImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 1));
+        BuilderMethod focusCheckDemo = builder.internMethod(HELLO, "focusCheckDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), focusCheckImpl);
+
+        // stackDemo(): synthesized thread stack names dex frames (length ≥ 2:
+        // the Intrinsics hop plus callers).
+        MutableMethodImplementation stackImpl = new MutableMethodImplementation(1);
+        stackImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Thread;", "currentThread",
+                        Collections.<String>emptyList(), "Ljava/lang/Thread;"))));
+        stackImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        stackImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Thread;", "getStackTrace",
+                        Collections.<String>emptyList(),
+                        "[Ljava/lang/StackTraceElement;"))));
+        stackImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        stackImpl.addInstruction(new BuilderInstruction12x(Opcode.ARRAY_LENGTH, 0, 0));
+        stackImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod stackDemo = builder.internMethod(HELLO, "stackDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), stackImpl);
+
+        // traceDemo(): systrace sections are silent no-ops, tracing off.
+        MutableMethodImplementation traceImpl = new MutableMethodImplementation(2);
+        traceImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("section")));
+        traceImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Trace;", "beginSection",
+                        Collections.singletonList("Ljava/lang/String;"), "V"))));
+        traceImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Trace;", "endSection",
+                        Collections.<String>emptyList(), "V"))));
+        traceImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Trace;", "isEnabled",
+                        Collections.<String>emptyList(), "Z"))));
+        traceImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        traceImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod traceDemo = builder.internMethod(HELLO, "traceDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Z",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), traceImpl);
+
+        // retainedDemo(): nothing retained across config changes headless.
+        MutableMethodImplementation retainedImpl = new MutableMethodImplementation(1);
+        retainedImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroidx/activity/ComponentActivity;")));
+        retainedImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        retainedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroidx/activity/ComponentActivity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        retainedImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroidx/activity/ComponentActivity;",
+                        "getLastNonConfigurationInstance",
+                        Collections.<String>emptyList(), "Ljava/lang/Object;"))));
+        retainedImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        retainedImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod retainedDemo = builder.internMethod(HELLO, "retainedDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), retainedImpl);
+
+        // bundleDemo(): Bundle string round-trip over a capacity init.
+        MutableMethodImplementation bundleImpl = new MutableMethodImplementation(3);
+        bundleImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/os/Bundle;")));
+        bundleImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        bundleImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 7));
+        bundleImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Bundle;", "<init>",
+                        Collections.singletonList("I"), "V"))));
+        bundleImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("k")));
+        bundleImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 2,
+                builder.internStringReference("v")));
+        bundleImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 1, 2, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Bundle;", "putString",
+                        Arrays.asList("Ljava/lang/String;", "Ljava/lang/String;"), "V"))));
+        bundleImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Bundle;", "getString",
+                        Collections.singletonList("Ljava/lang/String;"),
+                        "Ljava/lang/String;"))));
+        bundleImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        bundleImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod bundleDemo = builder.internMethod(HELLO, "bundleDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), bundleImpl);
+
+        // bundleIntDemo(): int/boolean/contains round-trip: 7 * 100 + 10 + 1.
+        MutableMethodImplementation bundleIntImpl = new MutableMethodImplementation(4);
+        bundleIntImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/os/Bundle;")));
+        bundleIntImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        bundleIntImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Bundle;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        bundleIntImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("n")));
+        bundleIntImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 7));
+        bundleIntImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 1, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Bundle;", "putInt",
+                        Arrays.asList("Ljava/lang/String;", "I"), "V"))));
+        bundleIntImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("b")));
+        bundleIntImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 1));
+        bundleIntImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 1, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Bundle;", "putBoolean",
+                        Arrays.asList("Ljava/lang/String;", "Z"), "V"))));
+        bundleIntImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("n")));
+        bundleIntImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Bundle;", "getInt",
+                        Collections.singletonList("Ljava/lang/String;"), "I"))));
+        bundleIntImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 3));
+        bundleIntImpl.addInstruction(new BuilderInstruction22b(Opcode.MUL_INT_LIT8, 3, 3, 100));
+        bundleIntImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("b")));
+        bundleIntImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Bundle;", "getBoolean",
+                        Collections.singletonList("Ljava/lang/String;"), "Z"))));
+        bundleIntImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        bundleIntImpl.addInstruction(new BuilderInstruction22b(Opcode.MUL_INT_LIT8, 2, 2, 10));
+        bundleIntImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("n")));
+        bundleIntImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/os/Bundle;", "containsKey",
+                        Collections.singletonList("Ljava/lang/String;"), "Z"))));
+        bundleIntImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        bundleIntImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 3, 3, 2));
+        bundleIntImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 3, 3, 1));
+        bundleIntImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 3));
+        BuilderMethod bundleIntDemo = builder.internMethod(HELLO, "bundleIntDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), bundleIntImpl);
+
+        // applicationDemo(): getApplication resolves stably per activity.
+        MutableMethodImplementation applicationImpl = new MutableMethodImplementation(1);
+        applicationImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroidx/activity/ComponentActivity;")));
+        applicationImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        applicationImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroidx/activity/ComponentActivity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        applicationImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0,
+                0, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroidx/activity/ComponentActivity;", "getApplication",
+                        Collections.<String>emptyList(), "Landroid/app/Application;"))));
+        applicationImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        applicationImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod applicationDemo = builder.internMethod(HELLO, "applicationDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), applicationImpl);
+
+        // intentDemo(): getIntent resolves stably per activity.
+        MutableMethodImplementation intentImpl = new MutableMethodImplementation(1);
+        intentImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroidx/activity/ComponentActivity;")));
+        intentImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        intentImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroidx/activity/ComponentActivity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        intentImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroidx/activity/ComponentActivity;", "getIntent",
+                        Collections.<String>emptyList(), "Landroid/content/Intent;"))));
+        intentImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        intentImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod intentDemo = builder.internMethod(HELLO, "intentDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), intentImpl);
+
+        // intentExtrasDemo(): empty Intents carry no extras.
+        MutableMethodImplementation intentExtrasImpl = new MutableMethodImplementation(1);
+        intentExtrasImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroidx/activity/ComponentActivity;")));
+        intentExtrasImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        intentExtrasImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0,
+                0, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroidx/activity/ComponentActivity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        intentExtrasImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0,
+                0, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroidx/activity/ComponentActivity;", "getIntent",
+                        Collections.<String>emptyList(), "Landroid/content/Intent;"))));
+        intentExtrasImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        intentExtrasImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0,
+                0, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/Intent;", "getExtras",
+                        Collections.<String>emptyList(), "Landroid/os/Bundle;"))));
+        intentExtrasImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        intentExtrasImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod intentExtrasDemo = builder.internMethod(HELLO, "intentExtrasDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), intentExtrasImpl);
+
+        // iterableDemo(): a host list iterated as bare Iterable is empty.
+        MutableMethodImplementation iterableImpl = new MutableMethodImplementation(1);
+        iterableImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Collections;", "emptyList",
+                        Collections.<String>emptyList(), "Ljava/util/List;"))));
+        iterableImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        iterableImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Iterable;", "iterator",
+                        Collections.<String>emptyList(), "Ljava/util/Iterator;"))));
+        iterableImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        iterableImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Iterator;", "hasNext",
+                        Collections.<String>emptyList(), "Z"))));
+        iterableImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        iterableImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod iterableDemo = builder.internMethod(HELLO, "iterableDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Z",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), iterableImpl);
+
+        // entryDemo(): a host map entry exposes its key.
+        MutableMethodImplementation entryImpl = new MutableMethodImplementation(3);
+        entryImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Ljava/util/LinkedHashMap;")));
+        entryImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        entryImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/LinkedHashMap;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        entryImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("k")));
+        entryImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 2,
+                builder.internStringReference("v")));
+        entryImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 3, 0, 1, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Map;", "put",
+                        Arrays.asList("Ljava/lang/Object;", "Ljava/lang/Object;"),
+                        "Ljava/lang/Object;"))));
+        entryImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Map;", "entrySet",
+                        Collections.<String>emptyList(), "Ljava/util/Set;"))));
+        entryImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        entryImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Set;", "iterator",
+                        Collections.<String>emptyList(), "Ljava/util/Iterator;"))));
+        entryImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        entryImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Iterator;", "next",
+                        Collections.<String>emptyList(), "Ljava/lang/Object;"))));
+        entryImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        entryImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_INTERFACE, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/util/Map$Entry;", "getKey",
+                        Collections.<String>emptyList(), "Ljava/lang/Object;"))));
+        entryImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        entryImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod entryDemo = builder.internMethod(HELLO, "entryDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), entryImpl);
+
+        // classDemo(): int is primitive, Object is not: 1 * 10 + 0.
+        MutableMethodImplementation classPrimImpl = new MutableMethodImplementation(2);
+        classPrimImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference("I")));
+        classPrimImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "isPrimitive",
+                        Collections.<String>emptyList(), "Z"))));
+        classPrimImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        classPrimImpl.addInstruction(new BuilderInstruction22b(Opcode.MUL_INT_LIT8, 0, 0, 10));
+        classPrimImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 1,
+                builder.internTypeReference("Ljava/lang/Object;")));
+        classPrimImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "isPrimitive",
+                        Collections.<String>emptyList(), "Z"))));
+        classPrimImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
+        classPrimImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 0, 0, 1));
+        classPrimImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod classPrimDemo = builder.internMethod(HELLO, "classPrimDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), classPrimImpl);
+
+        // resolverDemo(): getContentResolver resolves stably.
+        MutableMethodImplementation resolverImpl = new MutableMethodImplementation(1);
+        resolverImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        resolverImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        resolverImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        resolverImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/Context;", "getContentResolver",
+                        Collections.<String>emptyList(),
+                        "Landroid/content/ContentResolver;"))));
+        resolverImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        resolverImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod resolverDemo = builder.internMethod(HELLO, "resolverDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), resolverImpl);
+
+        // themeDemo(): getTheme resolves stably per context.
+        MutableMethodImplementation themeImpl = new MutableMethodImplementation(1);
+        themeImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        themeImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        themeImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        themeImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/Context;", "getTheme",
+                        Collections.<String>emptyList(),
+                        "Landroid/content/res/Resources$Theme;"))));
+        themeImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        themeImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod themeDemo = builder.internMethod(HELLO, "themeDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), themeImpl);
+
+        // resColorDemo(): unread resource colors read 0, both overloads.
+        MutableMethodImplementation resColorImpl = new MutableMethodImplementation(4);
+        resColorImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        resColorImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        resColorImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        resColorImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/Context;", "getResources",
+                        Collections.<String>emptyList(),
+                        "Landroid/content/res/Resources;"))));
+        resColorImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        resColorImpl.addInstruction(new BuilderInstruction31i(Opcode.CONST, 1, 0x7f010203));
+        resColorImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/res/Resources;", "getColor",
+                        Collections.singletonList("I"), "I"))));
+        resColorImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        resColorImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 1, 3,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/res/Resources;", "getColor",
+                        Arrays.asList("I", "Landroid/content/res/Resources$Theme;"), "I"))));
+        resColorImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        resColorImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 2, 2, 0));
+        resColorImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        BuilderMethod resColorDemo = builder.internMethod(HELLO, "resColorDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), resColorImpl);
+
+        // settingsUriDemo(): Settings.Global.getUriFor builds a Uri.
+        MutableMethodImplementation settingsUriImpl = new MutableMethodImplementation(1);
+        settingsUriImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("animator_duration_scale")));
+        settingsUriImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/provider/Settings$Global;", "getUriFor",
+                        Collections.singletonList("Ljava/lang/String;"),
+                        "Landroid/net/Uri;"))));
+        settingsUriImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        settingsUriImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod settingsUriDemo = builder.internMethod(HELLO, "settingsUriDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), settingsUriImpl);
+
+        // contentObserverDemo(): observer construction ignores the handler.
+        MutableMethodImplementation contentObserverImpl = new MutableMethodImplementation(2);
+        contentObserverImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/database/ContentObserver;")));
+        contentObserverImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT,
+                0));
+        contentObserverImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 0,
+                1, 0, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/database/ContentObserver;", "<init>",
+                        Collections.singletonList("Landroid/os/Handler;"), "V"))));
+        contentObserverImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod contentObserverDemo = builder.internMethod(HELLO, "contentObserverDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), contentObserverImpl);
+
+        // resolverObsDemo(): observer register/unregister is a silent no-op.
+        MutableMethodImplementation resolverObsImpl = new MutableMethodImplementation(4);
+        resolverObsImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        resolverObsImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        resolverObsImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        resolverObsImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0,
+                0, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/Context;", "getContentResolver",
+                        Collections.<String>emptyList(),
+                        "Landroid/content/ContentResolver;"))));
+        resolverObsImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        resolverObsImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("animator_duration_scale")));
+        resolverObsImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/provider/Settings$Global;", "getUriFor",
+                        Collections.singletonList("Ljava/lang/String;"),
+                        "Landroid/net/Uri;"))));
+        resolverObsImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        resolverObsImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 2,
+                builder.internTypeReference("Landroid/database/ContentObserver;")));
+        resolverObsImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        resolverObsImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 3, 0));
+        resolverObsImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 2, 3, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/database/ContentObserver;", "<init>",
+                        Collections.singletonList("Landroid/os/Handler;"), "V"))));
+        resolverObsImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 4, 0, 1,
+                3, 2, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/ContentResolver;", "registerContentObserver",
+                        Arrays.asList("Landroid/net/Uri;", "Z",
+                                "Landroid/database/ContentObserver;"),
+                        "V"))));
+        resolverObsImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 2, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/ContentResolver;", "unregisterContentObserver",
+                        Collections.singletonList("Landroid/database/ContentObserver;"),
+                        "V"))));
+        resolverObsImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod resolverObsDemo = builder.internMethod(HELLO, "resolverObsDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), resolverObsImpl);
+
+        // settingsFloatDemo(): unread settings fall back to the default.
+        MutableMethodImplementation settingsFloatImpl = new MutableMethodImplementation(3);
+        settingsFloatImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        settingsFloatImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        settingsFloatImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0,
+                0, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        settingsFloatImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0,
+                0, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/Context;", "getContentResolver",
+                        Collections.<String>emptyList(),
+                        "Landroid/content/ContentResolver;"))));
+        settingsFloatImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        settingsFloatImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("animator_duration_scale")));
+        settingsFloatImpl.addInstruction(new BuilderInstruction21ih(Opcode.CONST_HIGH16, 2,
+                0x40F00000));
+        settingsFloatImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 3, 0, 1,
+                2, 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/provider/Settings$Global;", "getFloat",
+                        Arrays.asList("Landroid/content/ContentResolver;",
+                                "Ljava/lang/String;", "F"),
+                        "F"))));
+        settingsFloatImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        settingsFloatImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod settingsFloatDemo = builder.internMethod(HELLO, "settingsFloatDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "F",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), settingsFloatImpl);
 
         // getClassDemo(): Counter.getClass().getName() is "test.Counter".
         MutableMethodImplementation getClassImpl = new MutableMethodImplementation(2);
@@ -4033,7 +5016,8 @@ public final class FixtureDex {
                         appendableCast, badCast, stringOps, mathMax, missing, vis, sdk, fwCast,
                         fwGhost, fwInit, activityStub, nops, covarOk, covarPrim, constClass,
                         clazzIsInstance, updater, sysClock, longArith, floatArith, doubleArith,
-                        lazyDemo, lazyIsInstance, executorDemo, postDemo, handlerDemo,
+                        lazyDemo, lazyIsInstance, executorDemo, postDemo, postSubDemo, casDemo,
+                        handlerDemo,
                         threadDemo, mapDemo, listDemo, setDemo, iterDemo, nullish, nullRecv,
                         boolStr, charStr, weakGet, weakClear, colorCmp, colorName,
                         colorValueOf, mapDefaults, mapPutAbsent, repeatDemo, emptyDemo,
@@ -4042,23 +5026,30 @@ public final class FixtureDex {
                         strokeDemo, styleDemo, styleRoundDemo, nanosDemo, contentGroup,
                         missFind, contentChild, viewCtx, clipDemo, attachDemo,
                         tagDemo, tagMiss, attachedDemo, parentDemo, vtoDemo,
-                        drawDemo, contentViewDemo, choreoDemo, handlerAsyncDemo,
+                        drawDemo, vtoLayoutDemo, vtoScrollDemo, vtoClusterDemo,
+                        contentViewDemo, choreoDemo, handlerAsyncDemo,
                         high16Demo, wideHigh16Demo, fillDemo, runtimeDemo,
                         cpuDemo, propDemo, windowDemo, parentLinkDemo,
                         attachLinkDemo, parentIfDemo, idDemo, viewHandlerDemo,
-                        detachedHandlerDemo, reflectDemo, reflectMissDemo,
+                        detachedHandlerDemo, reflectDemo, reflectMissDemo, reflectPubDemo,
+                        annoDemo,
                         longUpdaterDemo, intUpdaterDemo, cloneDemo, ordinalDemo,
-                        switchDemo, switchDefaultDemo, copyDemo, loaderDemo,
+                        switchDemo, switchDefaultDemo, copyDemo, loaderDemo, loadClassDemo,
                         serviceDemo, sdkIntDemo, suppressedDemo, zeroCheckDemo,
                         nullCheckDemo, frameIdDemo, frameCbDemo, postCbDemo,
-                        plusCollDemo, childAddDemo, childRemoveDemo, ctxDemo,
-                        resDemo, metricsDemo, configDemo, layoutDirDemo, touchModeDemo,
+                        plusCollDemo, childAddDemo, childRemoveDemo, attachPropDemo, ctxDemo,
+                        resDemo, metricsDemo, configDemo, layoutDirDemo, configCopyDemo,
+                        touchModeDemo,
                         willNotDrawDemo, focusableDemo, a11yImportantDemo, a11yDelegateDemo,
                         dragDemo, getClassDemo, getClassHostDemo, subDemo, layoutDemo,
-                        forceDarkDemo, fillFloatDemo,
+                        forceDarkDemo, windowFocusDemo, focusCheckDemo, translationDemo, stackDemo, traceDemo,
+                        retainedDemo, bundleDemo, bundleIntDemo, applicationDemo, intentDemo,
+                        intentExtrasDemo, iterableDemo, entryDemo, classPrimDemo,
+                        resolverDemo, settingsUriDemo, contentObserverDemo, settingsFloatDemo,
+                        resolverObsDemo, themeDemo, resColorDemo, fillFloatDemo,
                         hostFillDemo, sysServiceDemo, a11yDemo, a11yEnabledDemo, sortDemo,
-                        autofillDemo,
-                        importantDemo, clipboardDemo, treeDemo, viewConfigDemo,
+                        autofillDemo, autofillCbDemo,
+                        importantDemo, captureDemo, clipboardDemo, treeDemo, viewConfigDemo,
                         appCtxDemo, ctorDemo));
         builder.writeTo(new FileDataStore(dexFile.toFile()));
     }

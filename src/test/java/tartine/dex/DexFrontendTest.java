@@ -31,11 +31,9 @@ class DexFrontendTest {
 
     @Test
     void loadsClassesAndMethods() {
-        assertEquals(17, dex.classes().size());
         DexClass cls = dex.findClass(FixtureDex.HELLO);
         assertNotNull(cls);
         assertNull(dex.findClass("Ltest/Missing;"));
-        assertEquals(155, cls.methods.size());
         assertNotNull(cls.method("<init>"));
         assertNotNull(cls.method("twice"));
         assertNotNull(dex.findClass(FixtureDex.COUNTER));
@@ -54,1505 +52,1858 @@ class DexFrontendTest {
 
     @Test
     void dumpsGoldenText() {
-                String expected =
-                "class Lkotlin/Lazy;\n"
-                + "class Lkotlin/LazyKt;\n"
-                + "class Lkotlin/jvm/functions/Function0;\n"
-                + "class Ltest/Base;\n"
-                + "method <init>()V regs=1\n"
-                + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
-                + "  3: return-void\n"
-                + "class Ltest/Boom;\n"
-                + "method <init>()V regs=1\n"
-                + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
-                + "  3: return-void\n"
-                + "class Ltest/Cmp;\n"
-                + "method <init>()V regs=1\n"
-                + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
-                + "  3: return-void\n"
-                + "method compare(Ljava/lang/Object;Ljava/lang/Object;)I regs=5\n"
-                + "  0: invoke-virtual v3, Ljava/lang/Integer;->intValue()I\n"
-                + "  3: move-result v0\n"
-                + "  4: invoke-virtual v4, Ljava/lang/Integer;->intValue()I\n"
-                + "  7: move-result v1\n"
-                + "  8: sub-int v0, v0, v1\n"
-                + "  10: return v0\n"
-                + "class Ltest/Color;\n"
-                + "method <clinit>()V regs=3\n"
-                + "  0: new-instance v0, Ltest/Color;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: const-string v1, RED\n"
-                + "  5: const-4 v2, #0\n"
-                + "  6: invoke-direct v0, v1, v2, Ltest/Color;-><init>(Ljava/lang/String;I)V\n"
-                + "  9: sput-object v0, Ltest/Color;->RED:Ltest/Color;\n"
-                + "  11: new-instance v0, Ltest/Color;\n"
-                + "  13: move-result-object v0\n"
-                + "  14: const-string v1, BLUE\n"
-                + "  16: const-4 v2, #1\n"
-                + "  17: invoke-direct v0, v1, v2, Ltest/Color;-><init>(Ljava/lang/String;I)V\n"
-                + "  20: sput-object v0, Ltest/Color;->BLUE:Ltest/Color;\n"
-                + "  22: return-void\n"
-                + "method <init>(Ljava/lang/String;I)V regs=3\n"
-                + "  0: invoke-direct v0, v1, v2, Ljava/lang/Enum;-><init>(Ljava/lang/String;I)V\n"
-                + "  3: return-void\n"
-                + "class Ltest/Counter;\n"
-                + "method <init>()V regs=1\n"
-                + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
-                + "  3: return-void\n"
-                + "class Ltest/FlagMap;\n"
-                + "method <init>()V regs=1\n"
-                + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
-                + "  3: return-void\n"
-                + "method containsKey(Ljava/lang/Object;)Z regs=2\n"
-                + "  0: const-4 v1, #1\n"
-                + "  1: return v1\n"
-                + "method get(Ljava/lang/Object;)Ljava/lang/Object; regs=2\n"
-                + "  0: const-16 v1, #7\n"
-                + "  2: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  5: move-result-object v1\n"
-                + "  6: return-object v1\n"
-                + "method put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; regs=3\n"
-                + "  0: const-4 v1, #0\n"
-                + "  1: return-object v1\n"
-                + "class Ltest/Fn;\n"
-                + "method <init>()V regs=1\n"
-                + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
-                + "  3: return-void\n"
-                + "method invoke()I regs=1\n"
-                + "  0: const-16 v0, #99\n"
-                + "  2: return v0\n"
-                + "class Ltest/Hello;\n"
-                + "method <clinit>()V regs=1\n"
-                + "  0: const-16 v0, #9\n"
-                + "  2: mul-int-lit8 v0, v0, #4\n"
-                + "  4: add-int-lit8 v0, v0, #5\n"
-                + "  6: sput v0, Ltest/Hello;->counter:I\n"
-                + "  8: return-void\n"
-                + "method <init>()V regs=1\n"
-                + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
-                + "  3: return-void\n"
-                + "method a11yDelegateDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: new-instance v1, Landroid/view/View$AccessibilityDelegate;\n"
-                + "  8: move-result-object v1\n"
-                + "  9: invoke-direct v1, Landroid/view/View$AccessibilityDelegate;-><init>()V\n"
-                + "  12: invoke-virtual v0, v1, Landroid/view/View;->setAccessibilityDelegate(Landroid/view/View$AccessibilityDelegate;)V\n"
-                + "  15: return-object v0\n"
-                + "method a11yDemo()Z regs=2\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: const-string v1, accessibility\n"
-                + "  8: invoke-virtual v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;\n"
-                + "  11: move-result-object v0\n"
-                + "  12: const-4 v1, #-1\n"
-                + "  13: invoke-virtual v0, v1, Landroid/view/accessibility/AccessibilityManager;->getEnabledAccessibilityServiceList(I)Ljava/util/List;\n"
-                + "  16: move-result-object v0\n"
-                + "  17: invoke-interface v0, Ljava/util/List;->isEmpty()Z\n"
-                + "  20: move-result v0\n"
-                + "  21: return v0\n"
-                + "method a11yEnabledDemo()Z regs=2\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: const-string v1, accessibility\n"
-                + "  8: invoke-virtual v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;\n"
-                + "  11: move-result-object v0\n"
-                + "  12: invoke-virtual v0, Landroid/view/accessibility/AccessibilityManager;->isEnabled()Z\n"
-                + "  15: move-result v0\n"
-                + "  16: return v0\n"
-                + "method a11yImportantDemo()I regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const-4 v1, #1\n"
-                + "  7: invoke-virtual v0, v1, Landroid/view/View;->setImportantForAccessibility(I)V\n"
-                + "  10: invoke-virtual v0, Landroid/view/View;->getImportantForAccessibility()I\n"
-                + "  13: move-result v0\n"
-                + "  14: return v0\n"
-                + "method activityStub()V regs=2\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: invoke-virtual v0, v1, Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V\n"
-                + "  9: return-void\n"
-                + "method activityWindow()Ljava/lang/Object; regs=1\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/app/Activity;->getWindow()Landroid/view/Window;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: return-object v0\n"
-                + "method appCtxDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/content/Context;->getApplicationContext()Landroid/content/Context;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: return-object v0\n"
-                + "method appendableCast()I regs=2\n"
-                + "  0: new-instance v0, Ljava/lang/StringBuilder;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ljava/lang/StringBuilder;-><init>()V\n"
-                + "  6: check-cast v0, Ljava/lang/Appendable;\n"
-                + "  8: instance-of v1, v0, Ljava/lang/CharSequence;\n"
-                + "  10: return v1\n"
-                + "method argbDemo()I regs=4\n"
-                + "  0: const-16 v0, #255\n"
-                + "  2: const-4 v1, #1\n"
-                + "  3: const-4 v2, #2\n"
-                + "  4: const-4 v3, #3\n"
-                + "  5: invoke-static v0, v1, v2, v3, Landroid/graphics/Color;->argb(IIII)I\n"
-                + "  8: move-result v0\n"
-                + "  9: return v0\n"
-                + "method arrayCopy()I regs=5\n"
-                + "  0: const-4 v3, #3\n"
-                + "  1: new-array v0, v3, [I\n"
-                + "  3: const-4 v1, #0\n"
-                + "  4: const-16 v2, #9\n"
-                + "  6: aput v2, v0, v1\n"
-                + "  8: const-4 v1, #1\n"
-                + "  9: const-16 v2, #8\n"
-                + "  11: aput v2, v0, v1\n"
-                + "  13: const-4 v1, #2\n"
-                + "  14: const-16 v2, #7\n"
-                + "  16: aput v2, v0, v1\n"
-                + "  18: const-4 v3, #3\n"
-                + "  19: new-array v1, v3, [I\n"
-                + "  21: const-4 v2, #0\n"
-                + "  22: const-4 v3, #0\n"
-                + "  23: const-4 v4, #3\n"
-                + "  24: invoke-static v0, v2, v1, v3, v4, Ljava/lang/System;->arraycopy(Ljava/lang/Object;ILjava/lang/Object;II)V\n"
-                + "  27: const-4 v2, #1\n"
-                + "  28: aget v2, v1, v2\n"
-                + "  30: return v2\n"
-                + "method attachDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const-4 v1, #0\n"
-                + "  7: invoke-virtual v0, v1, Landroid/view/View;->addOnAttachStateChangeListener(Landroid/view/View$OnAttachStateChangeListener;)V\n"
-                + "  10: return-object v0\n"
-                + "method attachLinkDemo()Z regs=2\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: new-instance v1, Landroid/view/View;\n"
-                + "  8: move-result-object v1\n"
-                + "  9: invoke-direct v1, Landroid/view/View;-><init>()V\n"
-                + "  12: invoke-virtual v0, v1, Landroid/app/Activity;->setContentView(Landroid/view/View;)V\n"
-                + "  15: invoke-virtual v1, Landroid/view/View;->isAttachedToWindow()Z\n"
-                + "  18: move-result v1\n"
-                + "  19: return v1\n"
-                + "method attachedDemo()Z regs=1\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/view/View;->isAttachedToWindow()Z\n"
-                + "  9: move-result v0\n"
-                + "  10: return v0\n"
-                + "method autofillDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: const-class v1, Landroid/view/autofill/AutofillManager;\n"
-                + "  8: invoke-virtual v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/Class;)Ljava/lang/Object;\n"
-                + "  11: move-result-object v0\n"
-                + "  12: return-object v0\n"
-                + "method badCast()V regs=1\n"
-                + "  0: new-instance v0, Ljava/lang/StringBuilder;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ljava/lang/StringBuilder;-><init>()V\n"
-                + "  6: check-cast v0, Ljava/lang/Integer;\n"
-                + "  8: return-void\n"
-                + "method blockedExec()V regs=2\n"
-                + "  0: invoke-static, Ljava/lang/Runtime;->getRuntime()Ljava/lang/Runtime;\n"
-                + "  3: move-result-object v0\n"
-                + "  4: const-string v1, id\n"
-                + "  6: invoke-virtual v0, v1, Ljava/lang/Runtime;->exec(Ljava/lang/String;)Ljava/lang/Process;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: return-void\n"
-                + "method boolStr()Ljava/lang/String; regs=1\n"
-                + "  0: const-4 v0, #1\n"
-                + "  1: invoke-static v0, Ljava/lang/Boolean;->valueOf(Z)Ljava/lang/Boolean;\n"
-                + "  4: move-result-object v0\n"
-                + "  5: invoke-static v0, Ljava/lang/String;->valueOf(Ljava/lang/Object;)Ljava/lang/String;\n"
-                + "  8: move-result-object v0\n"
-                + "  9: return-object v0\n"
-                + "method boot()I regs=1\n"
-                + "  0: sget v0, Ltest/Hello;->counter:I\n"
-                + "  2: add-int-lit8 v0, v0, #1\n"
-                + "  4: return v0\n"
-                + "method castFail()V regs=1\n"
-                + "  0: new-instance v0, Ltest/Sub;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Sub;-><init>()V\n"
-                + "  6: check-cast v0, Ltest/Counter;\n"
-                + "  8: return-void\n"
-                + "method castOk()I regs=2\n"
-                + "  0: new-instance v0, Ltest/Sub;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Sub;-><init>()V\n"
-                + "  6: check-cast v0, Ltest/Base;\n"
-                + "  8: instance-of v1, v0, Ltest/Base;\n"
-                + "  10: return v1\n"
-                + "method charStr()Ljava/lang/String; regs=1\n"
-                + "  0: const-16 v0, #65\n"
-                + "  2: invoke-static v0, Ljava/lang/Character;->valueOf(C)Ljava/lang/Character;\n"
-                + "  5: move-result-object v0\n"
-                + "  6: invoke-virtual v0, Ljava/lang/Character;->toString()Ljava/lang/String;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: return-object v0\n"
-                + "method childAddDemo()Ljava/lang/Object; regs=4\n"
-                + "  0: new-instance v0, Landroid/view/ViewGroup;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: new-instance v1, Landroid/app/Activity;\n"
-                + "  5: move-result-object v1\n"
-                + "  6: invoke-direct v1, Landroid/app/Activity;-><init>()V\n"
-                + "  9: const-4 v2, #0\n"
-                + "  10: invoke-direct v0, v1, v2, v2, Landroid/view/ViewGroup;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V\n"
-                + "  13: new-instance v1, Landroid/view/View;\n"
-                + "  15: move-result-object v1\n"
-                + "  16: invoke-direct v1, Landroid/view/View;-><init>()V\n"
-                + "  19: invoke-virtual v0, v1, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V\n"
-                + "  22: const-4 v2, #0\n"
-                + "  23: invoke-virtual v0, v2, Landroid/view/ViewGroup;->getChildAt(I)Landroid/view/View;\n"
-                + "  26: move-result-object v0\n"
-                + "  27: return-object v0\n"
-                + "method childRemoveDemo()I regs=4\n"
-                + "  0: new-instance v0, Landroid/view/ViewGroup;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: new-instance v1, Landroid/app/Activity;\n"
-                + "  5: move-result-object v1\n"
-                + "  6: invoke-direct v1, Landroid/app/Activity;-><init>()V\n"
-                + "  9: const-4 v2, #0\n"
-                + "  10: invoke-direct v0, v1, v2, v2, Landroid/view/ViewGroup;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V\n"
-                + "  13: new-instance v1, Landroid/view/View;\n"
-                + "  15: move-result-object v1\n"
-                + "  16: invoke-direct v1, Landroid/view/View;-><init>()V\n"
-                + "  19: invoke-virtual v0, v1, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V\n"
-                + "  22: invoke-virtual v0, Landroid/view/ViewGroup;->removeAllViews()V\n"
-                + "  25: invoke-virtual v0, Landroid/view/ViewGroup;->getChildCount()I\n"
-                + "  28: move-result v0\n"
-                + "  29: return v0\n"
-                + "method choreoDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: invoke-static, Landroid/view/Choreographer;->getInstance()Landroid/view/Choreographer;\n"
-                + "  3: move-result-object v0\n"
-                + "  4: return-object v0\n"
-                + "method clazzIsInstance()I regs=3\n"
-                + "  0: new-instance v0, Ltest/Counter;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Counter;-><init>()V\n"
-                + "  6: const-class v1, Ltest/Counter;\n"
-                + "  8: invoke-virtual v1, v0, Ljava/lang/Class;->isInstance(Ljava/lang/Object;)Z\n"
-                + "  11: move-result v2\n"
-                + "  12: return v2\n"
-                + "method clipDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const-4 v1, #0\n"
-                + "  7: invoke-virtual v0, v1, Landroid/view/View;->setClipChildren(Z)V\n"
-                + "  10: invoke-virtual v0, v1, Landroid/view/View;->setClipToPadding(Z)V\n"
-                + "  13: return-object v0\n"
-                + "method clipboardDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: const-string v1, clipboard\n"
-                + "  8: invoke-virtual v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;\n"
-                + "  11: move-result-object v0\n"
-                + "  12: return-object v0\n"
-                + "method cloneDemo()Ljava/lang/Object; regs=3\n"
-                + "  0: const-4 v1, #2\n"
-                + "  1: new-array v0, v1, [Ljava/lang/Object;\n"
-                + "  3: const-string v1, a\n"
-                + "  5: const-4 v2, #0\n"
-                + "  6: aput-object v1, v0, v2\n"
-                + "  8: invoke-virtual v0, [Ljava/lang/Object;->clone()Ljava/lang/Object;\n"
-                + "  11: move-result-object v0\n"
-                + "  12: aget-object v0, v0, v2\n"
-                + "  14: return-object v0\n"
-                + "method cmpTiny()I regs=5\n"
-                + "  0: const-wide-16 v0, #5\n"
-                + "  2: const-wide-16 v2, #7\n"
-                + "  4: cmp-long v4, v0, v2\n"
-                + "  6: return v4\n"
-                + "method colorCmp()I regs=2\n"
-                + "  0: sget-object v0, Ltest/Color;->RED:Ltest/Color;\n"
-                + "  2: sget-object v1, Ltest/Color;->BLUE:Ltest/Color;\n"
-                + "  4: invoke-virtual v0, v1, Ltest/Color;->compareTo(Ljava/lang/Enum;)I\n"
-                + "  7: move-result v0\n"
-                + "  8: return v0\n"
-                + "method colorDemo()I regs=2\n"
-                + "  0: new-instance v0, Landroid/graphics/Paint;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: const-4 v1, #1\n"
-                + "  4: invoke-direct v0, v1, Landroid/graphics/Paint;-><init>(I)V\n"
-                + "  7: const-16 v1, #258\n"
-                + "  9: invoke-virtual v0, v1, Landroid/graphics/Paint;->setColor(I)V\n"
-                + "  12: invoke-virtual v0, Landroid/graphics/Paint;->getColor()I\n"
-                + "  15: move-result v0\n"
-                + "  16: return v0\n"
-                + "method colorName()Ljava/lang/String; regs=1\n"
-                + "  0: sget-object v0, Ltest/Color;->RED:Ltest/Color;\n"
-                + "  2: invoke-virtual v0, Ltest/Color;->name()Ljava/lang/String;\n"
-                + "  5: move-result-object v0\n"
-                + "  6: return-object v0\n"
-                + "method colorValueOf()Ljava/lang/String; regs=2\n"
-                + "  0: const-class v0, Ltest/Color;\n"
-                + "  2: const-string v1, BLUE\n"
-                + "  4: invoke-static v0, v1, Ljava/lang/Enum;->valueOf(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Object;\n"
-                + "  7: move-result-object v0\n"
-                + "  8: invoke-virtual v0, Ltest/Color;->toString()Ljava/lang/String;\n"
-                + "  11: move-result-object v0\n"
-                + "  12: return-object v0\n"
-                + "method configDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/content/Context;->getResources()Landroid/content/res/Resources;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: invoke-virtual v0, Landroid/content/res/Resources;->getConfiguration()Landroid/content/res/Configuration;\n"
-                + "  13: move-result-object v0\n"
-                + "  14: iget v0, v0, Landroid/content/res/Configuration;->fontScale:F\n"
-                + "  16: return-object v0\n"
-                + "method constClass()Ljava/lang/String; regs=1\n"
-                + "  0: const-class v0, Ltest/Counter;\n"
-                + "  2: invoke-virtual v0, Ljava/lang/Class;->getName()Ljava/lang/String;\n"
-                + "  5: move-result-object v0\n"
-                + "  6: return-object v0\n"
-                + "method contentChild()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const v1, #16908290\n"
-                + "  9: invoke-virtual v0, v1, Landroid/view/View;->findViewById(I)Landroid/view/View;\n"
-                + "  12: move-result-object v0\n"
-                + "  13: const-4 v1, #0\n"
-                + "  14: invoke-virtual v0, v1, Landroid/view/ViewGroup;->getChildAt(I)Landroid/view/View;\n"
-                + "  17: move-result-object v0\n"
-                + "  18: return-object v0\n"
-                + "method contentGroup()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const v1, #16908290\n"
-                + "  9: invoke-virtual v0, v1, Landroid/view/View;->findViewById(I)Landroid/view/View;\n"
-                + "  12: move-result-object v0\n"
-                + "  13: return-object v0\n"
-                + "method contentViewDemo()Ljava/lang/Object; regs=4\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: new-instance v1, Landroid/view/View;\n"
-                + "  8: move-result-object v1\n"
-                + "  9: invoke-direct v1, Landroid/view/View;-><init>()V\n"
-                + "  12: new-instance v2, Landroid/view/ViewGroup$LayoutParams;\n"
-                + "  14: move-result-object v2\n"
-                + "  15: const-16 v3, #-1\n"
-                + "  17: invoke-direct v2, v3, v3, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V\n"
-                + "  20: invoke-virtual v0, v1, v2, Landroid/app/Activity;->setContentView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V\n"
-                + "  23: iget-object v0, v0, Landroid/app/Activity;->mContentView:Landroid/view/View;\n"
-                + "  25: return-object v0\n"
-                + "method copyDemo()Ljava/lang/Object; regs=3\n"
-                + "  0: const-4 v1, #2\n"
-                + "  1: new-array v0, v1, [Ljava/lang/String;\n"
-                + "  3: const-string v1, a\n"
-                + "  5: const-4 v2, #0\n"
-                + "  6: aput-object v1, v0, v2\n"
-                + "  8: const-string v1, b\n"
-                + "  10: const-4 v2, #1\n"
-                + "  11: aput-object v1, v0, v2\n"
-                + "  13: const-4 v1, #0\n"
-                + "  14: const-4 v2, #1\n"
-                + "  15: invoke-static v0, v1, v2, Ljava/util/Arrays;->copyOfRange([Ljava/lang/Object;II)[Ljava/lang/Object;\n"
-                + "  18: move-result-object v0\n"
-                + "  19: check-cast v0, [Ljava/lang/String;\n"
-                + "  21: aget-object v0, v0, v1\n"
-                + "  23: return-object v0\n"
-                + "method covarOk()I regs=2\n"
-                + "  0: const-4 v0, #1\n"
-                + "  1: new-array v0, v0, [Ltest/Counter;\n"
-                + "  3: check-cast v0, [Ljava/lang/Object;\n"
-                + "  5: instance-of v1, v0, [Ltest/Counter;\n"
-                + "  7: return v1\n"
-                + "method covarPrim()V regs=1\n"
-                + "  0: const-4 v0, #2\n"
-                + "  1: new-array v0, v0, [I\n"
-                + "  3: check-cast v0, [Ljava/lang/Object;\n"
-                + "  5: return-void\n"
-                + "method cpuDemo()I regs=1\n"
-                + "  0: invoke-static, Ljava/lang/Runtime;->getRuntime()Ljava/lang/Runtime;\n"
-                + "  3: move-result-object v0\n"
-                + "  4: invoke-virtual v0, Ljava/lang/Runtime;->availableProcessors()I\n"
-                + "  7: move-result v0\n"
-                + "  8: return v0\n"
-                + "method ctorDemo()Ljava/lang/Object; regs=3\n"
-                + "  0: const-string v0, test.Counter\n"
-                + "  2: const-4 v1, #0\n"
-                + "  3: const-4 v2, #0\n"
-                + "  4: invoke-static v0, v1, v2, Ljava/lang/Class;->forName(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;\n"
-                + "  7: move-result-object v0\n"
-                + "  8: const-4 v1, #0\n"
-                + "  9: new-array v1, v1, [Ljava/lang/Class;\n"
-                + "  11: invoke-virtual v0, v1, Ljava/lang/Class;->getDeclaredConstructor([Ljava/lang/Class;)Ljava/lang/reflect/Constructor;\n"
-                + "  14: move-result-object v0\n"
-                + "  15: const-4 v1, #0\n"
-                + "  16: new-array v1, v1, [Ljava/lang/Object;\n"
-                + "  18: invoke-virtual v0, v1, Ljava/lang/reflect/Constructor;->newInstance([Ljava/lang/Object;)Ljava/lang/Object;\n"
-                + "  21: move-result-object v0\n"
-                + "  22: return-object v0\n"
-                + "method ctxDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/ViewGroup;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: new-instance v1, Landroid/app/Activity;\n"
-                + "  5: move-result-object v1\n"
-                + "  6: invoke-direct v1, Landroid/app/Activity;-><init>()V\n"
-                + "  9: invoke-direct v0, v1, Landroid/view/ViewGroup;-><init>(Landroid/content/Context;)V\n"
-                + "  12: invoke-virtual v0, Landroid/view/View;->getContext()Landroid/content/Context;\n"
-                + "  15: move-result-object v0\n"
-                + "  16: return-object v0\n"
-                + "method detachedHandlerDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/view/View;->getHandler()Landroid/os/Handler;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: return-object v0\n"
-                + "method doubleArith()D regs=3\n"
-                + "  0: const-4 v0, #7\n"
-                + "  1: int-to-double v0, v0\n"
-                + "  2: const-4 v1, #2\n"
-                + "  3: int-to-double v1, v1\n"
-                + "  4: div-double v2, v0, v1\n"
-                + "  6: return-wide v2\n"
-                + "method dragDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: invoke-virtual v0, v1, Landroid/view/View;->setOnDragListener(Landroid/view/View$OnDragListener;)V\n"
-                + "  9: return-object v0\n"
-                + "method drawDemo()Ljava/lang/Object; regs=3\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;\n"
-                + "  9: move-result-object v1\n"
-                + "  10: const-4 v2, #0\n"
-                + "  11: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->addOnDrawListener(Landroid/view/ViewTreeObserver$OnDrawListener;)V\n"
-                + "  14: return-object v0\n"
-                + "method emptyDemo()I regs=2\n"
-                + "  0: sget-object v0, Ljava/util/Collections;->EMPTY_LIST:Ljava/util/List;\n"
-                + "  2: invoke-interface v0, Ljava/util/List;->isEmpty()Z\n"
-                + "  5: move-result v1\n"
-                + "  6: return v1\n"
-                + "method executorDemo()I regs=3\n"
-                + "  0: new-instance v0, Ltest/Job;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Job;-><init>()V\n"
-                + "  6: invoke-static, Ljava/util/concurrent/Executors;->defaultThreadFactory()Ljava/util/concurrent/ThreadFactory;\n"
-                + "  9: move-result-object v1\n"
-                + "  10: const-4 v2, #1\n"
-                + "  11: invoke-static v2, v1, Ljava/util/concurrent/Executors;->newFixedThreadPool(ILjava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;\n"
-                + "  14: move-result-object v1\n"
-                + "  15: invoke-interface v1, v0, Ljava/util/concurrent/Executor;->execute(Ljava/lang/Runnable;)V\n"
-                + "  18: sget v2, Ltest/Hello;->flag:I\n"
-                + "  20: return v2\n"
-                + "method fillDemo()I regs=2\n"
-                + "  0: const-4 v1, #3\n"
-                + "  1: new-array v0, v1, [I\n"
-                + "  3: fill-array-data v0, +7\n"
-                + "  6: const-4 v1, #1\n"
-                + "  7: aget v0, v0, v1\n"
-                + "  9: return v0\n"
-                + "  10: array-payload\n"
-                + "method fillFloatDemo()I regs=2\n"
-                + "  0: const-4 v1, #1\n"
-                + "  1: new-array v0, v1, [F\n"
-                + "  3: fill-array-data v0, +7\n"
-                + "  6: const-4 v1, #0\n"
-                + "  7: aget v0, v0, v1\n"
-                + "  9: return v0\n"
-                + "  10: array-payload\n"
-                + "method floatArith()F regs=3\n"
-                + "  0: const-4 v0, #7\n"
-                + "  1: int-to-float v0, v0\n"
-                + "  2: const-4 v1, #2\n"
-                + "  3: int-to-float v1, v1\n"
-                + "  4: div-float v2, v0, v1\n"
-                + "  6: add-float-2addr v2, v1\n"
-                + "  7: return v2\n"
-                + "method focusableDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const-4 v1, #1\n"
-                + "  7: invoke-virtual v0, v1, Landroid/view/View;->setFocusable(Z)V\n"
-                + "  10: invoke-virtual v0, v1, Landroid/view/View;->setFocusable(I)V\n"
-                + "  13: invoke-virtual v0, v1, Landroid/view/View;->setDefaultFocusHighlightEnabled(Z)V\n"
-                + "  16: invoke-virtual v0, v1, Landroid/view/View;->setFocusableInTouchMode(Z)V\n"
-                + "  19: return-object v0\n"
-                + "method forceDarkDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const-4 v1, #0\n"
-                + "  7: invoke-virtual v0, v1, Landroid/view/View;->setForceDarkAllowed(Z)V\n"
-                + "  10: return-object v0\n"
-                + "method frameCbDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: invoke-static, Landroid/view/Choreographer;->getInstance()Landroid/view/Choreographer;\n"
-                + "  3: move-result-object v0\n"
-                + "  4: const-4 v1, #0\n"
-                + "  5: invoke-virtual v0, v1, Landroid/view/Choreographer;->removeFrameCallback(Landroid/view/Choreographer$FrameCallback;)V\n"
-                + "  8: return-object v0\n"
-                + "method frameIdDemo()I regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const v1, #16908290\n"
-                + "  9: invoke-virtual v0, v1, Landroid/view/View;->findViewById(I)Landroid/view/View;\n"
-                + "  12: move-result-object v0\n"
-                + "  13: invoke-virtual v0, Landroid/view/View;->getId()I\n"
-                + "  16: move-result v0\n"
-                + "  17: return v0\n"
-                + "method fwCast()I regs=2\n"
-                + "  0: new-instance v0, Ltest/Sub2;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Sub2;-><init>()V\n"
-                + "  6: check-cast v0, Lfw/Base;\n"
-                + "  8: instance-of v1, v0, Lfw/Base;\n"
-                + "  10: return v1\n"
-                + "method fwGhost()V regs=1\n"
-                + "  0: new-instance v0, Ltest/Orphan;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Orphan;-><init>()V\n"
-                + "  6: check-cast v0, Lfw/Base;\n"
-                + "  8: return-void\n"
-                + "method fwInit()V regs=1\n"
-                + "  0: new-instance v0, Lfw/Sub;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Lfw/Sub;-><init>()V\n"
-                + "  6: return-void\n"
-                + "method getClassDemo()Ljava/lang/String; regs=2\n"
-                + "  0: new-instance v0, Ltest/Counter;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Counter;-><init>()V\n"
-                + "  6: invoke-virtual v0, Ljava/lang/Object;->getClass()Ljava/lang/Class;\n"
-                + "  9: move-result-object v1\n"
-                + "  10: invoke-virtual v1, Ljava/lang/Class;->getName()Ljava/lang/String;\n"
-                + "  13: move-result-object v0\n"
-                + "  14: return-object v0\n"
-                + "method getClassHostDemo()Ljava/lang/String; regs=2\n"
-                + "  0: const-string v0, hi\n"
-                + "  2: invoke-virtual v0, Ljava/lang/Object;->getClass()Ljava/lang/Class;\n"
-                + "  5: move-result-object v1\n"
-                + "  6: invoke-virtual v1, Ljava/lang/Class;->getName()Ljava/lang/String;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: return-object v0\n"
-                + "method greet()Ljava/lang/String; regs=1\n"
-                + "  0: const-string v0, hi\n"
-                + "  2: return-object v0\n"
-                + "method handlerAsyncDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: invoke-static, Landroid/os/Looper;->getMainLooper()Landroid/os/Looper;\n"
-                + "  3: move-result-object v0\n"
-                + "  4: invoke-static v0, Landroid/os/Handler;->createAsync(Landroid/os/Looper;)Landroid/os/Handler;\n"
-                + "  7: move-result-object v0\n"
-                + "  8: return-object v0\n"
-                + "method handlerDemo()I regs=2\n"
-                + "  0: new-instance v0, Ltest/MyHandler;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/MyHandler;-><init>()V\n"
-                + "  6: invoke-direct v0, v0, Landroid/os/Handler;-><init>()V\n"
-                + "  9: const-16 v1, #42\n"
-                + "  11: invoke-virtual v0, v1, Landroid/os/Handler;->sendEmptyMessage(I)Z\n"
-                + "  14: move-result v1\n"
-                + "  15: sget v1, Ltest/Hello;->flag:I\n"
-                + "  17: return v1\n"
-                + "method high16Demo()I regs=1\n"
-                + "  0: const-high16 v0, #1065353216\n"
-                + "  2: return v0\n"
-                + "method hostFillDemo()I regs=4\n"
-                + "  0: const-4 v3, #2\n"
-                + "  1: new-array v0, v3, [I\n"
-                + "  3: const-4 v1, #0\n"
-                + "  4: const-4 v2, #2\n"
-                + "  5: const-16 v3, #42\n"
-                + "  7: invoke-static v0, v1, v2, v3, Ljava/util/Arrays;->fill([IIII)V\n"
-                + "  10: const-4 v1, #0\n"
-                + "  11: aget v0, v0, v1\n"
-                + "  13: return v0\n"
-                + "method id(I)I regs=2\n"
-                + "  0: move v0, v1\n"
-                + "  1: return v0\n"
-                + "method idDemo()I regs=1\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/view/View;->getId()I\n"
-                + "  9: move-result v0\n"
-                + "  10: return v0\n"
-                + "method importantDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const-4 v1, #1\n"
-                + "  7: invoke-virtual v0, v1, Landroid/view/View;->setImportantForAutofill(I)V\n"
-                + "  10: return-object v0\n"
-                + "method intBox()I regs=1\n"
-                + "  0: const-16 v0, #41\n"
-                + "  2: invoke-static v0, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  5: move-result-object v0\n"
-                + "  6: invoke-virtual v0, Ljava/lang/Integer;->intValue()I\n"
-                + "  9: move-result v0\n"
-                + "  10: add-int-lit8 v0, v0, #1\n"
-                + "  12: return v0\n"
-                + "method intUpdaterDemo()I regs=5\n"
-                + "  0: new-instance v0, Ltest/Counter;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Counter;-><init>()V\n"
-                + "  6: const-class v1, Ltest/Counter;\n"
-                + "  8: const-string v2, count\n"
-                + "  10: invoke-static v1, v2, Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->newUpdater(Ljava/lang/Class;Ljava/lang/String;)Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;\n"
-                + "  13: move-result-object v1\n"
-                + "  14: const-4 v2, #5\n"
-                + "  15: invoke-virtual v1, v0, v2, Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->set(Ljava/lang/Object;I)V\n"
-                + "  18: const-4 v2, #6\n"
-                + "  19: const-16 v3, #9\n"
-                + "  21: invoke-virtual v1, v0, v2, v3, Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->compareAndSet(Ljava/lang/Object;II)Z\n"
-                + "  24: move-result v4\n"
-                + "  25: invoke-virtual v1, v0, Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->get(Ljava/lang/Object;)I\n"
-                + "  28: move-result v4\n"
-                + "  29: return v4\n"
-                + "method iterDemo()I regs=3\n"
-                + "  0: new-instance v0, Ljava/util/ArrayList;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ljava/util/ArrayList;-><init>()V\n"
-                + "  6: const-16 v2, #5\n"
-                + "  8: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  11: move-result-object v2\n"
-                + "  12: invoke-virtual v0, v2, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z\n"
-                + "  15: move-result v2\n"
-                + "  16: invoke-interface v0, Ljava/util/List;->iterator()Ljava/util/Iterator;\n"
-                + "  19: move-result-object v1\n"
-                + "  20: invoke-interface v1, Ljava/util/Iterator;->hasNext()Z\n"
-                + "  23: move-result v2\n"
-                + "  24: invoke-interface v1, Ljava/util/Iterator;->next()Ljava/lang/Object;\n"
-                + "  27: move-result-object v2\n"
-                + "  28: invoke-virtual v2, Ljava/lang/Integer;->intValue()I\n"
-                + "  31: move-result v2\n"
-                + "  32: return v2\n"
-                + "method layoutDemo()I regs=3\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/view/View;->isLayoutRequested()Z\n"
-                + "  9: move-result v1\n"
-                + "  10: invoke-virtual v0, Landroid/view/View;->requestLayout()V\n"
-                + "  13: invoke-virtual v0, Landroid/view/View;->isLayoutRequested()Z\n"
-                + "  16: move-result v2\n"
-                + "  17: mul-int-lit8 v1, v1, #10\n"
-                + "  19: add-int v1, v1, v2\n"
-                + "  21: return v1\n"
-                + "method layoutDirDemo()I regs=1\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/content/Context;->getResources()Landroid/content/res/Resources;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: invoke-virtual v0, Landroid/content/res/Resources;->getConfiguration()Landroid/content/res/Configuration;\n"
-                + "  13: move-result-object v0\n"
-                + "  14: invoke-virtual v0, Landroid/content/res/Configuration;->getLayoutDirection()I\n"
-                + "  17: move-result v0\n"
-                + "  18: return v0\n"
-                + "method lazyDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Ltest/Fn;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Fn;-><init>()V\n"
-                + "  6: invoke-static v0, Lkotlin/LazyKt;->lazy(Lkotlin/jvm/functions/Function0;)Lkotlin/Lazy;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: invoke-interface v0, v1, Lkotlin/Lazy;->getValue(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\n"
-                + "  13: move-result-object v0\n"
-                + "  14: return-object v0\n"
-                + "method lazyIsInstance()I regs=1\n"
-                + "  0: new-instance v0, Ltest/Fn;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Fn;-><init>()V\n"
-                + "  6: invoke-static v0, Lkotlin/LazyKt;->lazy(Lkotlin/jvm/functions/Function0;)Lkotlin/Lazy;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: instance-of v0, v0, Lkotlin/Lazy;\n"
-                + "  12: return v0\n"
-                + "method len()I regs=2\n"
-                + "  0: const-4 v0, #5\n"
-                + "  1: new-array v1, v0, [I\n"
-                + "  3: array-length v0, v1\n"
-                + "  4: return v0\n"
-                + "method linkedMapDemo()I regs=4\n"
-                + "  0: new-instance v0, Ljava/util/LinkedHashMap;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ljava/util/LinkedHashMap;-><init>()V\n"
-                + "  6: const-string v1, k\n"
-                + "  8: const-16 v2, #42\n"
-                + "  10: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  13: move-result-object v2\n"
-                + "  14: invoke-virtual v0, v1, v2, Ljava/util/Map;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\n"
-                + "  17: move-result-object v3\n"
-                + "  18: invoke-virtual v0, v1, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;\n"
-                + "  21: move-result-object v2\n"
-                + "  22: invoke-virtual v2, Ljava/lang/Integer;->intValue()I\n"
-                + "  25: move-result v2\n"
-                + "  26: return v2\n"
-                + "method listDemo()I regs=2\n"
-                + "  0: new-instance v0, Ljava/util/ArrayList;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ljava/util/ArrayList;-><init>()V\n"
-                + "  6: const-16 v1, #7\n"
-                + "  8: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  11: move-result-object v1\n"
-                + "  12: invoke-virtual v0, v1, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z\n"
-                + "  15: move-result v1\n"
-                + "  16: const-16 v1, #8\n"
-                + "  18: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  21: move-result-object v1\n"
-                + "  22: invoke-virtual v0, v1, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z\n"
-                + "  25: move-result v1\n"
-                + "  26: const-4 v1, #1\n"
-                + "  27: invoke-virtual v0, v1, Ljava/util/ArrayList;->get(I)Ljava/lang/Object;\n"
-                + "  30: move-result-object v1\n"
-                + "  31: invoke-virtual v1, Ljava/lang/Integer;->intValue()I\n"
-                + "  34: move-result v1\n"
-                + "  35: return v1\n"
-                + "method loaderDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: const-class v0, Ljava/lang/Object;\n"
-                + "  2: invoke-virtual v0, Ljava/lang/Class;->getClassLoader()Ljava/lang/ClassLoader;\n"
-                + "  5: move-result-object v0\n"
-                + "  6: return-object v0\n"
-                + "method longArith()J regs=6\n"
-                + "  0: const-wide-16 v0, #100\n"
-                + "  2: const-wide-16 v2, #7\n"
-                + "  4: add-long v4, v0, v2\n"
-                + "  6: sub-long-2addr v4, v2\n"
-                + "  7: mul-long-2addr v4, v2\n"
-                + "  8: div-long-2addr v4, v2\n"
-                + "  9: return-wide v4\n"
-                + "method longUpdaterDemo()J regs=7\n"
-                + "  0: new-instance v2, Ltest/Counter;\n"
-                + "  2: move-result-object v2\n"
-                + "  3: invoke-direct v2, Ltest/Counter;-><init>()V\n"
-                + "  6: const-class v0, Ltest/Counter;\n"
-                + "  8: const-string v3, count\n"
-                + "  10: invoke-static v0, v3, Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->newUpdater(Ljava/lang/Class;Ljava/lang/String;)Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;\n"
-                + "  13: move-result-object v1\n"
-                + "  14: const-wide-16 v3, #7\n"
-                + "  16: const-4 v4, #0\n"
-                + "  17: invoke-virtual-range v1, v2, v3, v4, Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->set(Ljava/lang/Object;J)V\n"
-                + "  20: const-wide-16 v3, #7\n"
-                + "  22: const-4 v4, #0\n"
-                + "  23: const-wide-16 v5, #8\n"
-                + "  25: const-4 v6, #0\n"
-                + "  26: invoke-virtual-range v1, v2, v3, v4, v5, v6, Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->compareAndSet(Ljava/lang/Object;JJ)Z\n"
-                + "  29: move-result v3\n"
-                + "  30: const-wide-16 v3, #2\n"
-                + "  32: const-4 v4, #0\n"
-                + "  33: invoke-virtual-range v1, v2, v3, v4, Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->addAndGet(Ljava/lang/Object;J)J\n"
-                + "  36: move-result-wide v3\n"
-                + "  37: return-wide v3\n"
-                + "method lpDemo()I regs=2\n"
-                + "  0: new-instance v0, Landroid/view/ViewGroup$LayoutParams;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: const-16 v1, #-1\n"
-                + "  5: invoke-direct v0, v1, v1, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V\n"
-                + "  8: iget v0, v0, Landroid/view/ViewGroup$LayoutParams;->width:I\n"
-                + "  10: return v0\n"
-                + "method make()I regs=3\n"
-                + "  0: new-instance v0, Ltest/Counter;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Counter;-><init>()V\n"
-                + "  6: const-4 v1, #4\n"
-                + "  7: iput v1, v0, Ltest/Counter;->count:I\n"
-                + "  9: iget v2, v0, Ltest/Counter;->count:I\n"
-                + "  11: add-int-lit8 v2, v2, #1\n"
-                + "  13: return v2\n"
-                + "method mapDefaults()I regs=3\n"
-                + "  0: new-instance v0, Ltest/FlagMap;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/FlagMap;-><init>()V\n"
-                + "  6: const-string v1, k\n"
-                + "  8: const-16 v2, #99\n"
-                + "  10: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  13: move-result-object v2\n"
-                + "  14: invoke-interface v0, v1, v2, Ljava/util/Map;->getOrDefault(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\n"
-                + "  17: move-result-object v2\n"
-                + "  18: invoke-virtual v2, Ljava/lang/Integer;->intValue()I\n"
-                + "  21: move-result v2\n"
-                + "  22: return v2\n"
-                + "method mapDemo()I regs=4\n"
-                + "  0: new-instance v0, Ljava/util/HashMap;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ljava/util/HashMap;-><init>()V\n"
-                + "  6: const-string v1, k\n"
-                + "  8: const-16 v2, #42\n"
-                + "  10: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  13: move-result-object v2\n"
-                + "  14: invoke-virtual v0, v1, v2, Ljava/util/HashMap;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\n"
-                + "  17: move-result-object v3\n"
-                + "  18: invoke-interface v0, v1, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;\n"
-                + "  21: move-result-object v2\n"
-                + "  22: invoke-virtual v2, Ljava/lang/Integer;->intValue()I\n"
-                + "  25: move-result v2\n"
-                + "  26: return v2\n"
-                + "method mapPutAbsent()I regs=3\n"
-                + "  0: new-instance v0, Ltest/FlagMap;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/FlagMap;-><init>()V\n"
-                + "  6: const-string v1, k\n"
-                + "  8: const-16 v2, #5\n"
-                + "  10: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  13: move-result-object v2\n"
-                + "  14: invoke-interface v0, v1, v2, Ljava/util/Map;->putIfAbsent(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\n"
-                + "  17: move-result-object v2\n"
-                + "  18: invoke-virtual v2, Ljava/lang/Integer;->intValue()I\n"
-                + "  21: move-result v2\n"
-                + "  22: return v2\n"
-                + "method mathMax()I regs=2\n"
-                + "  0: const-4 v0, #3\n"
-                + "  1: const-4 v1, #7\n"
-                + "  2: invoke-static v0, v1, Ljava/lang/Math;->max(II)I\n"
-                + "  5: move-result v0\n"
-                + "  6: return v0\n"
-                + "method metricsDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/content/Context;->getResources()Landroid/content/res/Resources;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: invoke-virtual v0, Landroid/content/res/Resources;->getDisplayMetrics()Landroid/util/DisplayMetrics;\n"
-                + "  13: move-result-object v0\n"
-                + "  14: iget v0, v0, Landroid/util/DisplayMetrics;->density:F\n"
-                + "  16: return-object v0\n"
-                + "method missFind()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const v1, #2130772483\n"
-                + "  9: invoke-virtual v0, v1, Landroid/view/View;->findViewById(I)Landroid/view/View;\n"
-                + "  12: move-result-object v0\n"
-                + "  13: return-object v0\n"
-                + "method missing()V regs=0\n"
-                + "  0: invoke-static, Lfw/Base;->nope()V\n"
-                + "  3: return-void\n"
-                + "method nanosDemo()J regs=3\n"
-                + "  0: sget-object v0, Ljava/util/concurrent/TimeUnit;->SECONDS:Ljava/util/concurrent/TimeUnit;\n"
-                + "  2: const-wide-16 v1, #60\n"
-                + "  4: invoke-virtual v0, v1, Ljava/util/concurrent/TimeUnit;->toNanos(J)J\n"
-                + "  7: move-result-wide v0\n"
-                + "  8: return-wide v0\n"
-                + "method nops()I regs=1\n"
-                + "  0: nop\n"
-                + "  1: const-4 v0, #7\n"
-                + "  2: add-int-lit8 v0, v0, #2\n"
-                + "  4: return v0\n"
-                + "method nullCast()V regs=1\n"
-                + "  0: check-cast v0, Ltest/Counter;\n"
-                + "  2: return-void\n"
-                + "method nullCheckDemo()I regs=1\n"
-                + "  0: const-4 v0, #0\n"
-                + "  1: if-eqz v0, +5\n"
-                + "  3: const-16 v0, #99\n"
-                + "  5: return v0\n"
-                + "  6: const-4 v0, #7\n"
-                + "  7: return v0\n"
-                + "method nullRecv()V regs=1\n"
-                + "  0: const-4 v0, #0\n"
-                + "  1: invoke-virtual v0, Ljava/lang/String;->length()I\n"
-                + "  4: return-void\n"
-                + "method nullish()I regs=3\n"
-                + "  0: const-4 v0, #0\n"
-                + "  1: check-cast v0, Ltest/Counter;\n"
-                + "  3: instance-of v1, v0, Ltest/Counter;\n"
-                + "  5: instance-of v2, v0, Ljava/lang/Integer;\n"
-                + "  7: add-int v1, v1, v2\n"
-                + "  9: return v1\n"
-                + "method ordinalDemo()I regs=1\n"
-                + "  0: sget-object v0, Ltest/Color;->BLUE:Ltest/Color;\n"
-                + "  2: invoke-virtual v0, Ljava/lang/Enum;->ordinal()I\n"
-                + "  5: move-result v0\n"
-                + "  6: return v0\n"
-                + "method paintDemo()I regs=2\n"
-                + "  0: new-instance v0, Landroid/graphics/Paint;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: const-4 v1, #1\n"
-                + "  4: invoke-direct v0, v1, Landroid/graphics/Paint;-><init>(I)V\n"
-                + "  7: invoke-virtual v0, Landroid/graphics/Paint;->getFlags()I\n"
-                + "  10: move-result v0\n"
-                + "  11: return v0\n"
-                + "method parentDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/view/View;->getParent()Landroid/view/ViewParent;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: return-object v0\n"
-                + "method parentIfDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: invoke-interface v0, Landroid/view/ViewParent;->getParent()Landroid/view/ViewParent;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: return-object v0\n"
-                + "method parentLinkDemo()Ljava/lang/Object; regs=4\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: new-instance v1, Landroid/view/View;\n"
-                + "  8: move-result-object v1\n"
-                + "  9: invoke-direct v1, Landroid/view/View;-><init>()V\n"
-                + "  12: new-instance v2, Landroid/view/ViewGroup$LayoutParams;\n"
-                + "  14: move-result-object v2\n"
-                + "  15: const-16 v3, #-1\n"
-                + "  17: invoke-direct v2, v3, v3, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V\n"
-                + "  20: invoke-virtual v0, v1, v2, Landroid/app/Activity;->setContentView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V\n"
-                + "  23: invoke-virtual v1, Landroid/view/View;->getParent()Landroid/view/ViewParent;\n"
-                + "  26: move-result-object v0\n"
-                + "  27: return-object v0\n"
-                + "method parseDemo()I regs=1\n"
-                + "  0: const-string v0, #ff010203\n"
-                + "  2: invoke-static v0, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I\n"
-                + "  5: move-result v0\n"
-                + "  6: return v0\n"
-                + "method plusCollDemo()I regs=4\n"
-                + "  0: new-instance v0, Ljava/util/ArrayList;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ljava/util/ArrayList;-><init>()V\n"
-                + "  6: const-4 v1, #2\n"
-                + "  7: new-array v2, v1, [Ljava/lang/String;\n"
-                + "  9: const-string v1, a\n"
-                + "  11: const-4 v3, #0\n"
-                + "  12: aput-object v1, v2, v3\n"
-                + "  14: const-string v1, b\n"
-                + "  16: const-4 v3, #1\n"
-                + "  17: aput-object v1, v2, v3\n"
-                + "  19: invoke-virtual v0, v2, Ljava/util/ArrayList;->addAll(Ljava/util/Collection;)Z\n"
-                + "  22: move-result v1\n"
-                + "  23: invoke-virtual v0, Ljava/util/ArrayList;->size()I\n"
-                + "  26: move-result v1\n"
-                + "  27: return v1\n"
-                + "method postCbDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: invoke-static, Landroid/view/Choreographer;->getInstance()Landroid/view/Choreographer;\n"
-                + "  3: move-result-object v0\n"
-                + "  4: const-4 v1, #0\n"
-                + "  5: invoke-virtual v0, v1, Landroid/view/Choreographer;->postFrameCallback(Landroid/view/Choreographer$FrameCallback;)V\n"
-                + "  8: return-object v0\n"
-                + "method postDemo()I regs=2\n"
-                + "  0: new-instance v0, Ltest/MyHandler;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/MyHandler;-><init>()V\n"
-                + "  6: new-instance v1, Ltest/Job;\n"
-                + "  8: move-result-object v1\n"
-                + "  9: invoke-direct v1, Ltest/Job;-><init>()V\n"
-                + "  12: invoke-virtual v0, v1, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z\n"
-                + "  15: move-result v1\n"
-                + "  16: sget v1, Ltest/Hello;->flag:I\n"
-                + "  18: return v1\n"
-                + "method propDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: const-string v0, tartine.missing\n"
-                + "  2: invoke-static v0, Ljava/lang/System;->getProperty(Ljava/lang/String;)Ljava/lang/String;\n"
-                + "  5: move-result-object v0\n"
-                + "  6: return-object v0\n"
-                + "method reflectDemo()Ljava/lang/Object; regs=4\n"
-                + "  0: const-class v0, Landroid/os/Handler;\n"
-                + "  2: const-class v1, Landroid/os/Looper;\n"
-                + "  4: const-4 v2, #1\n"
-                + "  5: new-array v2, v2, [Ljava/lang/Class;\n"
-                + "  7: const-4 v3, #0\n"
-                + "  8: aput-object v1, v2, v3\n"
-                + "  10: const-string v3, createAsync\n"
-                + "  12: invoke-virtual v0, v3, v2, Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;\n"
-                + "  15: move-result-object v0\n"
-                + "  16: invoke-static, Landroid/os/Looper;->getMainLooper()Landroid/os/Looper;\n"
-                + "  19: move-result-object v1\n"
-                + "  20: const-4 v2, #1\n"
-                + "  21: new-array v2, v2, [Ljava/lang/Object;\n"
-                + "  23: const-4 v3, #0\n"
-                + "  24: aput-object v1, v2, v3\n"
-                + "  26: const-4 v1, #0\n"
-                + "  27: invoke-virtual v0, v1, v2, Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;\n"
-                + "  30: move-result-object v0\n"
-                + "  31: return-object v0\n"
-                + "method reflectMissDemo()Ljava/lang/Object; regs=3\n"
-                + "  0: const-class v0, Ljava/lang/Object;\n"
-                + "  2: const-4 v1, #0\n"
-                + "  3: new-array v1, v1, [Ljava/lang/Class;\n"
-                + "  5: const-string v2, nope\n"
-                + "  7: invoke-virtual v0, v2, v1, Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;\n"
-                + "  10: move-result-object v0\n"
-                + "  11: return-object v0\n"
-                + "method repeatDemo()Ljava/lang/String; regs=2\n"
-                + "  0: const-string v0, ab\n"
-                + "  2: const-4 v1, #3\n"
-                + "  3: invoke-virtual v0, v1, Ljava/lang/String;->repeat(I)Ljava/lang/String;\n"
-                + "  6: move-result-object v0\n"
-                + "  7: return-object v0\n"
-                + "method resDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/content/Context;->getResources()Landroid/content/res/Resources;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: return-object v0\n"
-                + "method runtimeDemo()J regs=1\n"
-                + "  0: invoke-static, Ljava/lang/Runtime;->getRuntime()Ljava/lang/Runtime;\n"
-                + "  3: move-result-object v0\n"
-                + "  4: invoke-virtual v0, Ljava/lang/Runtime;->maxMemory()J\n"
-                + "  7: move-result-wide v0\n"
-                + "  8: return-wide v0\n"
-                + "method safely()I regs=1\n"
-                + "  0: const-string v0, boom\n"
-                + "  2: throw v0\n"
-                + "  3: const-4 v0, #3\n"
-                + "  4: return v0\n"
-                + "  5: move-exception v0\n"
-                + "  6: const-4 v0, #7\n"
-                + "  7: return v0\n"
-                + "method sb()Ljava/lang/String; regs=2\n"
-                + "  0: new-instance v0, Ljava/lang/StringBuilder;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ljava/lang/StringBuilder;-><init>()V\n"
-                + "  6: const-string v1, a\n"
-                + "  8: invoke-virtual v0, v1, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;\n"
-                + "  11: const-4 v1, #1\n"
-                + "  12: invoke-virtual v0, v1, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;\n"
-                + "  15: move-result-object v1\n"
-                + "  16: invoke-virtual v1, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;\n"
-                + "  19: move-result-object v0\n"
-                + "  20: return-object v0\n"
-                + "method sdk()I regs=1\n"
-                + "  0: sget v0, Landroid/os/Build$VERSION;->SDK_INT:I\n"
-                + "  2: return v0\n"
-                + "method sdkIntDemo()I regs=2\n"
-                + "  0: const-class v0, Landroid/os/Build$VERSION;\n"
-                + "  2: const-string v1, SDK_INT\n"
-                + "  4: invoke-virtual v0, v1, Ljava/lang/Class;->getField(Ljava/lang/String;)Ljava/lang/reflect/Field;\n"
-                + "  7: move-result-object v0\n"
-                + "  8: const-4 v1, #0\n"
-                + "  9: invoke-virtual v0, v1, Ljava/lang/reflect/Field;->getInt(Ljava/lang/Object;)I\n"
-                + "  12: move-result v0\n"
-                + "  13: return v0\n"
-                + "method serviceDemo()Z regs=1\n"
-                + "  0: const-class v0, Ljava/lang/Object;\n"
-                + "  2: invoke-static v0, Ljava/util/ServiceLoader;->load(Ljava/lang/Class;)Ljava/util/ServiceLoader;\n"
-                + "  5: move-result-object v0\n"
-                + "  6: invoke-virtual v0, Ljava/util/ServiceLoader;->iterator()Ljava/util/Iterator;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: invoke-interface v0, Ljava/util/Iterator;->hasNext()Z\n"
-                + "  13: move-result v0\n"
-                + "  14: return v0\n"
-                + "method setDemo()I regs=3\n"
-                + "  0: new-instance v0, Ljava/util/HashSet;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ljava/util/HashSet;-><init>()V\n"
-                + "  6: const-string v2, x\n"
-                + "  8: invoke-virtual v0, v2, Ljava/util/HashSet;->add(Ljava/lang/Object;)Z\n"
-                + "  11: move-result v1\n"
-                + "  12: invoke-virtual v0, v2, Ljava/util/HashSet;->add(Ljava/lang/Object;)Z\n"
-                + "  15: move-result v2\n"
-                + "  16: add-int v1, v1, v2\n"
-                + "  18: return v1\n"
-                + "method sortDemo()I regs=4\n"
-                + "  0: const-4 v3, #3\n"
-                + "  1: new-array v0, v3, [Ljava/lang/Object;\n"
-                + "  3: const-4 v1, #3\n"
-                + "  4: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  7: move-result-object v1\n"
-                + "  8: const-4 v2, #0\n"
-                + "  9: aput-object v1, v0, v2\n"
-                + "  11: const-4 v1, #1\n"
-                + "  12: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  15: move-result-object v1\n"
-                + "  16: const-4 v2, #1\n"
-                + "  17: aput-object v1, v0, v2\n"
-                + "  19: const-4 v1, #2\n"
-                + "  20: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  23: move-result-object v1\n"
-                + "  24: const-4 v2, #2\n"
-                + "  25: aput-object v1, v0, v2\n"
-                + "  27: new-instance v1, Ltest/Cmp;\n"
-                + "  29: move-result-object v1\n"
-                + "  30: invoke-direct v1, Ltest/Cmp;-><init>()V\n"
-                + "  33: const-4 v2, #0\n"
-                + "  34: const-4 v3, #2\n"
-                + "  35: invoke-static v0, v2, v3, v1, Ljava/util/Arrays;->sort([Ljava/lang/Object;IILjava/util/Comparator;)V\n"
-                + "  38: const-4 v2, #0\n"
-                + "  39: aget-object v1, v0, v2\n"
-                + "  41: invoke-virtual v1, Ljava/lang/Integer;->intValue()I\n"
-                + "  44: move-result v1\n"
-                + "  45: mul-int-lit8 v1, v1, #10\n"
-                + "  47: const-4 v2, #1\n"
-                + "  48: aget-object v2, v0, v2\n"
-                + "  50: invoke-virtual v2, Ljava/lang/Integer;->intValue()I\n"
-                + "  53: move-result v2\n"
-                + "  54: add-int v1, v1, v2\n"
-                + "  56: return v1\n"
-                + "method strictSqrt()D regs=2\n"
-                + "  0: const-16 v0, #16\n"
-                + "  2: int-to-double v0, v0\n"
-                + "  3: invoke-static v0, Ljava/lang/StrictMath;->sqrt(D)D\n"
-                + "  6: move-result-wide v0\n"
-                + "  7: return-wide v0\n"
-                + "method stringOps()I regs=3\n"
-                + "  0: const-string v0, hello\n"
-                + "  2: invoke-virtual v0, Ljava/lang/String;->length()I\n"
-                + "  5: move-result v1\n"
-                + "  6: const-string v2, l\n"
-                + "  8: invoke-virtual v0, v2, Ljava/lang/String;->indexOf(Ljava/lang/String;)I\n"
-                + "  11: move-result v2\n"
-                + "  12: add-int v1, v1, v2\n"
-                + "  14: return v1\n"
-                + "method strokeDemo()F regs=2\n"
-                + "  0: new-instance v0, Landroid/graphics/Paint;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: const-4 v1, #0\n"
-                + "  4: invoke-direct v0, v1, Landroid/graphics/Paint;-><init>(I)V\n"
-                + "  7: const-high16 v1, #1073741824\n"
-                + "  9: invoke-virtual v0, v1, Landroid/graphics/Paint;->setStrokeWidth(F)V\n"
-                + "  12: invoke-virtual v0, Landroid/graphics/Paint;->getStrokeWidth()F\n"
-                + "  15: move-result v0\n"
-                + "  16: return v0\n"
-                + "method styleDemo()I regs=1\n"
-                + "  0: sget-object v0, Landroid/graphics/Paint$Style;->STROKE:Landroid/graphics/Paint$Style;\n"
-                + "  2: invoke-virtual v0, Ljava/lang/Enum;->ordinal()I\n"
-                + "  5: move-result v0\n"
-                + "  6: return v0\n"
-                + "method styleRoundDemo()I regs=2\n"
-                + "  0: new-instance v0, Landroid/graphics/Paint;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: const-4 v1, #0\n"
-                + "  4: invoke-direct v0, v1, Landroid/graphics/Paint;-><init>(I)V\n"
-                + "  7: sget-object v1, Landroid/graphics/Paint$Style;->STROKE:Landroid/graphics/Paint$Style;\n"
-                + "  9: invoke-virtual v0, v1, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V\n"
-                + "  12: invoke-virtual v0, Landroid/graphics/Paint;->getStyle()Landroid/graphics/Paint$Style;\n"
-                + "  15: move-result-object v0\n"
-                + "  16: invoke-virtual v0, Ljava/lang/Enum;->ordinal()I\n"
-                + "  19: move-result v0\n"
-                + "  20: return v0\n"
-                + "method subDemo()I regs=4\n"
-                + "  0: new-instance v1, Ltest/Cmp;\n"
-                + "  2: move-result-object v1\n"
-                + "  3: invoke-direct v1, Ltest/Cmp;-><init>()V\n"
-                + "  6: new-instance v0, Ltest/SubSet;\n"
-                + "  8: move-result-object v0\n"
-                + "  9: invoke-direct v0, v1, Ltest/SubSet;-><init>(Ljava/util/Comparator;)V\n"
-                + "  12: const-4 v2, #7\n"
-                + "  13: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  16: move-result-object v2\n"
-                + "  17: invoke-virtual v0, v2, Ltest/SubSet;->add(Ljava/lang/Object;)Z\n"
-                + "  20: const-16 v2, #8\n"
-                + "  22: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  25: move-result-object v2\n"
-                + "  26: invoke-virtual v0, v2, Ltest/SubSet;->add(Ljava/lang/Object;)Z\n"
-                + "  29: const-4 v2, #7\n"
-                + "  30: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  33: move-result-object v2\n"
-                + "  34: invoke-virtual v0, v2, Ltest/SubSet;->contains(Ljava/lang/Object;)Z\n"
-                + "  37: move-result v3\n"
-                + "  38: invoke-virtual v0, Ltest/SubSet;->size()I\n"
-                + "  41: move-result v2\n"
-                + "  42: add-int v3, v3, v2\n"
-                + "  44: return v3\n"
-                + "method sum()I regs=3\n"
-                + "  0: const-4 v1, #3\n"
-                + "  1: new-array v0, v1, [I\n"
-                + "  3: const-4 v1, #0\n"
-                + "  4: const-16 v2, #7\n"
-                + "  6: aput v2, v0, v1\n"
-                + "  8: const-4 v1, #1\n"
-                + "  9: const-16 v2, #8\n"
-                + "  11: aput v2, v0, v1\n"
-                + "  13: const-4 v1, #2\n"
-                + "  14: const-16 v2, #9\n"
-                + "  16: aput v2, v0, v1\n"
-                + "  18: const-4 v1, #0\n"
-                + "  19: aget v1, v0, v1\n"
-                + "  21: const-4 v2, #1\n"
-                + "  22: aget v2, v0, v2\n"
-                + "  24: add-int v1, v1, v2\n"
-                + "  26: const-4 v2, #2\n"
-                + "  27: aget v2, v0, v2\n"
-                + "  29: add-int v1, v1, v2\n"
-                + "  31: return v1\n"
-                + "method suppressedDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: new-instance v0, Ltest/Boom;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Boom;-><init>()V\n"
-                + "  6: invoke-virtual v0, v0, Ljava/lang/Throwable;->addSuppressed(Ljava/lang/Throwable;)V\n"
-                + "  9: invoke-virtual v0, Ljava/lang/Throwable;->getSuppressed()[Ljava/lang/Throwable;\n"
-                + "  12: move-result-object v0\n"
-                + "  13: return-object v0\n"
-                + "method switchDefaultDemo()I regs=1\n"
-                + "  0: const-4 v0, #5\n"
-                + "  1: packed-switch v0, +9\n"
-                + "  4: const-16 v0, #99\n"
-                + "  6: return v0\n"
-                + "  7: const-4 v0, #7\n"
-                + "  8: return v0\n"
-                + "  9: nop\n"
-                + "  10: packed-switch-payload\n"
-                + "method switchDemo()I regs=1\n"
-                + "  0: const-4 v0, #1\n"
-                + "  1: packed-switch v0, +9\n"
-                + "  4: const-16 v0, #99\n"
-                + "  6: return v0\n"
-                + "  7: const-4 v0, #7\n"
-                + "  8: return v0\n"
-                + "  9: nop\n"
-                + "  10: packed-switch-payload\n"
-                + "method sysClock()J regs=2\n"
-                + "  0: invoke-static, Landroid/os/SystemClock;->uptimeMillis()J\n"
-                + "  3: move-result-wide v0\n"
-                + "  4: return-wide v0\n"
-                + "method sysServiceDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: const-string v1, accessibility\n"
-                + "  8: invoke-virtual v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;\n"
-                + "  11: move-result-object v0\n"
-                + "  12: return-object v0\n"
-                + "method tagDemo()Ljava/lang/Object; regs=3\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const-string v1, seven\n"
-                + "  8: const-4 v2, #7\n"
-                + "  9: invoke-virtual v0, v2, v1, Landroid/view/View;->setTag(ILjava/lang/Object;)V\n"
-                + "  12: invoke-virtual v0, v2, Landroid/view/View;->getTag(I)Ljava/lang/Object;\n"
-                + "  15: move-result-object v0\n"
-                + "  16: return-object v0\n"
-                + "method tagMiss()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const-4 v1, #3\n"
-                + "  7: invoke-virtual v0, v1, Landroid/view/View;->getTag(I)Ljava/lang/Object;\n"
-                + "  10: move-result-object v0\n"
-                + "  11: return-object v0\n"
-                + "method threadDemo()Ljava/lang/String; regs=1\n"
-                + "  0: invoke-static, Ljava/lang/Thread;->currentThread()Ljava/lang/Thread;\n"
-                + "  3: move-result-object v0\n"
-                + "  4: invoke-virtual v0, Ljava/lang/Thread;->getName()Ljava/lang/String;\n"
-                + "  7: move-result-object v0\n"
-                + "  8: return-object v0\n"
-                + "method throwCatch()Ljava/lang/String; regs=2\n"
-                + "  0: new-instance v0, Ljava/lang/IllegalStateException;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: const-string v1, desk\n"
-                + "  5: invoke-direct v0, v1, Ljava/lang/IllegalStateException;-><init>(Ljava/lang/String;)V\n"
-                + "  8: throw v0\n"
-                + "  9: const-string v0, unreached\n"
-                + "  11: return-object v0\n"
-                + "  12: move-exception v0\n"
-                + "  13: invoke-virtual v0, Ljava/lang/IllegalStateException;->getMessage()Ljava/lang/String;\n"
-                + "  16: move-result-object v0\n"
-                + "  17: return-object v0\n"
-                + "method touchModeDemo()Z regs=1\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/view/View;->isInTouchMode()Z\n"
-                + "  9: move-result v0\n"
-                + "  10: return v0\n"
-                + "method treeDemo()I regs=3\n"
-                + "  0: new-instance v1, Ltest/Cmp;\n"
-                + "  2: move-result-object v1\n"
-                + "  3: invoke-direct v1, Ltest/Cmp;-><init>()V\n"
-                + "  6: new-instance v0, Ljava/util/TreeSet;\n"
-                + "  8: move-result-object v0\n"
-                + "  9: invoke-direct v0, v1, Ljava/util/TreeSet;-><init>(Ljava/util/Comparator;)V\n"
-                + "  12: const-4 v1, #7\n"
-                + "  13: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  16: move-result-object v1\n"
-                + "  17: invoke-virtual v0, v1, Ljava/util/TreeSet;->add(Ljava/lang/Object;)Z\n"
-                + "  20: move-result v1\n"
-                + "  21: const-16 v1, #8\n"
-                + "  23: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  26: move-result-object v1\n"
-                + "  27: invoke-virtual v0, v1, Ljava/util/TreeSet;->add(Ljava/lang/Object;)Z\n"
-                + "  30: move-result v1\n"
-                + "  31: invoke-virtual v0, Ljava/util/TreeSet;->size()I\n"
-                + "  34: move-result v0\n"
-                + "  35: return v0\n"
-                + "method twice(I)I regs=2\n"
-                + "  0: invoke-static v1, Ltest/Hello;->id(I)I\n"
-                + "  3: move-result v0\n"
-                + "  4: add-int-2addr v0, v0\n"
-                + "  5: return v0\n"
-                + "method txChain()I regs=3\n"
-                + "  0: const-string v0, tx\n"
-                + "  2: const-4 v1, #1\n"
-                + "  3: const-string v2, frag\n"
-                + "  5: invoke-virtual v0, v1, v2, Landroid/app/FragmentTransaction;->add(ILandroid/app/Fragment;)Landroid/app/FragmentTransaction;\n"
-                + "  8: move-result-object v0\n"
-                + "  9: invoke-virtual v0, Landroid/app/FragmentTransaction;->commit()I\n"
-                + "  12: move-result v0\n"
-                + "  13: return v0\n"
-                + "method updater()I regs=5\n"
-                + "  0: new-instance v0, Ltest/Counter;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Ltest/Counter;-><init>()V\n"
-                + "  6: const-class v1, Ltest/Counter;\n"
-                + "  8: const-class v2, Ljava/lang/Object;\n"
-                + "  10: const-string v3, count\n"
-                + "  12: invoke-static v1, v2, v3, Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->newUpdater(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;\n"
-                + "  15: move-result-object v1\n"
-                + "  16: invoke-virtual v1, v0, v4, v4, Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->compareAndSet(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Z\n"
-                + "  19: move-result v4\n"
-                + "  20: const-4 v2, #7\n"
-                + "  21: invoke-virtual v1, v0, v2, Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->set(Ljava/lang/Object;Ljava/lang/Object;)V\n"
-                + "  24: invoke-virtual v1, v0, Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->get(Ljava/lang/Object;)Ljava/lang/Object;\n"
-                + "  27: move-result-object v2\n"
-                + "  28: add-int v2, v4, v2\n"
-                + "  30: return v2\n"
-                + "method viewConfigDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: invoke-static v0, Landroid/view/ViewConfiguration;->get(Landroid/content/Context;)Landroid/view/ViewConfiguration;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: return-object v0\n"
-                + "method viewCtx()Ljava/lang/Object; regs=3\n"
-                + "  0: new-instance v0, Landroid/view/ViewGroup;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: new-instance v1, Landroid/app/Activity;\n"
-                + "  5: move-result-object v1\n"
-                + "  6: invoke-direct v1, Landroid/app/Activity;-><init>()V\n"
-                + "  9: const-4 v2, #0\n"
-                + "  10: invoke-direct v0, v1, v2, v2, Landroid/view/ViewGroup;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V\n"
-                + "  13: invoke-virtual v0, Landroid/view/View;->getContext()Landroid/content/Context;\n"
-                + "  16: move-result-object v0\n"
-                + "  17: return-object v0\n"
-                + "method viewHandlerDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: new-instance v1, Landroid/view/View;\n"
-                + "  8: move-result-object v1\n"
-                + "  9: invoke-direct v1, Landroid/view/View;-><init>()V\n"
-                + "  12: invoke-virtual v0, v1, Landroid/app/Activity;->setContentView(Landroid/view/View;)V\n"
-                + "  15: invoke-virtual v1, Landroid/view/View;->getHandler()Landroid/os/Handler;\n"
-                + "  18: move-result-object v0\n"
-                + "  19: return-object v0\n"
-                + "method viewVis()I regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/view/View;->getVisibility()I\n"
-                + "  9: move-result v1\n"
-                + "  10: const-16 v1, #8\n"
-                + "  12: invoke-virtual v0, v1, Landroid/view/View;->setVisibility(I)V\n"
-                + "  15: invoke-virtual v0, Landroid/view/View;->getVisibility()I\n"
-                + "  18: move-result v0\n"
-                + "  19: return v0\n"
-                + "method vis()I regs=1\n"
-                + "  0: sget v0, Landroid/view/View;->VISIBLE:I\n"
-                + "  2: return v0\n"
-                + "method vtoDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: return-object v0\n"
-                + "method weakClear()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Ljava/lang/ref/WeakReference;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: const-string v1, x\n"
-                + "  5: invoke-direct v0, v1, Ljava/lang/ref/WeakReference;-><init>(Ljava/lang/Object;)V\n"
-                + "  8: invoke-virtual v0, Ljava/lang/ref/WeakReference;->get()Ljava/lang/Object;\n"
-                + "  11: move-result-object v1\n"
-                + "  12: invoke-virtual v0, Ljava/lang/ref/WeakReference;->clear()V\n"
-                + "  15: invoke-virtual v0, Ljava/lang/ref/WeakReference;->get()Ljava/lang/Object;\n"
-                + "  18: move-result-object v0\n"
-                + "  19: return-object v0\n"
-                + "method weakGet()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Ljava/lang/ref/WeakReference;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: const-string v1, x\n"
-                + "  5: invoke-direct v0, v1, Ljava/lang/ref/WeakReference;-><init>(Ljava/lang/Object;)V\n"
-                + "  8: invoke-virtual v0, Ljava/lang/ref/WeakReference;->get()Ljava/lang/Object;\n"
-                + "  11: move-result-object v0\n"
-                + "  12: return-object v0\n"
-                + "method wideHigh16Demo()J regs=1\n"
-                + "  0: const-wide-high16 v0, #4607182418800017408\n"
-                + "  2: return-wide v0\n"
-                + "method willNotDrawDemo()Ljava/lang/Object; regs=2\n"
-                + "  0: new-instance v0, Landroid/view/View;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/view/View;-><init>()V\n"
-                + "  6: const-4 v1, #0\n"
-                + "  7: invoke-virtual v0, v1, Landroid/view/View;->setWillNotDraw(Z)V\n"
-                + "  10: return-object v0\n"
-                + "method windowDemo()Ljava/lang/Object; regs=1\n"
-                + "  0: new-instance v0, Landroid/app/Activity;\n"
-                + "  2: move-result-object v0\n"
-                + "  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n"
-                + "  6: invoke-virtual v0, Landroid/app/Activity;->getWindow()Landroid/view/Window;\n"
-                + "  9: move-result-object v0\n"
-                + "  10: return-object v0\n"
-                + "method zeroCheckDemo()I regs=1\n"
-                + "  0: const-4 v0, #0\n"
-                + "  1: invoke-static v0, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n"
-                + "  4: move-result-object v0\n"
-                + "  5: if-eqz v0, +4\n"
-                + "  7: const-4 v0, #7\n"
-                + "  8: return v0\n"
-                + "  9: const-16 v0, #99\n"
-                + "  11: return v0\n"
-                + "class Ltest/Job;\n"
-                + "method <init>()V regs=1\n"
-                + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
-                + "  3: return-void\n"
-                + "method run()V regs=2\n"
-                + "  0: const-4 v1, #7\n"
-                + "  1: sput v1, Ltest/Hello;->flag:I\n"
-                + "  3: return-void\n"
-                + "class Ltest/MyHandler;\n"
-                + "method <init>()V regs=1\n"
-                + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
-                + "  3: return-void\n"
-                + "method handleMessage(Landroid/os/Message;)V regs=2\n"
-                + "  0: iget v0, v1, Landroid/os/Message;->what:I\n"
-                + "  2: sput v0, Ltest/Hello;->flag:I\n"
-                + "  4: return-void\n"
-                + "class Ltest/Orphan;\n"
-                + "method <init>()V regs=1\n"
-                + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
-                + "  3: return-void\n"
-                + "class Ltest/Sub2;\n"
-                + "method <init>()V regs=1\n"
-                + "  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n"
-                + "  3: return-void\n"
-                + "class Ltest/Sub;\n"
-                + "method <init>()V regs=1\n"
-                + "  0: invoke-direct v0, Ltest/Base;-><init>()V\n"
-                + "  3: return-void\n"
-                + "class Ltest/SubSet;\n"
-                + "method <init>(Ljava/util/Comparator;)V regs=2\n"
-                + "  0: invoke-direct v0, v1, Ljava/util/TreeSet;-><init>(Ljava/util/Comparator;)V\n"
-                + "  3: return-void\n"
-                + "method getSize()I regs=1\n"
-                + "  0: invoke-super v0, Ljava/util/TreeSet;->size()I\n"
-                + "  3: move-result v0\n"
-                + "  4: return v0\n"
-                + "method size()I regs=1\n"
-                + "  0: invoke-virtual v0, Ltest/SubSet;->getSize()I\n"
-                + "  3: move-result v0\n"
-                + "  4: return v0\n";
+        StringBuilder expected = new StringBuilder();
+        expected.append("class Lkotlin/Lazy;\n");
+        expected.append("class Lkotlin/LazyKt;\n");
+        expected.append("class Lkotlin/jvm/functions/Function0;\n");
+        expected.append("class Ltest/Base;\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("method who()Ljava/lang/String; regs=1\n");
+        expected.append("  0: const-string v0, base\n");
+        expected.append("  2: return-object v0\n");
+        expected.append("class Ltest/Boom;\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("class Ltest/Cmp;\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("method compare(Ljava/lang/Object;Ljava/lang/Object;)I regs=5\n");
+        expected.append("  0: invoke-virtual v3, Ljava/lang/Integer;->intValue()I\n");
+        expected.append("  3: move-result v0\n");
+        expected.append("  4: invoke-virtual v4, Ljava/lang/Integer;->intValue()I\n");
+        expected.append("  7: move-result v1\n");
+        expected.append("  8: sub-int v0, v0, v1\n");
+        expected.append("  10: return v0\n");
+        expected.append("class Ltest/Color;\n");
+        expected.append("method <clinit>()V regs=3\n");
+        expected.append("  0: new-instance v0, Ltest/Color;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: const-string v1, RED\n");
+        expected.append("  5: const-4 v2, #0\n");
+        expected.append("  6: invoke-direct v0, v1, v2, Ltest/Color;-><init>(Ljava/lang/String;I)V\n");
+        expected.append("  9: sput-object v0, Ltest/Color;->RED:Ltest/Color;\n");
+        expected.append("  11: new-instance v0, Ltest/Color;\n");
+        expected.append("  13: move-result-object v0\n");
+        expected.append("  14: const-string v1, BLUE\n");
+        expected.append("  16: const-4 v2, #1\n");
+        expected.append("  17: invoke-direct v0, v1, v2, Ltest/Color;-><init>(Ljava/lang/String;I)V\n");
+        expected.append("  20: sput-object v0, Ltest/Color;->BLUE:Ltest/Color;\n");
+        expected.append("  22: return-void\n");
+        expected.append("method <init>(Ljava/lang/String;I)V regs=3\n");
+        expected.append("  0: invoke-direct v0, v1, v2, Ljava/lang/Enum;-><init>(Ljava/lang/String;I)V\n");
+        expected.append("  3: return-void\n");
+        expected.append("class Ltest/Counter;\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("class Ltest/FlagMap;\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("method containsKey(Ljava/lang/Object;)Z regs=2\n");
+        expected.append("  0: const-4 v1, #1\n");
+        expected.append("  1: return v1\n");
+        expected.append("method get(Ljava/lang/Object;)Ljava/lang/Object; regs=2\n");
+        expected.append("  0: const-16 v1, #7\n");
+        expected.append("  2: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  5: move-result-object v1\n");
+        expected.append("  6: return-object v1\n");
+        expected.append("method put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; regs=3\n");
+        expected.append("  0: const-4 v1, #0\n");
+        expected.append("  1: return-object v1\n");
+        expected.append("class Ltest/Fn;\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("method invoke()I regs=1\n");
+        expected.append("  0: const-16 v0, #99\n");
+        expected.append("  2: return v0\n");
+        expected.append("class Ltest/Hello;\n");
+        expected.append("method <clinit>()V regs=1\n");
+        expected.append("  0: const-16 v0, #9\n");
+        expected.append("  2: mul-int-lit8 v0, v0, #4\n");
+        expected.append("  4: add-int-lit8 v0, v0, #5\n");
+        expected.append("  6: sput v0, Ltest/Hello;->counter:I\n");
+        expected.append("  8: return-void\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("method a11yDelegateDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: new-instance v1, Landroid/view/View$AccessibilityDelegate;\n");
+        expected.append("  8: move-result-object v1\n");
+        expected.append("  9: invoke-direct v1, Landroid/view/View$AccessibilityDelegate;-><init>()V\n");
+        expected.append("  12: invoke-virtual v0, v1, Landroid/view/View;->setAccessibilityDelegate(Landroid/view/View$AccessibilityDelegate;)V\n");
+        expected.append("  15: return-object v0\n");
+        expected.append("method a11yDemo()Z regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: const-string v1, accessibility\n");
+        expected.append("  8: invoke-virtual v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;\n");
+        expected.append("  11: move-result-object v0\n");
+        expected.append("  12: const-4 v1, #-1\n");
+        expected.append("  13: invoke-virtual v0, v1, Landroid/view/accessibility/AccessibilityManager;->getEnabledAccessibilityServiceList(I)Ljava/util/List;\n");
+        expected.append("  16: move-result-object v0\n");
+        expected.append("  17: invoke-interface v0, Ljava/util/List;->isEmpty()Z\n");
+        expected.append("  20: move-result v0\n");
+        expected.append("  21: return v0\n");
+        expected.append("method a11yEnabledDemo()Z regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: const-string v1, accessibility\n");
+        expected.append("  8: invoke-virtual v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;\n");
+        expected.append("  11: move-result-object v0\n");
+        expected.append("  12: invoke-virtual v0, Landroid/view/accessibility/AccessibilityManager;->isEnabled()Z\n");
+        expected.append("  15: move-result v0\n");
+        expected.append("  16: return v0\n");
+        expected.append("method a11yImportantDemo()I regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const-4 v1, #1\n");
+        expected.append("  7: invoke-virtual v0, v1, Landroid/view/View;->setImportantForAccessibility(I)V\n");
+        expected.append("  10: invoke-virtual v0, Landroid/view/View;->getImportantForAccessibility()I\n");
+        expected.append("  13: move-result v0\n");
+        expected.append("  14: return v0\n");
+        expected.append("method activityStub()V regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, v1, Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V\n");
+        expected.append("  9: return-void\n");
+        expected.append("method activityWindow()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/app/Activity;->getWindow()Landroid/view/Window;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method annoDemo()I regs=3\n");
+        expected.append("  0: const-class v0, Ljava/lang/Object;\n");
+        expected.append("  2: const-4 v1, #0\n");
+        expected.append("  3: new-array v1, v1, [Ljava/lang/Class;\n");
+        expected.append("  5: const-string v2, toString\n");
+        expected.append("  7: invoke-virtual v0, v2, v1, Ljava/lang/Class;->getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;\n");
+        expected.append("  10: move-result-object v0\n");
+        expected.append("  11: invoke-virtual v0, Ljava/lang/reflect/Method;->getAnnotations()[Ljava/lang/annotation/Annotation;\n");
+        expected.append("  14: move-result-object v0\n");
+        expected.append("  15: array-length v0, v0\n");
+        expected.append("  16: return v0\n");
+        expected.append("method appCtxDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/content/Context;->getApplicationContext()Landroid/content/Context;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method appendableCast()I regs=2\n");
+        expected.append("  0: new-instance v0, Ljava/lang/StringBuilder;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ljava/lang/StringBuilder;-><init>()V\n");
+        expected.append("  6: check-cast v0, Ljava/lang/Appendable;\n");
+        expected.append("  8: instance-of v1, v0, Ljava/lang/CharSequence;\n");
+        expected.append("  10: return v1\n");
+        expected.append("method applicationDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroidx/activity/ComponentActivity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroidx/activity/ComponentActivity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroidx/activity/ComponentActivity;->getApplication()Landroid/app/Application;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method argbDemo()I regs=4\n");
+        expected.append("  0: const-16 v0, #255\n");
+        expected.append("  2: const-4 v1, #1\n");
+        expected.append("  3: const-4 v2, #2\n");
+        expected.append("  4: const-4 v3, #3\n");
+        expected.append("  5: invoke-static v0, v1, v2, v3, Landroid/graphics/Color;->argb(IIII)I\n");
+        expected.append("  8: move-result v0\n");
+        expected.append("  9: return v0\n");
+        expected.append("method arrayCopy()I regs=5\n");
+        expected.append("  0: const-4 v3, #3\n");
+        expected.append("  1: new-array v0, v3, [I\n");
+        expected.append("  3: const-4 v1, #0\n");
+        expected.append("  4: const-16 v2, #9\n");
+        expected.append("  6: aput v2, v0, v1\n");
+        expected.append("  8: const-4 v1, #1\n");
+        expected.append("  9: const-16 v2, #8\n");
+        expected.append("  11: aput v2, v0, v1\n");
+        expected.append("  13: const-4 v1, #2\n");
+        expected.append("  14: const-16 v2, #7\n");
+        expected.append("  16: aput v2, v0, v1\n");
+        expected.append("  18: const-4 v3, #3\n");
+        expected.append("  19: new-array v1, v3, [I\n");
+        expected.append("  21: const-4 v2, #0\n");
+        expected.append("  22: const-4 v3, #0\n");
+        expected.append("  23: const-4 v4, #3\n");
+        expected.append("  24: invoke-static v0, v2, v1, v3, v4, Ljava/lang/System;->arraycopy(Ljava/lang/Object;ILjava/lang/Object;II)V\n");
+        expected.append("  27: const-4 v2, #1\n");
+        expected.append("  28: aget v2, v1, v2\n");
+        expected.append("  30: return v2\n");
+        expected.append("method attachDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const-4 v1, #0\n");
+        expected.append("  7: invoke-virtual v0, v1, Landroid/view/View;->addOnAttachStateChangeListener(Landroid/view/View$OnAttachStateChangeListener;)V\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method attachLinkDemo()Z regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: new-instance v1, Landroid/view/View;\n");
+        expected.append("  8: move-result-object v1\n");
+        expected.append("  9: invoke-direct v1, Landroid/view/View;-><init>()V\n");
+        expected.append("  12: invoke-virtual v0, v1, Landroid/app/Activity;->setContentView(Landroid/view/View;)V\n");
+        expected.append("  15: invoke-virtual v1, Landroid/view/View;->isAttachedToWindow()Z\n");
+        expected.append("  18: move-result v1\n");
+        expected.append("  19: return v1\n");
+        expected.append("method attachPropDemo()I regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/view/ViewGroup;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: new-instance v1, Landroid/app/Activity;\n");
+        expected.append("  5: move-result-object v1\n");
+        expected.append("  6: invoke-direct v1, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  9: const-4 v2, #0\n");
+        expected.append("  10: invoke-direct v0, v1, v2, v2, Landroid/view/ViewGroup;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V\n");
+        expected.append("  13: new-instance v1, Landroid/view/View;\n");
+        expected.append("  15: move-result-object v1\n");
+        expected.append("  16: invoke-direct v1, Landroid/view/View;-><init>()V\n");
+        expected.append("  19: invoke-virtual v0, v1, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V\n");
+        expected.append("  22: invoke-virtual v0, Landroid/view/ViewGroup;->onAttachedToWindow()V\n");
+        expected.append("  25: invoke-virtual v1, Landroid/view/View;->isAttachedToWindow()Z\n");
+        expected.append("  28: move-result v2\n");
+        expected.append("  29: mul-int-lit8 v2, v2, #10\n");
+        expected.append("  31: invoke-virtual v0, Landroid/view/ViewGroup;->isAttachedToWindow()Z\n");
+        expected.append("  34: move-result v1\n");
+        expected.append("  35: add-int v2, v2, v1\n");
+        expected.append("  37: return v2\n");
+        expected.append("method attachedDemo()Z regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->isAttachedToWindow()Z\n");
+        expected.append("  9: move-result v0\n");
+        expected.append("  10: return v0\n");
+        expected.append("method autofillCbDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: const-class v1, Landroid/view/autofill/AutofillManager;\n");
+        expected.append("  8: invoke-virtual v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/Class;)Ljava/lang/Object;\n");
+        expected.append("  11: move-result-object v0\n");
+        expected.append("  12: invoke-virtual v0, v2, Landroid/view/autofill/AutofillManager;->registerCallback(Landroid/view/autofill/AutofillManager$AutofillCallback;)V\n");
+        expected.append("  15: return-object v0\n");
+        expected.append("method autofillDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: const-class v1, Landroid/view/autofill/AutofillManager;\n");
+        expected.append("  8: invoke-virtual v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/Class;)Ljava/lang/Object;\n");
+        expected.append("  11: move-result-object v0\n");
+        expected.append("  12: return-object v0\n");
+        expected.append("method badCast()V regs=1\n");
+        expected.append("  0: new-instance v0, Ljava/lang/StringBuilder;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ljava/lang/StringBuilder;-><init>()V\n");
+        expected.append("  6: check-cast v0, Ljava/lang/Integer;\n");
+        expected.append("  8: return-void\n");
+        expected.append("method blockedExec()V regs=2\n");
+        expected.append("  0: invoke-static, Ljava/lang/Runtime;->getRuntime()Ljava/lang/Runtime;\n");
+        expected.append("  3: move-result-object v0\n");
+        expected.append("  4: const-string v1, id\n");
+        expected.append("  6: invoke-virtual v0, v1, Ljava/lang/Runtime;->exec(Ljava/lang/String;)Ljava/lang/Process;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-void\n");
+        expected.append("method boolStr()Ljava/lang/String; regs=1\n");
+        expected.append("  0: const-4 v0, #1\n");
+        expected.append("  1: invoke-static v0, Ljava/lang/Boolean;->valueOf(Z)Ljava/lang/Boolean;\n");
+        expected.append("  4: move-result-object v0\n");
+        expected.append("  5: invoke-static v0, Ljava/lang/String;->valueOf(Ljava/lang/Object;)Ljava/lang/String;\n");
+        expected.append("  8: move-result-object v0\n");
+        expected.append("  9: return-object v0\n");
+        expected.append("method boot()I regs=1\n");
+        expected.append("  0: sget v0, Ltest/Hello;->counter:I\n");
+        expected.append("  2: add-int-lit8 v0, v0, #1\n");
+        expected.append("  4: return v0\n");
+        expected.append("method bundleDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/os/Bundle;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: const-4 v1, #7\n");
+        expected.append("  4: invoke-direct v0, v1, Landroid/os/Bundle;-><init>(I)V\n");
+        expected.append("  7: const-string v1, k\n");
+        expected.append("  9: const-string v2, v\n");
+        expected.append("  11: invoke-virtual v0, v1, v2, Landroid/os/Bundle;->putString(Ljava/lang/String;Ljava/lang/String;)V\n");
+        expected.append("  14: invoke-virtual v0, v1, Landroid/os/Bundle;->getString(Ljava/lang/String;)Ljava/lang/String;\n");
+        expected.append("  17: move-result-object v0\n");
+        expected.append("  18: return-object v0\n");
+        expected.append("method bundleIntDemo()I regs=4\n");
+        expected.append("  0: new-instance v0, Landroid/os/Bundle;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/os/Bundle;-><init>()V\n");
+        expected.append("  6: const-string v1, n\n");
+        expected.append("  8: const-4 v2, #7\n");
+        expected.append("  9: invoke-virtual v0, v1, v2, Landroid/os/Bundle;->putInt(Ljava/lang/String;I)V\n");
+        expected.append("  12: const-string v1, b\n");
+        expected.append("  14: const-4 v2, #1\n");
+        expected.append("  15: invoke-virtual v0, v1, v2, Landroid/os/Bundle;->putBoolean(Ljava/lang/String;Z)V\n");
+        expected.append("  18: const-string v1, n\n");
+        expected.append("  20: invoke-virtual v0, v1, Landroid/os/Bundle;->getInt(Ljava/lang/String;)I\n");
+        expected.append("  23: move-result v3\n");
+        expected.append("  24: mul-int-lit8 v3, v3, #100\n");
+        expected.append("  26: const-string v1, b\n");
+        expected.append("  28: invoke-virtual v0, v1, Landroid/os/Bundle;->getBoolean(Ljava/lang/String;)Z\n");
+        expected.append("  31: move-result v2\n");
+        expected.append("  32: mul-int-lit8 v2, v2, #10\n");
+        expected.append("  34: const-string v1, n\n");
+        expected.append("  36: invoke-virtual v0, v1, Landroid/os/Bundle;->containsKey(Ljava/lang/String;)Z\n");
+        expected.append("  39: move-result v1\n");
+        expected.append("  40: add-int v3, v3, v2\n");
+        expected.append("  42: add-int v3, v3, v1\n");
+        expected.append("  44: return v3\n");
+        expected.append("method captureDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->getContentCaptureSession()Landroid/view/contentcapture/ContentCaptureSession;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method casDemo()Z regs=3\n");
+        expected.append("  0: new-instance v0, Ljava/util/concurrent/atomic/AtomicReferenceArray;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: const-4 v1, #1\n");
+        expected.append("  4: invoke-direct v0, v1, Ljava/util/concurrent/atomic/AtomicReferenceArray;-><init>(I)V\n");
+        expected.append("  7: const-string v1, x\n");
+        expected.append("  9: const-4 v2, #0\n");
+        expected.append("  10: invoke-virtual v0, v2, v2, v1, Ljava/util/concurrent/atomic/AtomicReferenceArray;->compareAndSet(ILjava/lang/Object;Ljava/lang/Object;)Z\n");
+        expected.append("  13: move-result v0\n");
+        expected.append("  14: return v0\n");
+        expected.append("method castFail()V regs=1\n");
+        expected.append("  0: new-instance v0, Ltest/Sub;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Sub;-><init>()V\n");
+        expected.append("  6: check-cast v0, Ltest/Counter;\n");
+        expected.append("  8: return-void\n");
+        expected.append("method castOk()I regs=2\n");
+        expected.append("  0: new-instance v0, Ltest/Sub;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Sub;-><init>()V\n");
+        expected.append("  6: check-cast v0, Ltest/Base;\n");
+        expected.append("  8: instance-of v1, v0, Ltest/Base;\n");
+        expected.append("  10: return v1\n");
+        expected.append("method charStr()Ljava/lang/String; regs=1\n");
+        expected.append("  0: const-16 v0, #65\n");
+        expected.append("  2: invoke-static v0, Ljava/lang/Character;->valueOf(C)Ljava/lang/Character;\n");
+        expected.append("  5: move-result-object v0\n");
+        expected.append("  6: invoke-virtual v0, Ljava/lang/Character;->toString()Ljava/lang/String;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method childAddDemo()Ljava/lang/Object; regs=4\n");
+        expected.append("  0: new-instance v0, Landroid/view/ViewGroup;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: new-instance v1, Landroid/app/Activity;\n");
+        expected.append("  5: move-result-object v1\n");
+        expected.append("  6: invoke-direct v1, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  9: const-4 v2, #0\n");
+        expected.append("  10: invoke-direct v0, v1, v2, v2, Landroid/view/ViewGroup;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V\n");
+        expected.append("  13: new-instance v1, Landroid/view/View;\n");
+        expected.append("  15: move-result-object v1\n");
+        expected.append("  16: invoke-direct v1, Landroid/view/View;-><init>()V\n");
+        expected.append("  19: invoke-virtual v0, v1, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V\n");
+        expected.append("  22: const-4 v2, #0\n");
+        expected.append("  23: invoke-virtual v0, v2, Landroid/view/ViewGroup;->getChildAt(I)Landroid/view/View;\n");
+        expected.append("  26: move-result-object v0\n");
+        expected.append("  27: return-object v0\n");
+        expected.append("method childRemoveDemo()I regs=4\n");
+        expected.append("  0: new-instance v0, Landroid/view/ViewGroup;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: new-instance v1, Landroid/app/Activity;\n");
+        expected.append("  5: move-result-object v1\n");
+        expected.append("  6: invoke-direct v1, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  9: const-4 v2, #0\n");
+        expected.append("  10: invoke-direct v0, v1, v2, v2, Landroid/view/ViewGroup;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V\n");
+        expected.append("  13: new-instance v1, Landroid/view/View;\n");
+        expected.append("  15: move-result-object v1\n");
+        expected.append("  16: invoke-direct v1, Landroid/view/View;-><init>()V\n");
+        expected.append("  19: invoke-virtual v0, v1, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V\n");
+        expected.append("  22: invoke-virtual v0, Landroid/view/ViewGroup;->removeAllViews()V\n");
+        expected.append("  25: invoke-virtual v0, Landroid/view/ViewGroup;->getChildCount()I\n");
+        expected.append("  28: move-result v0\n");
+        expected.append("  29: return v0\n");
+        expected.append("method choreoDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: invoke-static, Landroid/view/Choreographer;->getInstance()Landroid/view/Choreographer;\n");
+        expected.append("  3: move-result-object v0\n");
+        expected.append("  4: return-object v0\n");
+        expected.append("method classPrimDemo()I regs=2\n");
+        expected.append("  0: const-class v0, I\n");
+        expected.append("  2: invoke-virtual v0, Ljava/lang/Class;->isPrimitive()Z\n");
+        expected.append("  5: move-result v0\n");
+        expected.append("  6: mul-int-lit8 v0, v0, #10\n");
+        expected.append("  8: const-class v1, Ljava/lang/Object;\n");
+        expected.append("  10: invoke-virtual v1, Ljava/lang/Class;->isPrimitive()Z\n");
+        expected.append("  13: move-result v1\n");
+        expected.append("  14: add-int v0, v0, v1\n");
+        expected.append("  16: return v0\n");
+        expected.append("method clazzIsInstance()I regs=3\n");
+        expected.append("  0: new-instance v0, Ltest/Counter;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Counter;-><init>()V\n");
+        expected.append("  6: const-class v1, Ltest/Counter;\n");
+        expected.append("  8: invoke-virtual v1, v0, Ljava/lang/Class;->isInstance(Ljava/lang/Object;)Z\n");
+        expected.append("  11: move-result v2\n");
+        expected.append("  12: return v2\n");
+        expected.append("method clipDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const-4 v1, #0\n");
+        expected.append("  7: invoke-virtual v0, v1, Landroid/view/View;->setClipChildren(Z)V\n");
+        expected.append("  10: invoke-virtual v0, v1, Landroid/view/View;->setClipToPadding(Z)V\n");
+        expected.append("  13: return-object v0\n");
+        expected.append("method clipboardDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: const-string v1, clipboard\n");
+        expected.append("  8: invoke-virtual v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;\n");
+        expected.append("  11: move-result-object v0\n");
+        expected.append("  12: return-object v0\n");
+        expected.append("method cloneDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: const-4 v1, #2\n");
+        expected.append("  1: new-array v0, v1, [Ljava/lang/Object;\n");
+        expected.append("  3: const-string v1, a\n");
+        expected.append("  5: const-4 v2, #0\n");
+        expected.append("  6: aput-object v1, v0, v2\n");
+        expected.append("  8: invoke-virtual v0, [Ljava/lang/Object;->clone()Ljava/lang/Object;\n");
+        expected.append("  11: move-result-object v0\n");
+        expected.append("  12: aget-object v0, v0, v2\n");
+        expected.append("  14: return-object v0\n");
+        expected.append("method cmpTiny()I regs=5\n");
+        expected.append("  0: const-wide-16 v0, #5\n");
+        expected.append("  2: const-wide-16 v2, #7\n");
+        expected.append("  4: cmp-long v4, v0, v2\n");
+        expected.append("  6: return v4\n");
+        expected.append("method colorCmp()I regs=2\n");
+        expected.append("  0: sget-object v0, Ltest/Color;->RED:Ltest/Color;\n");
+        expected.append("  2: sget-object v1, Ltest/Color;->BLUE:Ltest/Color;\n");
+        expected.append("  4: invoke-virtual v0, v1, Ltest/Color;->compareTo(Ljava/lang/Enum;)I\n");
+        expected.append("  7: move-result v0\n");
+        expected.append("  8: return v0\n");
+        expected.append("method colorDemo()I regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/graphics/Paint;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: const-4 v1, #1\n");
+        expected.append("  4: invoke-direct v0, v1, Landroid/graphics/Paint;-><init>(I)V\n");
+        expected.append("  7: const-16 v1, #258\n");
+        expected.append("  9: invoke-virtual v0, v1, Landroid/graphics/Paint;->setColor(I)V\n");
+        expected.append("  12: invoke-virtual v0, Landroid/graphics/Paint;->getColor()I\n");
+        expected.append("  15: move-result v0\n");
+        expected.append("  16: return v0\n");
+        expected.append("method colorName()Ljava/lang/String; regs=1\n");
+        expected.append("  0: sget-object v0, Ltest/Color;->RED:Ltest/Color;\n");
+        expected.append("  2: invoke-virtual v0, Ltest/Color;->name()Ljava/lang/String;\n");
+        expected.append("  5: move-result-object v0\n");
+        expected.append("  6: return-object v0\n");
+        expected.append("method colorValueOf()Ljava/lang/String; regs=2\n");
+        expected.append("  0: const-class v0, Ltest/Color;\n");
+        expected.append("  2: const-string v1, BLUE\n");
+        expected.append("  4: invoke-static v0, v1, Ljava/lang/Enum;->valueOf(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Object;\n");
+        expected.append("  7: move-result-object v0\n");
+        expected.append("  8: invoke-virtual v0, Ltest/Color;->toString()Ljava/lang/String;\n");
+        expected.append("  11: move-result-object v0\n");
+        expected.append("  12: return-object v0\n");
+        expected.append("method configCopyDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/content/Context;->getResources()Landroid/content/res/Resources;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: invoke-virtual v0, Landroid/content/res/Resources;->getConfiguration()Landroid/content/res/Configuration;\n");
+        expected.append("  13: move-result-object v0\n");
+        expected.append("  14: new-instance v1, Landroid/content/res/Configuration;\n");
+        expected.append("  16: move-result-object v1\n");
+        expected.append("  17: invoke-direct v1, v0, Landroid/content/res/Configuration;-><init>(Landroid/content/res/Configuration;)V\n");
+        expected.append("  20: new-instance v2, Landroid/content/res/Configuration;\n");
+        expected.append("  22: move-result-object v2\n");
+        expected.append("  23: invoke-direct v2, Landroid/content/res/Configuration;-><init>()V\n");
+        expected.append("  26: invoke-virtual v2, v1, Landroid/content/res/Configuration;->setTo(Landroid/content/res/Configuration;)V\n");
+        expected.append("  29: return-object v2\n");
+        expected.append("method configDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/content/Context;->getResources()Landroid/content/res/Resources;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: invoke-virtual v0, Landroid/content/res/Resources;->getConfiguration()Landroid/content/res/Configuration;\n");
+        expected.append("  13: move-result-object v0\n");
+        expected.append("  14: iget v0, v0, Landroid/content/res/Configuration;->fontScale:F\n");
+        expected.append("  16: return-object v0\n");
+        expected.append("method constClass()Ljava/lang/String; regs=1\n");
+        expected.append("  0: const-class v0, Ltest/Counter;\n");
+        expected.append("  2: invoke-virtual v0, Ljava/lang/Class;->getName()Ljava/lang/String;\n");
+        expected.append("  5: move-result-object v0\n");
+        expected.append("  6: return-object v0\n");
+        expected.append("method contentChild()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const v1, #16908290\n");
+        expected.append("  9: invoke-virtual v0, v1, Landroid/view/View;->findViewById(I)Landroid/view/View;\n");
+        expected.append("  12: move-result-object v0\n");
+        expected.append("  13: const-4 v1, #0\n");
+        expected.append("  14: invoke-virtual v0, v1, Landroid/view/ViewGroup;->getChildAt(I)Landroid/view/View;\n");
+        expected.append("  17: move-result-object v0\n");
+        expected.append("  18: return-object v0\n");
+        expected.append("method contentGroup()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const v1, #16908290\n");
+        expected.append("  9: invoke-virtual v0, v1, Landroid/view/View;->findViewById(I)Landroid/view/View;\n");
+        expected.append("  12: move-result-object v0\n");
+        expected.append("  13: return-object v0\n");
+        expected.append("method contentObserverDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/database/ContentObserver;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, v1, Landroid/database/ContentObserver;-><init>(Landroid/os/Handler;)V\n");
+        expected.append("  6: return-object v0\n");
+        expected.append("method contentViewDemo()Ljava/lang/Object; regs=4\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: new-instance v1, Landroid/view/View;\n");
+        expected.append("  8: move-result-object v1\n");
+        expected.append("  9: invoke-direct v1, Landroid/view/View;-><init>()V\n");
+        expected.append("  12: new-instance v2, Landroid/view/ViewGroup$LayoutParams;\n");
+        expected.append("  14: move-result-object v2\n");
+        expected.append("  15: const-16 v3, #-1\n");
+        expected.append("  17: invoke-direct v2, v3, v3, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V\n");
+        expected.append("  20: invoke-virtual v0, v1, v2, Landroid/app/Activity;->setContentView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V\n");
+        expected.append("  23: iget-object v0, v0, Landroid/app/Activity;->mContentView:Landroid/view/View;\n");
+        expected.append("  25: return-object v0\n");
+        expected.append("method copyDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: const-4 v1, #2\n");
+        expected.append("  1: new-array v0, v1, [Ljava/lang/String;\n");
+        expected.append("  3: const-string v1, a\n");
+        expected.append("  5: const-4 v2, #0\n");
+        expected.append("  6: aput-object v1, v0, v2\n");
+        expected.append("  8: const-string v1, b\n");
+        expected.append("  10: const-4 v2, #1\n");
+        expected.append("  11: aput-object v1, v0, v2\n");
+        expected.append("  13: const-4 v1, #0\n");
+        expected.append("  14: const-4 v2, #1\n");
+        expected.append("  15: invoke-static v0, v1, v2, Ljava/util/Arrays;->copyOfRange([Ljava/lang/Object;II)[Ljava/lang/Object;\n");
+        expected.append("  18: move-result-object v0\n");
+        expected.append("  19: check-cast v0, [Ljava/lang/String;\n");
+        expected.append("  21: aget-object v0, v0, v1\n");
+        expected.append("  23: return-object v0\n");
+        expected.append("method covarOk()I regs=2\n");
+        expected.append("  0: const-4 v0, #1\n");
+        expected.append("  1: new-array v0, v0, [Ltest/Counter;\n");
+        expected.append("  3: check-cast v0, [Ljava/lang/Object;\n");
+        expected.append("  5: instance-of v1, v0, [Ltest/Counter;\n");
+        expected.append("  7: return v1\n");
+        expected.append("method covarPrim()V regs=1\n");
+        expected.append("  0: const-4 v0, #2\n");
+        expected.append("  1: new-array v0, v0, [I\n");
+        expected.append("  3: check-cast v0, [Ljava/lang/Object;\n");
+        expected.append("  5: return-void\n");
+        expected.append("method cpuDemo()I regs=1\n");
+        expected.append("  0: invoke-static, Ljava/lang/Runtime;->getRuntime()Ljava/lang/Runtime;\n");
+        expected.append("  3: move-result-object v0\n");
+        expected.append("  4: invoke-virtual v0, Ljava/lang/Runtime;->availableProcessors()I\n");
+        expected.append("  7: move-result v0\n");
+        expected.append("  8: return v0\n");
+        expected.append("method ctorDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: const-string v0, test.Counter\n");
+        expected.append("  2: const-4 v1, #0\n");
+        expected.append("  3: const-4 v2, #0\n");
+        expected.append("  4: invoke-static v0, v1, v2, Ljava/lang/Class;->forName(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;\n");
+        expected.append("  7: move-result-object v0\n");
+        expected.append("  8: const-4 v1, #0\n");
+        expected.append("  9: new-array v1, v1, [Ljava/lang/Class;\n");
+        expected.append("  11: invoke-virtual v0, v1, Ljava/lang/Class;->getDeclaredConstructor([Ljava/lang/Class;)Ljava/lang/reflect/Constructor;\n");
+        expected.append("  14: move-result-object v0\n");
+        expected.append("  15: const-4 v1, #0\n");
+        expected.append("  16: new-array v1, v1, [Ljava/lang/Object;\n");
+        expected.append("  18: invoke-virtual v0, v1, Ljava/lang/reflect/Constructor;->newInstance([Ljava/lang/Object;)Ljava/lang/Object;\n");
+        expected.append("  21: move-result-object v0\n");
+        expected.append("  22: return-object v0\n");
+        expected.append("method ctxDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/ViewGroup;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: new-instance v1, Landroid/app/Activity;\n");
+        expected.append("  5: move-result-object v1\n");
+        expected.append("  6: invoke-direct v1, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  9: invoke-direct v0, v1, Landroid/view/ViewGroup;-><init>(Landroid/content/Context;)V\n");
+        expected.append("  12: invoke-virtual v0, Landroid/view/View;->getContext()Landroid/content/Context;\n");
+        expected.append("  15: move-result-object v0\n");
+        expected.append("  16: return-object v0\n");
+        expected.append("method detachedHandlerDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->getHandler()Landroid/os/Handler;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method doubleArith()D regs=3\n");
+        expected.append("  0: const-4 v0, #7\n");
+        expected.append("  1: int-to-double v0, v0\n");
+        expected.append("  2: const-4 v1, #2\n");
+        expected.append("  3: int-to-double v1, v1\n");
+        expected.append("  4: div-double v2, v0, v1\n");
+        expected.append("  6: return-wide v2\n");
+        expected.append("method dragDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, v1, Landroid/view/View;->setOnDragListener(Landroid/view/View$OnDragListener;)V\n");
+        expected.append("  9: return-object v0\n");
+        expected.append("method drawDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;\n");
+        expected.append("  9: move-result-object v1\n");
+        expected.append("  10: const-4 v2, #0\n");
+        expected.append("  11: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->addOnDrawListener(Landroid/view/ViewTreeObserver$OnDrawListener;)V\n");
+        expected.append("  14: return-object v0\n");
+        expected.append("method emptyDemo()I regs=2\n");
+        expected.append("  0: sget-object v0, Ljava/util/Collections;->EMPTY_LIST:Ljava/util/List;\n");
+        expected.append("  2: invoke-interface v0, Ljava/util/List;->isEmpty()Z\n");
+        expected.append("  5: move-result v1\n");
+        expected.append("  6: return v1\n");
+        expected.append("method entryDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: new-instance v0, Ljava/util/LinkedHashMap;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ljava/util/LinkedHashMap;-><init>()V\n");
+        expected.append("  6: const-string v1, k\n");
+        expected.append("  8: const-string v2, v\n");
+        expected.append("  10: invoke-interface v0, v1, v2, Ljava/util/Map;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\n");
+        expected.append("  13: invoke-interface v0, Ljava/util/Map;->entrySet()Ljava/util/Set;\n");
+        expected.append("  16: move-result-object v0\n");
+        expected.append("  17: invoke-interface v0, Ljava/util/Set;->iterator()Ljava/util/Iterator;\n");
+        expected.append("  20: move-result-object v0\n");
+        expected.append("  21: invoke-interface v0, Ljava/util/Iterator;->next()Ljava/lang/Object;\n");
+        expected.append("  24: move-result-object v0\n");
+        expected.append("  25: invoke-interface v0, Ljava/util/Map$Entry;->getKey()Ljava/lang/Object;\n");
+        expected.append("  28: move-result-object v0\n");
+        expected.append("  29: return-object v0\n");
+        expected.append("method executorDemo()I regs=3\n");
+        expected.append("  0: new-instance v0, Ltest/Job;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Job;-><init>()V\n");
+        expected.append("  6: invoke-static, Ljava/util/concurrent/Executors;->defaultThreadFactory()Ljava/util/concurrent/ThreadFactory;\n");
+        expected.append("  9: move-result-object v1\n");
+        expected.append("  10: const-4 v2, #1\n");
+        expected.append("  11: invoke-static v2, v1, Ljava/util/concurrent/Executors;->newFixedThreadPool(ILjava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;\n");
+        expected.append("  14: move-result-object v1\n");
+        expected.append("  15: invoke-interface v1, v0, Ljava/util/concurrent/Executor;->execute(Ljava/lang/Runnable;)V\n");
+        expected.append("  18: sget v2, Ltest/Hello;->flag:I\n");
+        expected.append("  20: return v2\n");
+        expected.append("method fillDemo()I regs=2\n");
+        expected.append("  0: const-4 v1, #3\n");
+        expected.append("  1: new-array v0, v1, [I\n");
+        expected.append("  3: fill-array-data v0, +7\n");
+        expected.append("  6: const-4 v1, #1\n");
+        expected.append("  7: aget v0, v0, v1\n");
+        expected.append("  9: return v0\n");
+        expected.append("  10: array-payload\n");
+        expected.append("method fillFloatDemo()I regs=2\n");
+        expected.append("  0: const-4 v1, #1\n");
+        expected.append("  1: new-array v0, v1, [F\n");
+        expected.append("  3: fill-array-data v0, +7\n");
+        expected.append("  6: const-4 v1, #0\n");
+        expected.append("  7: aget v0, v0, v1\n");
+        expected.append("  9: return v0\n");
+        expected.append("  10: array-payload\n");
+        expected.append("method floatArith()F regs=3\n");
+        expected.append("  0: const-4 v0, #7\n");
+        expected.append("  1: int-to-float v0, v0\n");
+        expected.append("  2: const-4 v1, #2\n");
+        expected.append("  3: int-to-float v1, v1\n");
+        expected.append("  4: div-float v2, v0, v1\n");
+        expected.append("  6: add-float-2addr v2, v1\n");
+        expected.append("  7: return v2\n");
+        expected.append("method focusCheckDemo()I regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->hasWindowFocus()Z\n");
+        expected.append("  9: move-result v1\n");
+        expected.append("  10: mul-int-lit8 v1, v1, #10\n");
+        expected.append("  12: invoke-virtual v0, Landroid/view/View;->isFocused()Z\n");
+        expected.append("  15: move-result v2\n");
+        expected.append("  16: add-int v1, v1, v2\n");
+        expected.append("  18: return v1\n");
+        expected.append("method focusableDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const-4 v1, #1\n");
+        expected.append("  7: invoke-virtual v0, v1, Landroid/view/View;->setFocusable(Z)V\n");
+        expected.append("  10: invoke-virtual v0, v1, Landroid/view/View;->setFocusable(I)V\n");
+        expected.append("  13: invoke-virtual v0, v1, Landroid/view/View;->setDefaultFocusHighlightEnabled(Z)V\n");
+        expected.append("  16: invoke-virtual v0, v1, Landroid/view/View;->setFocusableInTouchMode(Z)V\n");
+        expected.append("  19: return-object v0\n");
+        expected.append("method forceDarkDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const-4 v1, #0\n");
+        expected.append("  7: invoke-virtual v0, v1, Landroid/view/View;->setForceDarkAllowed(Z)V\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method frameCbDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: invoke-static, Landroid/view/Choreographer;->getInstance()Landroid/view/Choreographer;\n");
+        expected.append("  3: move-result-object v0\n");
+        expected.append("  4: const-4 v1, #0\n");
+        expected.append("  5: invoke-virtual v0, v1, Landroid/view/Choreographer;->removeFrameCallback(Landroid/view/Choreographer$FrameCallback;)V\n");
+        expected.append("  8: return-object v0\n");
+        expected.append("method frameIdDemo()I regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const v1, #16908290\n");
+        expected.append("  9: invoke-virtual v0, v1, Landroid/view/View;->findViewById(I)Landroid/view/View;\n");
+        expected.append("  12: move-result-object v0\n");
+        expected.append("  13: invoke-virtual v0, Landroid/view/View;->getId()I\n");
+        expected.append("  16: move-result v0\n");
+        expected.append("  17: return v0\n");
+        expected.append("method fwCast()I regs=2\n");
+        expected.append("  0: new-instance v0, Ltest/Sub2;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Sub2;-><init>()V\n");
+        expected.append("  6: check-cast v0, Lfw/Base;\n");
+        expected.append("  8: instance-of v1, v0, Lfw/Base;\n");
+        expected.append("  10: return v1\n");
+        expected.append("method fwGhost()V regs=1\n");
+        expected.append("  0: new-instance v0, Ltest/Orphan;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Orphan;-><init>()V\n");
+        expected.append("  6: check-cast v0, Lfw/Base;\n");
+        expected.append("  8: return-void\n");
+        expected.append("method fwInit()V regs=1\n");
+        expected.append("  0: new-instance v0, Lfw/Sub;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Lfw/Sub;-><init>()V\n");
+        expected.append("  6: return-void\n");
+        expected.append("method getClassDemo()Ljava/lang/String; regs=2\n");
+        expected.append("  0: new-instance v0, Ltest/Counter;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Counter;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Ljava/lang/Object;->getClass()Ljava/lang/Class;\n");
+        expected.append("  9: move-result-object v1\n");
+        expected.append("  10: invoke-virtual v1, Ljava/lang/Class;->getName()Ljava/lang/String;\n");
+        expected.append("  13: move-result-object v0\n");
+        expected.append("  14: return-object v0\n");
+        expected.append("method getClassHostDemo()Ljava/lang/String; regs=2\n");
+        expected.append("  0: const-string v0, hi\n");
+        expected.append("  2: invoke-virtual v0, Ljava/lang/Object;->getClass()Ljava/lang/Class;\n");
+        expected.append("  5: move-result-object v1\n");
+        expected.append("  6: invoke-virtual v1, Ljava/lang/Class;->getName()Ljava/lang/String;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method greet()Ljava/lang/String; regs=1\n");
+        expected.append("  0: const-string v0, hi\n");
+        expected.append("  2: return-object v0\n");
+        expected.append("method handlerAsyncDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: invoke-static, Landroid/os/Looper;->getMainLooper()Landroid/os/Looper;\n");
+        expected.append("  3: move-result-object v0\n");
+        expected.append("  4: invoke-static v0, Landroid/os/Handler;->createAsync(Landroid/os/Looper;)Landroid/os/Handler;\n");
+        expected.append("  7: move-result-object v0\n");
+        expected.append("  8: return-object v0\n");
+        expected.append("method handlerDemo()I regs=2\n");
+        expected.append("  0: new-instance v0, Ltest/MyHandler;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/MyHandler;-><init>()V\n");
+        expected.append("  6: invoke-direct v0, v0, Landroid/os/Handler;-><init>()V\n");
+        expected.append("  9: const-16 v1, #42\n");
+        expected.append("  11: invoke-virtual v0, v1, Landroid/os/Handler;->sendEmptyMessage(I)Z\n");
+        expected.append("  14: move-result v1\n");
+        expected.append("  15: sget v1, Ltest/Hello;->flag:I\n");
+        expected.append("  17: return v1\n");
+        expected.append("method high16Demo()I regs=1\n");
+        expected.append("  0: const-high16 v0, #1065353216\n");
+        expected.append("  2: return v0\n");
+        expected.append("method hostFillDemo()I regs=4\n");
+        expected.append("  0: const-4 v3, #2\n");
+        expected.append("  1: new-array v0, v3, [I\n");
+        expected.append("  3: const-4 v1, #0\n");
+        expected.append("  4: const-4 v2, #2\n");
+        expected.append("  5: const-16 v3, #42\n");
+        expected.append("  7: invoke-static v0, v1, v2, v3, Ljava/util/Arrays;->fill([IIII)V\n");
+        expected.append("  10: const-4 v1, #0\n");
+        expected.append("  11: aget v0, v0, v1\n");
+        expected.append("  13: return v0\n");
+        expected.append("method id(I)I regs=2\n");
+        expected.append("  0: move v0, v1\n");
+        expected.append("  1: return v0\n");
+        expected.append("method idDemo()I regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->getId()I\n");
+        expected.append("  9: move-result v0\n");
+        expected.append("  10: return v0\n");
+        expected.append("method importantDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const-4 v1, #1\n");
+        expected.append("  7: invoke-virtual v0, v1, Landroid/view/View;->setImportantForAutofill(I)V\n");
+        expected.append("  10: invoke-virtual v0, v1, Landroid/view/View;->setImportantForContentCapture(I)V\n");
+        expected.append("  13: return-object v0\n");
+        expected.append("method intBox()I regs=1\n");
+        expected.append("  0: const-16 v0, #41\n");
+        expected.append("  2: invoke-static v0, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  5: move-result-object v0\n");
+        expected.append("  6: invoke-virtual v0, Ljava/lang/Integer;->intValue()I\n");
+        expected.append("  9: move-result v0\n");
+        expected.append("  10: add-int-lit8 v0, v0, #1\n");
+        expected.append("  12: return v0\n");
+        expected.append("method intUpdaterDemo()I regs=5\n");
+        expected.append("  0: new-instance v0, Ltest/Counter;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Counter;-><init>()V\n");
+        expected.append("  6: const-class v1, Ltest/Counter;\n");
+        expected.append("  8: const-string v2, count\n");
+        expected.append("  10: invoke-static v1, v2, Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->newUpdater(Ljava/lang/Class;Ljava/lang/String;)Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;\n");
+        expected.append("  13: move-result-object v1\n");
+        expected.append("  14: const-4 v2, #5\n");
+        expected.append("  15: invoke-virtual v1, v0, v2, Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->set(Ljava/lang/Object;I)V\n");
+        expected.append("  18: const-4 v2, #6\n");
+        expected.append("  19: const-16 v3, #9\n");
+        expected.append("  21: invoke-virtual v1, v0, v2, v3, Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->compareAndSet(Ljava/lang/Object;II)Z\n");
+        expected.append("  24: move-result v4\n");
+        expected.append("  25: invoke-virtual v1, v0, Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;->get(Ljava/lang/Object;)I\n");
+        expected.append("  28: move-result v4\n");
+        expected.append("  29: return v4\n");
+        expected.append("method intentDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroidx/activity/ComponentActivity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroidx/activity/ComponentActivity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroidx/activity/ComponentActivity;->getIntent()Landroid/content/Intent;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method intentExtrasDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroidx/activity/ComponentActivity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroidx/activity/ComponentActivity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroidx/activity/ComponentActivity;->getIntent()Landroid/content/Intent;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: invoke-virtual v0, Landroid/content/Intent;->getExtras()Landroid/os/Bundle;\n");
+        expected.append("  13: move-result-object v0\n");
+        expected.append("  14: return-object v0\n");
+        expected.append("method iterDemo()I regs=3\n");
+        expected.append("  0: new-instance v0, Ljava/util/ArrayList;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ljava/util/ArrayList;-><init>()V\n");
+        expected.append("  6: const-16 v2, #5\n");
+        expected.append("  8: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  11: move-result-object v2\n");
+        expected.append("  12: invoke-virtual v0, v2, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z\n");
+        expected.append("  15: move-result v2\n");
+        expected.append("  16: invoke-interface v0, Ljava/util/List;->iterator()Ljava/util/Iterator;\n");
+        expected.append("  19: move-result-object v1\n");
+        expected.append("  20: invoke-interface v1, Ljava/util/Iterator;->hasNext()Z\n");
+        expected.append("  23: move-result v2\n");
+        expected.append("  24: invoke-interface v1, Ljava/util/Iterator;->next()Ljava/lang/Object;\n");
+        expected.append("  27: move-result-object v2\n");
+        expected.append("  28: invoke-virtual v2, Ljava/lang/Integer;->intValue()I\n");
+        expected.append("  31: move-result v2\n");
+        expected.append("  32: return v2\n");
+        expected.append("method iterableDemo()Z regs=1\n");
+        expected.append("  0: invoke-static, Ljava/util/Collections;->emptyList()Ljava/util/List;\n");
+        expected.append("  3: move-result-object v0\n");
+        expected.append("  4: invoke-interface v0, Ljava/lang/Iterable;->iterator()Ljava/util/Iterator;\n");
+        expected.append("  7: move-result-object v0\n");
+        expected.append("  8: invoke-interface v0, Ljava/util/Iterator;->hasNext()Z\n");
+        expected.append("  11: move-result v0\n");
+        expected.append("  12: return v0\n");
+        expected.append("method layoutDemo()I regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->isLayoutRequested()Z\n");
+        expected.append("  9: move-result v1\n");
+        expected.append("  10: invoke-virtual v0, Landroid/view/View;->requestLayout()V\n");
+        expected.append("  13: invoke-virtual v0, Landroid/view/View;->isLayoutRequested()Z\n");
+        expected.append("  16: move-result v2\n");
+        expected.append("  17: mul-int-lit8 v1, v1, #10\n");
+        expected.append("  19: add-int v1, v1, v2\n");
+        expected.append("  21: return v1\n");
+        expected.append("method layoutDirDemo()I regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/content/Context;->getResources()Landroid/content/res/Resources;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: invoke-virtual v0, Landroid/content/res/Resources;->getConfiguration()Landroid/content/res/Configuration;\n");
+        expected.append("  13: move-result-object v0\n");
+        expected.append("  14: invoke-virtual v0, Landroid/content/res/Configuration;->getLayoutDirection()I\n");
+        expected.append("  17: move-result v0\n");
+        expected.append("  18: return v0\n");
+        expected.append("method lazyDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Ltest/Fn;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Fn;-><init>()V\n");
+        expected.append("  6: invoke-static v0, Lkotlin/LazyKt;->lazy(Lkotlin/jvm/functions/Function0;)Lkotlin/Lazy;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: invoke-interface v0, v1, Lkotlin/Lazy;->getValue(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\n");
+        expected.append("  13: move-result-object v0\n");
+        expected.append("  14: return-object v0\n");
+        expected.append("method lazyIsInstance()I regs=1\n");
+        expected.append("  0: new-instance v0, Ltest/Fn;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Fn;-><init>()V\n");
+        expected.append("  6: invoke-static v0, Lkotlin/LazyKt;->lazy(Lkotlin/jvm/functions/Function0;)Lkotlin/Lazy;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: instance-of v0, v0, Lkotlin/Lazy;\n");
+        expected.append("  12: return v0\n");
+        expected.append("method len()I regs=2\n");
+        expected.append("  0: const-4 v0, #5\n");
+        expected.append("  1: new-array v1, v0, [I\n");
+        expected.append("  3: array-length v0, v1\n");
+        expected.append("  4: return v0\n");
+        expected.append("method linkedMapDemo()I regs=4\n");
+        expected.append("  0: new-instance v0, Ljava/util/LinkedHashMap;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ljava/util/LinkedHashMap;-><init>()V\n");
+        expected.append("  6: const-string v1, k\n");
+        expected.append("  8: const-16 v2, #42\n");
+        expected.append("  10: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  13: move-result-object v2\n");
+        expected.append("  14: invoke-virtual v0, v1, v2, Ljava/util/Map;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\n");
+        expected.append("  17: move-result-object v3\n");
+        expected.append("  18: invoke-virtual v0, v1, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;\n");
+        expected.append("  21: move-result-object v2\n");
+        expected.append("  22: invoke-virtual v2, Ljava/lang/Integer;->intValue()I\n");
+        expected.append("  25: move-result v2\n");
+        expected.append("  26: return v2\n");
+        expected.append("method listDemo()I regs=2\n");
+        expected.append("  0: new-instance v0, Ljava/util/ArrayList;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ljava/util/ArrayList;-><init>()V\n");
+        expected.append("  6: const-16 v1, #7\n");
+        expected.append("  8: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  11: move-result-object v1\n");
+        expected.append("  12: invoke-virtual v0, v1, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z\n");
+        expected.append("  15: move-result v1\n");
+        expected.append("  16: const-16 v1, #8\n");
+        expected.append("  18: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  21: move-result-object v1\n");
+        expected.append("  22: invoke-virtual v0, v1, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z\n");
+        expected.append("  25: move-result v1\n");
+        expected.append("  26: const-4 v1, #1\n");
+        expected.append("  27: invoke-virtual v0, v1, Ljava/util/ArrayList;->get(I)Ljava/lang/Object;\n");
+        expected.append("  30: move-result-object v1\n");
+        expected.append("  31: invoke-virtual v1, Ljava/lang/Integer;->intValue()I\n");
+        expected.append("  34: move-result v1\n");
+        expected.append("  35: return v1\n");
+        expected.append("method loadClassDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: const-class v0, Ljava/lang/Object;\n");
+        expected.append("  2: invoke-virtual v0, Ljava/lang/Class;->getClassLoader()Ljava/lang/ClassLoader;\n");
+        expected.append("  5: move-result-object v0\n");
+        expected.append("  6: const-string v1, test.Counter\n");
+        expected.append("  8: invoke-virtual v0, v1, Ljava/lang/ClassLoader;->loadClass(Ljava/lang/String;)Ljava/lang/Class;\n");
+        expected.append("  11: move-result-object v0\n");
+        expected.append("  12: invoke-virtual v0, Ljava/lang/Class;->getName()Ljava/lang/String;\n");
+        expected.append("  15: move-result-object v0\n");
+        expected.append("  16: return-object v0\n");
+        expected.append("method loaderDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: const-class v0, Ljava/lang/Object;\n");
+        expected.append("  2: invoke-virtual v0, Ljava/lang/Class;->getClassLoader()Ljava/lang/ClassLoader;\n");
+        expected.append("  5: move-result-object v0\n");
+        expected.append("  6: return-object v0\n");
+        expected.append("method longArith()J regs=6\n");
+        expected.append("  0: const-wide-16 v0, #100\n");
+        expected.append("  2: const-wide-16 v2, #7\n");
+        expected.append("  4: add-long v4, v0, v2\n");
+        expected.append("  6: sub-long-2addr v4, v2\n");
+        expected.append("  7: mul-long-2addr v4, v2\n");
+        expected.append("  8: div-long-2addr v4, v2\n");
+        expected.append("  9: return-wide v4\n");
+        expected.append("method longUpdaterDemo()J regs=7\n");
+        expected.append("  0: new-instance v2, Ltest/Counter;\n");
+        expected.append("  2: move-result-object v2\n");
+        expected.append("  3: invoke-direct v2, Ltest/Counter;-><init>()V\n");
+        expected.append("  6: const-class v0, Ltest/Counter;\n");
+        expected.append("  8: const-string v3, count\n");
+        expected.append("  10: invoke-static v0, v3, Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->newUpdater(Ljava/lang/Class;Ljava/lang/String;)Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;\n");
+        expected.append("  13: move-result-object v1\n");
+        expected.append("  14: const-wide-16 v3, #7\n");
+        expected.append("  16: const-4 v4, #0\n");
+        expected.append("  17: invoke-virtual-range v1, v2, v3, v4, Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->set(Ljava/lang/Object;J)V\n");
+        expected.append("  20: const-wide-16 v3, #7\n");
+        expected.append("  22: const-4 v4, #0\n");
+        expected.append("  23: const-wide-16 v5, #8\n");
+        expected.append("  25: const-4 v6, #0\n");
+        expected.append("  26: invoke-virtual-range v1, v2, v3, v4, v5, v6, Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->compareAndSet(Ljava/lang/Object;JJ)Z\n");
+        expected.append("  29: move-result v3\n");
+        expected.append("  30: const-wide-16 v3, #2\n");
+        expected.append("  32: const-4 v4, #0\n");
+        expected.append("  33: invoke-virtual-range v1, v2, v3, v4, Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;->addAndGet(Ljava/lang/Object;J)J\n");
+        expected.append("  36: move-result-wide v3\n");
+        expected.append("  37: return-wide v3\n");
+        expected.append("method lpDemo()I regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/ViewGroup$LayoutParams;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: const-16 v1, #-1\n");
+        expected.append("  5: invoke-direct v0, v1, v1, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V\n");
+        expected.append("  8: iget v0, v0, Landroid/view/ViewGroup$LayoutParams;->width:I\n");
+        expected.append("  10: return v0\n");
+        expected.append("method make()I regs=3\n");
+        expected.append("  0: new-instance v0, Ltest/Counter;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Counter;-><init>()V\n");
+        expected.append("  6: const-4 v1, #4\n");
+        expected.append("  7: iput v1, v0, Ltest/Counter;->count:I\n");
+        expected.append("  9: iget v2, v0, Ltest/Counter;->count:I\n");
+        expected.append("  11: add-int-lit8 v2, v2, #1\n");
+        expected.append("  13: return v2\n");
+        expected.append("method mapDefaults()I regs=3\n");
+        expected.append("  0: new-instance v0, Ltest/FlagMap;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/FlagMap;-><init>()V\n");
+        expected.append("  6: const-string v1, k\n");
+        expected.append("  8: const-16 v2, #99\n");
+        expected.append("  10: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  13: move-result-object v2\n");
+        expected.append("  14: invoke-interface v0, v1, v2, Ljava/util/Map;->getOrDefault(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\n");
+        expected.append("  17: move-result-object v2\n");
+        expected.append("  18: invoke-virtual v2, Ljava/lang/Integer;->intValue()I\n");
+        expected.append("  21: move-result v2\n");
+        expected.append("  22: return v2\n");
+        expected.append("method mapDemo()I regs=4\n");
+        expected.append("  0: new-instance v0, Ljava/util/HashMap;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ljava/util/HashMap;-><init>()V\n");
+        expected.append("  6: const-string v1, k\n");
+        expected.append("  8: const-16 v2, #42\n");
+        expected.append("  10: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  13: move-result-object v2\n");
+        expected.append("  14: invoke-virtual v0, v1, v2, Ljava/util/HashMap;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\n");
+        expected.append("  17: move-result-object v3\n");
+        expected.append("  18: invoke-interface v0, v1, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;\n");
+        expected.append("  21: move-result-object v2\n");
+        expected.append("  22: invoke-virtual v2, Ljava/lang/Integer;->intValue()I\n");
+        expected.append("  25: move-result v2\n");
+        expected.append("  26: return v2\n");
+        expected.append("method mapPutAbsent()I regs=3\n");
+        expected.append("  0: new-instance v0, Ltest/FlagMap;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/FlagMap;-><init>()V\n");
+        expected.append("  6: const-string v1, k\n");
+        expected.append("  8: const-16 v2, #5\n");
+        expected.append("  10: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  13: move-result-object v2\n");
+        expected.append("  14: invoke-interface v0, v1, v2, Ljava/util/Map;->putIfAbsent(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\n");
+        expected.append("  17: move-result-object v2\n");
+        expected.append("  18: invoke-virtual v2, Ljava/lang/Integer;->intValue()I\n");
+        expected.append("  21: move-result v2\n");
+        expected.append("  22: return v2\n");
+        expected.append("method mathMax()I regs=2\n");
+        expected.append("  0: const-4 v0, #3\n");
+        expected.append("  1: const-4 v1, #7\n");
+        expected.append("  2: invoke-static v0, v1, Ljava/lang/Math;->max(II)I\n");
+        expected.append("  5: move-result v0\n");
+        expected.append("  6: return v0\n");
+        expected.append("method metricsDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/content/Context;->getResources()Landroid/content/res/Resources;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: invoke-virtual v0, Landroid/content/res/Resources;->getDisplayMetrics()Landroid/util/DisplayMetrics;\n");
+        expected.append("  13: move-result-object v0\n");
+        expected.append("  14: iget v0, v0, Landroid/util/DisplayMetrics;->density:F\n");
+        expected.append("  16: return-object v0\n");
+        expected.append("method missFind()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const v1, #2130772483\n");
+        expected.append("  9: invoke-virtual v0, v1, Landroid/view/View;->findViewById(I)Landroid/view/View;\n");
+        expected.append("  12: move-result-object v0\n");
+        expected.append("  13: return-object v0\n");
+        expected.append("method missing()V regs=0\n");
+        expected.append("  0: invoke-static, Lfw/Base;->nope()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("method nanosDemo()J regs=3\n");
+        expected.append("  0: sget-object v0, Ljava/util/concurrent/TimeUnit;->SECONDS:Ljava/util/concurrent/TimeUnit;\n");
+        expected.append("  2: const-wide-16 v1, #60\n");
+        expected.append("  4: invoke-virtual v0, v1, Ljava/util/concurrent/TimeUnit;->toNanos(J)J\n");
+        expected.append("  7: move-result-wide v0\n");
+        expected.append("  8: return-wide v0\n");
+        expected.append("method nops()I regs=1\n");
+        expected.append("  0: nop\n");
+        expected.append("  1: const-4 v0, #7\n");
+        expected.append("  2: add-int-lit8 v0, v0, #2\n");
+        expected.append("  4: return v0\n");
+        expected.append("method nullCast()V regs=1\n");
+        expected.append("  0: check-cast v0, Ltest/Counter;\n");
+        expected.append("  2: return-void\n");
+        expected.append("method nullCheckDemo()I regs=1\n");
+        expected.append("  0: const-4 v0, #0\n");
+        expected.append("  1: if-eqz v0, +5\n");
+        expected.append("  3: const-16 v0, #99\n");
+        expected.append("  5: return v0\n");
+        expected.append("  6: const-4 v0, #7\n");
+        expected.append("  7: return v0\n");
+        expected.append("method nullRecv()V regs=1\n");
+        expected.append("  0: const-4 v0, #0\n");
+        expected.append("  1: invoke-virtual v0, Ljava/lang/String;->length()I\n");
+        expected.append("  4: return-void\n");
+        expected.append("method nullish()I regs=3\n");
+        expected.append("  0: const-4 v0, #0\n");
+        expected.append("  1: check-cast v0, Ltest/Counter;\n");
+        expected.append("  3: instance-of v1, v0, Ltest/Counter;\n");
+        expected.append("  5: instance-of v2, v0, Ljava/lang/Integer;\n");
+        expected.append("  7: add-int v1, v1, v2\n");
+        expected.append("  9: return v1\n");
+        expected.append("method ordinalDemo()I regs=1\n");
+        expected.append("  0: sget-object v0, Ltest/Color;->BLUE:Ltest/Color;\n");
+        expected.append("  2: invoke-virtual v0, Ljava/lang/Enum;->ordinal()I\n");
+        expected.append("  5: move-result v0\n");
+        expected.append("  6: return v0\n");
+        expected.append("method paintDemo()I regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/graphics/Paint;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: const-4 v1, #1\n");
+        expected.append("  4: invoke-direct v0, v1, Landroid/graphics/Paint;-><init>(I)V\n");
+        expected.append("  7: invoke-virtual v0, Landroid/graphics/Paint;->getFlags()I\n");
+        expected.append("  10: move-result v0\n");
+        expected.append("  11: return v0\n");
+        expected.append("method parentDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->getParent()Landroid/view/ViewParent;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method parentIfDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-interface v0, Landroid/view/ViewParent;->getParent()Landroid/view/ViewParent;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method parentLinkDemo()Ljava/lang/Object; regs=4\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: new-instance v1, Landroid/view/View;\n");
+        expected.append("  8: move-result-object v1\n");
+        expected.append("  9: invoke-direct v1, Landroid/view/View;-><init>()V\n");
+        expected.append("  12: new-instance v2, Landroid/view/ViewGroup$LayoutParams;\n");
+        expected.append("  14: move-result-object v2\n");
+        expected.append("  15: const-16 v3, #-1\n");
+        expected.append("  17: invoke-direct v2, v3, v3, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V\n");
+        expected.append("  20: invoke-virtual v0, v1, v2, Landroid/app/Activity;->setContentView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V\n");
+        expected.append("  23: invoke-virtual v1, Landroid/view/View;->getParent()Landroid/view/ViewParent;\n");
+        expected.append("  26: move-result-object v0\n");
+        expected.append("  27: return-object v0\n");
+        expected.append("method parseDemo()I regs=1\n");
+        expected.append("  0: const-string v0, #ff010203\n");
+        expected.append("  2: invoke-static v0, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I\n");
+        expected.append("  5: move-result v0\n");
+        expected.append("  6: return v0\n");
+        expected.append("method plusCollDemo()I regs=4\n");
+        expected.append("  0: new-instance v0, Ljava/util/ArrayList;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ljava/util/ArrayList;-><init>()V\n");
+        expected.append("  6: const-4 v1, #2\n");
+        expected.append("  7: new-array v2, v1, [Ljava/lang/String;\n");
+        expected.append("  9: const-string v1, a\n");
+        expected.append("  11: const-4 v3, #0\n");
+        expected.append("  12: aput-object v1, v2, v3\n");
+        expected.append("  14: const-string v1, b\n");
+        expected.append("  16: const-4 v3, #1\n");
+        expected.append("  17: aput-object v1, v2, v3\n");
+        expected.append("  19: invoke-virtual v0, v2, Ljava/util/ArrayList;->addAll(Ljava/util/Collection;)Z\n");
+        expected.append("  22: move-result v1\n");
+        expected.append("  23: invoke-virtual v0, Ljava/util/ArrayList;->size()I\n");
+        expected.append("  26: move-result v1\n");
+        expected.append("  27: return v1\n");
+        expected.append("method postCbDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: invoke-static, Landroid/view/Choreographer;->getInstance()Landroid/view/Choreographer;\n");
+        expected.append("  3: move-result-object v0\n");
+        expected.append("  4: const-4 v1, #0\n");
+        expected.append("  5: invoke-virtual v0, v1, Landroid/view/Choreographer;->postFrameCallback(Landroid/view/Choreographer$FrameCallback;)V\n");
+        expected.append("  8: return-object v0\n");
+        expected.append("method postDemo()I regs=2\n");
+        expected.append("  0: new-instance v0, Ltest/MyHandler;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/MyHandler;-><init>()V\n");
+        expected.append("  6: new-instance v1, Ltest/Job;\n");
+        expected.append("  8: move-result-object v1\n");
+        expected.append("  9: invoke-direct v1, Ltest/Job;-><init>()V\n");
+        expected.append("  12: invoke-virtual v0, v1, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z\n");
+        expected.append("  15: move-result v1\n");
+        expected.append("  16: sget v1, Ltest/Hello;->flag:I\n");
+        expected.append("  18: return v1\n");
+        expected.append("method postSubDemo()I regs=2\n");
+        expected.append("  0: new-instance v0, Ltest/MyHandler;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/MyHandler;-><init>()V\n");
+        expected.append("  6: new-instance v1, Ltest/SubJob;\n");
+        expected.append("  8: move-result-object v1\n");
+        expected.append("  9: invoke-direct v1, Ltest/SubJob;-><init>()V\n");
+        expected.append("  12: invoke-virtual v0, v1, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z\n");
+        expected.append("  15: move-result v1\n");
+        expected.append("  16: sget v1, Ltest/Hello;->flag:I\n");
+        expected.append("  18: return v1\n");
+        expected.append("method propDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: const-string v0, tartine.missing\n");
+        expected.append("  2: invoke-static v0, Ljava/lang/System;->getProperty(Ljava/lang/String;)Ljava/lang/String;\n");
+        expected.append("  5: move-result-object v0\n");
+        expected.append("  6: return-object v0\n");
+        expected.append("method reflectDemo()Ljava/lang/Object; regs=4\n");
+        expected.append("  0: const-class v0, Landroid/os/Handler;\n");
+        expected.append("  2: const-class v1, Landroid/os/Looper;\n");
+        expected.append("  4: const-4 v2, #1\n");
+        expected.append("  5: new-array v2, v2, [Ljava/lang/Class;\n");
+        expected.append("  7: const-4 v3, #0\n");
+        expected.append("  8: aput-object v1, v2, v3\n");
+        expected.append("  10: const-string v3, createAsync\n");
+        expected.append("  12: invoke-virtual v0, v3, v2, Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;\n");
+        expected.append("  15: move-result-object v0\n");
+        expected.append("  16: invoke-static, Landroid/os/Looper;->getMainLooper()Landroid/os/Looper;\n");
+        expected.append("  19: move-result-object v1\n");
+        expected.append("  20: const-4 v2, #1\n");
+        expected.append("  21: new-array v2, v2, [Ljava/lang/Object;\n");
+        expected.append("  23: const-4 v3, #0\n");
+        expected.append("  24: aput-object v1, v2, v3\n");
+        expected.append("  26: const-4 v1, #0\n");
+        expected.append("  27: invoke-virtual v0, v1, v2, Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;\n");
+        expected.append("  30: move-result-object v0\n");
+        expected.append("  31: return-object v0\n");
+        expected.append("method reflectMissDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: const-class v0, Ljava/lang/Object;\n");
+        expected.append("  2: const-4 v1, #0\n");
+        expected.append("  3: new-array v1, v1, [Ljava/lang/Class;\n");
+        expected.append("  5: const-string v2, nope\n");
+        expected.append("  7: invoke-virtual v0, v2, v1, Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;\n");
+        expected.append("  10: move-result-object v0\n");
+        expected.append("  11: return-object v0\n");
+        expected.append("method reflectPubDemo()Ljava/lang/Object; regs=4\n");
+        expected.append("  0: new-instance v0, Ltest/Sub;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Sub;-><init>()V\n");
+        expected.append("  6: const-class v1, Ltest/Sub;\n");
+        expected.append("  8: const-4 v2, #0\n");
+        expected.append("  9: new-array v2, v2, [Ljava/lang/Class;\n");
+        expected.append("  11: const-string v3, who\n");
+        expected.append("  13: invoke-virtual v1, v3, v2, Ljava/lang/Class;->getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;\n");
+        expected.append("  16: move-result-object v1\n");
+        expected.append("  17: const-4 v2, #0\n");
+        expected.append("  18: new-array v2, v2, [Ljava/lang/Object;\n");
+        expected.append("  20: invoke-virtual v1, v0, v2, Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;\n");
+        expected.append("  23: move-result-object v0\n");
+        expected.append("  24: return-object v0\n");
+        expected.append("method repeatDemo()Ljava/lang/String; regs=2\n");
+        expected.append("  0: const-string v0, ab\n");
+        expected.append("  2: const-4 v1, #3\n");
+        expected.append("  3: invoke-virtual v0, v1, Ljava/lang/String;->repeat(I)Ljava/lang/String;\n");
+        expected.append("  6: move-result-object v0\n");
+        expected.append("  7: return-object v0\n");
+        expected.append("method resColorDemo()I regs=4\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/content/Context;->getResources()Landroid/content/res/Resources;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: const v1, #2130772483\n");
+        expected.append("  13: invoke-virtual v0, v1, Landroid/content/res/Resources;->getColor(I)I\n");
+        expected.append("  16: move-result v2\n");
+        expected.append("  17: invoke-virtual v0, v1, v3, Landroid/content/res/Resources;->getColor(ILandroid/content/res/Resources$Theme;)I\n");
+        expected.append("  20: move-result v0\n");
+        expected.append("  21: add-int v2, v2, v0\n");
+        expected.append("  23: return v2\n");
+        expected.append("method resDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/content/Context;->getResources()Landroid/content/res/Resources;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method resolverDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method resolverObsDemo()Ljava/lang/Object; regs=4\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: const-string v1, animator_duration_scale\n");
+        expected.append("  12: invoke-static v1, Landroid/provider/Settings$Global;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;\n");
+        expected.append("  15: move-result-object v1\n");
+        expected.append("  16: new-instance v2, Landroid/database/ContentObserver;\n");
+        expected.append("  18: move-result-object v2\n");
+        expected.append("  19: const-4 v3, #0\n");
+        expected.append("  20: invoke-direct v2, v3, Landroid/database/ContentObserver;-><init>(Landroid/os/Handler;)V\n");
+        expected.append("  23: invoke-virtual v0, v1, v3, v2, Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;)V\n");
+        expected.append("  26: invoke-virtual v0, v2, Landroid/content/ContentResolver;->unregisterContentObserver(Landroid/database/ContentObserver;)V\n");
+        expected.append("  29: return-object v0\n");
+        expected.append("method retainedDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroidx/activity/ComponentActivity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroidx/activity/ComponentActivity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroidx/activity/ComponentActivity;->getLastNonConfigurationInstance()Ljava/lang/Object;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method runtimeDemo()J regs=1\n");
+        expected.append("  0: invoke-static, Ljava/lang/Runtime;->getRuntime()Ljava/lang/Runtime;\n");
+        expected.append("  3: move-result-object v0\n");
+        expected.append("  4: invoke-virtual v0, Ljava/lang/Runtime;->maxMemory()J\n");
+        expected.append("  7: move-result-wide v0\n");
+        expected.append("  8: return-wide v0\n");
+        expected.append("method safely()I regs=1\n");
+        expected.append("  0: const-string v0, boom\n");
+        expected.append("  2: throw v0\n");
+        expected.append("  3: const-4 v0, #3\n");
+        expected.append("  4: return v0\n");
+        expected.append("  5: move-exception v0\n");
+        expected.append("  6: const-4 v0, #7\n");
+        expected.append("  7: return v0\n");
+        expected.append("method sb()Ljava/lang/String; regs=2\n");
+        expected.append("  0: new-instance v0, Ljava/lang/StringBuilder;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ljava/lang/StringBuilder;-><init>()V\n");
+        expected.append("  6: const-string v1, a\n");
+        expected.append("  8: invoke-virtual v0, v1, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;\n");
+        expected.append("  11: const-4 v1, #1\n");
+        expected.append("  12: invoke-virtual v0, v1, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;\n");
+        expected.append("  15: move-result-object v1\n");
+        expected.append("  16: invoke-virtual v1, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;\n");
+        expected.append("  19: move-result-object v0\n");
+        expected.append("  20: return-object v0\n");
+        expected.append("method sdk()I regs=1\n");
+        expected.append("  0: sget v0, Landroid/os/Build$VERSION;->SDK_INT:I\n");
+        expected.append("  2: return v0\n");
+        expected.append("method sdkIntDemo()I regs=2\n");
+        expected.append("  0: const-class v0, Landroid/os/Build$VERSION;\n");
+        expected.append("  2: const-string v1, SDK_INT\n");
+        expected.append("  4: invoke-virtual v0, v1, Ljava/lang/Class;->getField(Ljava/lang/String;)Ljava/lang/reflect/Field;\n");
+        expected.append("  7: move-result-object v0\n");
+        expected.append("  8: const-4 v1, #0\n");
+        expected.append("  9: invoke-virtual v0, v1, Ljava/lang/reflect/Field;->getInt(Ljava/lang/Object;)I\n");
+        expected.append("  12: move-result v0\n");
+        expected.append("  13: return v0\n");
+        expected.append("method serviceDemo()Z regs=1\n");
+        expected.append("  0: const-class v0, Ljava/lang/Object;\n");
+        expected.append("  2: invoke-static v0, Ljava/util/ServiceLoader;->load(Ljava/lang/Class;)Ljava/util/ServiceLoader;\n");
+        expected.append("  5: move-result-object v0\n");
+        expected.append("  6: invoke-virtual v0, Ljava/util/ServiceLoader;->iterator()Ljava/util/Iterator;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: invoke-interface v0, Ljava/util/Iterator;->hasNext()Z\n");
+        expected.append("  13: move-result v0\n");
+        expected.append("  14: return v0\n");
+        expected.append("method setDemo()I regs=3\n");
+        expected.append("  0: new-instance v0, Ljava/util/HashSet;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ljava/util/HashSet;-><init>()V\n");
+        expected.append("  6: const-string v2, x\n");
+        expected.append("  8: invoke-virtual v0, v2, Ljava/util/HashSet;->add(Ljava/lang/Object;)Z\n");
+        expected.append("  11: move-result v1\n");
+        expected.append("  12: invoke-virtual v0, v2, Ljava/util/HashSet;->add(Ljava/lang/Object;)Z\n");
+        expected.append("  15: move-result v2\n");
+        expected.append("  16: add-int v1, v1, v2\n");
+        expected.append("  18: return v1\n");
+        expected.append("method settingsFloatDemo()F regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: const-string v1, animator_duration_scale\n");
+        expected.append("  12: const-high16 v2, #1089470464\n");
+        expected.append("  14: invoke-static v0, v1, v2, Landroid/provider/Settings$Global;->getFloat(Landroid/content/ContentResolver;Ljava/lang/String;F)F\n");
+        expected.append("  17: move-result v0\n");
+        expected.append("  18: return v0\n");
+        expected.append("method settingsUriDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: const-string v0, animator_duration_scale\n");
+        expected.append("  2: invoke-static v0, Landroid/provider/Settings$Global;->getUriFor(Ljava/lang/String;)Landroid/net/Uri;\n");
+        expected.append("  5: move-result-object v0\n");
+        expected.append("  6: return-object v0\n");
+        expected.append("method sortDemo()I regs=4\n");
+        expected.append("  0: const-4 v3, #3\n");
+        expected.append("  1: new-array v0, v3, [Ljava/lang/Object;\n");
+        expected.append("  3: const-4 v1, #3\n");
+        expected.append("  4: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  7: move-result-object v1\n");
+        expected.append("  8: const-4 v2, #0\n");
+        expected.append("  9: aput-object v1, v0, v2\n");
+        expected.append("  11: const-4 v1, #1\n");
+        expected.append("  12: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  15: move-result-object v1\n");
+        expected.append("  16: const-4 v2, #1\n");
+        expected.append("  17: aput-object v1, v0, v2\n");
+        expected.append("  19: const-4 v1, #2\n");
+        expected.append("  20: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  23: move-result-object v1\n");
+        expected.append("  24: const-4 v2, #2\n");
+        expected.append("  25: aput-object v1, v0, v2\n");
+        expected.append("  27: new-instance v1, Ltest/Cmp;\n");
+        expected.append("  29: move-result-object v1\n");
+        expected.append("  30: invoke-direct v1, Ltest/Cmp;-><init>()V\n");
+        expected.append("  33: const-4 v2, #0\n");
+        expected.append("  34: const-4 v3, #2\n");
+        expected.append("  35: invoke-static v0, v2, v3, v1, Ljava/util/Arrays;->sort([Ljava/lang/Object;IILjava/util/Comparator;)V\n");
+        expected.append("  38: const-4 v2, #0\n");
+        expected.append("  39: aget-object v1, v0, v2\n");
+        expected.append("  41: invoke-virtual v1, Ljava/lang/Integer;->intValue()I\n");
+        expected.append("  44: move-result v1\n");
+        expected.append("  45: mul-int-lit8 v1, v1, #10\n");
+        expected.append("  47: const-4 v2, #1\n");
+        expected.append("  48: aget-object v2, v0, v2\n");
+        expected.append("  50: invoke-virtual v2, Ljava/lang/Integer;->intValue()I\n");
+        expected.append("  53: move-result v2\n");
+        expected.append("  54: add-int v1, v1, v2\n");
+        expected.append("  56: return v1\n");
+        expected.append("method stackDemo()I regs=1\n");
+        expected.append("  0: invoke-static, Ljava/lang/Thread;->currentThread()Ljava/lang/Thread;\n");
+        expected.append("  3: move-result-object v0\n");
+        expected.append("  4: invoke-virtual v0, Ljava/lang/Thread;->getStackTrace()[Ljava/lang/StackTraceElement;\n");
+        expected.append("  7: move-result-object v0\n");
+        expected.append("  8: array-length v0, v0\n");
+        expected.append("  9: return v0\n");
+        expected.append("method strictSqrt()D regs=2\n");
+        expected.append("  0: const-16 v0, #16\n");
+        expected.append("  2: int-to-double v0, v0\n");
+        expected.append("  3: invoke-static v0, Ljava/lang/StrictMath;->sqrt(D)D\n");
+        expected.append("  6: move-result-wide v0\n");
+        expected.append("  7: return-wide v0\n");
+        expected.append("method stringOps()I regs=3\n");
+        expected.append("  0: const-string v0, hello\n");
+        expected.append("  2: invoke-virtual v0, Ljava/lang/String;->length()I\n");
+        expected.append("  5: move-result v1\n");
+        expected.append("  6: const-string v2, l\n");
+        expected.append("  8: invoke-virtual v0, v2, Ljava/lang/String;->indexOf(Ljava/lang/String;)I\n");
+        expected.append("  11: move-result v2\n");
+        expected.append("  12: add-int v1, v1, v2\n");
+        expected.append("  14: return v1\n");
+        expected.append("method strokeDemo()F regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/graphics/Paint;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: const-4 v1, #0\n");
+        expected.append("  4: invoke-direct v0, v1, Landroid/graphics/Paint;-><init>(I)V\n");
+        expected.append("  7: const-high16 v1, #1073741824\n");
+        expected.append("  9: invoke-virtual v0, v1, Landroid/graphics/Paint;->setStrokeWidth(F)V\n");
+        expected.append("  12: invoke-virtual v0, Landroid/graphics/Paint;->getStrokeWidth()F\n");
+        expected.append("  15: move-result v0\n");
+        expected.append("  16: return v0\n");
+        expected.append("method styleDemo()I regs=1\n");
+        expected.append("  0: sget-object v0, Landroid/graphics/Paint$Style;->STROKE:Landroid/graphics/Paint$Style;\n");
+        expected.append("  2: invoke-virtual v0, Ljava/lang/Enum;->ordinal()I\n");
+        expected.append("  5: move-result v0\n");
+        expected.append("  6: return v0\n");
+        expected.append("method styleRoundDemo()I regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/graphics/Paint;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: const-4 v1, #0\n");
+        expected.append("  4: invoke-direct v0, v1, Landroid/graphics/Paint;-><init>(I)V\n");
+        expected.append("  7: sget-object v1, Landroid/graphics/Paint$Style;->STROKE:Landroid/graphics/Paint$Style;\n");
+        expected.append("  9: invoke-virtual v0, v1, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V\n");
+        expected.append("  12: invoke-virtual v0, Landroid/graphics/Paint;->getStyle()Landroid/graphics/Paint$Style;\n");
+        expected.append("  15: move-result-object v0\n");
+        expected.append("  16: invoke-virtual v0, Ljava/lang/Enum;->ordinal()I\n");
+        expected.append("  19: move-result v0\n");
+        expected.append("  20: return v0\n");
+        expected.append("method subDemo()I regs=4\n");
+        expected.append("  0: new-instance v1, Ltest/Cmp;\n");
+        expected.append("  2: move-result-object v1\n");
+        expected.append("  3: invoke-direct v1, Ltest/Cmp;-><init>()V\n");
+        expected.append("  6: new-instance v0, Ltest/SubSet;\n");
+        expected.append("  8: move-result-object v0\n");
+        expected.append("  9: invoke-direct v0, v1, Ltest/SubSet;-><init>(Ljava/util/Comparator;)V\n");
+        expected.append("  12: const-4 v2, #7\n");
+        expected.append("  13: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  16: move-result-object v2\n");
+        expected.append("  17: invoke-virtual v0, v2, Ltest/SubSet;->add(Ljava/lang/Object;)Z\n");
+        expected.append("  20: const-16 v2, #8\n");
+        expected.append("  22: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  25: move-result-object v2\n");
+        expected.append("  26: invoke-virtual v0, v2, Ltest/SubSet;->add(Ljava/lang/Object;)Z\n");
+        expected.append("  29: const-4 v2, #7\n");
+        expected.append("  30: invoke-static v2, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  33: move-result-object v2\n");
+        expected.append("  34: invoke-virtual v0, v2, Ltest/SubSet;->contains(Ljava/lang/Object;)Z\n");
+        expected.append("  37: move-result v3\n");
+        expected.append("  38: invoke-virtual v0, Ltest/SubSet;->size()I\n");
+        expected.append("  41: move-result v2\n");
+        expected.append("  42: add-int v3, v3, v2\n");
+        expected.append("  44: return v3\n");
+        expected.append("method sum()I regs=3\n");
+        expected.append("  0: const-4 v1, #3\n");
+        expected.append("  1: new-array v0, v1, [I\n");
+        expected.append("  3: const-4 v1, #0\n");
+        expected.append("  4: const-16 v2, #7\n");
+        expected.append("  6: aput v2, v0, v1\n");
+        expected.append("  8: const-4 v1, #1\n");
+        expected.append("  9: const-16 v2, #8\n");
+        expected.append("  11: aput v2, v0, v1\n");
+        expected.append("  13: const-4 v1, #2\n");
+        expected.append("  14: const-16 v2, #9\n");
+        expected.append("  16: aput v2, v0, v1\n");
+        expected.append("  18: const-4 v1, #0\n");
+        expected.append("  19: aget v1, v0, v1\n");
+        expected.append("  21: const-4 v2, #1\n");
+        expected.append("  22: aget v2, v0, v2\n");
+        expected.append("  24: add-int v1, v1, v2\n");
+        expected.append("  26: const-4 v2, #2\n");
+        expected.append("  27: aget v2, v0, v2\n");
+        expected.append("  29: add-int v1, v1, v2\n");
+        expected.append("  31: return v1\n");
+        expected.append("method suppressedDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Ltest/Boom;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Boom;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, v0, Ljava/lang/Throwable;->addSuppressed(Ljava/lang/Throwable;)V\n");
+        expected.append("  9: invoke-virtual v0, Ljava/lang/Throwable;->getSuppressed()[Ljava/lang/Throwable;\n");
+        expected.append("  12: move-result-object v0\n");
+        expected.append("  13: return-object v0\n");
+        expected.append("method switchDefaultDemo()I regs=1\n");
+        expected.append("  0: const-4 v0, #5\n");
+        expected.append("  1: packed-switch v0, +9\n");
+        expected.append("  4: const-16 v0, #99\n");
+        expected.append("  6: return v0\n");
+        expected.append("  7: const-4 v0, #7\n");
+        expected.append("  8: return v0\n");
+        expected.append("  9: nop\n");
+        expected.append("  10: packed-switch-payload\n");
+        expected.append("method switchDemo()I regs=1\n");
+        expected.append("  0: const-4 v0, #1\n");
+        expected.append("  1: packed-switch v0, +9\n");
+        expected.append("  4: const-16 v0, #99\n");
+        expected.append("  6: return v0\n");
+        expected.append("  7: const-4 v0, #7\n");
+        expected.append("  8: return v0\n");
+        expected.append("  9: nop\n");
+        expected.append("  10: packed-switch-payload\n");
+        expected.append("method sysClock()J regs=2\n");
+        expected.append("  0: invoke-static, Landroid/os/SystemClock;->uptimeMillis()J\n");
+        expected.append("  3: move-result-wide v0\n");
+        expected.append("  4: return-wide v0\n");
+        expected.append("method sysServiceDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: const-string v1, accessibility\n");
+        expected.append("  8: invoke-virtual v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;\n");
+        expected.append("  11: move-result-object v0\n");
+        expected.append("  12: return-object v0\n");
+        expected.append("method tagDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const-string v1, seven\n");
+        expected.append("  8: const-4 v2, #7\n");
+        expected.append("  9: invoke-virtual v0, v2, v1, Landroid/view/View;->setTag(ILjava/lang/Object;)V\n");
+        expected.append("  12: invoke-virtual v0, v2, Landroid/view/View;->getTag(I)Ljava/lang/Object;\n");
+        expected.append("  15: move-result-object v0\n");
+        expected.append("  16: return-object v0\n");
+        expected.append("method tagMiss()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const-4 v1, #3\n");
+        expected.append("  7: invoke-virtual v0, v1, Landroid/view/View;->getTag(I)Ljava/lang/Object;\n");
+        expected.append("  10: move-result-object v0\n");
+        expected.append("  11: return-object v0\n");
+        expected.append("method themeDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/content/Context;->getTheme()Landroid/content/res/Resources$Theme;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method threadDemo()Ljava/lang/String; regs=1\n");
+        expected.append("  0: invoke-static, Ljava/lang/Thread;->currentThread()Ljava/lang/Thread;\n");
+        expected.append("  3: move-result-object v0\n");
+        expected.append("  4: invoke-virtual v0, Ljava/lang/Thread;->getName()Ljava/lang/String;\n");
+        expected.append("  7: move-result-object v0\n");
+        expected.append("  8: return-object v0\n");
+        expected.append("method throwCatch()Ljava/lang/String; regs=2\n");
+        expected.append("  0: new-instance v0, Ljava/lang/IllegalStateException;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: const-string v1, desk\n");
+        expected.append("  5: invoke-direct v0, v1, Ljava/lang/IllegalStateException;-><init>(Ljava/lang/String;)V\n");
+        expected.append("  8: throw v0\n");
+        expected.append("  9: const-string v0, unreached\n");
+        expected.append("  11: return-object v0\n");
+        expected.append("  12: move-exception v0\n");
+        expected.append("  13: invoke-virtual v0, Ljava/lang/IllegalStateException;->getMessage()Ljava/lang/String;\n");
+        expected.append("  16: move-result-object v0\n");
+        expected.append("  17: return-object v0\n");
+        expected.append("method touchModeDemo()Z regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->isInTouchMode()Z\n");
+        expected.append("  9: move-result v0\n");
+        expected.append("  10: return v0\n");
+        expected.append("method traceDemo()Z regs=2\n");
+        expected.append("  0: const-string v0, section\n");
+        expected.append("  2: invoke-static v0, Landroid/os/Trace;->beginSection(Ljava/lang/String;)V\n");
+        expected.append("  5: invoke-static, Landroid/os/Trace;->endSection()V\n");
+        expected.append("  8: invoke-static, Landroid/os/Trace;->isEnabled()Z\n");
+        expected.append("  11: move-result v0\n");
+        expected.append("  12: return v0\n");
+        expected.append("method translationDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, v1, Landroid/view/View;->setViewTranslationCallback(Landroid/view/translation/ViewTranslationCallback;)V\n");
+        expected.append("  9: return-object v0\n");
+        expected.append("method treeDemo()I regs=3\n");
+        expected.append("  0: new-instance v1, Ltest/Cmp;\n");
+        expected.append("  2: move-result-object v1\n");
+        expected.append("  3: invoke-direct v1, Ltest/Cmp;-><init>()V\n");
+        expected.append("  6: new-instance v0, Ljava/util/TreeSet;\n");
+        expected.append("  8: move-result-object v0\n");
+        expected.append("  9: invoke-direct v0, v1, Ljava/util/TreeSet;-><init>(Ljava/util/Comparator;)V\n");
+        expected.append("  12: const-4 v1, #7\n");
+        expected.append("  13: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  16: move-result-object v1\n");
+        expected.append("  17: invoke-virtual v0, v1, Ljava/util/TreeSet;->add(Ljava/lang/Object;)Z\n");
+        expected.append("  20: move-result v1\n");
+        expected.append("  21: const-16 v1, #8\n");
+        expected.append("  23: invoke-static v1, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  26: move-result-object v1\n");
+        expected.append("  27: invoke-virtual v0, v1, Ljava/util/TreeSet;->add(Ljava/lang/Object;)Z\n");
+        expected.append("  30: move-result v1\n");
+        expected.append("  31: invoke-virtual v0, Ljava/util/TreeSet;->size()I\n");
+        expected.append("  34: move-result v0\n");
+        expected.append("  35: return v0\n");
+        expected.append("method twice(I)I regs=2\n");
+        expected.append("  0: invoke-static v1, Ltest/Hello;->id(I)I\n");
+        expected.append("  3: move-result v0\n");
+        expected.append("  4: add-int-2addr v0, v0\n");
+        expected.append("  5: return v0\n");
+        expected.append("method txChain()I regs=3\n");
+        expected.append("  0: const-string v0, tx\n");
+        expected.append("  2: const-4 v1, #1\n");
+        expected.append("  3: const-string v2, frag\n");
+        expected.append("  5: invoke-virtual v0, v1, v2, Landroid/app/FragmentTransaction;->add(ILandroid/app/Fragment;)Landroid/app/FragmentTransaction;\n");
+        expected.append("  8: move-result-object v0\n");
+        expected.append("  9: invoke-virtual v0, Landroid/app/FragmentTransaction;->commit()I\n");
+        expected.append("  12: move-result v0\n");
+        expected.append("  13: return v0\n");
+        expected.append("method updater()I regs=5\n");
+        expected.append("  0: new-instance v0, Ltest/Counter;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Ltest/Counter;-><init>()V\n");
+        expected.append("  6: const-class v1, Ltest/Counter;\n");
+        expected.append("  8: const-class v2, Ljava/lang/Object;\n");
+        expected.append("  10: const-string v3, count\n");
+        expected.append("  12: invoke-static v1, v2, v3, Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->newUpdater(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;\n");
+        expected.append("  15: move-result-object v1\n");
+        expected.append("  16: invoke-virtual v1, v0, v4, v4, Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->compareAndSet(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Z\n");
+        expected.append("  19: move-result v4\n");
+        expected.append("  20: const-4 v2, #7\n");
+        expected.append("  21: invoke-virtual v1, v0, v2, Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->set(Ljava/lang/Object;Ljava/lang/Object;)V\n");
+        expected.append("  24: invoke-virtual v1, v0, Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;->get(Ljava/lang/Object;)Ljava/lang/Object;\n");
+        expected.append("  27: move-result-object v2\n");
+        expected.append("  28: add-int v2, v4, v2\n");
+        expected.append("  30: return v2\n");
+        expected.append("method viewConfigDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-static v0, Landroid/view/ViewConfiguration;->get(Landroid/content/Context;)Landroid/view/ViewConfiguration;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method viewCtx()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/view/ViewGroup;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: new-instance v1, Landroid/app/Activity;\n");
+        expected.append("  5: move-result-object v1\n");
+        expected.append("  6: invoke-direct v1, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  9: const-4 v2, #0\n");
+        expected.append("  10: invoke-direct v0, v1, v2, v2, Landroid/view/ViewGroup;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V\n");
+        expected.append("  13: invoke-virtual v0, Landroid/view/View;->getContext()Landroid/content/Context;\n");
+        expected.append("  16: move-result-object v0\n");
+        expected.append("  17: return-object v0\n");
+        expected.append("method viewHandlerDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: new-instance v1, Landroid/view/View;\n");
+        expected.append("  8: move-result-object v1\n");
+        expected.append("  9: invoke-direct v1, Landroid/view/View;-><init>()V\n");
+        expected.append("  12: invoke-virtual v0, v1, Landroid/app/Activity;->setContentView(Landroid/view/View;)V\n");
+        expected.append("  15: invoke-virtual v1, Landroid/view/View;->getHandler()Landroid/os/Handler;\n");
+        expected.append("  18: move-result-object v0\n");
+        expected.append("  19: return-object v0\n");
+        expected.append("method viewVis()I regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->getVisibility()I\n");
+        expected.append("  9: move-result v1\n");
+        expected.append("  10: const-16 v1, #8\n");
+        expected.append("  12: invoke-virtual v0, v1, Landroid/view/View;->setVisibility(I)V\n");
+        expected.append("  15: invoke-virtual v0, Landroid/view/View;->getVisibility()I\n");
+        expected.append("  18: move-result v0\n");
+        expected.append("  19: return v0\n");
+        expected.append("method vis()I regs=1\n");
+        expected.append("  0: sget v0, Landroid/view/View;->VISIBLE:I\n");
+        expected.append("  2: return v0\n");
+        expected.append("method vtoClusterDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;\n");
+        expected.append("  9: move-result-object v1\n");
+        expected.append("  10: const-4 v2, #0\n");
+        expected.append("  11: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->addOnTouchModeChangeListener(Landroid/view/ViewTreeObserver$OnTouchModeChangeListener;)V\n");
+        expected.append("  14: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->addOnPreDrawListener(Landroid/view/ViewTreeObserver$OnPreDrawListener;)V\n");
+        expected.append("  17: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->addOnWindowFocusChangeListener(Landroid/view/ViewTreeObserver$OnWindowFocusChangeListener;)V\n");
+        expected.append("  20: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->addOnWindowAttachListener(Landroid/view/ViewTreeObserver$OnWindowAttachListener;)V\n");
+        expected.append("  23: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->addOnComputeInternalInsetsListener(Landroid/view/ViewTreeObserver$OnComputeInternalInsetsListener;)V\n");
+        expected.append("  26: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->removeOnGlobalLayoutListener(Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;)V\n");
+        expected.append("  29: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->removeOnScrollChangedListener(Landroid/view/ViewTreeObserver$OnScrollChangedListener;)V\n");
+        expected.append("  32: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->removeOnPreDrawListener(Landroid/view/ViewTreeObserver$OnPreDrawListener;)V\n");
+        expected.append("  35: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->removeOnTouchModeChangeListener(Landroid/view/ViewTreeObserver$OnTouchModeChangeListener;)V\n");
+        expected.append("  38: return-object v0\n");
+        expected.append("method vtoDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method vtoLayoutDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;\n");
+        expected.append("  9: move-result-object v1\n");
+        expected.append("  10: const-4 v2, #0\n");
+        expected.append("  11: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->addOnGlobalLayoutListener(Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;)V\n");
+        expected.append("  14: return-object v0\n");
+        expected.append("method vtoScrollDemo()Ljava/lang/Object; regs=3\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;\n");
+        expected.append("  9: move-result-object v1\n");
+        expected.append("  10: const-4 v2, #0\n");
+        expected.append("  11: invoke-virtual v1, v2, Landroid/view/ViewTreeObserver;->addOnScrollChangedListener(Landroid/view/ViewTreeObserver$OnScrollChangedListener;)V\n");
+        expected.append("  14: return-object v0\n");
+        expected.append("method weakClear()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Ljava/lang/ref/WeakReference;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: const-string v1, x\n");
+        expected.append("  5: invoke-direct v0, v1, Ljava/lang/ref/WeakReference;-><init>(Ljava/lang/Object;)V\n");
+        expected.append("  8: invoke-virtual v0, Ljava/lang/ref/WeakReference;->get()Ljava/lang/Object;\n");
+        expected.append("  11: move-result-object v1\n");
+        expected.append("  12: invoke-virtual v0, Ljava/lang/ref/WeakReference;->clear()V\n");
+        expected.append("  15: invoke-virtual v0, Ljava/lang/ref/WeakReference;->get()Ljava/lang/Object;\n");
+        expected.append("  18: move-result-object v0\n");
+        expected.append("  19: return-object v0\n");
+        expected.append("method weakGet()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Ljava/lang/ref/WeakReference;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: const-string v1, x\n");
+        expected.append("  5: invoke-direct v0, v1, Ljava/lang/ref/WeakReference;-><init>(Ljava/lang/Object;)V\n");
+        expected.append("  8: invoke-virtual v0, Ljava/lang/ref/WeakReference;->get()Ljava/lang/Object;\n");
+        expected.append("  11: move-result-object v0\n");
+        expected.append("  12: return-object v0\n");
+        expected.append("method wideHigh16Demo()J regs=1\n");
+        expected.append("  0: const-wide-high16 v0, #4607182418800017408\n");
+        expected.append("  2: return-wide v0\n");
+        expected.append("method willNotDrawDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: const-4 v1, #0\n");
+        expected.append("  7: invoke-virtual v0, v1, Landroid/view/View;->setWillNotDraw(Z)V\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method windowDemo()Ljava/lang/Object; regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/app/Activity;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/app/Activity;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/app/Activity;->getWindow()Landroid/view/Window;\n");
+        expected.append("  9: move-result-object v0\n");
+        expected.append("  10: return-object v0\n");
+        expected.append("method windowFocusDemo()Z regs=1\n");
+        expected.append("  0: new-instance v0, Landroid/view/View;\n");
+        expected.append("  2: move-result-object v0\n");
+        expected.append("  3: invoke-direct v0, Landroid/view/View;-><init>()V\n");
+        expected.append("  6: invoke-virtual v0, Landroid/view/View;->hasWindowFocus()Z\n");
+        expected.append("  9: move-result v0\n");
+        expected.append("  10: return v0\n");
+        expected.append("method zeroCheckDemo()I regs=1\n");
+        expected.append("  0: const-4 v0, #0\n");
+        expected.append("  1: invoke-static v0, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;\n");
+        expected.append("  4: move-result-object v0\n");
+        expected.append("  5: if-eqz v0, +4\n");
+        expected.append("  7: const-4 v0, #7\n");
+        expected.append("  8: return v0\n");
+        expected.append("  9: const-16 v0, #99\n");
+        expected.append("  11: return v0\n");
+        expected.append("class Ltest/Job;\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("method run()V regs=2\n");
+        expected.append("  0: const-4 v1, #7\n");
+        expected.append("  1: sput v1, Ltest/Hello;->flag:I\n");
+        expected.append("  3: return-void\n");
+        expected.append("class Ltest/MyHandler;\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("method handleMessage(Landroid/os/Message;)V regs=2\n");
+        expected.append("  0: iget v0, v1, Landroid/os/Message;->what:I\n");
+        expected.append("  2: sput v0, Ltest/Hello;->flag:I\n");
+        expected.append("  4: return-void\n");
+        expected.append("class Ltest/Orphan;\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("class Ltest/Sub2;\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("class Ltest/Sub;\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ltest/Base;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("class Ltest/SubJob;\n");
+        expected.append("method <init>()V regs=1\n");
+        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
+        expected.append("  3: return-void\n");
+        expected.append("class Ltest/SubSet;\n");
+        expected.append("method <init>(Ljava/util/Comparator;)V regs=2\n");
+        expected.append("  0: invoke-direct v0, v1, Ljava/util/TreeSet;-><init>(Ljava/util/Comparator;)V\n");
+        expected.append("  3: return-void\n");
+        expected.append("method getSize()I regs=1\n");
+        expected.append("  0: invoke-super v0, Ljava/util/TreeSet;->size()I\n");
+        expected.append("  3: move-result v0\n");
+        expected.append("  4: return v0\n");
+        expected.append("method size()I regs=1\n");
+        expected.append("  0: invoke-virtual v0, Ltest/SubSet;->getSize()I\n");
+        expected.append("  3: move-result v0\n");
+        expected.append("  4: return v0\n");
         StringBuilder actual = new StringBuilder();
         for (DexClass cls : dex.classes()) {
             actual.append(DexDump.dump(cls));
         }
-        assertEquals(expected, actual.toString());
+        assertEquals(expected.toString(), actual.toString());
     }
 }

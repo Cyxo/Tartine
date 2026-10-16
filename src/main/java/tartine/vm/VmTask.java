@@ -23,19 +23,23 @@ public final class VmTask implements Runnable {
         this.entry = entry;
     }
 
-    /** Resolves a no-arg {@code run}/{@code call} method on a DEX object. */
+    /** Resolves a no-arg {@code run}/{@code call} method, walking superclasses. */
     public static VmTask runnable(Interpreter vm, Object target, String method) {
         if (!(target instanceof VmObject)) {
             throw new ClassCastException();
         }
         VmObject object = (VmObject) target;
         DexClass cls = object.type;
-        for (DexMethod candidate : cls.methods) {
-            if (candidate.name.equals(method) && candidate.parameterTypes.isEmpty()) {
-                return new VmTask(vm, object, candidate);
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        while (cls != null && seen.add(cls.type)) {
+            for (DexMethod candidate : cls.methods) {
+                if (candidate.name.equals(method) && candidate.parameterTypes.isEmpty()) {
+                    return new VmTask(vm, object, candidate);
+                }
             }
+            cls = cls.superclass == null ? null : vm.findClass(cls.superclass);
         }
-        throw new VmException("no such method: " + cls.type + "->" + method);
+        throw new VmException("no such method: " + object.type.type + "->" + method);
     }
 
     public Object call() {

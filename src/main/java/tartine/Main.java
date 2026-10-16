@@ -192,7 +192,15 @@ public final class Main {
                 return null;
             }
             VmObject receiver = new VmObject(cls);
-            interpreter.setMaxSteps(100000000L);
+            // Diagnostic escape hatch for spin hangs (default 100M).
+            long maxSteps = 100000000L;
+            try {
+                maxSteps = Long.parseLong(
+                        System.getenv().getOrDefault("TARTINE_MAX_STEPS", "100000000"));
+            } catch (NumberFormatException e) {
+                // keep default
+            }
+            interpreter.setMaxSteps(maxSteps);
             try {
                 interpreter.invoke(cls, init, receiver);
                 Object result = interpreter.invoke(cls, onCreate, receiver,
@@ -253,24 +261,7 @@ public final class Main {
         VmObject stateObject = (VmObject) state;
         System.out.println("content state: " + stateObject.type.type);
         try {
-            DexMethod getValue = null;
-            DexClass home = stateObject.type;
-            while (home != null && getValue == null) {
-                for (DexMethod candidate : home.methods) {
-                    if (candidate.name.equals("getValue")
-                            && candidate.parameterTypes.isEmpty()) {
-                        getValue = candidate;
-                        break;
-                    }
-                }
-                home = home.superclass == null ? null
-                        : dexes.findClass(home.superclass);
-            }
-            if (getValue == null) {
-                System.out.println("content lambda: no getValue to read it");
-                return;
-            }
-            Object lambda = interpreter.invoke(stateObject.type, getValue, stateObject);
+            Object lambda = readContentLambda(dexes, interpreter, view);
             System.out.println("content lambda: " + (lambda instanceof VmObject
                     ? ((VmObject) lambda).type.type : lambda));
         } catch (RuntimeException e) {
@@ -278,7 +269,42 @@ public final class Main {
         }
         // setContentView joined the view to a window; on device
         // onAttachedToWindow would now start composition. Drive it.
-        driveComposition(dexes, interpreter, view);
+        driveComposition(dexes, interpreter, view, activity);
+    }
+
+    /**
+     * Reads the stored composable out of the ComposeView's content state,
+     * or null when it is missing or unreadable.
+     */
+    private static Object readContentLambda(DexSet dexes, Interpreter interpreter,
+            VmObject view) {
+        Object state = view.getField(
+                "Landroidx/compose/ui/platform/ComposeView;.content");
+        if (!(state instanceof VmObject)) {
+            return null;
+        }
+        VmObject stateObject = (VmObject) state;
+        DexMethod getValue = null;
+        DexClass home = stateObject.type;
+        while (home != null && getValue == null) {
+            for (DexMethod candidate : home.methods) {
+                if (candidate.name.equals("getValue")
+                        && candidate.parameterTypes.isEmpty()) {
+                    getValue = candidate;
+                    break;
+                }
+            }
+            home = home.superclass == null ? null
+                    : dexes.findClass(home.superclass);
+        }
+        if (getValue == null) {
+            return null;
+        }
+        try {
+            return interpreter.invoke(stateObject.type, getValue, stateObject);
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     /**
@@ -287,7 +313,7 @@ public final class Main {
      * are the next worklist, not probe failures.
      */
     private static void driveComposition(DexSet dexes, Interpreter interpreter,
-            VmObject view) {
+            VmObject view, VmObject activity) {
         Object deferred = view.getField("Landroidx/compose/ui/platform/ComposeView;"
                 + ".shouldCreateCompositionOnAttachedToWindow");
         if (!Integer.valueOf(1).equals(deferred)) {
@@ -325,11 +351,258 @@ public final class Main {
         }
         System.out.println("composition: " + describe(view.getField(
                 "Landroidx/compose/ui/platform/AbstractComposeView;.composition")));
+        driveContent(dexes, interpreter, view);
+        driveAttach(dexes, interpreter, view, activity);
+    }
+
+    /**
+     * Runs the stored composable on the created composition (the driver's
+     * equivalent of the frame commit). Gaps inside are the next worklist.
+     */
+    private static void driveContent(DexSet dexes, Interpreter interpreter,
+            VmObject view) {
+        Object composition = view.getField(
+                "Landroidx/compose/ui/platform/AbstractComposeView;.composition");
+        if (!(composition instanceof VmObject)) {
+            System.out.println("content: no composition to drive");
+            return;
+        }
+        VmObject compositionObject = (VmObject) composition;
+        Object lambda = readContentLambda(dexes, interpreter, view);
+        if (!(lambda instanceof VmObject)) {
+            System.out.println("content: no composable lambda to run");
+            return;
+        }
+        DexMethod setContent = null;
+        DexClass home = compositionObject.type;
+        while (home != null && setContent == null) {
+            for (DexMethod candidate : home.methods) {
+                if (candidate.name.equals("setContent")
+                        && candidate.parameterTypes.size() == 1
+                        && (candidate.accessFlags & 0x0008) == 0) {
+                    setContent = candidate;
+                    break;
+                }
+            }
+            if (setContent == null) {
+                home = home.superclass == null ? null : dexes.findClass(home.superclass);
+            }
+        }
+        if (setContent == null) {
+            System.out.println("content: no setContent to drive");
+            return;
+        }
+        try {
+            interpreter.invoke(compositionObject.type, setContent, compositionObject,
+                    new Object[]{lambda});
+            System.out.println("setContent returned after " + interpreter.steps()
+                    + " steps");
+        } catch (RuntimeException e) {
+            System.out.println("content blocked at: " + e.getMessage());
+            if (e instanceof VmThrow) {
+                System.out.println("thrown: " + describe(((VmThrow) e).value));
+            }
+            printTrace(interpreter);
+            e.printStackTrace(System.err);
+        }
     }
 
     private static String describe(Object value) {
         return value instanceof VmObject
                 ? ((VmObject) value).type.type : String.valueOf(value);
+    }
+
+    /**
+     * Models attach completion: tags the content view with the activity as
+     * its lifecycle/saved-state owners (what ComponentActivity does to the
+     * decor on device), then runs the AndroidComposeView's
+     * onAttachedToWindow, which fires the stored composition callback.
+     */
+    private static void driveAttach(DexSet dexes, Interpreter interpreter,
+            VmObject view, VmObject activity) {
+        Object composition = view.getField(
+                "Landroidx/compose/ui/platform/AbstractComposeView;.composition");
+        if (!(composition instanceof VmObject)) {
+            System.out.println("attach: no composition to attach");
+            return;
+        }
+        VmObject compositionObject = (VmObject) composition;
+        try {
+            invokeStatic(dexes, interpreter,
+                    "Landroidx/lifecycle/ViewTreeLifecycleOwner;", "set",
+                    view, activity);
+            invokeStatic(dexes, interpreter,
+                    "Landroidx/savedstate/ViewTreeSavedStateRegistryOwner;", "set",
+                    view, activity);
+            Object owner = invokeVirtual(dexes, interpreter, compositionObject,
+                    "getOwner", 0);
+            if (!(owner instanceof VmObject)) {
+                System.out.println("attach: no owner to attach");
+                return;
+            }
+            VmObject ownerObject = (VmObject) owner;
+            invokeVirtual(dexes, interpreter, ownerObject, "onAttachedToWindow", 0);
+            ownerObject.putField("Landroid/view/View;.mAttached", 1);
+            System.out.println("onAttachedToWindow returned after " + interpreter.steps()
+                    + " steps");
+            driveLifecycle(dexes, interpreter, activity);
+            driveContent(dexes, interpreter, view);
+            Object original = invokeVirtual(dexes, interpreter, compositionObject,
+                    "getOriginal", 0);
+            Object invalidations = original instanceof VmObject
+                    ? invokeVirtual(dexes, interpreter, (VmObject) original,
+                            "getHasInvalidations", 0)
+                    : null;
+            System.out.println("original invalidations: " + invalidations);
+            Object root = invokeVirtual(dexes, interpreter, ownerObject, "getRoot", 0);
+            Object children = root instanceof VmObject
+                    ? invokeVirtual(dexes, interpreter, (VmObject) root,
+                            "getChildren$ui_release", 0)
+                    : null;
+            Object childCount = children instanceof VmObject
+                    ? invokeVirtual(dexes, interpreter, (VmObject) children, "size", 0)
+                    : null;
+            System.out.println("root children: " + childCount);
+            driveFrame(dexes, interpreter, ownerObject);
+        } catch (RuntimeException e) {
+            System.out.println("attach blocked at: " + e.getMessage());
+            if (e instanceof VmThrow) {
+                System.out.println("thrown: " + describe(((VmThrow) e).value));
+            }
+            printTrace(interpreter);
+            e.printStackTrace(System.err);
+        }
+    }
+
+    /** Invokes a static dex method found by class, name, and arity. */
+    private static Object invokeStatic(DexSet dexes, Interpreter interpreter,
+            String classDesc, String name, Object... args) {
+        DexClass cls = dexes.findClass(classDesc);
+        if (cls == null) {
+            throw new VmException("no class: " + classDesc);
+        }
+        for (DexMethod candidate : cls.methods) {
+            if (candidate.name.equals(name)
+                    && candidate.parameterTypes.size() == args.length
+                    && (candidate.accessFlags & 0x0008) != 0) {
+                return interpreter.invoke(cls, candidate, null, args);
+            }
+        }
+        throw new VmException("no static: " + classDesc + "." + name);
+    }
+
+    /** Invokes an instance dex method found by walking the receiver's hierarchy. */
+    private static Object invokeVirtual(DexSet dexes, Interpreter interpreter,
+            VmObject receiver, String name, int arity, Object... args) {
+        DexClass home = receiver.type;
+        while (home != null) {
+            for (DexMethod candidate : home.methods) {
+                if (candidate.name.equals(name)
+                        && candidate.parameterTypes.size() == arity
+                        && (candidate.accessFlags & 0x0008) == 0) {
+                    return interpreter.invoke(receiver.type, candidate, receiver, args);
+                }
+            }
+            home = home.superclass == null ? null : dexes.findClass(home.superclass);
+        }
+        throw new VmException("no method: " + receiver.type.type + "." + name);
+    }
+
+    /**
+     * Brings the activity lifecycle to RESUMED through the registry (the
+     * driver's equivalent of the device's activity bring-up). Dispatching
+     * ON_CREATE notifies the composition's observer, which forwards the
+     * stored content to the inner composition.
+     */
+    private static void driveLifecycle(DexSet dexes, Interpreter interpreter,
+            VmObject activity) {
+        Object lifecycle = invokeVirtual(dexes, interpreter, activity, "getLifecycle", 0);
+        if (!(lifecycle instanceof VmObject)) {
+            System.out.println("lifecycle: none to drive");
+            return;
+        }
+        VmObject lifecycleObject = (VmObject) lifecycle;
+        String[] events = {"ON_CREATE", "ON_START", "ON_RESUME"};
+        for (String event : events) {
+            Object constant = interpreter.staticField(
+                    "Landroidx/lifecycle/Lifecycle$Event;", event,
+                    "Landroidx/lifecycle/Lifecycle$Event;");
+            invokeVirtual(dexes, interpreter, lifecycleObject, "handleLifecycleEvent", 1,
+                    constant);
+        }
+        System.out.println("lifecycle resumed after " + interpreter.steps() + " steps");
+    }
+
+    /**
+     * Fires recorded frame callbacks with the current nanos (the driver's
+     * VSync), repeating while callbacks re-post, up to a bound. Then
+     * reports whether the root gained children.
+     */
+    private static void driveFrame(DexSet dexes, Interpreter interpreter,
+            VmObject owner) {
+        for (int round = 0; round < 10; round++) {
+            java.util.List<Object> callbacks = interpreter.frameCallbacks();
+            System.out.println("frame callbacks round " + round + ": " + callbacks.size()
+                    + " at " + interpreter.steps() + " steps");
+            if (callbacks.isEmpty()) {
+                break;
+            }
+            boolean advanced = false;
+            for (Object callback : callbacks) {
+                System.out.println("frame callback: " + describe(callback));
+                if (!(callback instanceof VmObject)) {
+                    continue;
+                }
+                try {
+                    invokeVirtual(dexes, interpreter, (VmObject) callback, "doFrame", 1,
+                            System.nanoTime());
+                    advanced = true;
+                } catch (RuntimeException e) {
+                    System.out.println("frame blocked at: " + e.getMessage());
+                    if (e instanceof VmThrow) {
+                        System.out.println("thrown: " + describe(((VmThrow) e).value));
+                    }
+                    printTrace(interpreter);
+                    e.printStackTrace(System.err);
+                    return;
+                }
+            }
+            if (!advanced) {
+                break;
+            }
+        }
+        try {
+            Object root = invokeVirtual(dexes, interpreter, owner, "getRoot", 0);
+            Object children = root instanceof VmObject
+                    ? invokeVirtual(dexes, interpreter, (VmObject) root,
+                            "getChildren$ui_release", 0)
+                    : null;
+            Object childCount = children instanceof VmObject
+                    ? invokeVirtual(dexes, interpreter, (VmObject) children, "size", 0)
+                    : null;
+            System.out.println("root children after frame: " + childCount);
+            System.out.println("composition frames:");
+            java.util.List<String> trace = interpreter.lastTrace();
+            int shown = 0;
+            for (int i = trace.size() - 1; i >= 0 && shown < 60; i--) {
+                String line = trace.get(i);
+                if (line.contains("AndroidUiDispatcher")) {
+                    continue;
+                }
+                if (line.contains("omposition") || line.contains("ecomposer")
+                        || line.contains("ispatche") || line.contains("Await")
+                        || line.contains("ecompose") || line.contains("omposer")) {
+                    System.out.println("  at " + line);
+                    shown++;
+                }
+            }
+        } catch (RuntimeException e) {
+            System.out.println("frame blocked at: " + e.getMessage());
+            if (e instanceof VmThrow) {
+                System.out.println("thrown: " + describe(((VmThrow) e).value));
+            }
+            printTrace(interpreter);
+        }
     }
 
     private static FwIndex loadFramework(BinaryXml.Element manifest,
