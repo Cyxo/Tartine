@@ -4004,6 +4004,9 @@ public final class Interpreter {
         // Nothing takes focus headless (no input, focus setters no-op).
         builtin("Landroid/view/View;->isFocused()Z",
                 (receiver, args) -> 0);
+        // ... so no subtree holds focus either.
+        builtin("Landroid/view/View;->hasFocus()Z",
+                (receiver, args) -> 0);
         // No input occurs headless, so touch mode is never entered.
         builtin("Landroid/view/View;->isInTouchMode()Z",
                 (receiver, args) -> 0);
@@ -4228,6 +4231,14 @@ public final class Interpreter {
                 (receiver, args) -> cachedPlaceholder((VmObject) receiver,
                         "Landroid/content/Context;.mTheme",
                         "Landroid/content/res/Resources$Theme;"));
+        // No configuration changes, memory pressure, or trimming occurs
+        // headless; component callbacks never fire.
+        builtin("Landroid/content/Context;->registerComponentCallbacks("
+                + "Landroid/content/ComponentCallbacks;)V",
+                (receiver, args) -> null);
+        builtin("Landroid/content/Context;->unregisterComponentCallbacks("
+                + "Landroid/content/ComponentCallbacks;)V",
+                (receiver, args) -> null);
         // No resources are parsed headless: color lookups read 0.
         builtin("Landroid/content/res/Resources;->getColor(I)I",
                 (receiver, args) -> 0);
@@ -4291,6 +4302,15 @@ public final class Interpreter {
                             .getField("Landroid/view/View;.mLayoutRequested");
                     return marked == null ? 0 : asInt(marked);
                 });
+        // Window insets never change headless; dispatch is a no-op.
+        builtin("Landroid/view/View;->requestApplyInsets()V",
+                (receiver, args) -> null);
+        // Inset animations never run headless; callbacks never fire.
+        builtin("Landroid/view/WindowInsetsAnimation$Callback;-><init>(I)V",
+                (receiver, args) -> null);
+        builtin("Landroid/view/View;->setWindowInsetsAnimationCallback("
+                + "Landroid/view/WindowInsetsAnimation$Callback;)V",
+                (receiver, args) -> null);
         // Force-dark is a display feature with no headless effect.
         builtin("Landroid/view/View;->setForceDarkAllowed(Z)V",
                 (receiver, args) -> null);

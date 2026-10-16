@@ -4120,6 +4120,7 @@ public final class FixtureDex {
 
         // layoutDemo(): fresh views have no layout requested (0); after
         // requestLayout they do (1): returns first * 10 + second = 1.
+        // requestApplyInsets dispatches silently in between.
         MutableMethodImplementation layoutImpl = new MutableMethodImplementation(3);
         layoutImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
                 builder.internTypeReference("Landroid/view/View;")));
@@ -4139,6 +4140,10 @@ public final class FixtureDex {
                         Collections.<String>emptyList(), "V"))));
         layoutImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
                 0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "requestApplyInsets",
+                        Collections.<String>emptyList(), "V"))));
+        layoutImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/view/View;", "isLayoutRequested",
                         Collections.<String>emptyList(), "Z"))));
         layoutImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
@@ -4149,6 +4154,35 @@ public final class FixtureDex {
                 Collections.<ImmutableMethodParameter>emptyList(), "I",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), layoutImpl);
+
+        // insetsAnimDemo(): animation callbacks install silently, never fire.
+        MutableMethodImplementation insetsAnimImpl = new MutableMethodImplementation(2);
+        insetsAnimImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/WindowInsetsAnimation$Callback;")));
+        insetsAnimImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        insetsAnimImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 0));
+        insetsAnimImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 0, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/WindowInsetsAnimation$Callback;", "<init>",
+                        Collections.singletonList("I"), "V"))));
+        insetsAnimImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Landroid/view/View;")));
+        insetsAnimImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        insetsAnimImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        insetsAnimImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "setWindowInsetsAnimationCallback",
+                        Collections.singletonList(
+                                "Landroid/view/WindowInsetsAnimation$Callback;"),
+                        "V"))));
+        insetsAnimImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod insetsAnimDemo = builder.internMethod(HELLO, "insetsAnimDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), insetsAnimImpl);
 
         // forceDarkDemo(): setForceDarkAllowed is a silent no-op.
         MutableMethodImplementation forceDarkImpl = new MutableMethodImplementation(2);
@@ -4211,7 +4245,7 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), windowFocusImpl);
 
-        // focusCheckDemo(): window focus is held, view focus never is.
+        // focusCheckDemo(): window focus held, view/subtree focus never is.
         MutableMethodImplementation focusCheckImpl = new MutableMethodImplementation(3);
         focusCheckImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
                 builder.internTypeReference("Landroid/view/View;")));
@@ -4225,10 +4259,17 @@ public final class FixtureDex {
                         "Landroid/view/View;", "hasWindowFocus",
                         Collections.<String>emptyList(), "Z"))));
         focusCheckImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
-        focusCheckImpl.addInstruction(new BuilderInstruction22b(Opcode.MUL_INT_LIT8, 1, 1, 10));
+        focusCheckImpl.addInstruction(new BuilderInstruction22b(Opcode.MUL_INT_LIT8, 1, 1, 100));
         focusCheckImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
                 0, 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/view/View;", "isFocused",
+                        Collections.<String>emptyList(), "Z"))));
+        focusCheckImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        focusCheckImpl.addInstruction(new BuilderInstruction22b(Opcode.MUL_INT_LIT8, 2, 2, 10));
+        focusCheckImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 1, 1, 2));
+        focusCheckImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/view/View;", "hasFocus",
                         Collections.<String>emptyList(), "Z"))));
         focusCheckImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
         focusCheckImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 1, 1, 2));
@@ -4584,6 +4625,31 @@ public final class FixtureDex {
                 Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), themeImpl);
+
+        // compCbDemo(): component callback (un)registration is a no-op.
+        MutableMethodImplementation compCbImpl = new MutableMethodImplementation(2);
+        compCbImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/app/Activity;")));
+        compCbImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        compCbImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/app/Activity;", "<init>",
+                        Collections.<String>emptyList(), "V"))));
+        compCbImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/Context;", "registerComponentCallbacks",
+                        Collections.singletonList("Landroid/content/ComponentCallbacks;"),
+                        "V"))));
+        compCbImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Landroid/content/Context;", "unregisterComponentCallbacks",
+                        Collections.singletonList("Landroid/content/ComponentCallbacks;"),
+                        "V"))));
+        compCbImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod compCbDemo = builder.internMethod(HELLO, "compCbDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), compCbImpl);
 
         // resColorDemo(): unread resource colors read 0, both overloads.
         MutableMethodImplementation resColorImpl = new MutableMethodImplementation(4);
@@ -5042,11 +5108,11 @@ public final class FixtureDex {
                         touchModeDemo,
                         willNotDrawDemo, focusableDemo, a11yImportantDemo, a11yDelegateDemo,
                         dragDemo, getClassDemo, getClassHostDemo, subDemo, layoutDemo,
-                        forceDarkDemo, windowFocusDemo, focusCheckDemo, translationDemo, stackDemo, traceDemo,
+                        insetsAnimDemo, forceDarkDemo, windowFocusDemo, focusCheckDemo, translationDemo, stackDemo, traceDemo,
                         retainedDemo, bundleDemo, bundleIntDemo, applicationDemo, intentDemo,
                         intentExtrasDemo, iterableDemo, entryDemo, classPrimDemo,
                         resolverDemo, settingsUriDemo, contentObserverDemo, settingsFloatDemo,
-                        resolverObsDemo, themeDemo, resColorDemo, fillFloatDemo,
+                        resolverObsDemo, themeDemo, resColorDemo, compCbDemo, fillFloatDemo,
                         hostFillDemo, sysServiceDemo, a11yDemo, a11yEnabledDemo, sortDemo,
                         autofillDemo, autofillCbDemo,
                         importantDemo, captureDemo, clipboardDemo, treeDemo, viewConfigDemo,

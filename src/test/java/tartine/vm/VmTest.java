@@ -534,6 +534,12 @@ class VmTest {
     }
 
     @Test
+    void insetsAnimationIgnores() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "insetsAnimDemo"));
+    }
+
+    @Test
     void forceDarkIgnores() {
         interpreter.setFramework(framework());
         assertNotNull(interpreter.call(FixtureDex.HELLO, "forceDarkDemo"));
@@ -637,6 +643,12 @@ class VmTest {
     }
 
     @Test
+    void componentCallbacksIgnore() {
+        interpreter.setFramework(framework());
+        assertNotNull(interpreter.call(FixtureDex.HELLO, "compCbDemo"));
+    }
+
+    @Test
     void resourceColorsReadZero() {
         interpreter.setFramework(framework());
         assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "resColorDemo"));
@@ -665,7 +677,7 @@ class VmTest {
     @Test
     void viewFocusNeverHeld() {
         interpreter.setFramework(framework());
-        assertEquals(Integer.valueOf(10),
+        assertEquals(Integer.valueOf(100),
                 interpreter.call(FixtureDex.HELLO, "focusCheckDemo"));
     }
 
@@ -1200,6 +1212,12 @@ class VmTest {
                 Collections.<FwIndex.FwField>emptyList(),
                 Collections.<String, Object>emptyMap()));
         index.put(new FwClass("Landroid/content/res/Configuration;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/view/WindowInsetsAnimation$Callback;",
+                "Ljava/lang/Object;",
                 Collections.<String>emptyList(),
                 Collections.<FwIndex.FwMethod>emptyList(),
                 Collections.<FwIndex.FwField>emptyList(),
