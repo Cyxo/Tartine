@@ -14,6 +14,8 @@ dependencies {
     implementation 'org.smali:dexlib2:2.5.2'
     implementation 'com.google.guava:guava:27.1-android'
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    // Real Java implementations of android.* (generated skeletons + behavior).
+    implementation project(':framework')
     // Desktop windowing (GLFW) + GL for the GUI step (BSD-3-Clause).
     def lwjglVersion = '3.4.3'
     for (name in ['lwjgl', 'lwjgl-glfw', 'lwjgl-opengl']) {
@@ -53,3 +55,15 @@ tasks.register('writeClasspath') {
                 .findAll { it.name.endsWith('.jar') }.join('\n') + '\n'
     }
 }
+
+// Regenerate the framework module's android.* skeletons from the local
+// android.jar (additive by default; --force overwrites). Committed output.
+tasks.register('fwGen', JavaExec) {
+    group = 'framework'
+    description = 'Emit framework skeletons (UOE bodies) into framework/src/main/java'
+    mainClass = 'tartine.fw.SkeletonGen'
+    classpath = sourceSets.main.runtimeClasspath
+    args = [layout.projectDirectory.dir('framework/src/main/java').asFile.path]
+    environment 'ANDROID_HOME': (System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT') ?: '')
+}
+

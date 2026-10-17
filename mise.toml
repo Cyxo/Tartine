@@ -44,3 +44,8 @@ depends = ["build"]
 usage = 'arg "<dex>" help="Dex file to dump"'
 run = "bash scripts/dump.sh"
 run_windows = "pwsh -File scripts/dump.ps1"
+
+[tasks.'fw-gen']
+description = "Regenerate framework skeletons from the local android.jar (adds classes not yet on disk)"
+depends = ["build"]
+run = "gradle fwGen"

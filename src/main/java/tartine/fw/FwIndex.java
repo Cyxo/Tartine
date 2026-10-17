@@ -26,21 +26,43 @@ public final class FwIndex {
         public final String name;
         public final List<String> params;
         public final String ret;
+        /** Classfile access flags (ACC_* bits); 0 for hand-authored entries. */
+        public final int access;
+        /** Method-level generic Signature string, or null (erasure only). */
+        public final String signature;
 
         public FwMethod(String name, List<String> params, String ret) {
+            this(name, params, ret, 0, null);
+        }
+
+        public FwMethod(String name, List<String> params, String ret, int access) {
+            this(name, params, ret, access, null);
+        }
+
+        public FwMethod(String name, List<String> params, String ret, int access,
+                String signature) {
             this.name = name;
             this.params = Collections.unmodifiableList(new ArrayList<>(params));
             this.ret = ret;
+            this.access = access;
+            this.signature = signature;
         }
     }
 
     public static final class FwField {
         public final String name;
         public final String type;
+        /** Classfile access flags (ACC_* bits); 0 for hand-authored entries. */
+        public final int access;
 
         public FwField(String name, String type) {
+            this(name, type, 0);
+        }
+
+        public FwField(String name, String type, int access) {
             this.name = name;
             this.type = type;
+            this.access = access;
         }
     }
 
@@ -53,15 +75,33 @@ public final class FwIndex {
         public final List<FwField> fields;
         /** True (ConstantValue) static finals by field name. */
         public final Map<String, Object> constants;
+        /** Classfile access flags (ACC_* bits); 0 for hand-authored entries. */
+        public final int access;
+        /** Class-level generic Signature string, or null (hand-authored). */
+        public final String signature;
 
         public FwClass(String descriptor, String superclass, List<String> interfaces,
                 List<FwMethod> methods, List<FwField> fields, Map<String, Object> constants) {
+            this(descriptor, superclass, interfaces, methods, fields, constants, 0, null);
+        }
+
+        public FwClass(String descriptor, String superclass, List<String> interfaces,
+                List<FwMethod> methods, List<FwField> fields, Map<String, Object> constants,
+                int access) {
+            this(descriptor, superclass, interfaces, methods, fields, constants, access, null);
+        }
+
+        public FwClass(String descriptor, String superclass, List<String> interfaces,
+                List<FwMethod> methods, List<FwField> fields, Map<String, Object> constants,
+                int access, String signature) {
             this.descriptor = descriptor;
             this.superclass = superclass;
             this.interfaces = Collections.unmodifiableList(new ArrayList<>(interfaces));
             this.methods = Collections.unmodifiableList(new ArrayList<>(methods));
             this.fields = Collections.unmodifiableList(new ArrayList<>(fields));
             this.constants = Collections.unmodifiableMap(new HashMap<>(constants));
+            this.access = access;
+            this.signature = signature;
         }
 
         public boolean hasMethod(String name, List<String> params, String ret) {
@@ -192,7 +232,7 @@ public final class FwIndex {
                     throw new IOException("bad constant tag");
             }
         }
-        u2(buf); // access flags
+        int classAccess = u2(buf);
         String type = className(pool, u2(buf));
         int superIndex = u2(buf);
         String superclass = superIndex == 0 ? null : className(pool, superIndex);
@@ -205,7 +245,7 @@ public final class FwIndex {
         Map<String, Object> constants = new HashMap<>();
         int fieldCount = u2(buf);
         for (int i = 0; i < fieldCount; i++) {
-            u2(buf); // access
+            int access = u2(buf);
             String name = utf8(pool, u2(buf));
             String descriptor = utf8(pool, u2(buf));
             int attrCount = u2(buf);
@@ -218,25 +258,44 @@ public final class FwIndex {
                     skip(buf, length);
                 }
             }
-            fields.add(new FwField(name, descriptor));
+            fields.add(new FwField(name, descriptor, access));
         }
         List<FwMethod> methods = new ArrayList<>();
         int methodCount = u2(buf);
         for (int i = 0; i < methodCount; i++) {
-            u2(buf); // access
+            int access = u2(buf);
             String name = utf8(pool, u2(buf));
             String descriptor = utf8(pool, u2(buf));
+            String methodSignature = null;
             int attrCount = u2(buf);
             for (int a = 0; a < attrCount; a++) {
-                u2(buf); // attr name
-                skip(buf, u4(buf));
+                String attrName = utf8(pool, u2(buf));
+                int attrLength = u4(buf);
+                if (attrName.equals("Signature") && attrLength == 2) {
+                    methodSignature = utf8(pool, u2(buf));
+                } else {
+                    skip(buf, attrLength);
+                }
             }
             int open = descriptor.indexOf('(');
             methods.add(new FwMethod(name, Descriptors.splitTypes(
                     descriptor.substring(open + 1, descriptor.indexOf(')', open))),
-                    descriptor.substring(descriptor.indexOf(')') + 1)));
+                    descriptor.substring(descriptor.indexOf(')') + 1), access,
+                    methodSignature));
         }
-        return new FwClass(type, superclass, interfaces, methods, fields, constants);
+        String signature = null;
+        int classAttrCount = u2(buf);
+        for (int i = 0; i < classAttrCount; i++) {
+            String attrName = utf8(pool, u2(buf));
+            int length = u4(buf);
+            if (attrName.equals("Signature") && length == 2) {
+                signature = utf8(pool, u2(buf));
+            } else {
+                skip(buf, length);
+            }
+        }
+        return new FwClass(type, superclass, interfaces, methods, fields, constants,
+                classAccess, signature);
     }
 
     private static String className(Object[] pool, int index) throws IOException {
