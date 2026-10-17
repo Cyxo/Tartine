@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.jf.dexlib2.AccessFlags;
-import org.jf.dexlib2.iface.ClassDef;
-import org.jf.dexlib2.iface.Field;
-import org.jf.dexlib2.iface.Method;
+import com.android.tools.smali.dexlib2.AccessFlags;
+import com.android.tools.smali.dexlib2.iface.ClassDef;
+import com.android.tools.smali.dexlib2.iface.Field;
+import com.android.tools.smali.dexlib2.iface.Method;
 
 /** One class in our own model. */
 public final class DexClass {

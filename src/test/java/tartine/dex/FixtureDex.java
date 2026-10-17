@@ -8,39 +8,39 @@ import java.util.Map;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.jf.dexlib2.AccessFlags;
-import org.jf.dexlib2.Opcode;
-import org.jf.dexlib2.Opcodes;
-import org.jf.dexlib2.builder.Label;
-import org.jf.dexlib2.builder.MutableMethodImplementation;
-import org.jf.dexlib2.builder.Label;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction10x;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction11n;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction11x;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction12x;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction21c;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction21ih;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction21lh;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction21s;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction21s;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction21t;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction22b;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction22c;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction23x;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction31i;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction31t;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction35c;
-import org.jf.dexlib2.builder.instruction.BuilderInstruction3rc;
-import org.jf.dexlib2.builder.instruction.BuilderArrayPayload;
-import org.jf.dexlib2.builder.instruction.BuilderPackedSwitchPayload;
-import org.jf.dexlib2.immutable.ImmutableMethodParameter;
-import org.jf.dexlib2.immutable.reference.ImmutableFieldReference;
-import org.jf.dexlib2.immutable.reference.ImmutableMethodReference;
-import org.jf.dexlib2.writer.builder.BuilderFieldReference;
-import org.jf.dexlib2.writer.builder.BuilderMethod;
-import org.jf.dexlib2.writer.builder.BuilderMethodReference;
-import org.jf.dexlib2.writer.builder.DexBuilder;
-import org.jf.dexlib2.writer.io.FileDataStore;
+import com.android.tools.smali.dexlib2.AccessFlags;
+import com.android.tools.smali.dexlib2.Opcode;
+import com.android.tools.smali.dexlib2.Opcodes;
+import com.android.tools.smali.dexlib2.builder.Label;
+import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation;
+import com.android.tools.smali.dexlib2.builder.Label;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction10x;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction11n;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction11x;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction12x;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21c;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21ih;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21lh;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21s;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21s;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21t;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction22b;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction22c;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction23x;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction31i;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction31t;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction35c;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction3rc;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderArrayPayload;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderPackedSwitchPayload;
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter;
+import com.android.tools.smali.dexlib2.immutable.reference.ImmutableFieldReference;
+import com.android.tools.smali.dexlib2.immutable.reference.ImmutableMethodReference;
+import com.android.tools.smali.dexlib2.writer.builder.BuilderFieldReference;
+import com.android.tools.smali.dexlib2.writer.builder.BuilderMethod;
+import com.android.tools.smali.dexlib2.writer.builder.BuilderMethodReference;
+import com.android.tools.smali.dexlib2.writer.builder.DexBuilder;
+import com.android.tools.smali.dexlib2.writer.io.FileDataStore;
 
 /**
  * Shared dexlib2-written fixture: {@code Ltest/Hello;} exercising calls,
@@ -93,17 +93,17 @@ public final class FixtureDex {
         builder.internClassDef(COUNTER, AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "Counter.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Collections.singletonList(counterInit));
         builder.internClassDef(BASE, AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "Base.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Arrays.asList(baseInit, baseWho));
         builder.internClassDef(SUB, AccessFlags.PUBLIC.getValue(), BASE,
                 Collections.<String>emptyList(), "Sub.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Collections.singletonList(subInit));
 
         // Sub2/Orphan extend framework types (exist only in a framework index).
@@ -120,7 +120,7 @@ public final class FixtureDex {
         builder.internClassDef(SUB2, AccessFlags.PUBLIC.getValue(), FW_BASE,
                 Collections.<String>emptyList(), "Sub2.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Collections.singletonList(sub2Init));
         MutableMethodImplementation orphanInitImpl = new MutableMethodImplementation(1);
         orphanInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
@@ -133,7 +133,7 @@ public final class FixtureDex {
         builder.internClassDef(ORPHAN, AccessFlags.PUBLIC.getValue(), FW_GHOST,
                 Collections.<String>emptyList(), "Orphan.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Collections.singletonList(orphanInit));
 
         // Boom: a dex-defined throwable (stays a model object, unlike
@@ -144,7 +144,7 @@ public final class FixtureDex {
                 "Ljava/lang/Exception;",
                 Collections.<String>emptyList(), "Boom.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Collections.singletonList(boomInit));
 
         // Cmp: a dex-defined Comparator comparing Integers by subtraction.
@@ -176,7 +176,7 @@ public final class FixtureDex {
                 "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "Cmp.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Arrays.asList(cmpInit, cmpCompare));
 
         // SubSet: a dex subclass of host TreeSet with no instance state,
@@ -220,7 +220,7 @@ public final class FixtureDex {
                 "Ljava/util/TreeSet;",
                 Collections.<String>emptyList(), "SubSet.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Arrays.asList(subSetInit, subSetGetSize, subSetSize));
 
         Map<String, BuilderMethod> demos = new HashMap<>();
@@ -233,7 +233,7 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "Hello.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Arrays.asList(demos.get("init"), demos.get("id"), demos.get("twice"), demos.get("greet"), demos.get("make"), demos.get("sum"), demos.get("len"), demos.get("safely"), demos.get("clinit"), demos.get("boot"),
                         demos.get("nullCast"), demos.get("castOk"), demos.get("castFail"), demos.get("cmpTiny"), demos.get("sb"), demos.get("throwCatch"), demos.get("intBox"), demos.get("arrayCopy"),
                         demos.get("appendableCast"), demos.get("badCast"), demos.get("stringOps"), demos.get("mathMax"), demos.get("missing"), demos.get("vis"), demos.get("sdk"), demos.get("fwCast"),
@@ -981,21 +981,21 @@ public final class FixtureDex {
                         | AccessFlags.ABSTRACT.getValue(),
                 "Ljava/lang/Object;", Collections.<String>emptyList(), "Lazy.kt",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderMethod>emptyList());
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderMethod>emptyList());
         builder.internClassDef("Lkotlin/LazyKt;",
                 AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "LazyKt.kt",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderMethod>emptyList());
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderMethod>emptyList());
         builder.internClassDef("Lkotlin/jvm/functions/Function0;",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.INTERFACE.getValue()
                         | AccessFlags.ABSTRACT.getValue(),
                 "Ljava/lang/Object;", Collections.<String>emptyList(), "Function0.kt",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderMethod>emptyList());
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderMethod>emptyList());
         MutableMethodImplementation fnInitImpl = new MutableMethodImplementation(1);
         fnInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
                 objectInit));
@@ -1014,7 +1014,7 @@ public final class FixtureDex {
         builder.internClassDef("Ltest/Fn;", AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.singletonList("Lkotlin/jvm/functions/Function0;"), "Fn.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Arrays.asList(fnInit, fnInvoke));
 
         // lazyDemo(): lazy { 99 }.getValue().
@@ -1086,7 +1086,7 @@ public final class FixtureDex {
         builder.internClassDef("Ltest/Job;", AccessFlags.PUBLIC.getValue(), "Ljava/lang/Object;",
                 Collections.singletonList("Ljava/lang/Runnable;"), "Job.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Arrays.asList(jobInit, jobRun));
 
         // SubJob: inherits run() from Job (host task dispatch walks up).
@@ -1095,7 +1095,7 @@ public final class FixtureDex {
         builder.internClassDef("Ltest/SubJob;", AccessFlags.PUBLIC.getValue(), "Ltest/Job;",
                 Collections.<String>emptyList(), "SubJob.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Collections.singletonList(subJobInit));
 
         // executorDemo(): pool.execute(new Job()); return Hello.flag.
@@ -1159,7 +1159,7 @@ public final class FixtureDex {
                 "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "MyHandler.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Arrays.asList(handlerInit, handleMessage));
 
         // postDemo(): handler.post(new Job()) runs inline; return flag.
@@ -1638,7 +1638,7 @@ public final class FixtureDex {
         builder.internClassDef("Ltest/Color;", AccessFlags.PUBLIC.getValue(), "Ljava/lang/Enum;",
                 Collections.<String>emptyList(), "Color.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Arrays.asList(colorInit, colorClinit));
 
         // colorCmp(): RED.compareTo(BLUE).
@@ -1751,7 +1751,7 @@ public final class FixtureDex {
                 "Ljava/lang/Object;",
                 Collections.<String>emptyList(), "FlagMap.java",
                 Collections.emptySet(),
-                Collections.<org.jf.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Arrays.asList(flagInit, flagGet, flagContains, flagPut));
 
         // mapDefaults(): getOrDefault("k", 99) on a dex-implemented map.

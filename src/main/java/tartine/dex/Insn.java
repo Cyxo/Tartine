@@ -4,19 +4,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.jf.dexlib2.iface.instruction.FiveRegisterInstruction;
-import org.jf.dexlib2.iface.instruction.Instruction;
-import org.jf.dexlib2.iface.instruction.NarrowLiteralInstruction;
-import org.jf.dexlib2.iface.instruction.OffsetInstruction;
-import org.jf.dexlib2.iface.instruction.OneRegisterInstruction;
-import org.jf.dexlib2.iface.instruction.ReferenceInstruction;
-import org.jf.dexlib2.iface.instruction.RegisterRangeInstruction;
-import org.jf.dexlib2.iface.instruction.SwitchElement;
-import org.jf.dexlib2.iface.instruction.SwitchPayload;
-import org.jf.dexlib2.iface.instruction.ThreeRegisterInstruction;
-import org.jf.dexlib2.iface.instruction.TwoRegisterInstruction;
-import org.jf.dexlib2.iface.instruction.WideLiteralInstruction;
-import org.jf.dexlib2.iface.instruction.formats.ArrayPayload;
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction;
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction;
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction;
+import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction;
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction;
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction;
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction;
+import com.android.tools.smali.dexlib2.iface.instruction.SwitchElement;
+import com.android.tools.smali.dexlib2.iface.instruction.SwitchPayload;
+import com.android.tools.smali.dexlib2.iface.instruction.ThreeRegisterInstruction;
+import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction;
+import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.ArrayPayload;
 
 /**
  * One Dalvik instruction in our own model, decoupled from dexlib2 types.

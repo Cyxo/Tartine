@@ -11,9 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class DexLibPresenceTest {
     @Test
     void dexlib2TypesLink() {
-        assertEquals("org.jf.dexlib2.DexFileFactory",
-                org.jf.dexlib2.DexFileFactory.class.getName());
-        assertEquals("org.jf.dexlib2.Opcodes",
-                org.jf.dexlib2.Opcodes.class.getName());
+        assertEquals("com.android.tools.smali.dexlib2.DexFileFactory",
+                com.android.tools.smali.dexlib2.DexFileFactory.class.getName());
+        assertEquals("com.android.tools.smali.dexlib2.Opcodes",
+                com.android.tools.smali.dexlib2.Opcodes.class.getName());
     }
 }

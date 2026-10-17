@@ -8,11 +8,12 @@ version = '0.1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    google() // com.android.tools.smali:* (dexlib2 fork) publishes here only
 }
 
 dependencies {
-    implementation 'org.smali:dexlib2:2.5.2'
-    implementation 'com.google.guava:guava:27.1-android'
+    implementation 'com.android.tools.smali:smali-dexlib2:3.0.10'
+    implementation 'com.google.guava:guava:31.1-android' // dexlib2 3.0.10 requires >= 31.1
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
     // Real Java implementations of android.* (generated skeletons + behavior).
     implementation project(':framework')

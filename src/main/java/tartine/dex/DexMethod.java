@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.jf.dexlib2.iface.ExceptionHandler;
-import org.jf.dexlib2.iface.ClassDef;
-import org.jf.dexlib2.iface.Method;
-import org.jf.dexlib2.iface.MethodImplementation;
-import org.jf.dexlib2.iface.MethodParameter;
-import org.jf.dexlib2.iface.TryBlock;
-import org.jf.dexlib2.iface.instruction.Instruction;
+import com.android.tools.smali.dexlib2.iface.ExceptionHandler;
+import com.android.tools.smali.dexlib2.iface.ClassDef;
+import com.android.tools.smali.dexlib2.iface.Method;
+import com.android.tools.smali.dexlib2.iface.MethodImplementation;
+import com.android.tools.smali.dexlib2.iface.MethodParameter;
+import com.android.tools.smali.dexlib2.iface.TryBlock;
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction;
 
 /** One method in our own model. */
 public final class DexMethod {

@@ -7,24 +7,25 @@ the runtime classpath). `apks/` (gitignored) holds local test fixtures
 only. Build/test toolchain pins live in `mise.toml` (Java, Gradle) and
 `build.gradle` (JUnit).
 
-## Runtime path (via Gradle / Maven Central)
+## Runtime path (via Gradle / Central + Google Maven)
 
 | Artifact | Version | Role | License |
 |---|---|---|---|
-| `org.smali:dexlib2` | 2.5.2 | DEX parse model (frontend for Step 2) | BSD 3-Clause |
-| `com.google.guava:guava` (android flavor) | 27.1-android | dexlib2 runtime dep | Apache-2.0 |
+| `com.android.tools.smali:smali-dexlib2` | 3.0.10 | DEX parse model (frontend for Step 2) | BSD 3-Clause |
+| `com.google.guava:guava` (android flavor) | 31.1-android | dexlib2 runtime dep | Apache-2.0 |
 | `com.google.code.findbugs:jsr305` | 3.0.2 | dexlib2 runtime dep (annotations) | Apache-2.0 |
 | `org.lwjgl:lwjgl` + `lwjgl-glfw` + `lwjgl-opengl` (+ natives for windows/linux/macos/macos-arm64) | 3.4.3 | Desktop windowing (GLFW) + GL context for the GUI step | BSD-3-Clause |
 
-dexlib2 2.5.2 reads DEX up to version 039 (verified: fixture `classes*.dex`
-are 039 and disassemble cleanly). Newer DEX (040+) exists in the Google-
-maintained smali fork. Fact-check 2026-10-17 (correcting this file and
-the 2026-10 audit both): the fork DOES publish Maven artifacts, but only
-on GOOGLE Maven — `com.android.tools.smali:smali-dexlib2` (latest 3.0.10;
-package rename `org.jf` → `com.android.tools.smali`), not Maven Central,
-where `org.smali:dexlib2` tops out at 2.5.2 (last update 2021). Migrate
-when a DEX 040+ fixture appears (needs the `google()` repository; verify
-the fork's LICENSE file at adoption time).
+dexlib2 migrated 2026-10-17 from `org.smali:dexlib2` 2.5.2 (Central, `org.jf.*`
+namespace) to the Google-maintained fork `com.android.tools.smali:smali-dexlib2`
+3.0.10 (`com.android.tools.smali.*` namespace; requires the `google()`
+repository). License verified at adoption time via the POM: BSD 3-Clause.
+The fork reads newer DEX than 2.5.2's ceiling of 039; suite ran green with
+byte-identical fixture output after the switch (pure namespace/coordinate
+migration). Fact-check history 2026-10-17 (correcting this file and the
+2026-10 audit both): the fork DOES publish Maven artifacts, but only on GOOGLE
+Maven, not Maven Central, where `org.smali:dexlib2` tops out at 2.5.2 (last
+update 2021).
 
 ## Test path (via Gradle / Maven Central)
 

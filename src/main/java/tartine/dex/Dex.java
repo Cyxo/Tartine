@@ -5,11 +5,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jf.dexlib2.DexFileFactory;
-import org.jf.dexlib2.Opcodes;
-import org.jf.dexlib2.dexbacked.DexBackedDexFile;
-import org.jf.dexlib2.iface.ClassDef;
-import org.jf.dexlib2.iface.DexFile;
+import com.android.tools.smali.dexlib2.DexFileFactory;
+import com.android.tools.smali.dexlib2.Opcodes;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
+import com.android.tools.smali.dexlib2.iface.ClassDef;
+import com.android.tools.smali.dexlib2.iface.DexFile;
 
 /**
  * Loads a {@code classes.dex} file into our own model via dexlib2.
