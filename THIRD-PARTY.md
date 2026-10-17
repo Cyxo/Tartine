@@ -17,8 +17,14 @@ only. Build/test toolchain pins live in `mise.toml` (Java, Gradle) and
 | `org.lwjgl:lwjgl` + `lwjgl-glfw` + `lwjgl-opengl` (+ natives for windows/linux/macos/macos-arm64) | 3.4.3 | Desktop windowing (GLFW) + GL context for the GUI step | BSD-3-Clause |
 
 dexlib2 2.5.2 reads DEX up to version 039 (verified: fixture `classes*.dex`
-are 039 and disassemble cleanly). DEX 040+ needs smali 3.x, which publishes
-no Maven artifacts — revisit if a fixture requires it.
+are 039 and disassemble cleanly). Newer DEX (040+) exists in the Google-
+maintained smali fork. Fact-check 2026-10-17 (correcting this file and
+the 2026-10 audit both): the fork DOES publish Maven artifacts, but only
+on GOOGLE Maven — `com.android.tools.smali:smali-dexlib2` (latest 3.0.10;
+package rename `org.jf` → `com.android.tools.smali`), not Maven Central,
+where `org.smali:dexlib2` tops out at 2.5.2 (last update 2021). Migrate
+when a DEX 040+ fixture appears (needs the `google()` repository; verify
+the fork's LICENSE file at adoption time).
 
 ## Test path (via Gradle / Maven Central)
 
@@ -47,6 +53,9 @@ java -cp "tools/baksmali-2.5.2.jar;tools/util-2.5.2.jar;tools/jcommander-1.64.ja
 
 ## Deferred (do not include yet)
 
+- **`com.android.tools.build:apksig`** (Google Maven only, Apache-2.0;
+  stable 8.13.2 as of 2026-10-17) — APK signature verification (v2/v3,
+  v1 fallback) for the future install/daemon flow.
 - **dex2jar** (Apache-2.0) / **Enjarify** (Apache-2.0, pure Python 3,
   archived; successor `Storyyeller/enjarify`) — translation oracles.
   Both translated the Step 3 fixture cleanly (fetch on demand, scratch-only;
