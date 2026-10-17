@@ -1,5 +1,5 @@
 [tools]
-java = "corretto-18.0.2.9.1"
+java = "corretto-27.0.0.35.1"
 gradle = "9.8.1"
 powershell = { version = "7.6.6", os = ["windows"] }
 

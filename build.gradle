@@ -30,9 +30,9 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
 }
 
-// Java 14 language/API level on every compile; never use source/target instead.
+// Java 21 language/API level on every compile; never use source/target instead.
 tasks.withType(JavaCompile).configureEach {
-    options.release = 14
+    options.release = 21
 }
 
 tasks.named('test', Test) {
