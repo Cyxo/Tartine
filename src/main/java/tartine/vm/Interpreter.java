@@ -1108,7 +1108,8 @@ public final class Interpreter {
                             pc++;
                             break;
                         }
-                        throw gapMessage(ref.definingClass, ref, insn.reference, resolved);
+                        throw gapMessage(ref.definingClass, ref, insn.reference,
+                                resolved, null);
                     }
                     case "invoke-direct":
                     case "invoke-direct-range":
@@ -1272,8 +1273,9 @@ public final class Interpreter {
                                 break;
                             }
                         }
+                        Object[] refArgs = readRefArgs(ref, g, 1, regs);
                         ReflectResult reflected = reflectCall(receiver, ref,
-                                readRefArgs(ref, g, 1, regs), false);
+                                refArgs, false);
                         if (reflected.hit) {
                             if (ref.returnType.equals("V")) {
                                 pending = null;
@@ -1285,7 +1287,15 @@ public final class Interpreter {
                             pc++;
                             break;
                         }
-                        throw gapMessage(ref.definingClass, ref, insn.reference, resolved);
+                        Outcome fw = frameworkDispatch(receiver, ref, refArgs);
+                        if (fw.handled) {
+                            pending = fw.hasValue ? fw.value : null;
+                            hasPending = fw.hasValue;
+                            pc++;
+                            break;
+                        }
+                        throw gapMessage(ref.definingClass, ref, insn.reference,
+                                resolved, receiver);
                     }
                     default:
                         throw new VmException("unsupported opcode: " + op);
@@ -1526,8 +1536,14 @@ public final class Interpreter {
         if (framework == null) {
             return null;
         }
-        if (hostClass(descriptor) != null) {
-            return null;  // host enums carry real behavior; reflection handles them
+        // Host-owned java.* enums carry real behavior (TimeUnit.toNanos
+        // etc.): reflection serves them. Android module enums stay
+        // placeholders until stub-jar constant order (alpha, not device
+        // declaration order) is repaired, so serving judges by the
+        // registry until then.
+        if (hostClass(descriptor) != null
+                && descriptor.startsWith("Ljava/")) {
+            return null;
         }
         FwIndex.FwClass fw = framework.find(descriptor);
         if (fw == null || !"Ljava/lang/Enum;".equals(fw.superclass)) {
@@ -1563,7 +1579,10 @@ public final class Interpreter {
         if (framework == null) {
             return null;
         }
-        if (hostClass(descriptor) != null) {
+        // Host-owned java.* enums reflect (same rule as above); android
+        // module enums stay placeholders until ordinals are faithful.
+        if (hostClass(descriptor) != null
+                && descriptor.startsWith("Ljava/")) {
             return null;
         }
         FwIndex.FwClass fw = framework.find(descriptor);
@@ -1728,12 +1747,25 @@ public final class Interpreter {
     }
 
     private Object field(Object target, String fieldReference) {
-        VmObject object = vmObject(target, fieldReference);
+        if (target == null) {
+            throw new NullPointerException("null target: " + fieldReference);
+        }
+        if (!(target instanceof VmObject)) {
+            return hostField(target, FieldRef.parse(fieldReference), true, null);
+        }
+        VmObject object = (VmObject) target;
         FieldRef ref = FieldRef.parse(fieldReference);
         return instanceField(object, ref.definingClass, ref.name);
     }
 
     private void field(Object target, String fieldReference, Object value) {
+        if (target == null) {
+            throw new NullPointerException("null target: " + fieldReference);
+        }
+        if (!(target instanceof VmObject)) {
+            hostField(target, FieldRef.parse(fieldReference), false, value);
+            return;
+        }
         vmObject(target, fieldReference).putField(fieldKey(fieldReference), value);
     }
 
@@ -2232,8 +2264,190 @@ public final class Interpreter {
     private final Map<String, Class<?>> hostClasses = new HashMap<>();
     private final Map<String, Method> hostMethods = new HashMap<>();
 
+    /**
+     * Host-runtime classes a guest may reach reflectively. {@code java.*}
+     * minus the deny list resolves against the live JDK; {@code android.*}
+     * resolves against the framework module (generated skeletons ported
+     * there). Presence is still confirmed by {@link Class#forName}, so
+     * unported android classes simply resolve to nothing.
+     */
     private static boolean isReflectable(String descriptor) {
+        if (descriptor.startsWith("Landroid/")) {
+            return true;
+        }
         return descriptor.startsWith("Ljava/") && !REFLECT_DENY.contains(descriptor);
+    }
+
+    /**
+     * Framework-module dispatch for placeholder receivers: the adapter's
+     * reflective host step (AGENTS.md framework-in-Java (2)). Finds the
+     * receiver's most-derived present framework class, lazily builds a
+     * mirror instance, copies the receiver's mapped state into it
+     * (definingClass-keyed fields), invokes reflectively (guest overrides
+     * already dispatched above; builtins stay ahead), then copies the
+     * mirror's instance fields back so the mapped state stays canonical.
+     * Misses fall through to the gap path unchanged.
+     */
+    private Outcome frameworkDispatch(Object receiver, MethodRef ref,
+            Object[] args) {
+        if (!(receiver instanceof VmObject) || ref.name.equals("<init>")) {
+            return Outcome.MISS;
+        }
+        VmObject object = (VmObject) receiver;
+        Class<?> home = mirrorHome(object);
+        if (home == null) {
+            return Outcome.MISS;
+        }
+        Object mirror = object.host;
+        if (mirror == null || mirror.getClass() != home) {
+            try {
+                mirror = home.getDeclaredConstructor().newInstance();
+            } catch (ReflectiveOperationException | LinkageError
+                    | RuntimeException e) {
+                return Outcome.MISS;
+            }
+            object.host = mirror;
+        }
+        syncFields(object, mirror, true);
+        ReflectResult result = reflectCall(mirror, ref, args, false);
+        if (!result.hit) {
+            return Outcome.MISS;
+        }
+        syncFields(object, mirror, false);
+        if (ref.returnType.equals("V")) {
+            return Outcome.empty();
+        }
+        return Outcome.value(result.value);
+    }
+
+    /**
+     * Most-derived concrete framework class on the receiver's super chain:
+     * dex supers name framework classes that only the module indexes know,
+     * so the walk crosses into FwIndex territory and stops at the first
+     * class the runtime classpath can actually instantiate.
+     */
+    private Class<?> mirrorHome(VmObject object) {
+        String current = object.type.type;
+        int guard = 0;
+        while (current != null && !"Ljava/lang/Object;".equals(current)
+                && guard++ < 64) {
+            DexClass dex = dexes.findClass(current);
+            if (dex != null) {
+                current = dex.superclass;
+                continue;
+            }
+            FwIndex.FwClass fw = framework == null ? null : framework.find(current);
+            if (fw == null) {
+                return null;
+            }
+            Class<?> home = hostClass(current);
+            if (home != null && !home.isInterface() && !home.isEnum()
+                    && !Modifier.isAbstract(home.getModifiers())) {
+                return home;
+            }
+            current = fw.superclass;
+        }
+        return null;
+    }
+
+    /**
+     * Copies instance fields between the mapped receiver (state keys are
+     * {@code L<declaringClass>;.<name>}) and the mirror. {@code forward}
+     * runs before the call; without it the mutated mirror state would
+     * vanish. Reflection failure stays silent: that field is not passable
+     * state and both sides simply won't track it.
+     */
+    private void syncFields(VmObject object, Object mirror, boolean forward) {
+        Class<?> c = mirror.getClass();
+        while (c != null && c != Object.class) {
+            for (java.lang.reflect.Field f : c.getDeclaredFields()) {
+                int mods = f.getModifiers();
+                if (Modifier.isStatic(mods)) {
+                    continue;
+                }
+                String key = "L" + c.getName().replace('.', '/') + ";."
+                        + f.getName();
+                try {
+                    f.setAccessible(true);
+                    if (forward) {
+                        Object value = object.getField(key);
+                        if (value != null) {
+                            f.set(mirror, value);
+                        }
+                    } else {
+                        Object value = f.get(mirror);
+                        if (value != null) {
+                            object.putField(key, value);
+                        }
+                    }
+                } catch (IllegalAccessException ignored) {
+                    // Not passable state; skip the field.
+                }
+            }
+            c = c.getSuperclass();
+        }
+    }
+
+    /**
+     * Reflective instance-field access against host objects (host values
+     * of java.* or ported framework types): iget/iput on a non-mapped
+     * receiver resolves the declared owner and reads/writes the real
+     * field. Guest placeholders never reach here.
+     */
+    private Object hostField(Object target, FieldRef ref, boolean read,
+            Object value) {
+        Class<?> owner = hostClass(ref.definingClass);
+        java.lang.reflect.Field field = null;
+        if (owner == null || !owner.isInstance(target)) {
+            throw new VmException("no host field: " + ref.definingClass
+                    + "." + ref.name + " (" + target.getClass().getTypeName()
+                    + ")");
+        }
+        for (Class<?> c = owner; c != null && c != Object.class
+                && field == null; c = c.getSuperclass()) {
+            try {
+                field = c.getDeclaredField(ref.name);
+            } catch (NoSuchFieldException e) {
+                // keep walking up the chain
+            }
+        }
+        if (field == null) {
+            throw new VmException("no host field: " + ref.definingClass
+                    + "." + ref.name);
+        }
+        try {
+            field.setAccessible(true);
+            if (read) {
+                return field.get(target);
+            }
+            if (value == null && field.getType().isPrimitive()) {
+                value = zeroValue(field.getType());
+            }
+            field.set(target, value);
+            return null;
+        } catch (IllegalAccessException e) {
+            throw new VmException("no host field: " + ref.definingClass
+                    + "." + ref.name, e);
+        }
+    }
+
+    private static Object zeroValue(Class<?> type) {
+        if (type == long.class) {
+            return 0L;
+        }
+        if (type == boolean.class) {
+            return false;
+        }
+        if (type == char.class) {
+            return '\0';
+        }
+        if (type == double.class) {
+            return 0.0d;
+        }
+        if (type == float.class) {
+            return 0.0f;
+        }
+        return 0;
     }
 
     private Class<?> hostClass(String descriptor) {
@@ -2785,6 +2999,10 @@ public final class Interpreter {
                 || dex.superclass.equals("Ljava/lang/Object;")
                 || dexes.findClass(dex.superclass) != null
                 || dex.hasInstanceFields()
+                // Java superclasses only: guest android.* subclasses stay
+                // placeholders, and framework dispatch mirrors from the
+                // ported module instead of re-targeting construction.
+                || !dex.superclass.startsWith("Ljava/")
                 || !isReflectable(dex.superclass)) {
             return ReflectResult.MISS;
         }
@@ -3419,18 +3637,26 @@ public final class Interpreter {
     }
 
     private VmException gapMessage(String defineDesc, MethodRef ref, String reference,
-            Resolved resolved) {
+            Resolved resolved, Object receiver) {
+        // Naming the receiver type pinpoints which placeholder/host shape the
+        // gap actually bit on (identical interface holes differ by dispatch).
+        String suffix = "";
+        if (receiver instanceof VmObject vm) {
+            suffix = " (on " + vm.type.type + ")";
+        } else if (receiver != null) {
+            suffix = " (on " + receiver.getClass().getTypeName() + ")";
+        }
         if (resolved.exists) {
-            return new VmException("unimplemented: " + reference);
+            return new VmException("unimplemented: " + reference + suffix);
         }
         if (resolved.unknownSuper != null && !resolved.unknownSuper.equals(defineDesc)) {
-            return new VmException("unimplemented class: " + resolved.unknownSuper);
+            return new VmException("unimplemented class: " + resolved.unknownSuper + suffix);
         }
         if (dexes.findClass(defineDesc) != null
                 || framework != null && framework.find(defineDesc) != null) {
-            return new VmException("no such method: " + reference);
+            return new VmException("no such method: " + reference + suffix);
         }
-        return new VmException("unimplemented: " + reference);
+        return new VmException("unimplemented: " + reference + suffix);
     }
 
     private static DexMethod findMethod(DexClass cls, MethodRef ref) {
@@ -4786,16 +5012,6 @@ public final class Interpreter {
         builtin("Landroid/view/Window;->setAttributes("
                 + "Landroid/view/WindowManager$LayoutParams;)V",
                 (receiver, args) -> null);
-        // LayoutParams(II) carries real values (read back by window code),
-        // so the ctor stores them instead of no-op'ing per the arg rule.
-        builtin("Landroid/view/ViewGroup$LayoutParams;-><init>(II)V",
-                (receiver, args) -> {
-                    ((VmObject) receiver).putField(
-                            "Landroid/view/ViewGroup$LayoutParams;.width", asInt(args[0]));
-                    ((VmObject) receiver).putField(
-                            "Landroid/view/ViewGroup$LayoutParams;.height", asInt(args[1]));
-                    return null;
-                });
         builtin("Landroid/view/WindowInsetsController;->setSystemBarsAppearance(II)V",
                 (receiver, args) -> null);
         builtin("Landroid/app/Activity;->registerActivityLifecycleCallbacks("
@@ -6148,8 +6364,14 @@ public final class Interpreter {
                     }
                     return out;
                 });
+        // Enum entry points serve both placeholder model objects and real
+        // java.lang.Enum instances: ported module enums allocate real
+        // constants on the host, while guest-only enums stay placeholders.
         builtin("Ljava/lang/Enum;->name()Ljava/lang/String;",
                 (receiver, args) -> {
+                    if (receiver instanceof java.lang.Enum) {
+                        return ((java.lang.Enum<?>) receiver).name();
+                    }
                     Object name = ((VmObject) receiver).getField("Ljava/lang/Enum;.name");
                     if (name == null) {
                         throw new VmException("enum without name");
@@ -6158,6 +6380,11 @@ public final class Interpreter {
                 });
         builtin("Ljava/lang/Enum;->compareTo(Ljava/lang/Enum;)I",
                 (receiver, args) -> {
+                    if (receiver instanceof java.lang.Enum
+                            && args[0] instanceof java.lang.Enum) {
+                        return Integer.compare(((java.lang.Enum<?>) receiver).ordinal(),
+                                ((java.lang.Enum<?>) args[0]).ordinal());
+                    }
                     Object left = ((VmObject) receiver).getField("Ljava/lang/Enum;.ordinal");
                     Object right = ((VmObject) args[0]).getField("Ljava/lang/Enum;.ordinal");
                     if (left == null || right == null) {
@@ -6167,6 +6394,9 @@ public final class Interpreter {
                 });
         builtin("Ljava/lang/Enum;->ordinal()I",
                 (receiver, args) -> {
+                    if (receiver instanceof java.lang.Enum) {
+                        return ((java.lang.Enum<?>) receiver).ordinal();
+                    }
                     Object ordinal = ((VmObject) receiver)
                             .getField("Ljava/lang/Enum;.ordinal");
                     if (ordinal == null) {

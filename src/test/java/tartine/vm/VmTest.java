@@ -300,6 +300,12 @@ class VmTest {
     }
 
     @Test
+    void viewLpRoundTripsFrameworkDispatch() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(30), interpreter.call(FixtureDex.HELLO, "viewLp"));
+    }
+
+    @Test
     void mapDefaultsEmulates() {
         assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "mapDefaults"));
     }
@@ -1409,10 +1415,12 @@ class VmTest {
     }
 
     @Test
-    void frameworkMissingIsUnimplemented() {
-        VmException e = assertThrows(VmException.class,
-                () -> interpreter.call(FixtureDex.HELLO, "vis"));
-        assertTrue(e.getMessage().contains("unimplemented:"), e.getMessage());
+    void frameworkConstantsResolveWithoutIndex() {
+        // Module classes live on the runtime classpath: even with no
+        // framework registry, true jar constants (View.VISIBLE = 0) serve
+        // reflectively. The unimplemented gap now gates behavior, not
+        // class presence.
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "vis"));
     }
 
     @Test

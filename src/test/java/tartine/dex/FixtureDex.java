@@ -245,7 +245,7 @@ public final class FixtureDex {
                         demos.get("boolStr"), demos.get("charStr"), demos.get("weakGet"), demos.get("weakClear"), demos.get("colorCmp"), demos.get("colorName"),
                         demos.get("colorValueOf"), demos.get("mapDefaults"), demos.get("mapPutAbsent"), demos.get("repeatDemo"), demos.get("emptyDemo"),
                         demos.get("strictSqrt"), demos.get("linkedMapDemo"), demos.get("blockedExec"), demos.get("txChain"), demos.get("argbDemo"),
-                        demos.get("parseDemo"), demos.get("activityWindow"), demos.get("viewVis"), demos.get("lpDemo"), demos.get("paintDemo"), demos.get("textPaintDemo"),
+                        demos.get("parseDemo"), demos.get("activityWindow"), demos.get("viewVis"), demos.get("lpDemo"), demos.get("viewLp"), demos.get("paintDemo"), demos.get("textPaintDemo"),
                         demos.get("paintTextDemo"), demos.get("paintFullDemo"), demos.get("typefaceDemo"), demos.get("heuristicDemo"), demos.get("boringDemo"),
                         demos.get("desiredDemo"), demos.get("desiredSpanDemo"), demos.get("spannableDemo"), demos.get("enumValuesDemo"), demos.get("obtainDemo"),
                         demos.get("directionDemo"), demos.get("builderOptsDemo"), demos.get("lineBreakDemo"), demos.get("buildLayoutDemo"),
@@ -355,6 +355,52 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), makeImpl);
         demos.put("make", make);
+
+        // viewLp(): framework-dispatch proof. v = new View(); (placeholder,
+        // argless framework init) v.setLayoutParams(new
+        // ViewGroup.LayoutParams(30, 40)); I = v.getLayoutParams().width —
+        // the dispatch mirrors a real android.view.View, the roundtrip
+        // keeps parameter identity, and the width read is a real host
+        // field access since the ported LayoutParams allocates on the host.
+        MutableMethodImplementation viewLpImpl = new MutableMethodImplementation(6);
+        viewLpImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference("Landroid/view/View;")));
+        viewLpImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        viewLpImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1,
+                0, 0, 0, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference("Landroid/view/View;", "<init>",
+                                Collections.<String>emptyList(), "V"))));
+        viewLpImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Landroid/view/ViewGroup$LayoutParams;")));
+        viewLpImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        viewLpImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 2, 30));
+        viewLpImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 3, 40));
+        viewLpImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 3,
+                1, 2, 3, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference("Landroid/view/ViewGroup$LayoutParams;",
+                                "<init>", Arrays.asList("I", "I"), "V"))));
+        viewLpImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2,
+                0, 1, 0, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference("Landroid/view/View;",
+                                "setLayoutParams",
+                                Collections.singletonList("Landroid/view/ViewGroup$LayoutParams;"),
+                                "V"))));
+        viewLpImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1,
+                0, 0, 0, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference("Landroid/view/View;",
+                                "getLayoutParams",
+                                Collections.<String>emptyList(),
+                                "Landroid/view/ViewGroup$LayoutParams;"))));
+        viewLpImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 4));
+        viewLpImpl.addInstruction(new BuilderInstruction22c(Opcode.IGET, 5, 4,
+                builder.internFieldReference(new ImmutableFieldReference(
+                        "Landroid/view/ViewGroup$LayoutParams;", "width", "I"))));
+        viewLpImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 5));
+        BuilderMethod viewLp = builder.internMethod(HELLO, "viewLp",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), viewLpImpl);
+        demos.put("viewLp", viewLp);
 
         // sum(): int[] a = {7, 8, 9}; return a[0] + a[1] + a[2];
         MutableMethodImplementation sumImpl = new MutableMethodImplementation(3);

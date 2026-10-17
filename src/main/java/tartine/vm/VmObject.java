@@ -12,6 +12,9 @@ import tartine.dex.DexClass;
  */
 public final class VmObject {
     public final DexClass type;
+    /** Cached framework-dispatch mirror (Interpreter.frameworkDispatch);
+     *  adapter state, never a guest-visible alias. */
+    public Object host;
     private final Map<String, Object> fields = new HashMap<>();
 
     public VmObject(DexClass type) {
