@@ -1,0 +1,29 @@
+package android.view;
+
+    public class TouchDelegate {
+
+    public static final int ABOVE = 1;
+    public static final int BELOW = 2;
+    public static final int TO_LEFT = 4;
+    public static final int TO_RIGHT = 8;
+
+    public TouchDelegate(android.graphics.Rect arg0, android.view.View arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/TouchDelegate;-><init>(Landroid/graphics/Rect;Landroid/view/View;)V");
+    }
+
+    public android.view.accessibility.AccessibilityNodeInfo.TouchDelegateInfo getTouchDelegateInfo() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/TouchDelegate;->getTouchDelegateInfo()Landroid/view/accessibility/AccessibilityNodeInfo$TouchDelegateInfo;");
+    }
+
+    public boolean onTouchEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/TouchDelegate;->onTouchEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    public boolean onTouchExplorationHoverEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/TouchDelegate;->onTouchExplorationHoverEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public TouchDelegate() {
+        }
+    }

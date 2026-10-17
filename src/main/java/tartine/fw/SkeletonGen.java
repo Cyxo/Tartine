@@ -45,7 +45,8 @@ import java.util.Map;
  */
 public final class SkeletonGen {
     /** Seed descriptors for the closure (grow as classes port). */
-    private static final List<String> DEFAULT_SEEDS = List.of("android/graphics/Paint");
+    private static final List<String> DEFAULT_SEEDS = List.of(
+            "android/graphics/Paint", "android/view/View");
 
     /** ACC bits (JVMS 4.1/4.5/4.6). */
     private static final int ACC_PUBLIC = 0x0001;
@@ -129,9 +130,26 @@ public final class SkeletonGen {
                     continue;
                 }
                 FwIndex.FwClass found = index.find("L" + ref + ";");
-                if (found != null) {
-                    out.put(ref, found);
+                if (found != null && out.putIfAbsent(ref, found) == null) {
                     work.add(ref);
+                }
+                // A nested class needs its full enclosing chain present:
+                // one source file per top-level binary name and nested
+                // types declared inside their parents, so an orphan
+                // reference (Button$Options without Button) would emit an
+                // empty file and fail compilation.
+                int cut = ref.indexOf('$');
+                while (cut >= 0) {
+                    String ancestor = ref.substring(0, cut);
+                    if (!out.containsKey(ancestor)) {
+                        FwIndex.FwClass parent = index.find("L" + ancestor + ";");
+                        if (parent == null) {
+                            break; // holder absent from the jar; nested can't parent
+                        }
+                        out.put(ancestor, parent);
+                        work.add(ancestor);
+                    }
+                    cut = ref.indexOf('$', cut + 1);
                 }
             }
         }
@@ -152,25 +170,48 @@ public final class SkeletonGen {
                 collectRefs(p, refs);
             }
             collectRefs(m.ret, refs);
+            // Erasure drops generic arguments inside <>; the Signature
+            // attribute carries them and only the Signature reveals them
+            // (Consumer<ViewTranslationRequest> params).
+            if (m.signature != null) {
+                collectRefs(m.signature, refs);
+            }
         }
         for (FwIndex.FwField f : cls.fields) {
             collectRefs(f.type, refs);
         }
+        if (cls.signature != null) {
+            collectRefs(cls.signature, refs);
+        }
         return refs;
     }
 
+    /**
+     * Class references inside a descriptor or generic Signature string:
+     * every {@code L} starts one (a name cannot contain {@code L}); a
+     * {@code <} body is scanned linearly by the same loop, so nested
+     * generic arguments and throws clauses surface without recursion.
+     */
     private static void collectRefs(String descriptor, List<String> refs) {
-        int pos = 0;
-        while (pos < descriptor.length() && descriptor.charAt(pos) == '[') {
-            pos++;
-        }
-        String inner = descriptor.substring(pos);
-        if (!inner.startsWith("L")) {
-            return;
-        }
-        String name = strip(inner);
-        if (!refs.contains(name)) {
-            refs.add(name);
+        int i = 0;
+        int length = descriptor.length();
+        while (i < length) {
+            if (descriptor.charAt(i) != 'L') {
+                i++;
+                continue;
+            }
+            int nameStart = i + 1;
+            int j = nameStart;
+            while (j < length && descriptor.charAt(j) != ';'
+                    && descriptor.charAt(j) != '<') {
+                j++;
+            }
+            String name = descriptor.substring(nameStart, j);
+            if (!name.isEmpty() && !name.contains("<") && name.indexOf('/') >= 0
+                    && !refs.contains(name)) {
+                refs.add(name);
+            }
+            i = j <= nameStart ? i + 1 : j;
         }
     }
 
@@ -242,6 +283,7 @@ public final class SkeletonGen {
             emitEnumBody(out, cls, indent);
         } else {
             emitMembers(out, cls, indent);
+            emitAdapterCtor(out, cls, indent);
         }
         for (FwIndex.FwClass member : members) {
             String binary = strip(member.descriptor);
@@ -474,6 +516,31 @@ public final class SkeletonGen {
                 emitMethod(out, cls, m, indent);
             }
         }
+    }
+
+    /**
+     * Scratch no-arg constructor backing interpreter framework-dispatch
+     * mirrors. Only for classes the platform jar does not itself declare
+     * {@code ()V} on: guests cannot legally reference such a signature
+     * (their compile SDK has none), and reusing a real UOE skeleton
+     * constructor would defeat mirror construction. Adapter surface, not
+     * SDK surface.
+     */
+    private static void emitAdapterCtor(StringBuilder out, FwIndex.FwClass cls,
+            String indent) {
+        if ((cls.access & (ACC_INTERFACE | ACC_ABSTRACT | ACC_ENUM)) != 0) {
+            return;
+        }
+        for (FwIndex.FwMethod m : cls.methods) {
+            if (m.name.equals("<init>") && m.params.isEmpty() && m.ret.equals("V")) {
+                return; // real ()V exists; the mirror uses it once hosted
+            }
+        }
+        out.append('\n').append(indent)
+                .append("    /** Scratch mirror constructor (SkeletonGen). */\n")
+                .append(indent).append("    public ")
+                .append(simpleName(strip(cls.descriptor))).append("() {\n")
+                .append(indent).append("    }\n");
     }
 
     /** Enum constants first (must be first in source), then other members. */

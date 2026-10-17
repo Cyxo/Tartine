@@ -418,6 +418,10 @@ package android.icu.util;
     public static java.lang.String toUnicodeLocaleType(java.lang.String arg0, java.lang.String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->toUnicodeLocaleType(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public ULocale() {
+        }
         public static enum AvailableType {
             DEFAULT, ONLY_LEGACY_ALIASES, WITH_LEGACY_ALIASES;
         }

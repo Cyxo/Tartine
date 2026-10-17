@@ -13,4 +13,7 @@ package android.graphics;
     public void setLocalMatrix(android.graphics.Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Shader;->setLocalMatrix(Landroid/graphics/Matrix;)V");
     }
+        public static enum TileMode {
+            CLAMP, DECAL, MIRROR, REPEAT;
+        }
     }

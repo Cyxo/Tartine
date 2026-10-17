@@ -79,4 +79,8 @@ package android.os;
     public void writeToParcel(android.os.Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/LocaleList;->writeToParcel(Landroid/os/Parcel;I)V");
     }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public LocaleList() {
+        }
     }

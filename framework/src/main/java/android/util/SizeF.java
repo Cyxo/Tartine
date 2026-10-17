@@ -39,4 +39,8 @@ package android.util;
     public void writeToParcel(android.os.Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SizeF;->writeToParcel(Landroid/os/Parcel;I)V");
     }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public SizeF() {
+        }
     }

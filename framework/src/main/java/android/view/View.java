@@ -1,0 +1,3129 @@
+package android.view;
+
+    public class View implements android.view.accessibility.AccessibilityEventSource, android.graphics.drawable.Drawable.Callback, android.view.KeyEvent.Callback {
+
+    public static final int ACCESSIBILITY_DATA_SENSITIVE_AUTO = 0;
+    public static final int ACCESSIBILITY_DATA_SENSITIVE_NO = 2;
+    public static final int ACCESSIBILITY_DATA_SENSITIVE_YES = 1;
+    public static final int ACCESSIBILITY_LIVE_REGION_ASSERTIVE = 2;
+    public static final int ACCESSIBILITY_LIVE_REGION_NONE = 0;
+    public static final int ACCESSIBILITY_LIVE_REGION_POLITE = 1;
+    public static android.util.Property ALPHA;
+    public static final int AUTOFILL_FLAG_INCLUDE_NOT_IMPORTANT_VIEWS = 1;
+    public static final java.lang.String AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_DATE = "creditCardExpirationDate";
+    public static final java.lang.String AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_DAY = "creditCardExpirationDay";
+    public static final java.lang.String AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_MONTH = "creditCardExpirationMonth";
+    public static final java.lang.String AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_YEAR = "creditCardExpirationYear";
+    public static final java.lang.String AUTOFILL_HINT_CREDIT_CARD_NUMBER = "creditCardNumber";
+    public static final java.lang.String AUTOFILL_HINT_CREDIT_CARD_SECURITY_CODE = "creditCardSecurityCode";
+    public static final java.lang.String AUTOFILL_HINT_EMAIL_ADDRESS = "emailAddress";
+    public static final java.lang.String AUTOFILL_HINT_NAME = "name";
+    public static final java.lang.String AUTOFILL_HINT_PASSWORD = "password";
+    public static final java.lang.String AUTOFILL_HINT_PHONE = "phone";
+    public static final java.lang.String AUTOFILL_HINT_POSTAL_ADDRESS = "postalAddress";
+    public static final java.lang.String AUTOFILL_HINT_POSTAL_CODE = "postalCode";
+    public static final java.lang.String AUTOFILL_HINT_USERNAME = "username";
+    public static final int AUTOFILL_TYPE_DATE = 4;
+    public static final int AUTOFILL_TYPE_LIST = 3;
+    public static final int AUTOFILL_TYPE_NONE = 0;
+    public static final int AUTOFILL_TYPE_TEXT = 1;
+    public static final int AUTOFILL_TYPE_TOGGLE = 2;
+    public static final int CONTENT_SENSITIVITY_AUTO = 0;
+    public static final int CONTENT_SENSITIVITY_NOT_SENSITIVE = 2;
+    public static final int CONTENT_SENSITIVITY_SENSITIVE = 1;
+    public static final int DRAG_FLAG_ACCESSIBILITY_ACTION = 1024;
+    public static final int DRAG_FLAG_GLOBAL = 256;
+    public static final int DRAG_FLAG_GLOBAL_PERSISTABLE_URI_PERMISSION = 64;
+    public static final int DRAG_FLAG_GLOBAL_PREFIX_URI_PERMISSION = 128;
+    public static final int DRAG_FLAG_GLOBAL_SAME_APPLICATION = 4096;
+    public static final int DRAG_FLAG_GLOBAL_URI_READ = 1;
+    public static final int DRAG_FLAG_GLOBAL_URI_WRITE = 2;
+    public static final int DRAG_FLAG_HIDE_CALLING_TASK_ON_DRAG_START = 16384;
+    public static final int DRAG_FLAG_OPAQUE = 512;
+    public static final int DRAG_FLAG_START_INTENT_SENDER_ON_UNHANDLED_DRAG = 8192;
+    public static final int DRAWING_CACHE_QUALITY_AUTO = 0;
+    public static final int DRAWING_CACHE_QUALITY_HIGH = 1048576;
+    public static final int DRAWING_CACHE_QUALITY_LOW = 524288;
+    protected static int[] EMPTY_STATE_SET;
+    protected static int[] ENABLED_FOCUSED_SELECTED_STATE_SET;
+    protected static int[] ENABLED_FOCUSED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    protected static int[] ENABLED_FOCUSED_STATE_SET;
+    protected static int[] ENABLED_FOCUSED_WINDOW_FOCUSED_STATE_SET;
+    protected static int[] ENABLED_SELECTED_STATE_SET;
+    protected static int[] ENABLED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    protected static int[] ENABLED_STATE_SET;
+    protected static int[] ENABLED_WINDOW_FOCUSED_STATE_SET;
+    public static final int FIND_VIEWS_WITH_CONTENT_DESCRIPTION = 2;
+    public static final int FIND_VIEWS_WITH_TEXT = 1;
+    public static final int FOCUSABLE = 1;
+    public static final int FOCUSABLES_ALL = 0;
+    public static final int FOCUSABLES_TOUCH_MODE = 1;
+    public static final int FOCUSABLE_AUTO = 16;
+    protected static int[] FOCUSED_SELECTED_STATE_SET;
+    protected static int[] FOCUSED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    protected static int[] FOCUSED_STATE_SET;
+    protected static int[] FOCUSED_WINDOW_FOCUSED_STATE_SET;
+    public static final int FOCUS_BACKWARD = 1;
+    public static final int FOCUS_DOWN = 130;
+    public static final int FOCUS_FORWARD = 2;
+    public static final int FOCUS_LEFT = 17;
+    public static final int FOCUS_RIGHT = 66;
+    public static final int FOCUS_UP = 33;
+    public static final int GONE = 8;
+    public static final int HAPTIC_FEEDBACK_ENABLED = 268435456;
+    public static final int IMPORTANT_FOR_ACCESSIBILITY_AUTO = 0;
+    public static final int IMPORTANT_FOR_ACCESSIBILITY_NO = 2;
+    public static final int IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS = 4;
+    public static final int IMPORTANT_FOR_ACCESSIBILITY_YES = 1;
+    public static final int IMPORTANT_FOR_AUTOFILL_AUTO = 0;
+    public static final int IMPORTANT_FOR_AUTOFILL_NO = 2;
+    public static final int IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS = 8;
+    public static final int IMPORTANT_FOR_AUTOFILL_YES = 1;
+    public static final int IMPORTANT_FOR_AUTOFILL_YES_EXCLUDE_DESCENDANTS = 4;
+    public static final int IMPORTANT_FOR_CONTENT_CAPTURE_AUTO = 0;
+    public static final int IMPORTANT_FOR_CONTENT_CAPTURE_NO = 2;
+    public static final int IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS = 8;
+    public static final int IMPORTANT_FOR_CONTENT_CAPTURE_YES = 1;
+    public static final int IMPORTANT_FOR_CONTENT_CAPTURE_YES_EXCLUDE_DESCENDANTS = 4;
+    public static final int INVISIBLE = 4;
+    public static final int KEEP_SCREEN_ON = 67108864;
+    public static final int LAYER_TYPE_HARDWARE = 2;
+    public static final int LAYER_TYPE_NONE = 0;
+    public static final int LAYER_TYPE_SOFTWARE = 1;
+    public static final int LAYOUT_DIRECTION_INHERIT = 2;
+    public static final int LAYOUT_DIRECTION_LOCALE = 3;
+    public static final int LAYOUT_DIRECTION_LTR = 0;
+    public static final int LAYOUT_DIRECTION_RTL = 1;
+    public static final int MEASURED_HEIGHT_STATE_SHIFT = 16;
+    public static final int MEASURED_SIZE_MASK = 16777215;
+    public static final int MEASURED_STATE_MASK = -16777216;
+    public static final int MEASURED_STATE_TOO_SMALL = 16777216;
+    public static final int NOT_FOCUSABLE = 0;
+    public static final int NO_ID = -1;
+    public static final int OVER_SCROLL_ALWAYS = 0;
+    public static final int OVER_SCROLL_IF_CONTENT_SCROLLS = 1;
+    public static final int OVER_SCROLL_NEVER = 2;
+    protected static int[] PRESSED_ENABLED_FOCUSED_SELECTED_STATE_SET;
+    protected static int[] PRESSED_ENABLED_FOCUSED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    protected static int[] PRESSED_ENABLED_FOCUSED_STATE_SET;
+    protected static int[] PRESSED_ENABLED_FOCUSED_WINDOW_FOCUSED_STATE_SET;
+    protected static int[] PRESSED_ENABLED_SELECTED_STATE_SET;
+    protected static int[] PRESSED_ENABLED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    protected static int[] PRESSED_ENABLED_STATE_SET;
+    protected static int[] PRESSED_ENABLED_WINDOW_FOCUSED_STATE_SET;
+    protected static int[] PRESSED_FOCUSED_SELECTED_STATE_SET;
+    protected static int[] PRESSED_FOCUSED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    protected static int[] PRESSED_FOCUSED_STATE_SET;
+    protected static int[] PRESSED_FOCUSED_WINDOW_FOCUSED_STATE_SET;
+    protected static int[] PRESSED_SELECTED_STATE_SET;
+    protected static int[] PRESSED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    protected static int[] PRESSED_STATE_SET;
+    protected static int[] PRESSED_WINDOW_FOCUSED_STATE_SET;
+    public static final float REQUESTED_FRAME_RATE_CATEGORY_DEFAULT = Float.NaN;
+    public static final float REQUESTED_FRAME_RATE_CATEGORY_HIGH = -4.0f;
+    public static final float REQUESTED_FRAME_RATE_CATEGORY_LOW = -2.0f;
+    public static final float REQUESTED_FRAME_RATE_CATEGORY_NORMAL = -3.0f;
+    public static final float REQUESTED_FRAME_RATE_CATEGORY_NO_PREFERENCE = -1.0f;
+    public static android.util.Property ROTATION;
+    public static android.util.Property ROTATION_X;
+    public static android.util.Property ROTATION_Y;
+    public static android.util.Property SCALE_X;
+    public static android.util.Property SCALE_Y;
+    public static final int SCREEN_STATE_OFF = 0;
+    public static final int SCREEN_STATE_ON = 1;
+    public static final int SCROLLBARS_INSIDE_INSET = 16777216;
+    public static final int SCROLLBARS_INSIDE_OVERLAY = 0;
+    public static final int SCROLLBARS_OUTSIDE_INSET = 50331648;
+    public static final int SCROLLBARS_OUTSIDE_OVERLAY = 33554432;
+    public static final int SCROLLBAR_POSITION_DEFAULT = 0;
+    public static final int SCROLLBAR_POSITION_LEFT = 1;
+    public static final int SCROLLBAR_POSITION_RIGHT = 2;
+    public static final int SCROLL_AXIS_HORIZONTAL = 1;
+    public static final int SCROLL_AXIS_NONE = 0;
+    public static final int SCROLL_AXIS_VERTICAL = 2;
+    public static final int SCROLL_CAPTURE_HINT_AUTO = 0;
+    public static final int SCROLL_CAPTURE_HINT_EXCLUDE = 1;
+    public static final int SCROLL_CAPTURE_HINT_EXCLUDE_DESCENDANTS = 4;
+    public static final int SCROLL_CAPTURE_HINT_INCLUDE = 2;
+    public static final int SCROLL_INDICATOR_BOTTOM = 2;
+    public static final int SCROLL_INDICATOR_END = 32;
+    public static final int SCROLL_INDICATOR_LEFT = 4;
+    public static final int SCROLL_INDICATOR_RIGHT = 8;
+    public static final int SCROLL_INDICATOR_START = 16;
+    public static final int SCROLL_INDICATOR_TOP = 1;
+    protected static int[] SELECTED_STATE_SET;
+    protected static int[] SELECTED_WINDOW_FOCUSED_STATE_SET;
+    public static final int SOUND_EFFECTS_ENABLED = 134217728;
+    public static final int STATUS_BAR_HIDDEN = 1;
+    public static final int STATUS_BAR_VISIBLE = 0;
+    public static final int SYSTEM_UI_FLAG_FULLSCREEN = 4;
+    public static final int SYSTEM_UI_FLAG_HIDE_NAVIGATION = 2;
+    public static final int SYSTEM_UI_FLAG_IMMERSIVE = 2048;
+    public static final int SYSTEM_UI_FLAG_IMMERSIVE_STICKY = 4096;
+    public static final int SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN = 1024;
+    public static final int SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION = 512;
+    public static final int SYSTEM_UI_FLAG_LAYOUT_STABLE = 256;
+    public static final int SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR = 16;
+    public static final int SYSTEM_UI_FLAG_LIGHT_STATUS_BAR = 8192;
+    public static final int SYSTEM_UI_FLAG_LOW_PROFILE = 1;
+    public static final int SYSTEM_UI_FLAG_VISIBLE = 0;
+    public static final int SYSTEM_UI_LAYOUT_FLAGS = 1536;
+    public static final int TEXT_ALIGNMENT_CENTER = 4;
+    public static final int TEXT_ALIGNMENT_GRAVITY = 1;
+    public static final int TEXT_ALIGNMENT_INHERIT = 0;
+    public static final int TEXT_ALIGNMENT_TEXT_END = 3;
+    public static final int TEXT_ALIGNMENT_TEXT_START = 2;
+    public static final int TEXT_ALIGNMENT_VIEW_END = 6;
+    public static final int TEXT_ALIGNMENT_VIEW_START = 5;
+    public static final int TEXT_DIRECTION_ANY_RTL = 2;
+    public static final int TEXT_DIRECTION_FIRST_STRONG = 1;
+    public static final int TEXT_DIRECTION_FIRST_STRONG_LTR = 6;
+    public static final int TEXT_DIRECTION_FIRST_STRONG_RTL = 7;
+    public static final int TEXT_DIRECTION_INHERIT = 0;
+    public static final int TEXT_DIRECTION_LOCALE = 5;
+    public static final int TEXT_DIRECTION_LTR = 3;
+    public static final int TEXT_DIRECTION_RTL = 4;
+    public static android.util.Property TRANSLATION_X;
+    public static android.util.Property TRANSLATION_Y;
+    public static android.util.Property TRANSLATION_Z;
+    protected static final java.lang.String VIEW_LOG_TAG = "View";
+    public static final int VISIBLE = 0;
+    protected static int[] WINDOW_FOCUSED_STATE_SET;
+    public static android.util.Property X;
+    public static android.util.Property Y;
+    public static android.util.Property Z;
+
+    public View(android.content.Context arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;-><init>(Landroid/content/Context;)V");
+    }
+
+    public View(android.content.Context arg0, android.util.AttributeSet arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;)V");
+    }
+
+    public View(android.content.Context arg0, android.util.AttributeSet arg1, int arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V");
+    }
+
+    public View(android.content.Context arg0, android.util.AttributeSet arg1, int arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;II)V");
+    }
+
+    public void addChildrenForAccessibility(java.util.ArrayList<android.view.View> arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->addChildrenForAccessibility(Ljava/util/ArrayList;)V");
+    }
+
+    public void addExtraDataToAccessibilityNodeInfo(android.view.accessibility.AccessibilityNodeInfo arg0, java.lang.String arg1, android.os.Bundle arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->addExtraDataToAccessibilityNodeInfo(Landroid/view/accessibility/AccessibilityNodeInfo;Ljava/lang/String;Landroid/os/Bundle;)V");
+    }
+
+    public void addFocusables(java.util.ArrayList<android.view.View> arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->addFocusables(Ljava/util/ArrayList;I)V");
+    }
+
+    public void addFocusables(java.util.ArrayList<android.view.View> arg0, int arg1, int arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->addFocusables(Ljava/util/ArrayList;II)V");
+    }
+
+    public void addKeyboardNavigationClusters(java.util.Collection<android.view.View> arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->addKeyboardNavigationClusters(Ljava/util/Collection;I)V");
+    }
+
+    public void addOnAttachStateChangeListener(android.view.View.OnAttachStateChangeListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->addOnAttachStateChangeListener(Landroid/view/View$OnAttachStateChangeListener;)V");
+    }
+
+    public void addOnLayoutChangeListener(android.view.View.OnLayoutChangeListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->addOnLayoutChangeListener(Landroid/view/View$OnLayoutChangeListener;)V");
+    }
+
+    public void addOnUnhandledKeyEventListener(android.view.View.OnUnhandledKeyEventListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->addOnUnhandledKeyEventListener(Landroid/view/View$OnUnhandledKeyEventListener;)V");
+    }
+
+    public void addTouchables(java.util.ArrayList<android.view.View> arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->addTouchables(Ljava/util/ArrayList;)V");
+    }
+
+    public android.view.ViewPropertyAnimator animate() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->animate()Landroid/view/ViewPropertyAnimator;");
+    }
+
+    public void announceForAccessibility(java.lang.CharSequence arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->announceForAccessibility(Ljava/lang/CharSequence;)V");
+    }
+
+    public void autofill(android.util.SparseArray<android.view.autofill.AutofillValue> arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->autofill(Landroid/util/SparseArray;)V");
+    }
+
+    public void autofill(android.view.autofill.AutofillValue arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->autofill(Landroid/view/autofill/AutofillValue;)V");
+    }
+
+    protected boolean awakenScrollBars() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->awakenScrollBars()Z");
+    }
+
+    protected boolean awakenScrollBars(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->awakenScrollBars(I)Z");
+    }
+
+    protected boolean awakenScrollBars(int arg0, boolean arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->awakenScrollBars(IZ)Z");
+    }
+
+    public void bringToFront() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->bringToFront()V");
+    }
+
+    public void buildDrawingCache() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->buildDrawingCache()V");
+    }
+
+    public void buildDrawingCache(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->buildDrawingCache(Z)V");
+    }
+
+    public void buildLayer() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->buildLayer()V");
+    }
+
+    public boolean callOnClick() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->callOnClick()Z");
+    }
+
+    public boolean canResolveLayoutDirection() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->canResolveLayoutDirection()Z");
+    }
+
+    public boolean canResolveTextAlignment() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->canResolveTextAlignment()Z");
+    }
+
+    public boolean canResolveTextDirection() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->canResolveTextDirection()Z");
+    }
+
+    public boolean canScrollHorizontally(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->canScrollHorizontally(I)Z");
+    }
+
+    public boolean canScrollVertically(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->canScrollVertically(I)Z");
+    }
+
+    public final void cancelDragAndDrop() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->cancelDragAndDrop()V");
+    }
+
+    public void cancelLongPress() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->cancelLongPress()V");
+    }
+
+    public final void cancelPendingInputEvents() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->cancelPendingInputEvents()V");
+    }
+
+    public boolean checkInputConnectionProxy(android.view.View arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->checkInputConnectionProxy(Landroid/view/View;)Z");
+    }
+
+    public void clearAnimation() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->clearAnimation()V");
+    }
+
+    public void clearFocus() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->clearFocus()V");
+    }
+
+    public void clearPendingCredentialRequest() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->clearPendingCredentialRequest()V");
+    }
+
+    public void clearViewTranslationCallback() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->clearViewTranslationCallback()V");
+    }
+
+    public static int combineMeasuredStates(int arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->combineMeasuredStates(II)I");
+    }
+
+    protected int computeHorizontalScrollExtent() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->computeHorizontalScrollExtent()I");
+    }
+
+    protected int computeHorizontalScrollOffset() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->computeHorizontalScrollOffset()I");
+    }
+
+    protected int computeHorizontalScrollRange() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->computeHorizontalScrollRange()I");
+    }
+
+    public void computeScroll() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->computeScroll()V");
+    }
+
+    public android.view.WindowInsets computeSystemWindowInsets(android.view.WindowInsets arg0, android.graphics.Rect arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->computeSystemWindowInsets(Landroid/view/WindowInsets;Landroid/graphics/Rect;)Landroid/view/WindowInsets;");
+    }
+
+    protected int computeVerticalScrollExtent() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->computeVerticalScrollExtent()I");
+    }
+
+    protected int computeVerticalScrollOffset() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->computeVerticalScrollOffset()I");
+    }
+
+    protected int computeVerticalScrollRange() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->computeVerticalScrollRange()I");
+    }
+
+    public android.view.accessibility.AccessibilityNodeInfo createAccessibilityNodeInfo() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->createAccessibilityNodeInfo()Landroid/view/accessibility/AccessibilityNodeInfo;");
+    }
+
+    public void createContextMenu(android.view.ContextMenu arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->createContextMenu(Landroid/view/ContextMenu;)V");
+    }
+
+    public void destroyDrawingCache() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->destroyDrawingCache()V");
+    }
+
+    public android.view.WindowInsets dispatchApplyWindowInsets(android.view.WindowInsets arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchApplyWindowInsets(Landroid/view/WindowInsets;)Landroid/view/WindowInsets;");
+    }
+
+    public boolean dispatchCapturedPointerEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchCapturedPointerEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    public void dispatchConfigurationChanged(android.content.res.Configuration arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchConfigurationChanged(Landroid/content/res/Configuration;)V");
+    }
+
+    public void dispatchCreateViewTranslationRequest(java.util.Map<android.view.autofill.AutofillId, long[]> arg0, int[] arg1, android.view.translation.TranslationCapability arg2, java.util.List<android.view.translation.ViewTranslationRequest> arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchCreateViewTranslationRequest(Ljava/util/Map;[ILandroid/view/translation/TranslationCapability;Ljava/util/List;)V");
+    }
+
+    public void dispatchDisplayHint(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchDisplayHint(I)V");
+    }
+
+    public boolean dispatchDragEvent(android.view.DragEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchDragEvent(Landroid/view/DragEvent;)Z");
+    }
+
+    protected void dispatchDraw(android.graphics.Canvas arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchDraw(Landroid/graphics/Canvas;)V");
+    }
+
+    public void dispatchDrawableHotspotChanged(float arg0, float arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchDrawableHotspotChanged(FF)V");
+    }
+
+    public void dispatchFinishTemporaryDetach() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchFinishTemporaryDetach()V");
+    }
+
+    protected boolean dispatchGenericFocusedEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchGenericFocusedEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    public boolean dispatchGenericMotionEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchGenericMotionEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    protected boolean dispatchGenericPointerEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchGenericPointerEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    protected boolean dispatchHoverEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchHoverEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    public boolean dispatchKeyEvent(android.view.KeyEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchKeyEvent(Landroid/view/KeyEvent;)Z");
+    }
+
+    public boolean dispatchKeyEventPreIme(android.view.KeyEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchKeyEventPreIme(Landroid/view/KeyEvent;)Z");
+    }
+
+    public boolean dispatchKeyShortcutEvent(android.view.KeyEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchKeyShortcutEvent(Landroid/view/KeyEvent;)Z");
+    }
+
+    public boolean dispatchNestedFling(float arg0, float arg1, boolean arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchNestedFling(FFZ)Z");
+    }
+
+    public boolean dispatchNestedPreFling(float arg0, float arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchNestedPreFling(FF)Z");
+    }
+
+    public boolean dispatchNestedPrePerformAccessibilityAction(int arg0, android.os.Bundle arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchNestedPrePerformAccessibilityAction(ILandroid/os/Bundle;)Z");
+    }
+
+    public boolean dispatchNestedPreScroll(int arg0, int arg1, int[] arg2, int[] arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchNestedPreScroll(II[I[I)Z");
+    }
+
+    public boolean dispatchNestedScroll(int arg0, int arg1, int arg2, int arg3, int[] arg4) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchNestedScroll(IIII[I)Z");
+    }
+
+    public void dispatchPointerCaptureChanged(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchPointerCaptureChanged(Z)V");
+    }
+
+    public boolean dispatchPopulateAccessibilityEvent(android.view.accessibility.AccessibilityEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchPopulateAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)Z");
+    }
+
+    public void dispatchProvideAutofillStructure(android.view.ViewStructure arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchProvideAutofillStructure(Landroid/view/ViewStructure;I)V");
+    }
+
+    public void dispatchProvideStructure(android.view.ViewStructure arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchProvideStructure(Landroid/view/ViewStructure;)V");
+    }
+
+    protected void dispatchRestoreInstanceState(android.util.SparseArray<android.os.Parcelable> arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchRestoreInstanceState(Landroid/util/SparseArray;)V");
+    }
+
+    protected void dispatchSaveInstanceState(android.util.SparseArray<android.os.Parcelable> arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchSaveInstanceState(Landroid/util/SparseArray;)V");
+    }
+
+    public void dispatchScrollCaptureSearch(android.graphics.Rect arg0, android.graphics.Point arg1, java.util.function.Consumer<android.view.ScrollCaptureTarget> arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchScrollCaptureSearch(Landroid/graphics/Rect;Landroid/graphics/Point;Ljava/util/function/Consumer;)V");
+    }
+
+    protected void dispatchSetActivated(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchSetActivated(Z)V");
+    }
+
+    protected void dispatchSetPressed(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchSetPressed(Z)V");
+    }
+
+    protected void dispatchSetSelected(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchSetSelected(Z)V");
+    }
+
+    public void dispatchStartTemporaryDetach() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchStartTemporaryDetach()V");
+    }
+
+    public void dispatchSystemUiVisibilityChanged(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchSystemUiVisibilityChanged(I)V");
+    }
+
+    public boolean dispatchTouchEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchTouchEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    public boolean dispatchTrackballEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchTrackballEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    public boolean dispatchUnhandledMove(android.view.View arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchUnhandledMove(Landroid/view/View;I)Z");
+    }
+
+    protected void dispatchVisibilityChanged(android.view.View arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchVisibilityChanged(Landroid/view/View;I)V");
+    }
+
+    public void dispatchWindowFocusChanged(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchWindowFocusChanged(Z)V");
+    }
+
+    public void dispatchWindowInsetsAnimationEnd(android.view.WindowInsetsAnimation arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchWindowInsetsAnimationEnd(Landroid/view/WindowInsetsAnimation;)V");
+    }
+
+    public void dispatchWindowInsetsAnimationPrepare(android.view.WindowInsetsAnimation arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchWindowInsetsAnimationPrepare(Landroid/view/WindowInsetsAnimation;)V");
+    }
+
+    public android.view.WindowInsets dispatchWindowInsetsAnimationProgress(android.view.WindowInsets arg0, java.util.List<android.view.WindowInsetsAnimation> arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchWindowInsetsAnimationProgress(Landroid/view/WindowInsets;Ljava/util/List;)Landroid/view/WindowInsets;");
+    }
+
+    public android.view.WindowInsetsAnimation.Bounds dispatchWindowInsetsAnimationStart(android.view.WindowInsetsAnimation arg0, android.view.WindowInsetsAnimation.Bounds arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchWindowInsetsAnimationStart(Landroid/view/WindowInsetsAnimation;Landroid/view/WindowInsetsAnimation$Bounds;)Landroid/view/WindowInsetsAnimation$Bounds;");
+    }
+
+    public void dispatchWindowSystemUiVisiblityChanged(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchWindowSystemUiVisiblityChanged(I)V");
+    }
+
+    public void dispatchWindowVisibilityChanged(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchWindowVisibilityChanged(I)V");
+    }
+
+    public void draw(android.graphics.Canvas arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->draw(Landroid/graphics/Canvas;)V");
+    }
+
+    public void drawableHotspotChanged(float arg0, float arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->drawableHotspotChanged(FF)V");
+    }
+
+    protected void drawableStateChanged() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->drawableStateChanged()V");
+    }
+
+    public android.view.View findFocus() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->findFocus()Landroid/view/View;");
+    }
+
+    public final android.window.OnBackInvokedDispatcher findOnBackInvokedDispatcher() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->findOnBackInvokedDispatcher()Landroid/window/OnBackInvokedDispatcher;");
+    }
+
+    public final <T> T findViewById(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->findViewById(I)Landroid/view/View;");
+    }
+
+    public final <T> T findViewWithTag(java.lang.Object arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->findViewWithTag(Ljava/lang/Object;)Landroid/view/View;");
+    }
+
+    public void findViewsWithText(java.util.ArrayList<android.view.View> arg0, java.lang.CharSequence arg1, int arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->findViewsWithText(Ljava/util/ArrayList;Ljava/lang/CharSequence;I)V");
+    }
+
+    protected boolean fitSystemWindows(android.graphics.Rect arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->fitSystemWindows(Landroid/graphics/Rect;)Z");
+    }
+
+    public android.view.View focusSearch(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->focusSearch(I)Landroid/view/View;");
+    }
+
+    public void forceHasOverlappingRendering(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->forceHasOverlappingRendering(Z)V");
+    }
+
+    public void forceLayout() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->forceLayout()V");
+    }
+
+    public boolean gatherTransparentRegion(android.graphics.Region arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->gatherTransparentRegion(Landroid/graphics/Region;)Z");
+    }
+
+    public void generateDisplayHash(java.lang.String arg0, android.graphics.Rect arg1, java.util.concurrent.Executor arg2, android.view.displayhash.DisplayHashResultCallback arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->generateDisplayHash(Ljava/lang/String;Landroid/graphics/Rect;Ljava/util/concurrent/Executor;Landroid/view/displayhash/DisplayHashResultCallback;)V");
+    }
+
+    public static int generateViewId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->generateViewId()I");
+    }
+
+    public java.lang.CharSequence getAccessibilityClassName() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAccessibilityClassName()Ljava/lang/CharSequence;");
+    }
+
+    public android.view.View.AccessibilityDelegate getAccessibilityDelegate() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAccessibilityDelegate()Landroid/view/View$AccessibilityDelegate;");
+    }
+
+    public int getAccessibilityLiveRegion() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAccessibilityLiveRegion()I");
+    }
+
+    public android.view.accessibility.AccessibilityNodeProvider getAccessibilityNodeProvider() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAccessibilityNodeProvider()Landroid/view/accessibility/AccessibilityNodeProvider;");
+    }
+
+    public java.lang.CharSequence getAccessibilityPaneTitle() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAccessibilityPaneTitle()Ljava/lang/CharSequence;");
+    }
+
+    public int getAccessibilityTraversalAfter() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAccessibilityTraversalAfter()I");
+    }
+
+    public int getAccessibilityTraversalBefore() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAccessibilityTraversalBefore()I");
+    }
+
+    public java.lang.String getAllowedHandwritingDelegatePackageName() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAllowedHandwritingDelegatePackageName()Ljava/lang/String;");
+    }
+
+    public java.lang.String getAllowedHandwritingDelegatorPackageName() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAllowedHandwritingDelegatorPackageName()Ljava/lang/String;");
+    }
+
+    public float getAlpha() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAlpha()F");
+    }
+
+    public android.view.animation.Animation getAnimation() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAnimation()Landroid/view/animation/Animation;");
+    }
+
+    public android.graphics.Matrix getAnimationMatrix() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAnimationMatrix()Landroid/graphics/Matrix;");
+    }
+
+    public android.os.IBinder getApplicationWindowToken() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getApplicationWindowToken()Landroid/os/IBinder;");
+    }
+
+    public int[] getAttributeResolutionStack(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAttributeResolutionStack(I)[I");
+    }
+
+    public java.util.Map<java.lang.Integer, java.lang.Integer> getAttributeSourceResourceMap() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAttributeSourceResourceMap()Ljava/util/Map;");
+    }
+
+    public java.lang.String[] getAutofillHints() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAutofillHints()[Ljava/lang/String;");
+    }
+
+    public final android.view.autofill.AutofillId getAutofillId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAutofillId()Landroid/view/autofill/AutofillId;");
+    }
+
+    public int getAutofillType() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAutofillType()I");
+    }
+
+    public android.view.autofill.AutofillValue getAutofillValue() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAutofillValue()Landroid/view/autofill/AutofillValue;");
+    }
+
+    public android.graphics.drawable.Drawable getBackground() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getBackground()Landroid/graphics/drawable/Drawable;");
+    }
+
+    public android.graphics.BlendMode getBackgroundTintBlendMode() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getBackgroundTintBlendMode()Landroid/graphics/BlendMode;");
+    }
+
+    public android.content.res.ColorStateList getBackgroundTintList() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getBackgroundTintList()Landroid/content/res/ColorStateList;");
+    }
+
+    public android.graphics.PorterDuff.Mode getBackgroundTintMode() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getBackgroundTintMode()Landroid/graphics/PorterDuff$Mode;");
+    }
+
+    public int getBaseline() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getBaseline()I");
+    }
+
+    public final int getBottom() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getBottom()I");
+    }
+
+    protected float getBottomFadingEdgeStrength() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getBottomFadingEdgeStrength()F");
+    }
+
+    protected int getBottomPaddingOffset() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getBottomPaddingOffset()I");
+    }
+
+    public float getCameraDistance() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getCameraDistance()F");
+    }
+
+    public android.graphics.Rect getClipBounds() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getClipBounds()Landroid/graphics/Rect;");
+    }
+
+    public boolean getClipBounds(android.graphics.Rect arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getClipBounds(Landroid/graphics/Rect;)Z");
+    }
+
+    public final boolean getClipToOutline() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getClipToOutline()Z");
+    }
+
+    public final android.view.contentcapture.ContentCaptureSession getContentCaptureSession() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getContentCaptureSession()Landroid/view/contentcapture/ContentCaptureSession;");
+    }
+
+    public java.lang.CharSequence getContentDescription() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getContentDescription()Ljava/lang/CharSequence;");
+    }
+
+    public final int getContentSensitivity() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getContentSensitivity()I");
+    }
+
+    public final android.content.Context getContext() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getContext()Landroid/content/Context;");
+    }
+
+    protected android.view.ContextMenu.ContextMenuInfo getContextMenuInfo() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getContextMenuInfo()Landroid/view/ContextMenu$ContextMenuInfo;");
+    }
+
+    public final boolean getDefaultFocusHighlightEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDefaultFocusHighlightEnabled()Z");
+    }
+
+    public static int getDefaultSize(int arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDefaultSize(II)I");
+    }
+
+    public android.view.Display getDisplay() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDisplay()Landroid/view/Display;");
+    }
+
+    public final int[] getDrawableState() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDrawableState()[I");
+    }
+
+    public android.graphics.Bitmap getDrawingCache() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDrawingCache()Landroid/graphics/Bitmap;");
+    }
+
+    public android.graphics.Bitmap getDrawingCache(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDrawingCache(Z)Landroid/graphics/Bitmap;");
+    }
+
+    public int getDrawingCacheBackgroundColor() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDrawingCacheBackgroundColor()I");
+    }
+
+    public int getDrawingCacheQuality() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDrawingCacheQuality()I");
+    }
+
+    public void getDrawingRect(android.graphics.Rect arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDrawingRect(Landroid/graphics/Rect;)V");
+    }
+
+    public long getDrawingTime() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDrawingTime()J");
+    }
+
+    public float getElevation() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getElevation()F");
+    }
+
+    public int getExplicitStyle() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getExplicitStyle()I");
+    }
+
+    public boolean getFilterTouchesWhenObscured() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getFilterTouchesWhenObscured()Z");
+    }
+
+    public boolean getFitsSystemWindows() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getFitsSystemWindows()Z");
+    }
+
+    public int getFocusable() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getFocusable()I");
+    }
+
+    public java.util.ArrayList<android.view.View> getFocusables(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getFocusables(I)Ljava/util/ArrayList;");
+    }
+
+    public void getFocusedRect(android.graphics.Rect arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getFocusedRect(Landroid/graphics/Rect;)V");
+    }
+
+    public android.graphics.drawable.Drawable getForeground() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getForeground()Landroid/graphics/drawable/Drawable;");
+    }
+
+    public int getForegroundGravity() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getForegroundGravity()I");
+    }
+
+    public android.graphics.BlendMode getForegroundTintBlendMode() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getForegroundTintBlendMode()Landroid/graphics/BlendMode;");
+    }
+
+    public android.content.res.ColorStateList getForegroundTintList() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getForegroundTintList()Landroid/content/res/ColorStateList;");
+    }
+
+    public android.graphics.PorterDuff.Mode getForegroundTintMode() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getForegroundTintMode()Landroid/graphics/PorterDuff$Mode;");
+    }
+
+    public float getFrameContentVelocity() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getFrameContentVelocity()F");
+    }
+
+    public final boolean getGlobalVisibleRect(android.graphics.Rect arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getGlobalVisibleRect(Landroid/graphics/Rect;)Z");
+    }
+
+    public boolean getGlobalVisibleRect(android.graphics.Rect arg0, android.graphics.Point arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getGlobalVisibleRect(Landroid/graphics/Rect;Landroid/graphics/Point;)Z");
+    }
+
+    public android.os.Handler getHandler() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHandler()Landroid/os/Handler;");
+    }
+
+    public float getHandwritingBoundsOffsetBottom() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHandwritingBoundsOffsetBottom()F");
+    }
+
+    public float getHandwritingBoundsOffsetLeft() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHandwritingBoundsOffsetLeft()F");
+    }
+
+    public float getHandwritingBoundsOffsetRight() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHandwritingBoundsOffsetRight()F");
+    }
+
+    public float getHandwritingBoundsOffsetTop() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHandwritingBoundsOffsetTop()F");
+    }
+
+    public int getHandwritingDelegateFlags() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHandwritingDelegateFlags()I");
+    }
+
+    public java.lang.Runnable getHandwritingDelegatorCallback() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHandwritingDelegatorCallback()Ljava/lang/Runnable;");
+    }
+
+    public final boolean getHasOverlappingRendering() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHasOverlappingRendering()Z");
+    }
+
+    public final int getHeight() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHeight()I");
+    }
+
+    public void getHitRect(android.graphics.Rect arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHitRect(Landroid/graphics/Rect;)V");
+    }
+
+    public int getHorizontalFadingEdgeLength() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHorizontalFadingEdgeLength()I");
+    }
+
+    protected int getHorizontalScrollbarHeight() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHorizontalScrollbarHeight()I");
+    }
+
+    public android.graphics.drawable.Drawable getHorizontalScrollbarThumbDrawable() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHorizontalScrollbarThumbDrawable()Landroid/graphics/drawable/Drawable;");
+    }
+
+    public android.graphics.drawable.Drawable getHorizontalScrollbarTrackDrawable() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHorizontalScrollbarTrackDrawable()Landroid/graphics/drawable/Drawable;");
+    }
+
+    public int getId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getId()I");
+    }
+
+    public int getImportantForAccessibility() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getImportantForAccessibility()I");
+    }
+
+    public int getImportantForAutofill() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getImportantForAutofill()I");
+    }
+
+    public int getImportantForContentCapture() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getImportantForContentCapture()I");
+    }
+
+    public boolean getKeepScreenOn() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getKeepScreenOn()Z");
+    }
+
+    public android.view.KeyEvent.DispatcherState getKeyDispatcherState() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getKeyDispatcherState()Landroid/view/KeyEvent$DispatcherState;");
+    }
+
+    public int getLabelFor() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLabelFor()I");
+    }
+
+    public int getLayerType() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLayerType()I");
+    }
+
+    public int getLayoutDirection() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLayoutDirection()I");
+    }
+
+    /**
+     * Mirror state for layout params: the SDK stub jar declares no
+     * instance fields, so interpreter framework-dispatch synchronizes the
+     * {@code View;.mLayoutParams} mapping key onto this field.
+     */
+    protected android.view.ViewGroup.LayoutParams mLayoutParams;
+
+    public android.view.ViewGroup.LayoutParams getLayoutParams() {
+        // Real Android throws when no params were attached via inflation
+        // or addView; our composition measures bare views directly, so the
+        // read defaults to a WRAP_CONTENT pair. setLayoutParams preserves
+        // caller identity, so attach-time params round-trip exactly.
+        if (mLayoutParams == null) {
+            mLayoutParams = new android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+        return mLayoutParams;
+    }
+
+    public final int getLeft() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLeft()I");
+    }
+
+    protected float getLeftFadingEdgeStrength() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLeftFadingEdgeStrength()F");
+    }
+
+    protected int getLeftPaddingOffset() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLeftPaddingOffset()I");
+    }
+
+    public final boolean getLocalVisibleRect(android.graphics.Rect arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLocalVisibleRect(Landroid/graphics/Rect;)Z");
+    }
+
+    public void getLocationInSurface(int[] arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLocationInSurface([I)V");
+    }
+
+    public void getLocationInWindow(int[] arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLocationInWindow([I)V");
+    }
+
+    public void getLocationOnScreen(int[] arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLocationOnScreen([I)V");
+    }
+
+    public android.graphics.Matrix getMatrix() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMatrix()Landroid/graphics/Matrix;");
+    }
+
+    public final int getMeasuredHeight() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMeasuredHeight()I");
+    }
+
+    public final int getMeasuredHeightAndState() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMeasuredHeightAndState()I");
+    }
+
+    public final int getMeasuredState() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMeasuredState()I");
+    }
+
+    public final int getMeasuredWidth() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMeasuredWidth()I");
+    }
+
+    public final int getMeasuredWidthAndState() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMeasuredWidthAndState()I");
+    }
+
+    public int getMinimumHeight() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMinimumHeight()I");
+    }
+
+    public int getMinimumWidth() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMinimumWidth()I");
+    }
+
+    public int getNextClusterForwardId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getNextClusterForwardId()I");
+    }
+
+    public int getNextFocusDownId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getNextFocusDownId()I");
+    }
+
+    public int getNextFocusForwardId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getNextFocusForwardId()I");
+    }
+
+    public int getNextFocusLeftId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getNextFocusLeftId()I");
+    }
+
+    public int getNextFocusRightId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getNextFocusRightId()I");
+    }
+
+    public int getNextFocusUpId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getNextFocusUpId()I");
+    }
+
+    public android.view.View.OnFocusChangeListener getOnFocusChangeListener() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getOnFocusChangeListener()Landroid/view/View$OnFocusChangeListener;");
+    }
+
+    public int getOutlineAmbientShadowColor() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getOutlineAmbientShadowColor()I");
+    }
+
+    public android.view.ViewOutlineProvider getOutlineProvider() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getOutlineProvider()Landroid/view/ViewOutlineProvider;");
+    }
+
+    public int getOutlineSpotShadowColor() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getOutlineSpotShadowColor()I");
+    }
+
+    public int getOverScrollMode() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getOverScrollMode()I");
+    }
+
+    public android.view.ViewOverlay getOverlay() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getOverlay()Landroid/view/ViewOverlay;");
+    }
+
+    public int getPaddingBottom() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingBottom()I");
+    }
+
+    public int getPaddingEnd() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingEnd()I");
+    }
+
+    public int getPaddingLeft() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingLeft()I");
+    }
+
+    public int getPaddingRight() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingRight()I");
+    }
+
+    public int getPaddingStart() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingStart()I");
+    }
+
+    public int getPaddingTop() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingTop()I");
+    }
+
+    public final android.view.ViewParent getParent() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getParent()Landroid/view/ViewParent;");
+    }
+
+    public android.view.ViewParent getParentForAccessibility() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getParentForAccessibility()Landroid/view/ViewParent;");
+    }
+
+    public final android.os.OutcomeReceiver<android.credentials.GetCredentialResponse, android.credentials.GetCredentialException> getPendingCredentialCallback() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPendingCredentialCallback()Landroid/os/OutcomeReceiver;");
+    }
+
+    public final android.credentials.GetCredentialRequest getPendingCredentialRequest() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPendingCredentialRequest()Landroid/credentials/GetCredentialRequest;");
+    }
+
+    public float getPivotX() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPivotX()F");
+    }
+
+    public float getPivotY() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPivotY()F");
+    }
+
+    public android.view.PointerIcon getPointerIcon() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPointerIcon()Landroid/view/PointerIcon;");
+    }
+
+    public final java.util.List<android.graphics.Rect> getPreferKeepClearRects() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPreferKeepClearRects()Ljava/util/List;");
+    }
+
+    public java.lang.String[] getReceiveContentMimeTypes() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getReceiveContentMimeTypes()[Ljava/lang/String;");
+    }
+
+    public float getRequestedFrameRate() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRequestedFrameRate()F");
+    }
+
+    public android.content.res.Resources getResources() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getResources()Landroid/content/res/Resources;");
+    }
+
+    public final boolean getRevealOnFocusHint() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRevealOnFocusHint()Z");
+    }
+
+    public final int getRight() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRight()I");
+    }
+
+    protected float getRightFadingEdgeStrength() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRightFadingEdgeStrength()F");
+    }
+
+    protected int getRightPaddingOffset() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRightPaddingOffset()I");
+    }
+
+    public android.view.AttachedSurfaceControl getRootSurfaceControl() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRootSurfaceControl()Landroid/view/AttachedSurfaceControl;");
+    }
+
+    public android.view.View getRootView() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRootView()Landroid/view/View;");
+    }
+
+    public android.view.WindowInsets getRootWindowInsets() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRootWindowInsets()Landroid/view/WindowInsets;");
+    }
+
+    public float getRotation() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRotation()F");
+    }
+
+    public float getRotationX() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRotationX()F");
+    }
+
+    public float getRotationY() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRotationY()F");
+    }
+
+    public float getScaleX() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getScaleX()F");
+    }
+
+    public float getScaleY() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getScaleY()F");
+    }
+
+    public int getScrollBarDefaultDelayBeforeFade() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getScrollBarDefaultDelayBeforeFade()I");
+    }
+
+    public int getScrollBarFadeDuration() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getScrollBarFadeDuration()I");
+    }
+
+    public int getScrollBarSize() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getScrollBarSize()I");
+    }
+
+    public int getScrollBarStyle() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getScrollBarStyle()I");
+    }
+
+    public int getScrollCaptureHint() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getScrollCaptureHint()I");
+    }
+
+    public int getScrollIndicators() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getScrollIndicators()I");
+    }
+
+    public final int getScrollX() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getScrollX()I");
+    }
+
+    public final int getScrollY() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getScrollY()I");
+    }
+
+    public int getSolidColor() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getSolidColor()I");
+    }
+
+    public int getSourceLayoutResId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getSourceLayoutResId()I");
+    }
+
+    public final java.lang.CharSequence getStateDescription() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getStateDescription()Ljava/lang/CharSequence;");
+    }
+
+    public android.animation.StateListAnimator getStateListAnimator() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getStateListAnimator()Landroid/animation/StateListAnimator;");
+    }
+
+    protected int getSuggestedMinimumHeight() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getSuggestedMinimumHeight()I");
+    }
+
+    protected int getSuggestedMinimumWidth() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getSuggestedMinimumWidth()I");
+    }
+
+    public java.lang.CharSequence getSupplementalDescription() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getSupplementalDescription()Ljava/lang/CharSequence;");
+    }
+
+    public java.util.List<android.graphics.Rect> getSystemGestureExclusionRects() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getSystemGestureExclusionRects()Ljava/util/List;");
+    }
+
+    public int getSystemUiVisibility() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getSystemUiVisibility()I");
+    }
+
+    public java.lang.Object getTag() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTag()Ljava/lang/Object;");
+    }
+
+    public java.lang.Object getTag(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTag(I)Ljava/lang/Object;");
+    }
+
+    public int getTextAlignment() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTextAlignment()I");
+    }
+
+    public int getTextDirection() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTextDirection()I");
+    }
+
+    public java.lang.CharSequence getTooltipText() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTooltipText()Ljava/lang/CharSequence;");
+    }
+
+    public final int getTop() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTop()I");
+    }
+
+    protected float getTopFadingEdgeStrength() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTopFadingEdgeStrength()F");
+    }
+
+    protected int getTopPaddingOffset() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTopPaddingOffset()I");
+    }
+
+    public android.view.TouchDelegate getTouchDelegate() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTouchDelegate()Landroid/view/TouchDelegate;");
+    }
+
+    public java.util.ArrayList<android.view.View> getTouchables() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTouchables()Ljava/util/ArrayList;");
+    }
+
+    public float getTransitionAlpha() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTransitionAlpha()F");
+    }
+
+    public java.lang.String getTransitionName() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTransitionName()Ljava/lang/String;");
+    }
+
+    public float getTranslationX() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTranslationX()F");
+    }
+
+    public float getTranslationY() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTranslationY()F");
+    }
+
+    public float getTranslationZ() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTranslationZ()F");
+    }
+
+    public long getUniqueDrawingId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getUniqueDrawingId()J");
+    }
+
+    public int getVerticalFadingEdgeLength() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getVerticalFadingEdgeLength()I");
+    }
+
+    public int getVerticalScrollbarPosition() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getVerticalScrollbarPosition()I");
+    }
+
+    public android.graphics.drawable.Drawable getVerticalScrollbarThumbDrawable() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getVerticalScrollbarThumbDrawable()Landroid/graphics/drawable/Drawable;");
+    }
+
+    public android.graphics.drawable.Drawable getVerticalScrollbarTrackDrawable() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getVerticalScrollbarTrackDrawable()Landroid/graphics/drawable/Drawable;");
+    }
+
+    public int getVerticalScrollbarWidth() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getVerticalScrollbarWidth()I");
+    }
+
+    public android.view.translation.ViewTranslationResponse getViewTranslationResponse() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getViewTranslationResponse()Landroid/view/translation/ViewTranslationResponse;");
+    }
+
+    public android.view.ViewTreeObserver getViewTreeObserver() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;");
+    }
+
+    public int getVisibility() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getVisibility()I");
+    }
+
+    public final int getWidth() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getWidth()I");
+    }
+
+    protected int getWindowAttachCount() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getWindowAttachCount()I");
+    }
+
+    public android.view.WindowId getWindowId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getWindowId()Landroid/view/WindowId;");
+    }
+
+    public android.view.WindowInsetsController getWindowInsetsController() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getWindowInsetsController()Landroid/view/WindowInsetsController;");
+    }
+
+    public int getWindowSystemUiVisibility() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getWindowSystemUiVisibility()I");
+    }
+
+    public android.os.IBinder getWindowToken() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getWindowToken()Landroid/os/IBinder;");
+    }
+
+    public int getWindowVisibility() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getWindowVisibility()I");
+    }
+
+    public void getWindowVisibleDisplayFrame(android.graphics.Rect arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getWindowVisibleDisplayFrame(Landroid/graphics/Rect;)V");
+    }
+
+    public float getX() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getX()F");
+    }
+
+    public float getY() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getY()F");
+    }
+
+    public float getZ() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getZ()F");
+    }
+
+    public boolean hasExplicitFocusable() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasExplicitFocusable()Z");
+    }
+
+    public boolean hasFocus() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasFocus()Z");
+    }
+
+    public boolean hasFocusable() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasFocusable()Z");
+    }
+
+    public boolean hasNestedScrollingParent() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasNestedScrollingParent()Z");
+    }
+
+    public boolean hasOnClickListeners() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasOnClickListeners()Z");
+    }
+
+    public boolean hasOnLongClickListeners() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasOnLongClickListeners()Z");
+    }
+
+    public boolean hasOverlappingRendering() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasOverlappingRendering()Z");
+    }
+
+    public boolean hasPointerCapture() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasPointerCapture()Z");
+    }
+
+    public boolean hasTransientState() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasTransientState()Z");
+    }
+
+    public boolean hasWindowFocus() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasWindowFocus()Z");
+    }
+
+    public static android.view.View inflate(android.content.Context arg0, int arg1, android.view.ViewGroup arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->inflate(Landroid/content/Context;ILandroid/view/ViewGroup;)Landroid/view/View;");
+    }
+
+    public void invalidate() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->invalidate()V");
+    }
+
+    public void invalidate(android.graphics.Rect arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->invalidate(Landroid/graphics/Rect;)V");
+    }
+
+    public void invalidate(int arg0, int arg1, int arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->invalidate(IIII)V");
+    }
+
+    public void invalidateDrawable(android.graphics.drawable.Drawable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->invalidateDrawable(Landroid/graphics/drawable/Drawable;)V");
+    }
+
+    public void invalidateOutline() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->invalidateOutline()V");
+    }
+
+    public boolean isAccessibilityDataSensitive() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isAccessibilityDataSensitive()Z");
+    }
+
+    public boolean isAccessibilityFocused() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isAccessibilityFocused()Z");
+    }
+
+    public boolean isAccessibilityHeading() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isAccessibilityHeading()Z");
+    }
+
+    public boolean isActivated() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isActivated()Z");
+    }
+
+    public boolean isAttachedToWindow() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isAttachedToWindow()Z");
+    }
+
+    public boolean isAutoHandwritingEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isAutoHandwritingEnabled()Z");
+    }
+
+    public boolean isClickable() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isClickable()Z");
+    }
+
+    public final boolean isContentSensitive() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isContentSensitive()Z");
+    }
+
+    public boolean isContextClickable() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isContextClickable()Z");
+    }
+
+    public boolean isCredential() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isCredential()Z");
+    }
+
+    public boolean isDirty() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isDirty()Z");
+    }
+
+    public boolean isDrawingCacheEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isDrawingCacheEnabled()Z");
+    }
+
+    public boolean isDuplicateParentStateEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isDuplicateParentStateEnabled()Z");
+    }
+
+    public boolean isEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isEnabled()Z");
+    }
+
+    public final boolean isFocusable() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isFocusable()Z");
+    }
+
+    public final boolean isFocusableInTouchMode() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isFocusableInTouchMode()Z");
+    }
+
+    public boolean isFocused() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isFocused()Z");
+    }
+
+    public final boolean isFocusedByDefault() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isFocusedByDefault()Z");
+    }
+
+    public boolean isForceDarkAllowed() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isForceDarkAllowed()Z");
+    }
+
+    public boolean isHandwritingDelegate() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isHandwritingDelegate()Z");
+    }
+
+    public boolean isHapticFeedbackEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isHapticFeedbackEnabled()Z");
+    }
+
+    public boolean isHardwareAccelerated() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isHardwareAccelerated()Z");
+    }
+
+    public boolean isHorizontalFadingEdgeEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isHorizontalFadingEdgeEnabled()Z");
+    }
+
+    public boolean isHorizontalScrollBarEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isHorizontalScrollBarEnabled()Z");
+    }
+
+    public boolean isHovered() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isHovered()Z");
+    }
+
+    public boolean isImportantForAccessibility() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isImportantForAccessibility()Z");
+    }
+
+    public final boolean isImportantForAutofill() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isImportantForAutofill()Z");
+    }
+
+    public final boolean isImportantForContentCapture() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isImportantForContentCapture()Z");
+    }
+
+    public boolean isInEditMode() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isInEditMode()Z");
+    }
+
+    public boolean isInLayout() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isInLayout()Z");
+    }
+
+    public boolean isInTouchMode() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isInTouchMode()Z");
+    }
+
+    public final boolean isKeyboardNavigationCluster() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isKeyboardNavigationCluster()Z");
+    }
+
+    public boolean isLaidOut() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isLaidOut()Z");
+    }
+
+    public boolean isLayoutDirectionResolved() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isLayoutDirectionResolved()Z");
+    }
+
+    public boolean isLayoutRequested() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isLayoutRequested()Z");
+    }
+
+    public boolean isLongClickable() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isLongClickable()Z");
+    }
+
+    public boolean isNestedScrollingEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isNestedScrollingEnabled()Z");
+    }
+
+    public boolean isOpaque() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isOpaque()Z");
+    }
+
+    protected boolean isPaddingOffsetRequired() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isPaddingOffsetRequired()Z");
+    }
+
+    public boolean isPaddingRelative() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isPaddingRelative()Z");
+    }
+
+    public boolean isPivotSet() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isPivotSet()Z");
+    }
+
+    public final boolean isPreferKeepClear() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isPreferKeepClear()Z");
+    }
+
+    public boolean isPressed() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isPressed()Z");
+    }
+
+    public boolean isSaveEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isSaveEnabled()Z");
+    }
+
+    public boolean isSaveFromParentEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isSaveFromParentEnabled()Z");
+    }
+
+    public boolean isScreenReaderFocusable() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isScreenReaderFocusable()Z");
+    }
+
+    public boolean isScrollContainer() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isScrollContainer()Z");
+    }
+
+    public boolean isScrollbarFadingEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isScrollbarFadingEnabled()Z");
+    }
+
+    public boolean isSelected() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isSelected()Z");
+    }
+
+    public final boolean isShowingLayoutBounds() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isShowingLayoutBounds()Z");
+    }
+
+    public boolean isShown() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isShown()Z");
+    }
+
+    public boolean isSoundEffectsEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isSoundEffectsEnabled()Z");
+    }
+
+    public final boolean isTemporarilyDetached() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isTemporarilyDetached()Z");
+    }
+
+    public boolean isTextAlignmentResolved() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isTextAlignmentResolved()Z");
+    }
+
+    public boolean isTextDirectionResolved() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isTextDirectionResolved()Z");
+    }
+
+    public boolean isVerticalFadingEdgeEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isVerticalFadingEdgeEnabled()Z");
+    }
+
+    public boolean isVerticalScrollBarEnabled() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isVerticalScrollBarEnabled()Z");
+    }
+
+    public boolean isVisibleToUserForAutofill(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isVisibleToUserForAutofill(I)Z");
+    }
+
+    public void jumpDrawablesToCurrentState() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->jumpDrawablesToCurrentState()V");
+    }
+
+    public android.view.View keyboardNavigationClusterSearch(android.view.View arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->keyboardNavigationClusterSearch(Landroid/view/View;I)Landroid/view/View;");
+    }
+
+    public void layout(int arg0, int arg1, int arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->layout(IIII)V");
+    }
+
+    public final void measure(int arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->measure(II)V");
+    }
+
+    protected static int[] mergeDrawableStates(int[] arg0, int[] arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->mergeDrawableStates([I[I)[I");
+    }
+
+    public void offsetLeftAndRight(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->offsetLeftAndRight(I)V");
+    }
+
+    public void offsetTopAndBottom(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->offsetTopAndBottom(I)V");
+    }
+
+    protected void onAnimationEnd() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onAnimationEnd()V");
+    }
+
+    protected void onAnimationStart() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onAnimationStart()V");
+    }
+
+    public android.view.WindowInsets onApplyWindowInsets(android.view.WindowInsets arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onApplyWindowInsets(Landroid/view/WindowInsets;)Landroid/view/WindowInsets;");
+    }
+
+    protected void onAttachedToWindow() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onAttachedToWindow()V");
+    }
+
+    public void onCancelPendingInputEvents() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onCancelPendingInputEvents()V");
+    }
+
+    public boolean onCapturedPointerEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onCapturedPointerEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    public boolean onCheckIsTextEditor() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onCheckIsTextEditor()Z");
+    }
+
+    protected void onConfigurationChanged(android.content.res.Configuration arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onConfigurationChanged(Landroid/content/res/Configuration;)V");
+    }
+
+    protected void onCreateContextMenu(android.view.ContextMenu arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onCreateContextMenu(Landroid/view/ContextMenu;)V");
+    }
+
+    protected int[] onCreateDrawableState(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onCreateDrawableState(I)[I");
+    }
+
+    public android.view.inputmethod.InputConnection onCreateInputConnection(android.view.inputmethod.EditorInfo arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onCreateInputConnection(Landroid/view/inputmethod/EditorInfo;)Landroid/view/inputmethod/InputConnection;");
+    }
+
+    public void onCreateViewTranslationRequest(int[] arg0, java.util.function.Consumer<android.view.translation.ViewTranslationRequest> arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onCreateViewTranslationRequest([ILjava/util/function/Consumer;)V");
+    }
+
+    public void onCreateVirtualViewTranslationRequests(long[] arg0, int[] arg1, java.util.function.Consumer<android.view.translation.ViewTranslationRequest> arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onCreateVirtualViewTranslationRequests([J[ILjava/util/function/Consumer;)V");
+    }
+
+    protected void onDetachedFromWindow() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onDetachedFromWindow()V");
+    }
+
+    protected void onDisplayHint(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onDisplayHint(I)V");
+    }
+
+    public boolean onDragEvent(android.view.DragEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onDragEvent(Landroid/view/DragEvent;)Z");
+    }
+
+    protected void onDraw(android.graphics.Canvas arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onDraw(Landroid/graphics/Canvas;)V");
+    }
+
+    public void onDrawForeground(android.graphics.Canvas arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onDrawForeground(Landroid/graphics/Canvas;)V");
+    }
+
+    protected final void onDrawScrollBars(android.graphics.Canvas arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onDrawScrollBars(Landroid/graphics/Canvas;)V");
+    }
+
+    public boolean onFilterTouchEventForSecurity(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onFilterTouchEventForSecurity(Landroid/view/MotionEvent;)Z");
+    }
+
+    protected void onFinishInflate() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onFinishInflate()V");
+    }
+
+    public void onFinishTemporaryDetach() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onFinishTemporaryDetach()V");
+    }
+
+    protected void onFocusChanged(boolean arg0, int arg1, android.graphics.Rect arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onFocusChanged(ZILandroid/graphics/Rect;)V");
+    }
+
+    public boolean onGenericMotionEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onGenericMotionEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    public void onHoverChanged(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onHoverChanged(Z)V");
+    }
+
+    public boolean onHoverEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onHoverEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    public void onInitializeAccessibilityEvent(android.view.accessibility.AccessibilityEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onInitializeAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V");
+    }
+
+    public void onInitializeAccessibilityNodeInfo(android.view.accessibility.AccessibilityNodeInfo arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onInitializeAccessibilityNodeInfo(Landroid/view/accessibility/AccessibilityNodeInfo;)V");
+    }
+
+    public boolean onKeyDown(int arg0, android.view.KeyEvent arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onKeyDown(ILandroid/view/KeyEvent;)Z");
+    }
+
+    public boolean onKeyLongPress(int arg0, android.view.KeyEvent arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onKeyLongPress(ILandroid/view/KeyEvent;)Z");
+    }
+
+    public boolean onKeyMultiple(int arg0, int arg1, android.view.KeyEvent arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onKeyMultiple(IILandroid/view/KeyEvent;)Z");
+    }
+
+    public boolean onKeyPreIme(int arg0, android.view.KeyEvent arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onKeyPreIme(ILandroid/view/KeyEvent;)Z");
+    }
+
+    public boolean onKeyShortcut(int arg0, android.view.KeyEvent arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onKeyShortcut(ILandroid/view/KeyEvent;)Z");
+    }
+
+    public boolean onKeyUp(int arg0, android.view.KeyEvent arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onKeyUp(ILandroid/view/KeyEvent;)Z");
+    }
+
+    protected void onLayout(boolean arg0, int arg1, int arg2, int arg3, int arg4) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onLayout(ZIIII)V");
+    }
+
+    protected void onMeasure(int arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onMeasure(II)V");
+    }
+
+    protected void onOverScrolled(int arg0, int arg1, boolean arg2, boolean arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onOverScrolled(IIZZ)V");
+    }
+
+    public void onPointerCaptureChange(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onPointerCaptureChange(Z)V");
+    }
+
+    public void onPopulateAccessibilityEvent(android.view.accessibility.AccessibilityEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onPopulateAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V");
+    }
+
+    public void onProvideAutofillStructure(android.view.ViewStructure arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onProvideAutofillStructure(Landroid/view/ViewStructure;I)V");
+    }
+
+    public void onProvideAutofillVirtualStructure(android.view.ViewStructure arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onProvideAutofillVirtualStructure(Landroid/view/ViewStructure;I)V");
+    }
+
+    public void onProvideContentCaptureStructure(android.view.ViewStructure arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onProvideContentCaptureStructure(Landroid/view/ViewStructure;I)V");
+    }
+
+    public void onProvideStructure(android.view.ViewStructure arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onProvideStructure(Landroid/view/ViewStructure;)V");
+    }
+
+    public void onProvideVirtualStructure(android.view.ViewStructure arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onProvideVirtualStructure(Landroid/view/ViewStructure;)V");
+    }
+
+    public android.view.ContentInfo onReceiveContent(android.view.ContentInfo arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onReceiveContent(Landroid/view/ContentInfo;)Landroid/view/ContentInfo;");
+    }
+
+    public android.view.PointerIcon onResolvePointerIcon(android.view.MotionEvent arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onResolvePointerIcon(Landroid/view/MotionEvent;I)Landroid/view/PointerIcon;");
+    }
+
+    protected void onRestoreInstanceState(android.os.Parcelable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onRestoreInstanceState(Landroid/os/Parcelable;)V");
+    }
+
+    public void onRtlPropertiesChanged(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onRtlPropertiesChanged(I)V");
+    }
+
+    protected android.os.Parcelable onSaveInstanceState() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onSaveInstanceState()Landroid/os/Parcelable;");
+    }
+
+    public void onScreenStateChanged(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onScreenStateChanged(I)V");
+    }
+
+    public void onScrollCaptureSearch(android.graphics.Rect arg0, android.graphics.Point arg1, java.util.function.Consumer<android.view.ScrollCaptureTarget> arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onScrollCaptureSearch(Landroid/graphics/Rect;Landroid/graphics/Point;Ljava/util/function/Consumer;)V");
+    }
+
+    protected void onScrollChanged(int arg0, int arg1, int arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onScrollChanged(IIII)V");
+    }
+
+    protected boolean onSetAlpha(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onSetAlpha(I)Z");
+    }
+
+    protected void onSizeChanged(int arg0, int arg1, int arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onSizeChanged(IIII)V");
+    }
+
+    public void onStartTemporaryDetach() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onStartTemporaryDetach()V");
+    }
+
+    public boolean onTouchEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onTouchEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    public boolean onTrackballEvent(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onTrackballEvent(Landroid/view/MotionEvent;)Z");
+    }
+
+    public void onViewTranslationResponse(android.view.translation.ViewTranslationResponse arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onViewTranslationResponse(Landroid/view/translation/ViewTranslationResponse;)V");
+    }
+
+    public void onVirtualViewTranslationResponses(android.util.LongSparseArray<android.view.translation.ViewTranslationResponse> arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onVirtualViewTranslationResponses(Landroid/util/LongSparseArray;)V");
+    }
+
+    public void onVisibilityAggregated(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onVisibilityAggregated(Z)V");
+    }
+
+    protected void onVisibilityChanged(android.view.View arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onVisibilityChanged(Landroid/view/View;I)V");
+    }
+
+    public void onWindowFocusChanged(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onWindowFocusChanged(Z)V");
+    }
+
+    public void onWindowSystemUiVisibilityChanged(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onWindowSystemUiVisibilityChanged(I)V");
+    }
+
+    protected void onWindowVisibilityChanged(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onWindowVisibilityChanged(I)V");
+    }
+
+    protected boolean overScrollBy(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, boolean arg8) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->overScrollBy(IIIIIIIIZ)Z");
+    }
+
+    public boolean performAccessibilityAction(int arg0, android.os.Bundle arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->performAccessibilityAction(ILandroid/os/Bundle;)Z");
+    }
+
+    public boolean performClick() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->performClick()Z");
+    }
+
+    public boolean performContextClick() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->performContextClick()Z");
+    }
+
+    public boolean performContextClick(float arg0, float arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->performContextClick(FF)Z");
+    }
+
+    public boolean performHapticFeedback(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->performHapticFeedback(I)Z");
+    }
+
+    public boolean performHapticFeedback(int arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->performHapticFeedback(II)Z");
+    }
+
+    public boolean performLongClick() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->performLongClick()Z");
+    }
+
+    public boolean performLongClick(float arg0, float arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->performLongClick(FF)Z");
+    }
+
+    public android.view.ContentInfo performReceiveContent(android.view.ContentInfo arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->performReceiveContent(Landroid/view/ContentInfo;)Landroid/view/ContentInfo;");
+    }
+
+    public void playSoundEffect(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->playSoundEffect(I)V");
+    }
+
+    public boolean post(java.lang.Runnable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->post(Ljava/lang/Runnable;)Z");
+    }
+
+    public boolean postDelayed(java.lang.Runnable arg0, long arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postDelayed(Ljava/lang/Runnable;J)Z");
+    }
+
+    public void postInvalidate() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postInvalidate()V");
+    }
+
+    public void postInvalidate(int arg0, int arg1, int arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postInvalidate(IIII)V");
+    }
+
+    public void postInvalidateDelayed(long arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postInvalidateDelayed(J)V");
+    }
+
+    public void postInvalidateDelayed(long arg0, int arg1, int arg2, int arg3, int arg4) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postInvalidateDelayed(JIIII)V");
+    }
+
+    public void postInvalidateOnAnimation() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postInvalidateOnAnimation()V");
+    }
+
+    public void postInvalidateOnAnimation(int arg0, int arg1, int arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postInvalidateOnAnimation(IIII)V");
+    }
+
+    public void postOnAnimation(java.lang.Runnable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postOnAnimation(Ljava/lang/Runnable;)V");
+    }
+
+    public void postOnAnimationDelayed(java.lang.Runnable arg0, long arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postOnAnimationDelayed(Ljava/lang/Runnable;J)V");
+    }
+
+    public void refreshDrawableState() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->refreshDrawableState()V");
+    }
+
+    public void releasePointerCapture() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->releasePointerCapture()V");
+    }
+
+    public boolean removeCallbacks(java.lang.Runnable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->removeCallbacks(Ljava/lang/Runnable;)Z");
+    }
+
+    public void removeOnAttachStateChangeListener(android.view.View.OnAttachStateChangeListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->removeOnAttachStateChangeListener(Landroid/view/View$OnAttachStateChangeListener;)V");
+    }
+
+    public void removeOnLayoutChangeListener(android.view.View.OnLayoutChangeListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->removeOnLayoutChangeListener(Landroid/view/View$OnLayoutChangeListener;)V");
+    }
+
+    public void removeOnUnhandledKeyEventListener(android.view.View.OnUnhandledKeyEventListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->removeOnUnhandledKeyEventListener(Landroid/view/View$OnUnhandledKeyEventListener;)V");
+    }
+
+    public void reportAppJankStats(android.app.jank.AppJankStats arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->reportAppJankStats(Landroid/app/jank/AppJankStats;)V");
+    }
+
+    public void requestApplyInsets() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestApplyInsets()V");
+    }
+
+    public void requestFitSystemWindows() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestFitSystemWindows()V");
+    }
+
+    public final boolean requestFocus() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestFocus()Z");
+    }
+
+    public final boolean requestFocus(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestFocus(I)Z");
+    }
+
+    public boolean requestFocus(int arg0, android.graphics.Rect arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestFocus(ILandroid/graphics/Rect;)Z");
+    }
+
+    public final boolean requestFocusFromTouch() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestFocusFromTouch()Z");
+    }
+
+    public void requestLayout() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestLayout()V");
+    }
+
+    public void requestPointerCapture() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestPointerCapture()V");
+    }
+
+    public boolean requestRectangleOnScreen(android.graphics.Rect arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestRectangleOnScreen(Landroid/graphics/Rect;)Z");
+    }
+
+    public boolean requestRectangleOnScreen(android.graphics.Rect arg0, boolean arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestRectangleOnScreen(Landroid/graphics/Rect;Z)Z");
+    }
+
+    public final void requestUnbufferedDispatch(android.view.MotionEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestUnbufferedDispatch(Landroid/view/MotionEvent;)V");
+    }
+
+    public final void requestUnbufferedDispatch(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestUnbufferedDispatch(I)V");
+    }
+
+    public final <T> T requireViewById(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requireViewById(I)Landroid/view/View;");
+    }
+
+    public void resetPivot() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->resetPivot()V");
+    }
+
+    public static int resolveSize(int arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->resolveSize(II)I");
+    }
+
+    public static int resolveSizeAndState(int arg0, int arg1, int arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->resolveSizeAndState(III)I");
+    }
+
+    public boolean restoreDefaultFocus() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->restoreDefaultFocus()Z");
+    }
+
+    public void restoreHierarchyState(android.util.SparseArray<android.os.Parcelable> arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->restoreHierarchyState(Landroid/util/SparseArray;)V");
+    }
+
+    public final void saveAttributeDataForStyleable(android.content.Context arg0, int[] arg1, android.util.AttributeSet arg2, android.content.res.TypedArray arg3, int arg4, int arg5) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->saveAttributeDataForStyleable(Landroid/content/Context;[ILandroid/util/AttributeSet;Landroid/content/res/TypedArray;II)V");
+    }
+
+    public void saveHierarchyState(android.util.SparseArray<android.os.Parcelable> arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->saveHierarchyState(Landroid/util/SparseArray;)V");
+    }
+
+    public void scheduleDrawable(android.graphics.drawable.Drawable arg0, java.lang.Runnable arg1, long arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->scheduleDrawable(Landroid/graphics/drawable/Drawable;Ljava/lang/Runnable;J)V");
+    }
+
+    public void scrollBy(int arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->scrollBy(II)V");
+    }
+
+    public void scrollTo(int arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->scrollTo(II)V");
+    }
+
+    public void sendAccessibilityEvent(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->sendAccessibilityEvent(I)V");
+    }
+
+    public void sendAccessibilityEventUnchecked(android.view.accessibility.AccessibilityEvent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->sendAccessibilityEventUnchecked(Landroid/view/accessibility/AccessibilityEvent;)V");
+    }
+
+    public void setAccessibilityDataSensitive(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAccessibilityDataSensitive(I)V");
+    }
+
+    public void setAccessibilityDelegate(android.view.View.AccessibilityDelegate arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAccessibilityDelegate(Landroid/view/View$AccessibilityDelegate;)V");
+    }
+
+    public void setAccessibilityHeading(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAccessibilityHeading(Z)V");
+    }
+
+    public void setAccessibilityLiveRegion(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAccessibilityLiveRegion(I)V");
+    }
+
+    public void setAccessibilityPaneTitle(java.lang.CharSequence arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAccessibilityPaneTitle(Ljava/lang/CharSequence;)V");
+    }
+
+    public void setAccessibilityTraversalAfter(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAccessibilityTraversalAfter(I)V");
+    }
+
+    public void setAccessibilityTraversalBefore(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAccessibilityTraversalBefore(I)V");
+    }
+
+    public void setActivated(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setActivated(Z)V");
+    }
+
+    public void setAllowClickWhenDisabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAllowClickWhenDisabled(Z)V");
+    }
+
+    public void setAllowedHandwritingDelegatePackage(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAllowedHandwritingDelegatePackage(Ljava/lang/String;)V");
+    }
+
+    public void setAllowedHandwritingDelegatorPackage(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAllowedHandwritingDelegatorPackage(Ljava/lang/String;)V");
+    }
+
+    public void setAlpha(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAlpha(F)V");
+    }
+
+    public void setAnimation(android.view.animation.Animation arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAnimation(Landroid/view/animation/Animation;)V");
+    }
+
+    public void setAnimationMatrix(android.graphics.Matrix arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAnimationMatrix(Landroid/graphics/Matrix;)V");
+    }
+
+    public void setAutoHandwritingEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAutoHandwritingEnabled(Z)V");
+    }
+
+    public void setAutofillHints(java.lang.String[] arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAutofillHints([Ljava/lang/String;)V");
+    }
+
+    public void setAutofillId(android.view.autofill.AutofillId arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAutofillId(Landroid/view/autofill/AutofillId;)V");
+    }
+
+    public void setBackground(android.graphics.drawable.Drawable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V");
+    }
+
+    public void setBackgroundColor(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBackgroundColor(I)V");
+    }
+
+    public void setBackgroundDrawable(android.graphics.drawable.Drawable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V");
+    }
+
+    public void setBackgroundResource(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBackgroundResource(I)V");
+    }
+
+    public void setBackgroundTintBlendMode(android.graphics.BlendMode arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBackgroundTintBlendMode(Landroid/graphics/BlendMode;)V");
+    }
+
+    public void setBackgroundTintList(android.content.res.ColorStateList arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBackgroundTintList(Landroid/content/res/ColorStateList;)V");
+    }
+
+    public void setBackgroundTintMode(android.graphics.PorterDuff.Mode arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBackgroundTintMode(Landroid/graphics/PorterDuff$Mode;)V");
+    }
+
+    public final void setBottom(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBottom(I)V");
+    }
+
+    public void setCameraDistance(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setCameraDistance(F)V");
+    }
+
+    public void setClickable(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setClickable(Z)V");
+    }
+
+    public void setClipBounds(android.graphics.Rect arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setClipBounds(Landroid/graphics/Rect;)V");
+    }
+
+    public void setClipToOutline(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setClipToOutline(Z)V");
+    }
+
+    public void setContentCaptureSession(android.view.contentcapture.ContentCaptureSession arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setContentCaptureSession(Landroid/view/contentcapture/ContentCaptureSession;)V");
+    }
+
+    public void setContentDescription(java.lang.CharSequence arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setContentDescription(Ljava/lang/CharSequence;)V");
+    }
+
+    public final void setContentSensitivity(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setContentSensitivity(I)V");
+    }
+
+    public void setContextClickable(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setContextClickable(Z)V");
+    }
+
+    public void setDefaultFocusHighlightEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setDefaultFocusHighlightEnabled(Z)V");
+    }
+
+    public void setDrawingCacheBackgroundColor(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setDrawingCacheBackgroundColor(I)V");
+    }
+
+    public void setDrawingCacheEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setDrawingCacheEnabled(Z)V");
+    }
+
+    public void setDrawingCacheQuality(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setDrawingCacheQuality(I)V");
+    }
+
+    public void setDuplicateParentStateEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setDuplicateParentStateEnabled(Z)V");
+    }
+
+    public void setElevation(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setElevation(F)V");
+    }
+
+    public void setEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setEnabled(Z)V");
+    }
+
+    public void setFadingEdgeLength(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setFadingEdgeLength(I)V");
+    }
+
+    public void setFilterTouchesWhenObscured(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setFilterTouchesWhenObscured(Z)V");
+    }
+
+    public void setFitsSystemWindows(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setFitsSystemWindows(Z)V");
+    }
+
+    public void setFocusable(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setFocusable(Z)V");
+    }
+
+    public void setFocusable(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setFocusable(I)V");
+    }
+
+    public void setFocusableInTouchMode(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setFocusableInTouchMode(Z)V");
+    }
+
+    public void setFocusedByDefault(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setFocusedByDefault(Z)V");
+    }
+
+    public void setForceDarkAllowed(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setForceDarkAllowed(Z)V");
+    }
+
+    public void setForeground(android.graphics.drawable.Drawable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setForeground(Landroid/graphics/drawable/Drawable;)V");
+    }
+
+    public void setForegroundGravity(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setForegroundGravity(I)V");
+    }
+
+    public void setForegroundTintBlendMode(android.graphics.BlendMode arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setForegroundTintBlendMode(Landroid/graphics/BlendMode;)V");
+    }
+
+    public void setForegroundTintList(android.content.res.ColorStateList arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setForegroundTintList(Landroid/content/res/ColorStateList;)V");
+    }
+
+    public void setForegroundTintMode(android.graphics.PorterDuff.Mode arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setForegroundTintMode(Landroid/graphics/PorterDuff$Mode;)V");
+    }
+
+    public void setFrameContentVelocity(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setFrameContentVelocity(F)V");
+    }
+
+    public void setHandwritingBoundsOffsets(float arg0, float arg1, float arg2, float arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setHandwritingBoundsOffsets(FFFF)V");
+    }
+
+    public void setHandwritingDelegateFlags(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setHandwritingDelegateFlags(I)V");
+    }
+
+    public void setHandwritingDelegatorCallback(java.lang.Runnable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setHandwritingDelegatorCallback(Ljava/lang/Runnable;)V");
+    }
+
+    public void setHapticFeedbackEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setHapticFeedbackEnabled(Z)V");
+    }
+
+    public void setHasTransientState(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setHasTransientState(Z)V");
+    }
+
+    public void setHorizontalFadingEdgeEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setHorizontalFadingEdgeEnabled(Z)V");
+    }
+
+    public void setHorizontalScrollBarEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setHorizontalScrollBarEnabled(Z)V");
+    }
+
+    public void setHorizontalScrollbarThumbDrawable(android.graphics.drawable.Drawable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setHorizontalScrollbarThumbDrawable(Landroid/graphics/drawable/Drawable;)V");
+    }
+
+    public void setHorizontalScrollbarTrackDrawable(android.graphics.drawable.Drawable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setHorizontalScrollbarTrackDrawable(Landroid/graphics/drawable/Drawable;)V");
+    }
+
+    public void setHovered(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setHovered(Z)V");
+    }
+
+    public void setId(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setId(I)V");
+    }
+
+    public void setImportantForAccessibility(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setImportantForAccessibility(I)V");
+    }
+
+    public void setImportantForAutofill(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setImportantForAutofill(I)V");
+    }
+
+    public void setImportantForContentCapture(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setImportantForContentCapture(I)V");
+    }
+
+    public void setIsCredential(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setIsCredential(Z)V");
+    }
+
+    public void setIsHandwritingDelegate(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setIsHandwritingDelegate(Z)V");
+    }
+
+    public void setKeepScreenOn(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setKeepScreenOn(Z)V");
+    }
+
+    public void setKeyboardNavigationCluster(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setKeyboardNavigationCluster(Z)V");
+    }
+
+    public void setLabelFor(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setLabelFor(I)V");
+    }
+
+    public void setLayerPaint(android.graphics.Paint arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setLayerPaint(Landroid/graphics/Paint;)V");
+    }
+
+    public void setLayerType(int arg0, android.graphics.Paint arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setLayerType(ILandroid/graphics/Paint;)V");
+    }
+
+    public void setLayoutDirection(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setLayoutDirection(I)V");
+    }
+
+    public void setLayoutParams(android.view.ViewGroup.LayoutParams arg0) {
+        mLayoutParams = arg0;
+    }
+
+    public final void setLeft(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setLeft(I)V");
+    }
+
+    public final void setLeftTopRightBottom(int arg0, int arg1, int arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setLeftTopRightBottom(IIII)V");
+    }
+
+    public void setLongClickable(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setLongClickable(Z)V");
+    }
+
+    protected final void setMeasuredDimension(int arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setMeasuredDimension(II)V");
+    }
+
+    public void setMinimumHeight(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setMinimumHeight(I)V");
+    }
+
+    public void setMinimumWidth(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setMinimumWidth(I)V");
+    }
+
+    public void setNestedScrollingEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setNestedScrollingEnabled(Z)V");
+    }
+
+    public void setNextClusterForwardId(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setNextClusterForwardId(I)V");
+    }
+
+    public void setNextFocusDownId(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setNextFocusDownId(I)V");
+    }
+
+    public void setNextFocusForwardId(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setNextFocusForwardId(I)V");
+    }
+
+    public void setNextFocusLeftId(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setNextFocusLeftId(I)V");
+    }
+
+    public void setNextFocusRightId(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setNextFocusRightId(I)V");
+    }
+
+    public void setNextFocusUpId(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setNextFocusUpId(I)V");
+    }
+
+    public void setOnApplyWindowInsetsListener(android.view.View.OnApplyWindowInsetsListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnApplyWindowInsetsListener(Landroid/view/View$OnApplyWindowInsetsListener;)V");
+    }
+
+    public void setOnCapturedPointerListener(android.view.View.OnCapturedPointerListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnCapturedPointerListener(Landroid/view/View$OnCapturedPointerListener;)V");
+    }
+
+    public void setOnClickListener(android.view.View.OnClickListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnClickListener(Landroid/view/View$OnClickListener;)V");
+    }
+
+    public void setOnContextClickListener(android.view.View.OnContextClickListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnContextClickListener(Landroid/view/View$OnContextClickListener;)V");
+    }
+
+    public void setOnCreateContextMenuListener(android.view.View.OnCreateContextMenuListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnCreateContextMenuListener(Landroid/view/View$OnCreateContextMenuListener;)V");
+    }
+
+    public void setOnDragListener(android.view.View.OnDragListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnDragListener(Landroid/view/View$OnDragListener;)V");
+    }
+
+    public void setOnFocusChangeListener(android.view.View.OnFocusChangeListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnFocusChangeListener(Landroid/view/View$OnFocusChangeListener;)V");
+    }
+
+    public void setOnGenericMotionListener(android.view.View.OnGenericMotionListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnGenericMotionListener(Landroid/view/View$OnGenericMotionListener;)V");
+    }
+
+    public void setOnHoverListener(android.view.View.OnHoverListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnHoverListener(Landroid/view/View$OnHoverListener;)V");
+    }
+
+    public void setOnKeyListener(android.view.View.OnKeyListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnKeyListener(Landroid/view/View$OnKeyListener;)V");
+    }
+
+    public void setOnLongClickListener(android.view.View.OnLongClickListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnLongClickListener(Landroid/view/View$OnLongClickListener;)V");
+    }
+
+    public void setOnReceiveContentListener(java.lang.String[] arg0, android.view.OnReceiveContentListener arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnReceiveContentListener([Ljava/lang/String;Landroid/view/OnReceiveContentListener;)V");
+    }
+
+    public void setOnScrollChangeListener(android.view.View.OnScrollChangeListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnScrollChangeListener(Landroid/view/View$OnScrollChangeListener;)V");
+    }
+
+    public void setOnSystemUiVisibilityChangeListener(android.view.View.OnSystemUiVisibilityChangeListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnSystemUiVisibilityChangeListener(Landroid/view/View$OnSystemUiVisibilityChangeListener;)V");
+    }
+
+    public void setOnTouchListener(android.view.View.OnTouchListener arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnTouchListener(Landroid/view/View$OnTouchListener;)V");
+    }
+
+    public void setOutlineAmbientShadowColor(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOutlineAmbientShadowColor(I)V");
+    }
+
+    public void setOutlineProvider(android.view.ViewOutlineProvider arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOutlineProvider(Landroid/view/ViewOutlineProvider;)V");
+    }
+
+    public void setOutlineSpotShadowColor(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOutlineSpotShadowColor(I)V");
+    }
+
+    public void setOverScrollMode(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOverScrollMode(I)V");
+    }
+
+    public void setPadding(int arg0, int arg1, int arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setPadding(IIII)V");
+    }
+
+    public void setPaddingRelative(int arg0, int arg1, int arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setPaddingRelative(IIII)V");
+    }
+
+    public void setPendingCredentialRequest(android.credentials.GetCredentialRequest arg0, android.os.OutcomeReceiver<android.credentials.GetCredentialResponse, android.credentials.GetCredentialException> arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setPendingCredentialRequest(Landroid/credentials/GetCredentialRequest;Landroid/os/OutcomeReceiver;)V");
+    }
+
+    public void setPivotX(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setPivotX(F)V");
+    }
+
+    public void setPivotY(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setPivotY(F)V");
+    }
+
+    public void setPointerIcon(android.view.PointerIcon arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setPointerIcon(Landroid/view/PointerIcon;)V");
+    }
+
+    public final void setPreferKeepClear(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setPreferKeepClear(Z)V");
+    }
+
+    public final void setPreferKeepClearRects(java.util.List<android.graphics.Rect> arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setPreferKeepClearRects(Ljava/util/List;)V");
+    }
+
+    public void setPressed(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setPressed(Z)V");
+    }
+
+    public void setRenderEffect(android.graphics.RenderEffect arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setRenderEffect(Landroid/graphics/RenderEffect;)V");
+    }
+
+    public void setRequestedFrameRate(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setRequestedFrameRate(F)V");
+    }
+
+    public final void setRevealOnFocusHint(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setRevealOnFocusHint(Z)V");
+    }
+
+    public final void setRight(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setRight(I)V");
+    }
+
+    public void setRotation(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setRotation(F)V");
+    }
+
+    public void setRotationX(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setRotationX(F)V");
+    }
+
+    public void setRotationY(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setRotationY(F)V");
+    }
+
+    public void setSaveEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setSaveEnabled(Z)V");
+    }
+
+    public void setSaveFromParentEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setSaveFromParentEnabled(Z)V");
+    }
+
+    public void setScaleX(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScaleX(F)V");
+    }
+
+    public void setScaleY(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScaleY(F)V");
+    }
+
+    public void setScreenReaderFocusable(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScreenReaderFocusable(Z)V");
+    }
+
+    public void setScrollBarDefaultDelayBeforeFade(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollBarDefaultDelayBeforeFade(I)V");
+    }
+
+    public void setScrollBarFadeDuration(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollBarFadeDuration(I)V");
+    }
+
+    public void setScrollBarSize(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollBarSize(I)V");
+    }
+
+    public void setScrollBarStyle(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollBarStyle(I)V");
+    }
+
+    public final void setScrollCaptureCallback(android.view.ScrollCaptureCallback arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollCaptureCallback(Landroid/view/ScrollCaptureCallback;)V");
+    }
+
+    public void setScrollCaptureHint(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollCaptureHint(I)V");
+    }
+
+    public void setScrollContainer(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollContainer(Z)V");
+    }
+
+    public void setScrollIndicators(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollIndicators(I)V");
+    }
+
+    public void setScrollIndicators(int arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollIndicators(II)V");
+    }
+
+    public void setScrollX(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollX(I)V");
+    }
+
+    public void setScrollY(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollY(I)V");
+    }
+
+    public void setScrollbarFadingEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollbarFadingEnabled(Z)V");
+    }
+
+    public void setSelected(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setSelected(Z)V");
+    }
+
+    public void setSoundEffectsEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setSoundEffectsEnabled(Z)V");
+    }
+
+    public void setStateDescription(java.lang.CharSequence arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setStateDescription(Ljava/lang/CharSequence;)V");
+    }
+
+    public void setStateListAnimator(android.animation.StateListAnimator arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setStateListAnimator(Landroid/animation/StateListAnimator;)V");
+    }
+
+    public void setSupplementalDescription(java.lang.CharSequence arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setSupplementalDescription(Ljava/lang/CharSequence;)V");
+    }
+
+    public void setSystemGestureExclusionRects(java.util.List<android.graphics.Rect> arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setSystemGestureExclusionRects(Ljava/util/List;)V");
+    }
+
+    public void setSystemUiVisibility(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setSystemUiVisibility(I)V");
+    }
+
+    public void setTag(int arg0, java.lang.Object arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTag(ILjava/lang/Object;)V");
+    }
+
+    public void setTag(java.lang.Object arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTag(Ljava/lang/Object;)V");
+    }
+
+    public void setTextAlignment(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTextAlignment(I)V");
+    }
+
+    public void setTextDirection(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTextDirection(I)V");
+    }
+
+    public void setTooltipText(java.lang.CharSequence arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTooltipText(Ljava/lang/CharSequence;)V");
+    }
+
+    public final void setTop(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTop(I)V");
+    }
+
+    public void setTouchDelegate(android.view.TouchDelegate arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTouchDelegate(Landroid/view/TouchDelegate;)V");
+    }
+
+    public void setTransitionAlpha(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTransitionAlpha(F)V");
+    }
+
+    public final void setTransitionName(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTransitionName(Ljava/lang/String;)V");
+    }
+
+    public void setTransitionVisibility(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTransitionVisibility(I)V");
+    }
+
+    public void setTranslationX(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTranslationX(F)V");
+    }
+
+    public void setTranslationY(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTranslationY(F)V");
+    }
+
+    public void setTranslationZ(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTranslationZ(F)V");
+    }
+
+    public void setVerticalFadingEdgeEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setVerticalFadingEdgeEnabled(Z)V");
+    }
+
+    public void setVerticalScrollBarEnabled(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setVerticalScrollBarEnabled(Z)V");
+    }
+
+    public void setVerticalScrollbarPosition(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setVerticalScrollbarPosition(I)V");
+    }
+
+    public void setVerticalScrollbarThumbDrawable(android.graphics.drawable.Drawable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setVerticalScrollbarThumbDrawable(Landroid/graphics/drawable/Drawable;)V");
+    }
+
+    public void setVerticalScrollbarTrackDrawable(android.graphics.drawable.Drawable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setVerticalScrollbarTrackDrawable(Landroid/graphics/drawable/Drawable;)V");
+    }
+
+    public void setViewTranslationCallback(android.view.translation.ViewTranslationCallback arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setViewTranslationCallback(Landroid/view/translation/ViewTranslationCallback;)V");
+    }
+
+    public void setVisibility(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setVisibility(I)V");
+    }
+
+    public void setWillNotCacheDrawing(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setWillNotCacheDrawing(Z)V");
+    }
+
+    public void setWillNotDraw(boolean arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setWillNotDraw(Z)V");
+    }
+
+    public void setWindowInsetsAnimationCallback(android.view.WindowInsetsAnimation.Callback arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setWindowInsetsAnimationCallback(Landroid/view/WindowInsetsAnimation$Callback;)V");
+    }
+
+    public void setX(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setX(F)V");
+    }
+
+    public void setY(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setY(F)V");
+    }
+
+    public void setZ(float arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setZ(F)V");
+    }
+
+    public boolean showContextMenu() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->showContextMenu()Z");
+    }
+
+    public boolean showContextMenu(float arg0, float arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->showContextMenu(FF)Z");
+    }
+
+    public android.view.ActionMode startActionMode(android.view.ActionMode.Callback arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->startActionMode(Landroid/view/ActionMode$Callback;)Landroid/view/ActionMode;");
+    }
+
+    public android.view.ActionMode startActionMode(android.view.ActionMode.Callback arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->startActionMode(Landroid/view/ActionMode$Callback;I)Landroid/view/ActionMode;");
+    }
+
+    public void startAnimation(android.view.animation.Animation arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->startAnimation(Landroid/view/animation/Animation;)V");
+    }
+
+    public final boolean startDrag(android.content.ClipData arg0, android.view.View.DragShadowBuilder arg1, java.lang.Object arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->startDrag(Landroid/content/ClipData;Landroid/view/View$DragShadowBuilder;Ljava/lang/Object;I)Z");
+    }
+
+    public final boolean startDragAndDrop(android.content.ClipData arg0, android.view.View.DragShadowBuilder arg1, java.lang.Object arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->startDragAndDrop(Landroid/content/ClipData;Landroid/view/View$DragShadowBuilder;Ljava/lang/Object;I)Z");
+    }
+
+    public boolean startNestedScroll(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->startNestedScroll(I)Z");
+    }
+
+    public void stopNestedScroll() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->stopNestedScroll()V");
+    }
+
+    public java.lang.String toString() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->toString()Ljava/lang/String;");
+    }
+
+    public void transformMatrixToGlobal(android.graphics.Matrix arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->transformMatrixToGlobal(Landroid/graphics/Matrix;)V");
+    }
+
+    public void transformMatrixToLocal(android.graphics.Matrix arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->transformMatrixToLocal(Landroid/graphics/Matrix;)V");
+    }
+
+    public void unscheduleDrawable(android.graphics.drawable.Drawable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->unscheduleDrawable(Landroid/graphics/drawable/Drawable;)V");
+    }
+
+    public void unscheduleDrawable(android.graphics.drawable.Drawable arg0, java.lang.Runnable arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->unscheduleDrawable(Landroid/graphics/drawable/Drawable;Ljava/lang/Runnable;)V");
+    }
+
+    public final void updateDragShadow(android.view.View.DragShadowBuilder arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->updateDragShadow(Landroid/view/View$DragShadowBuilder;)V");
+    }
+
+    protected boolean verifyDrawable(android.graphics.drawable.Drawable arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->verifyDrawable(Landroid/graphics/drawable/Drawable;)Z");
+    }
+
+    public boolean willNotCacheDrawing() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->willNotCacheDrawing()Z");
+    }
+
+    public boolean willNotDraw() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->willNotDraw()Z");
+    }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public View() {
+        }
+        public static class AccessibilityDelegate {
+
+        public AccessibilityDelegate() {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$AccessibilityDelegate;-><init>()V");
+        }
+
+        public void addExtraDataToAccessibilityNodeInfo(android.view.View arg0, android.view.accessibility.AccessibilityNodeInfo arg1, java.lang.String arg2, android.os.Bundle arg3) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$AccessibilityDelegate;->addExtraDataToAccessibilityNodeInfo(Landroid/view/View;Landroid/view/accessibility/AccessibilityNodeInfo;Ljava/lang/String;Landroid/os/Bundle;)V");
+        }
+
+        public boolean dispatchPopulateAccessibilityEvent(android.view.View arg0, android.view.accessibility.AccessibilityEvent arg1) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$AccessibilityDelegate;->dispatchPopulateAccessibilityEvent(Landroid/view/View;Landroid/view/accessibility/AccessibilityEvent;)Z");
+        }
+
+        public android.view.accessibility.AccessibilityNodeProvider getAccessibilityNodeProvider(android.view.View arg0) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$AccessibilityDelegate;->getAccessibilityNodeProvider(Landroid/view/View;)Landroid/view/accessibility/AccessibilityNodeProvider;");
+        }
+
+        public void onInitializeAccessibilityEvent(android.view.View arg0, android.view.accessibility.AccessibilityEvent arg1) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$AccessibilityDelegate;->onInitializeAccessibilityEvent(Landroid/view/View;Landroid/view/accessibility/AccessibilityEvent;)V");
+        }
+
+        public void onInitializeAccessibilityNodeInfo(android.view.View arg0, android.view.accessibility.AccessibilityNodeInfo arg1) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$AccessibilityDelegate;->onInitializeAccessibilityNodeInfo(Landroid/view/View;Landroid/view/accessibility/AccessibilityNodeInfo;)V");
+        }
+
+        public void onPopulateAccessibilityEvent(android.view.View arg0, android.view.accessibility.AccessibilityEvent arg1) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$AccessibilityDelegate;->onPopulateAccessibilityEvent(Landroid/view/View;Landroid/view/accessibility/AccessibilityEvent;)V");
+        }
+
+        public boolean onRequestSendAccessibilityEvent(android.view.ViewGroup arg0, android.view.View arg1, android.view.accessibility.AccessibilityEvent arg2) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$AccessibilityDelegate;->onRequestSendAccessibilityEvent(Landroid/view/ViewGroup;Landroid/view/View;Landroid/view/accessibility/AccessibilityEvent;)Z");
+        }
+
+        public boolean performAccessibilityAction(android.view.View arg0, int arg1, android.os.Bundle arg2) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$AccessibilityDelegate;->performAccessibilityAction(Landroid/view/View;ILandroid/os/Bundle;)Z");
+        }
+
+        public void sendAccessibilityEvent(android.view.View arg0, int arg1) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$AccessibilityDelegate;->sendAccessibilityEvent(Landroid/view/View;I)V");
+        }
+
+        public void sendAccessibilityEventUnchecked(android.view.View arg0, android.view.accessibility.AccessibilityEvent arg1) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$AccessibilityDelegate;->sendAccessibilityEventUnchecked(Landroid/view/View;Landroid/view/accessibility/AccessibilityEvent;)V");
+        }
+        }
+        public static class DragShadowBuilder {
+
+        public DragShadowBuilder() {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$DragShadowBuilder;-><init>()V");
+        }
+
+        public DragShadowBuilder(android.view.View arg0) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$DragShadowBuilder;-><init>(Landroid/view/View;)V");
+        }
+
+        public final android.view.View getView() {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$DragShadowBuilder;->getView()Landroid/view/View;");
+        }
+
+        public void onDrawShadow(android.graphics.Canvas arg0) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$DragShadowBuilder;->onDrawShadow(Landroid/graphics/Canvas;)V");
+        }
+
+        public void onProvideShadowMetrics(android.graphics.Point arg0, android.graphics.Point arg1) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$DragShadowBuilder;->onProvideShadowMetrics(Landroid/graphics/Point;Landroid/graphics/Point;)V");
+        }
+        }
+        public static interface OnApplyWindowInsetsListener {
+
+        public abstract android.view.WindowInsets onApplyWindowInsets(android.view.View arg0, android.view.WindowInsets arg1);
+        }
+        public static interface OnAttachStateChangeListener {
+
+        public abstract void onViewAttachedToWindow(android.view.View arg0);
+
+        public abstract void onViewDetachedFromWindow(android.view.View arg0);
+        }
+        public static interface OnCapturedPointerListener {
+
+        public abstract boolean onCapturedPointer(android.view.View arg0, android.view.MotionEvent arg1);
+        }
+        public static interface OnClickListener {
+
+        public abstract void onClick(android.view.View arg0);
+        }
+        public static interface OnContextClickListener {
+
+        public abstract boolean onContextClick(android.view.View arg0);
+        }
+        public static interface OnCreateContextMenuListener {
+
+        public abstract void onCreateContextMenu(android.view.ContextMenu arg0, android.view.View arg1, android.view.ContextMenu.ContextMenuInfo arg2);
+        }
+        public static interface OnDragListener {
+
+        public abstract boolean onDrag(android.view.View arg0, android.view.DragEvent arg1);
+        }
+        public static interface OnFocusChangeListener {
+
+        public abstract void onFocusChange(android.view.View arg0, boolean arg1);
+        }
+        public static interface OnGenericMotionListener {
+
+        public abstract boolean onGenericMotion(android.view.View arg0, android.view.MotionEvent arg1);
+        }
+        public static interface OnHoverListener {
+
+        public abstract boolean onHover(android.view.View arg0, android.view.MotionEvent arg1);
+        }
+        public static interface OnKeyListener {
+
+        public abstract boolean onKey(android.view.View arg0, int arg1, android.view.KeyEvent arg2);
+        }
+        public static interface OnLayoutChangeListener {
+
+        public abstract void onLayoutChange(android.view.View arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8);
+        }
+        public static interface OnLongClickListener {
+
+        public abstract boolean onLongClick(android.view.View arg0);
+
+        public default boolean onLongClickUseDefaultHapticFeedback(android.view.View arg0) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$OnLongClickListener;->onLongClickUseDefaultHapticFeedback(Landroid/view/View;)Z");
+        }
+        }
+        public static interface OnScrollChangeListener {
+
+        public abstract void onScrollChange(android.view.View arg0, int arg1, int arg2, int arg3, int arg4);
+        }
+        public static interface OnSystemUiVisibilityChangeListener {
+
+        public abstract void onSystemUiVisibilityChange(int arg0);
+        }
+        public static interface OnTouchListener {
+
+        public abstract boolean onTouch(android.view.View arg0, android.view.MotionEvent arg1);
+        }
+        public static interface OnUnhandledKeyEventListener {
+
+        public abstract boolean onUnhandledKeyEvent(android.view.View arg0, android.view.KeyEvent arg1);
+        }
+    }

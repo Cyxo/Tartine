@@ -29,4 +29,8 @@ package android.util;
     public java.lang.String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Size;->toString()Ljava/lang/String;");
     }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public Size() {
+        }
     }
