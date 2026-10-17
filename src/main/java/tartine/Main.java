@@ -581,27 +581,45 @@ public final class Main {
                     ? invokeVirtual(dexes, interpreter, (VmObject) children, "size", 0)
                     : null;
             System.out.println("root children after frame: " + childCount);
-            System.out.println("composition frames:");
-            java.util.List<String> trace = interpreter.lastTrace();
-            int shown = 0;
-            for (int i = trace.size() - 1; i >= 0 && shown < 60; i--) {
-                String line = trace.get(i);
-                if (line.contains("AndroidUiDispatcher")) {
-                    continue;
-                }
-                if (line.contains("omposition") || line.contains("ecomposer")
-                        || line.contains("ispatche") || line.contains("Await")
-                        || line.contains("ecompose") || line.contains("omposer")) {
-                    System.out.println("  at " + line);
-                    shown++;
-                }
-            }
+            driveMeasureLayout(dexes, interpreter, owner);
         } catch (RuntimeException e) {
             System.out.println("frame blocked at: " + e.getMessage());
             if (e instanceof VmThrow) {
                 System.out.println("thrown: " + describe(((VmThrow) e).value));
             }
             printTrace(interpreter);
+        }
+    }
+
+    /**
+     * Runs measure and layout on the owner with EXACTLY specs matching
+     * the headless window (480x960), the driver's equivalent of the first
+     * traversal. Then reports the root's measured size.
+     */
+    private static void driveMeasureLayout(DexSet dexes, Interpreter interpreter,
+            VmObject owner) {
+        int widthSpec = 480 | (1 << 30);
+        int heightSpec = 960 | (1 << 30);
+        try {
+            invokeVirtual(dexes, interpreter, owner, "onMeasure", 2, widthSpec, heightSpec);
+            System.out.println("onMeasure returned after " + interpreter.steps() + " steps");
+            invokeVirtual(dexes, interpreter, owner, "onLayout", 5, 0, 0, 0, 480, 960);
+            System.out.println("onLayout returned after " + interpreter.steps() + " steps");
+            Object root = invokeVirtual(dexes, interpreter, owner, "getRoot", 0);
+            Object width = root instanceof VmObject
+                    ? invokeVirtual(dexes, interpreter, (VmObject) root, "getWidth", 0)
+                    : null;
+            Object height = root instanceof VmObject
+                    ? invokeVirtual(dexes, interpreter, (VmObject) root, "getHeight", 0)
+                    : null;
+            System.out.println("root size: " + width + "x" + height);
+        } catch (RuntimeException e) {
+            System.out.println("measure blocked at: " + e.getMessage());
+            if (e instanceof VmThrow) {
+                System.out.println("thrown: " + describe(((VmThrow) e).value));
+            }
+            printTrace(interpreter);
+            e.printStackTrace(System.err);
         }
     }
 

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -371,7 +372,253 @@ class VmTest {
     @Test
     void paintFlagsRoundTrip() {
         interpreter.setFramework(framework());
-        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "paintDemo"));
+        assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "paintDemo"));
+    }
+
+    @Test
+    void textPaintFlagsRoundTrip() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(1), interpreter.call(FixtureDex.HELLO, "textPaintDemo"));
+    }
+
+    @Test
+    void paintTextStateRoundTrips() {
+        interpreter.setFramework(framework());
+        Object result = interpreter.call(FixtureDex.HELLO, "paintTextDemo");
+        assertTrue(result instanceof VmObject);
+        VmObject paint = (VmObject) result;
+        assertEquals(Integer.valueOf(1),
+                paint.getField("Landroid/graphics/Paint;.mHinting"));
+        assertEquals(Float.valueOf(7.5f),
+                paint.getField("Landroid/graphics/Paint;.mTextSize"));
+        assertNull(paint.getField("Landroid/graphics/Paint;.mTypeface"));
+        assertNull(paint.getField("Landroid/graphics/Paint;.mShader"));
+        assertEquals(Float.valueOf(2.0f),
+                paint.getField("Landroid/graphics/Paint;.mTextScaleX"));
+    }
+
+    @Test
+    void typefaceDefaultIsStable() {
+        interpreter.setFramework(framework());
+        Object first = interpreter.call(FixtureDex.HELLO, "typefaceDemo");
+        Object second = interpreter.call(FixtureDex.HELLO, "typefaceDemo");
+        assertSame(first, second);
+        assertTrue(first instanceof VmObject);
+        assertEquals("DEFAULT", ((VmObject) first)
+                .getField("Landroid/graphics/Typeface;.familyName"));
+    }
+
+    @Test
+    void heuristicLtrIsStable() {
+        interpreter.setFramework(framework());
+        Object first = interpreter.call(FixtureDex.HELLO, "heuristicDemo");
+        Object second = interpreter.call(FixtureDex.HELLO, "heuristicDemo");
+        assertSame(first, second);
+        assertTrue(first instanceof VmObject);
+        assertEquals("LTR", ((VmObject) first)
+                .getField("Landroid/text/TextDirectionHeuristics;.heuristicName"));
+    }
+
+    @Test
+    void boringLayoutIsNeverProven() {
+        interpreter.setFramework(framework());
+        assertNull(interpreter.call(FixtureDex.HELLO, "boringDemo"));
+    }
+
+    @Test
+    void enumValuesListsConstants() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(3),
+                interpreter.call(FixtureDex.HELLO, "enumValuesDemo"));
+    }
+
+    @Test
+    void staticLayoutBuilderRecords() {
+        interpreter.setFramework(framework());
+        Object result = interpreter.call(FixtureDex.HELLO, "obtainDemo");
+        assertTrue(result instanceof VmObject);
+        VmObject builder = (VmObject) result;
+        assertEquals("hello",
+                builder.getField("Landroid/text/StaticLayout$Builder;.mText"));
+        assertEquals(Integer.valueOf(100),
+                builder.getField("Landroid/text/StaticLayout$Builder;.mWidth"));
+    }
+
+    @Test
+    void builderDirectionChains() {
+        interpreter.setFramework(framework());
+        Object result = interpreter.call(FixtureDex.HELLO, "directionDemo");
+        assertTrue(result instanceof VmObject);
+        assertNotNull(((VmObject) result)
+                .getField("Landroid/text/StaticLayout$Builder;.mTextDir"));
+    }
+
+    @Test
+    void lineBreakStyleChains() {
+        interpreter.setFramework(framework());
+        Object result = interpreter.call(FixtureDex.HELLO, "lineBreakDemo");
+        assertTrue(result instanceof VmObject);
+        Object config = ((VmObject) result)
+                .getField("Landroid/text/StaticLayout$Builder;.mLineBreakConfig");
+        assertTrue(config instanceof VmObject);
+        assertEquals(Integer.valueOf(1), ((VmObject) config).getField(
+                "Landroid/graphics/text/LineBreakConfig$Builder;.mStyle"));
+        assertEquals(Integer.valueOf(2), ((VmObject) config).getField(
+                "Landroid/graphics/text/LineBreakConfig$Builder;.mWordStyle"));
+        assertEquals(Integer.valueOf(3), ((VmObject) config).getField(
+                "Landroid/graphics/text/LineBreakConfig$Builder;.mHyphenation"));
+    }
+
+    @Test
+    void staticLayoutBreaksLines() {
+        interpreter.setFramework(framework());
+        Object result = interpreter.call(FixtureDex.HELLO, "buildLayoutDemo");
+        assertTrue(result instanceof VmObject);
+        VmObject layout = (VmObject) result;
+        assertEquals(Integer.valueOf(3),
+                layout.getField("Landroid/text/StaticLayout;.mLineCount"));
+        assertEquals(Integer.valueOf(30),
+                layout.getField("Landroid/text/StaticLayout;.mWidth"));
+        assertEquals(Integer.valueOf(29),
+                layout.getField("Landroid/text/StaticLayout;.mHeight"));
+        Object starts = layout.getField("Landroid/text/StaticLayout;.mLineStarts");
+        Object widths = layout.getField("Landroid/text/StaticLayout;.mLineWidths");
+        assertTrue(starts instanceof VmArray && widths instanceof VmArray);
+        assertEquals(Integer.valueOf(6), ((VmArray) starts).get(1));
+        assertEquals(Float.valueOf(20.0f), ((VmArray) widths).get(0));
+        assertEquals("hello world test",
+                layout.getField("Landroid/text/StaticLayout;.mText"));
+    }
+
+    @Test
+    void layoutGettersReadBrokenLines() {
+        interpreter.setFramework(framework());
+        Object result = interpreter.call(FixtureDex.HELLO, "layoutGetDemo");
+        assertTrue(result instanceof VmArray);
+        VmArray values = (VmArray) result;
+        assertEquals(18, values.length());
+        assertEquals(Integer.valueOf(3), values.get(0));
+        assertEquals(Integer.valueOf(29), values.get(1));
+        assertEquals(Integer.valueOf(30), values.get(2));
+        assertEquals(Integer.valueOf(6), values.get(3));
+        assertEquals(Integer.valueOf(11), values.get(4));
+        assertEquals(Integer.valueOf(10), values.get(5));
+        assertEquals(Integer.valueOf(19), values.get(6));
+        assertEquals(Float.valueOf(0.0f), values.get(7));
+        assertEquals(Float.valueOf(20.0f), values.get(8));
+        assertEquals(Integer.valueOf(0), values.get(9));
+        assertEquals(Integer.valueOf(1), values.get(10));
+        assertEquals(Float.valueOf(20.0f), values.get(11));
+        assertEquals(Integer.valueOf(0), values.get(12));
+        assertEquals("hello world test", values.get(13));
+        assertTrue(values.get(14) instanceof VmObject);
+        assertEquals(Float.valueOf(8.0f), ((VmObject) values.get(14))
+                .getField("Landroid/graphics/Paint;.mTextSize"));
+        assertEquals(Integer.valueOf(16), values.get(15));
+        assertEquals(Integer.valueOf(6), values.get(16));
+        assertEquals(Integer.valueOf(2), values.get(17));
+    }
+
+    @Test
+    void builderOptionsRecord() {
+        interpreter.setFramework(framework());
+        Object result = interpreter.call(FixtureDex.HELLO, "builderOptsDemo");
+        assertTrue(result instanceof VmObject);
+        VmObject builder = (VmObject) result;
+        Object alignment = builder.getField("Landroid/text/StaticLayout$Builder;.mAlignment");
+        assertTrue(alignment instanceof VmObject);
+        assertEquals("ALIGN_NORMAL",
+                ((VmObject) alignment).getField("Ljava/lang/Enum;.name"));
+        assertEquals(Float.valueOf(1.5f),
+                builder.getField("Landroid/text/StaticLayout$Builder;.mSpacingAdd"));
+        assertEquals(Float.valueOf(2.5f),
+                builder.getField("Landroid/text/StaticLayout$Builder;.mSpacingMult"));
+        assertEquals(Integer.valueOf(1),
+                builder.getField("Landroid/text/StaticLayout$Builder;.mIncludePad"));
+        assertNull(builder.getField("Landroid/text/StaticLayout$Builder;.mEllipsize"));
+        assertEquals(Integer.valueOf(100),
+                builder.getField("Landroid/text/StaticLayout$Builder;.mEllipsizedWidth"));
+        assertEquals(Integer.valueOf(3),
+                builder.getField("Landroid/text/StaticLayout$Builder;.mMaxLines"));
+        assertEquals(Integer.valueOf(1),
+                builder.getField("Landroid/text/StaticLayout$Builder;.mBreakStrategy"));
+        assertEquals(Integer.valueOf(2),
+                builder.getField("Landroid/text/StaticLayout$Builder;.mHyphenation"));
+        assertEquals(Integer.valueOf(1),
+                builder.getField("Landroid/text/StaticLayout$Builder;.mJustification"));
+        Object indentsLeft = builder.getField("Landroid/text/StaticLayout$Builder;.mIndentsLeft");
+        Object indentsRight =
+                builder.getField("Landroid/text/StaticLayout$Builder;.mIndentsRight");
+        assertTrue(indentsLeft instanceof VmArray && indentsRight instanceof VmArray);
+        assertEquals(Integer.valueOf(10),
+                ((VmArray) indentsLeft).get(0));
+        assertEquals(Integer.valueOf(40),
+                ((VmArray) indentsRight).get(1));
+        assertEquals(Integer.valueOf(1),
+                builder.getField("Landroid/text/StaticLayout$Builder;.mFallbackLineSpacing"));
+    }
+
+    @Test
+    void desiredWidthApproximates() {
+        interpreter.setFramework(framework());
+        assertEquals(Float.valueOf(45.0f),
+                interpreter.call(FixtureDex.HELLO, "desiredDemo"));
+    }
+
+    @Test
+    void desiredWidthReadsSpannables() {
+        interpreter.setFramework(framework());
+        assertEquals(Float.valueOf(20.0f),
+                interpreter.call(FixtureDex.HELLO, "desiredSpanDemo"));
+    }
+
+    @Test
+    void spannableWrapsAndQueries() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(41611),
+                interpreter.call(FixtureDex.HELLO, "spannableDemo"));
+    }
+
+    @Test
+    void paintFullStateRoundTrips() {
+        interpreter.setFramework(framework());
+        Object result = interpreter.call(FixtureDex.HELLO, "paintFullDemo");
+        assertTrue(result instanceof VmObject);
+        VmObject paint = (VmObject) result;
+        assertEquals(Float.valueOf(2.0f),
+                paint.getField("Landroid/graphics/Paint;.mLetterSpacing"));
+        assertEquals(Float.valueOf(3.0f),
+                paint.getField("Landroid/graphics/Paint;.mWordSpacing"));
+        assertEquals(Float.valueOf(4.0f),
+                paint.getField("Landroid/graphics/Paint;.mTextSkewX"));
+        assertEquals(Integer.valueOf(1),
+                paint.getField("Landroid/graphics/Paint;.mAntiAlias"));
+        assertEquals(Integer.valueOf(1),
+                paint.getField("Landroid/graphics/Paint;.mFilterBitmap"));
+        assertEquals(Integer.valueOf(1), paint.getField("Landroid/graphics/Paint;.mDither"));
+        assertEquals(Integer.valueOf(1),
+                paint.getField("Landroid/graphics/Paint;.mStrikeThru"));
+        assertEquals(Integer.valueOf(1),
+                paint.getField("Landroid/graphics/Paint;.mUnderline"));
+        assertEquals(Integer.valueOf(1),
+                paint.getField("Landroid/graphics/Paint;.mFakeBold"));
+        assertEquals(Integer.valueOf(1), paint.getField("Landroid/graphics/Paint;.mElegant"));
+        assertNotNull(paint.getField("Landroid/graphics/Paint;.mTextLocale"));
+        assertNotNull(paint.getField("Landroid/graphics/Paint;.mTextLocales"));
+        assertEquals("smcp", paint.getField("Landroid/graphics/Paint;.mFontFeature"));
+        assertNull(paint.getField("Landroid/graphics/Paint;.mColorFilter"));
+        assertNull(paint.getField("Landroid/graphics/Paint;.mBlendMode"));
+        assertEquals(Integer.valueOf(200), paint.getField("Landroid/graphics/Paint;.mAlpha"));
+        assertEquals(Float.valueOf(2.0f),
+                paint.getField("Landroid/graphics/Paint;.mShadowRadius"));
+        assertEquals(Float.valueOf(3.0f),
+                paint.getField("Landroid/graphics/Paint;.mShadowDx"));
+        assertEquals(Float.valueOf(4.0f),
+                paint.getField("Landroid/graphics/Paint;.mShadowDy"));
+        assertEquals(Integer.valueOf(5),
+                paint.getField("Landroid/graphics/Paint;.mShadowColor"));
+        assertEquals(Integer.valueOf(0),
+                paint.getField("Landroid/graphics/Paint;.mHasShadow"));
     }
 
     @Test
@@ -534,9 +781,28 @@ class VmTest {
     }
 
     @Test
+    void measuredDimensionsRoundTrip() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(480960),
+                interpreter.call(FixtureDex.HELLO, "measuredDemo"));
+    }
+
+    @Test
     void insetsAnimationIgnores() {
         interpreter.setFramework(framework());
         assertNotNull(interpreter.call(FixtureDex.HELLO, "insetsAnimDemo"));
+    }
+
+    @Test
+    void measureSpecRoundTrips() {
+        assertEquals(Integer.valueOf(1073742304),
+                interpreter.call(FixtureDex.HELLO, "specDemo"));
+    }
+
+    @Test
+    void defaultLocalesResolve() {
+        assertEquals(Integer.valueOf(12),
+                interpreter.call(FixtureDex.HELLO, "localeDemo"));
     }
 
     @Test
@@ -672,6 +938,12 @@ class VmTest {
         interpreter.setFramework(framework());
         assertEquals(Integer.valueOf(1),
                 interpreter.call(FixtureDex.HELLO, "windowFocusDemo"));
+    }
+
+    @Test
+    void hardwareAcceleratedOff() {
+        interpreter.setFramework(framework());
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "hwDemo"));
     }
 
     @Test
@@ -1243,7 +1515,50 @@ class VmTest {
                 Collections.<FwIndex.FwMethod>emptyList(),
                 Collections.<FwIndex.FwField>emptyList(),
                 Collections.<String, Object>emptyMap()));
-        index.put(new FwClass("Landroid/graphics/Paint$Style;", "Ljava/lang/Enum;",
+        index.put(new FwClass("Landroid/text/TextPaint;", "Landroid/graphics/Paint;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/graphics/Typeface;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.singletonList(
+                        new FwField("DEFAULT", "Landroid/graphics/Typeface;")),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/text/SpannableString;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/text/TextDirectionHeuristics;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.singletonList(new FwField("LTR",
+                        "Landroid/text/TextDirectionHeuristic;")),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/text/StaticLayout$Builder;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/text/StaticLayout;", "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/graphics/text/LineBreakConfig$Builder;",
+                "Ljava/lang/Object;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
+        index.put(new FwClass("Landroid/text/Layout$Alignment;", "Ljava/lang/Enum;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.singletonList(new FwField("ALIGN_NORMAL",
+                        "Landroid/text/Layout$Alignment;")),
+                Collections.<String, Object>emptyMap()));        index.put(new FwClass("Landroid/graphics/Paint$Style;", "Ljava/lang/Enum;",
                 Collections.<String>emptyList(),
                 Collections.<FwIndex.FwMethod>emptyList(),
                 Arrays.asList(

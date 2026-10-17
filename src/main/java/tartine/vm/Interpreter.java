@@ -57,6 +57,7 @@ public final class Interpreter {
     private VmLooper mainLooper;
     private VmQueue mainQueue;
     private VmObject choreographer;
+    private VmObject defaultLocales;
     // Reported Android API level. Defaults to the modeled framework
     // (android-36); Main overrides it from the APK manifest per app.
     private int sdkInt = 36;
@@ -1087,10 +1088,17 @@ public final class Interpreter {
                             pc++;
                             break;
                         }
+                        Outcome special = runSpecial(null, ref,
+                                readRefArgs(ref, g, 0, regs));
+                        if (special.handled) {
+                            pending = special.hasValue ? special.value : null;
+                            hasPending = special.hasValue;
+                            pc++;
+                            break;
+                        }
                         ReflectResult reflected = reflectCall(null, ref,
                                 readRefArgs(ref, g, 0, regs), true);
-                        if (reflected.hit) {
-                            if (ref.returnType.equals("V")) {
+                        if (reflected.hit) {                            if (ref.returnType.equals("V")) {
                                 pending = null;
                                 hasPending = false;
                             } else {
@@ -1497,6 +1505,10 @@ public final class Interpreter {
         if (enumValue != null) {
             return enumValue;
         }
+        VmObject singleton = frameworkSingleton(ref.definingClass, ref.name);
+        if (singleton != null) {
+            return singleton;
+        }
         ReflectResult reflected = reflectStaticField(ref.definingClass, ref.name);
         if (reflected.hit) {
             return reflected.value;
@@ -1539,6 +1551,80 @@ public final class Interpreter {
         VmObject value = newPlaceholder(descriptor);
         value.putField("Ljava/lang/Enum;.name", name);
         value.putField("Ljava/lang/Enum;.ordinal", ordinal);
+        statics.put(descriptor + "." + name, value);
+        return value;
+    }
+
+    /**
+     * Every constant of a framework enum in declaration order, mirroring
+     * the device values() array. Null when not a framework enum.
+     */
+    private List<VmObject> frameworkEnumValues(String descriptor) {
+        if (framework == null) {
+            return null;
+        }
+        if (hostClass(descriptor) != null) {
+            return null;
+        }
+        FwIndex.FwClass fw = framework.find(descriptor);
+        if (fw == null || !"Ljava/lang/Enum;".equals(fw.superclass)) {
+            return null;
+        }
+        List<VmObject> out = new ArrayList<>();
+        for (FwIndex.FwField field : fw.fields) {
+            if (!descriptor.equals(field.type)) {
+                continue;
+            }
+            Object cached = statics.get(descriptor + "." + field.name);
+            if (cached instanceof VmObject) {
+                out.add((VmObject) cached);
+                continue;
+            }
+            VmObject constant = frameworkEnumValue(descriptor, field.name);
+            if (constant == null) {
+                return null;
+            }
+            out.add(constant);
+        }
+        return out;
+    }
+
+    /**
+     * Materializes opaque framework singletons (Typeface families,
+     * TextDirectionHeuristics) that have no jar value: cached placeholder
+     * recording the constant name for later matching (font lookup,
+     * bidi). Singleton fields may be interface-typed, so matching is by
+     * declaring class and name; the class allowlist is the guard.
+     * Null for anything else.
+     */
+    private VmObject frameworkSingleton(String descriptor, String name) {
+        String label;
+        if (descriptor.equals("Landroid/graphics/Typeface;")) {
+            label = "familyName";
+        } else if (descriptor.equals("Landroid/text/TextDirectionHeuristics;")) {
+            label = "heuristicName";
+        } else {
+            return null;
+        }
+        if (framework == null) {
+            return null;
+        }
+        FwIndex.FwClass fw = framework.find(descriptor);
+        if (fw == null) {
+            return null;
+        }
+        boolean found = false;
+        for (FwIndex.FwField field : fw.fields) {
+            if (field.name.equals(name)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            return null;
+        }
+        VmObject value = newPlaceholder(descriptor);
+        value.putField(descriptor + "." + label, name);
         statics.put(descriptor + "." + name, value);
         return value;
     }
@@ -2072,6 +2158,45 @@ public final class Interpreter {
                 out.unknownSuper = current;
             }
         }
+        // Phase 2b: builtins keyed on the receiver's runtime hierarchy.
+        // Interface calls into concrete builtins (e.g. CharSequence.length
+        // on our SpannableString store) miss the lexical walk above;
+        // lexical matches still win since they returned first.
+        if (hint != null) {
+            queue.clear();
+            seen.clear();
+            queue.add(hint.type);
+            while (!queue.isEmpty()) {
+                String current = queue.removeFirst();
+                if (!seen.add(current)) {
+                    continue;
+                }
+                HostMethod builtin = builtins.get(keyFor(ref, current));
+                if (builtin != null) {
+                    out.builtin = builtin;
+                    return out;
+                }
+                DexClass dex = dexes.findClass(current);
+                if (dex != null) {
+                    if (dex.superclass != null
+                            && !dex.superclass.equals("Ljava/lang/Object;")) {
+                        queue.add(dex.superclass);
+                    }
+                    queue.addAll(dex.interfaces);
+                    continue;
+                }
+                if (framework != null) {
+                    FwIndex.FwClass fw = framework.find(current);
+                    if (fw != null) {
+                        if (fw.superclass != null
+                                && !fw.superclass.equals("Ljava/lang/Object;")) {
+                            queue.add(fw.superclass);
+                        }
+                        queue.addAll(fw.interfaces);
+                    }
+                }
+            }
+        }
         return out;
     }
 
@@ -2198,13 +2323,13 @@ public final class Interpreter {
     }
 
     /**
-     * Reads a static field the way {@code sget} would (running class
-     * init, then interpreter statics and framework constants). Lets the
-     * driver fetch enum values and constants without a dex round-trip.
+     * Reads a static field exactly the way {@code sget-object} would
+     * (class init, interpreter statics, framework constants and
+     * materializers, host reflection). Lets the driver fetch enum values
+     * and constants without a dex round-trip.
      */
     public Object staticField(String classDesc, String name, String type) {
-        ensureInitFor(classDesc + "->" + name + ":" + type);
-        return staticRead(classDesc, name, type);
+        return staticRef(classDesc + "->" + name + ":" + type);
     }
 
     /**
@@ -2806,6 +2931,212 @@ public final class Interpreter {
         throw new VmThrow(new ClassNotFoundException(binary));
     }
 
+    /**
+     * Approximate text width from stored paint state. Average glyphs run
+     * half the text size; callers should route through here so real font
+     * measurement replaces one seam.
+     */
+    /**
+     * Text of any CharSequence: host strings directly, our spannable
+     * store, dex toString (AnnotatedString returns its text), host
+     * fallback otherwise.
+     */
+    private String charSequenceText(Object value) {
+        if (value == null || value instanceof String) {
+            return (String) value;
+        }
+        if (value instanceof VmObject) {
+            Object stored = ((VmObject) value)
+                    .getField("Landroid/text/SpannableString;.mText");
+            if (stored instanceof String) {
+                return (String) stored;
+            }
+            try {
+                Object text = dispatchDex(value, "toString",
+                        Collections.<String>emptyList(), "Ljava/lang/String;",
+                        new Object[0]);
+                if (text instanceof String) {
+                    return (String) text;
+                }
+            } catch (VmException e) {
+                // fall through to host rendering below
+            }
+        }
+        return String.valueOf(value);
+    }
+
+    /**
+     * Approximate text width from stored paint state. Average glyphs run
+     * half the text size; callers should route through here so real font
+     * measurement replaces one seam.
+     */
+    private static float measureText(Object paint, String text, int start, int end) {
+        float size = 0.0f;
+        float scaleX = 1.0f;
+        float spacing = 0.0f;
+        if (paint instanceof VmObject) {
+            VmObject metrics = (VmObject) paint;
+            Object textSize = metrics.getField("Landroid/graphics/Paint;.mTextSize");
+            if (textSize != null) {
+                size = asFloatBits(textSize);
+            }
+            Object scale = metrics.getField("Landroid/graphics/Paint;.mTextScaleX");
+            if (scale != null) {
+                scaleX = asFloatBits(scale);
+            }
+            Object letter = metrics.getField("Landroid/graphics/Paint;.mLetterSpacing");
+            if (letter != null) {
+                spacing = asFloatBits(letter);
+            }
+        }
+        int length = text == null ? 0 : text.length();
+        int from = Math.min(Math.max(start, 0), length);
+        int to = Math.min(Math.max(end, from), length);
+        return (to - from) * (size * 0.5f * scaleX + spacing);
+    }
+
+    /**
+     * Greedy line breaking for StaticLayout.build: longest space-bounded
+     * run fitting the outer width per line (overlong first words
+     * overflow, explicit newlines force breaks), line height from text
+     * size until font metrics arrive.
+     */
+    private VmObject buildStaticLayout(VmObject builder) {
+        Object rawText = builder.getField("Landroid/text/StaticLayout$Builder;.mText");
+        String text = rawText instanceof String ? (String) rawText : null;
+        Object paint = builder.getField("Landroid/text/StaticLayout$Builder;.mPaint");
+        Object startValue = builder.getField("Landroid/text/StaticLayout$Builder;.mStart");
+        Object endValue = builder.getField("Landroid/text/StaticLayout$Builder;.mEnd");
+        Object widthValue = builder.getField("Landroid/text/StaticLayout$Builder;.mWidth");
+        Object multValue =
+                builder.getField("Landroid/text/StaticLayout$Builder;.mSpacingMult");
+        Object addValue = builder.getField("Landroid/text/StaticLayout$Builder;.mSpacingAdd");
+        Object maxValue = builder.getField("Landroid/text/StaticLayout$Builder;.mMaxLines");
+        int length = text == null ? 0 : text.length();
+        int start = startValue == null ? 0
+                : Math.min(Math.max(asInt(startValue), 0), length);
+        int end = endValue == null ? length
+                : Math.min(Math.max(asInt(endValue), start), length);
+        int outerWidth = widthValue == null ? 0 : Math.max(asInt(widthValue), 0);
+        float mult = multValue == null ? 1.0f : asFloatBits(multValue);
+        float add = addValue == null ? 0.0f : asFloatBits(addValue);
+        int maxLines = maxValue == null ? Integer.MAX_VALUE : Math.max(asInt(maxValue), 0);
+        List<Integer> starts = new ArrayList<>();
+        List<Integer> ends = new ArrayList<>();
+        List<Float> widths = new ArrayList<>();
+        if (start < end && outerWidth > 0) {
+            int i = start;
+            while (i < end && starts.size() < maxLines) {
+                if (starts.size() + 1 >= maxLines) {
+                    starts.add(i);
+                    ends.add(end);
+                    widths.add(measureText(paint, text, i, end));
+                    break;
+                }
+                int j = i;
+                int lastFit = -1;
+                while (j < end) {
+                    int k = j;
+                    while (k < end && text.charAt(k) != ' ' && text.charAt(k) != '\n') {
+                        k++;
+                    }
+                    boolean newline = k < end && text.charAt(k) == '\n';
+                    float wordWidth = measureText(paint, text, i, k);
+                    if (newline) {
+                        lastFit = k;
+                        break;
+                    }
+                    if (wordWidth <= outerWidth || j == i) {
+                        lastFit = k;
+                        j = k + 1;
+                        if (j >= end) {
+                            lastFit = end;
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                if (lastFit < 0) {
+                    lastFit = Math.min(i + 1, end);
+                }
+                starts.add(i);
+                ends.add(lastFit);
+                widths.add(measureText(paint, text, i, lastFit));
+                i = lastFit;
+                while (i < end && (text.charAt(i) == ' ' || text.charAt(i) == '\n')) {
+                    i++;
+                }
+            }
+        } else if (start < end) {
+            starts.add(start);
+            ends.add(end);
+            widths.add(measureText(paint, text, start, end));
+        }
+        float textSize = 0.0f;
+        if (paint instanceof VmObject) {
+            Object sizeValue =
+                    ((VmObject) paint).getField("Landroid/graphics/Paint;.mTextSize");
+            if (sizeValue != null) {
+                textSize = asFloatBits(sizeValue);
+            }
+        }
+        float lineHeight = textSize * 1.2f * mult + add;
+        VmObject layout = newPlaceholder("Landroid/text/StaticLayout;");
+        layout.putField("Landroid/text/StaticLayout;.mLineCount", starts.size());
+        layout.putField("Landroid/text/StaticLayout;.mWidth", outerWidth);
+        layout.putField("Landroid/text/StaticLayout;.mHeight",
+                (int) Math.ceil(lineHeight * starts.size()));
+        layout.putField("Landroid/text/StaticLayout;.mText", text);
+        layout.putField("Landroid/text/StaticLayout;.mPaint", paint);
+        Object fallback = builder.getField(
+                "Landroid/text/StaticLayout$Builder;.mFallbackLineSpacing");
+        layout.putField("Landroid/text/StaticLayout;.mFallbackLineSpacing",
+                fallback == null ? 0 : asInt(fallback));
+        VmArray lineStarts = new VmArray("I", starts.size());
+        VmArray lineEnds = new VmArray("I", starts.size());
+        VmArray lineWidths = new VmArray("F", widths.size());
+        VmArray lineTops = new VmArray("I", starts.size());
+        for (int i = 0; i < starts.size(); i++) {
+            lineStarts.set(i, starts.get(i));
+            lineWidths.set(i, widths.get(i));
+            lineTops.set(i, Math.round(lineHeight * i));
+        }
+        // Line ends are tracked during breaking (trailing spaces belong
+        // to no line); tops are uniform from the line height.
+        for (int i = 0; i < starts.size(); i++) {
+            lineEnds.set(i, ends.get(i));
+        }
+        layout.putField("Landroid/text/StaticLayout;.mLineStarts", lineStarts);
+        layout.putField("Landroid/text/StaticLayout;.mLineEnds", lineEnds);
+        layout.putField("Landroid/text/StaticLayout;.mLineWidths", lineWidths);
+        layout.putField("Landroid/text/StaticLayout;.mLineTops", lineTops);
+        return layout;
+    }
+
+    /** VmArray store read, or null when absent. */
+    private static VmArray layoutFloats(Object receiver, String key) {
+        Object value = ((VmObject) receiver).getField(key);
+        return value instanceof VmArray ? (VmArray) value : null;
+    }
+
+    /** Approximated ascent (0.8 of text size) backing baseline/ascent reads. */
+    private static float layoutAscent(VmObject layout) {
+        Object paint = layout.getField("Landroid/text/StaticLayout;.mPaint");
+        if (!(paint instanceof VmObject)) {
+            return 0.0f;
+        }
+        Object textSize = ((VmObject) paint).getField("Landroid/graphics/Paint;.mTextSize");
+        return textSize == null ? 0.0f : asFloatBits(textSize) * 0.8f;
+    }
+
+    /** Indexed int read with lenient out-of-range default 0. */
+    private static int layoutLineInt(Object receiver, String key, int line) {
+        VmArray array = layoutFloats(receiver, key);
+        return array == null || line < 0 || line >= array.length() ? 0
+                : asInt(array.get(line));
+    }
+
     /** Descriptor to host class for reflective parameter matching. */
     private static Class<?> hostParamClass(String descriptor) throws ClassNotFoundException {
         switch (descriptor) {
@@ -3329,6 +3660,20 @@ public final class Interpreter {
                     return Outcome.empty();
                 }
                 return Outcome.MISS;
+            }
+            return Outcome.MISS;
+        }
+        // Framework enum values(): materialize every constant in declaration
+        // order, mirroring the device array.
+        if (ref.name.equals("values") && noArgs && receiver == null
+                && ref.returnType.equals("[" + ref.definingClass)) {
+            List<VmObject> constants = frameworkEnumValues(ref.definingClass);
+            if (constants != null) {
+                VmArray out = new VmArray(ref.definingClass, constants.size());
+                for (int i = 0; i < constants.size(); i++) {
+                    out.set(i, constants.get(i));
+                }
+                return Outcome.value(out);
             }
             return Outcome.MISS;
         }
@@ -4001,6 +4346,9 @@ public final class Interpreter {
         // Headless runs foreground: the window holds focus.
         builtin("Landroid/view/View;->hasWindowFocus()Z",
                 (receiver, args) -> 1);
+        // No GPU runs headless; revisit when the GL backend lands.
+        builtin("Landroid/view/View;->isHardwareAccelerated()Z",
+                (receiver, args) -> 0);
         // Nothing takes focus headless (no input, focus setters no-op).
         builtin("Landroid/view/View;->isFocused()Z",
                 (receiver, args) -> 0);
@@ -4305,6 +4653,50 @@ public final class Interpreter {
         // Window insets never change headless; dispatch is a no-op.
         builtin("Landroid/view/View;->requestApplyInsets()V",
                 (receiver, args) -> null);
+        // Measured dimensions store for later reads (no parent to report).
+        builtin("Landroid/view/View;->setMeasuredDimension(II)V",
+                (receiver, args) -> {
+                    VmObject view = (VmObject) receiver;
+                    view.putField("Landroid/view/View;.mMeasuredWidth", asInt(args[0]));
+                    view.putField("Landroid/view/View;.mMeasuredHeight", asInt(args[1]));
+                    return null;
+                });
+        builtin("Landroid/view/View;->getMeasuredWidth()I",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/view/View;.mMeasuredWidth");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/view/View;->getMeasuredHeight()I",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/view/View;.mMeasuredHeight");
+                    return value == null ? 0 : asInt(value);
+                });
+        // One default locale list; a single US entry, like a fresh
+        // device: an empty list cannot exist on device and would crash
+        // blind get(0) callers with a false IndexOutOfBounds.
+        builtin("Landroid/os/LocaleList;->getDefault()Landroid/os/LocaleList;",
+                (receiver, args) -> {
+                    if (defaultLocales == null) {
+                        defaultLocales = newPlaceholder("Landroid/os/LocaleList;");
+                    }
+                    return defaultLocales;
+                });
+        builtin("Landroid/os/LocaleList;->size()I",
+                (receiver, args) -> 1);
+        builtin("Landroid/os/LocaleList;->isEmpty()Z",
+                (receiver, args) -> 0);
+        builtin("Landroid/os/LocaleList;->get(I)Ljava/util/Locale;",
+                (receiver, args) -> asInt(args[0]) == 0 ? java.util.Locale.US : null);
+        // MeasureSpecs are packed ints; the packing is pure arithmetic.
+        builtin("Landroid/view/View$MeasureSpec;->makeMeasureSpec(II)I",
+                (receiver, args) -> (asInt(args[0]) & ~(0x3 << 30))
+                        | (asInt(args[1]) & (0x3 << 30)));
+        builtin("Landroid/view/View$MeasureSpec;->getMode(I)I",
+                (receiver, args) -> asInt(args[0]) & (0x3 << 30));
+        builtin("Landroid/view/View$MeasureSpec;->getSize(I)I",
+                (receiver, args) -> asInt(args[0]) & ~(0x3 << 30));
         // Inset animations never run headless; callbacks never fire.
         builtin("Landroid/view/WindowInsetsAnimation$Callback;-><init>(I)V",
                 (receiver, args) -> null);
@@ -4490,10 +4882,677 @@ public final class Interpreter {
                             asInt(args[0]));
                     return null;
                 });
+        // TextPaint shares Paint's flag store (inherited getters observe it).
+        builtin("Landroid/text/TextPaint;-><init>(I)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mFlags",
+                            asInt(args[0]));
+                    return null;
+                });
+        // SpannableStrings wrap source text with an overridable span list;
+        // reads delegate to the source, spans filter by class and overlap.
+        builtin("Landroid/text/SpannableString;-><init>(Ljava/lang/CharSequence;)V",
+                (receiver, args) -> {
+                    VmObject spannable = (VmObject) receiver;
+                    spannable.putField("Landroid/text/SpannableString;.mText",
+                            charSequenceText(args[0]));
+                    spannable.putField("Landroid/text/SpannableString;.mSpans",
+                            new ArrayList<Object>());
+                    return null;
+                });
+        builtin("Landroid/text/SpannableString;->length()I",
+                (receiver, args) -> {
+                    Object text = ((VmObject) receiver)
+                            .getField("Landroid/text/SpannableString;.mText");
+                    return text == null ? 0 : ((String) text).length();
+                });
+        builtin("Landroid/text/SpannableString;->charAt(I)C",
+                (receiver, args) -> {
+                    Object text = ((VmObject) receiver)
+                            .getField("Landroid/text/SpannableString;.mText");
+                    return text == null ? 0 : (int) ((String) text).charAt(asInt(args[0]));
+                });
+        builtin("Landroid/text/SpannableString;->setSpan(Ljava/lang/Object;III)V",
+                (receiver, args) -> {
+                    Object spans = ((VmObject) receiver)
+                            .getField("Landroid/text/SpannableString;.mSpans");
+                    if (spans instanceof List) {
+                        ((List<Object>) spans).add(new Object[]{args[0], args[1], args[2],
+                                args[3]});
+                    }
+                    return null;
+                });
+        builtin("Landroid/text/SpannableString;->getSpans(IILjava/lang/Class;)"
+                + "[Ljava/lang/Object;",
+                (receiver, args) -> {
+                    int queryStart = asInt(args[0]);
+                    int queryEnd = asInt(args[1]);
+                    String query = ((VmClass) args[2]).descriptor;
+                    Object spans = ((VmObject) receiver)
+                            .getField("Landroid/text/SpannableString;.mSpans");
+                    List<Object> matches = new ArrayList<>();
+                    if (spans instanceof List) {
+                        for (Object record : (List<?>) spans) {
+                            Object[] span = (Object[]) record;
+                            int spanStart = asInt(span[1]);
+                            int spanEnd = asInt(span[2]);
+                            if (spanEnd <= queryStart || spanStart >= queryEnd) {
+                                continue;
+                            }
+                            if (isInstance(span[0], query)) {
+                                matches.add(span[0]);
+                            }
+                        }
+                    }
+                    VmArray out = new VmArray(query, matches.size());
+                    for (int i = 0; i < matches.size(); i++) {
+                        out.set(i, matches.get(i));
+                    }
+                    return out;
+                });
+        // First offset past start where a matching span starts or ends
+        // (capped at limit); spans never transition headless beyond this.
+        builtin("Landroid/text/Spanned;->nextSpanTransition(II"
+                + "Ljava/lang/Class;)I",
+                (receiver, args) -> {
+                    int start = asInt(args[0]);
+                    int limit = asInt(args[1]);
+                    Object query = args[2];
+                    String filter = query instanceof VmClass
+                            ? ((VmClass) query).descriptor : null;
+                    Object spans = ((VmObject) receiver)
+                            .getField("Landroid/text/SpannableString;.mSpans");
+                    int next = limit;
+                    if (spans instanceof List) {
+                        for (Object record : (List<?>) spans) {
+                            Object[] span = (Object[]) record;
+                            if (filter != null && !isInstance(span[0], filter)) {
+                                continue;
+                            }
+                            int spanStart = asInt(span[1]);
+                            int spanEnd = asInt(span[2]);
+                            if (spanStart > start && spanStart < next) {
+                                next = spanStart;
+                            }
+                            if (spanEnd > start && spanEnd < next) {
+                                next = spanEnd;
+                            }
+                        }
+                    }
+                    return next;
+                });
         builtin("Landroid/graphics/Paint;->getFlags()I",
                 (receiver, args) -> {
                     Object value = ((VmObject) receiver)
                             .getField("Landroid/graphics/Paint;.mFlags");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/graphics/Paint;->setFlags(I)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mFlags",
+                            asInt(args[0]));
+                    return null;
+                });
+        // Text-measurement state round-trips for later measure/draw calls.
+        builtin("Landroid/graphics/Paint;->setHinting(I)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mHinting",
+                            asInt(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->getHinting()I",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mHinting");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/graphics/Paint;->setTextSize(F)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mTextSize",
+                            asFloatBits(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->getTextSize()F",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mTextSize");
+                    return value == null ? 0.0f : asFloatBits(value);
+                });
+        builtin("Landroid/graphics/Paint;->setTypeface(Landroid/graphics/Typeface;)"
+                + "Landroid/graphics/Typeface;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mTypeface",
+                            args[0]);
+                    return args[0];
+                });
+        builtin("Landroid/graphics/Paint;->getTypeface()Landroid/graphics/Typeface;",
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/graphics/Paint;.mTypeface"));
+        // Boringness can't be proven headless (no bidi analysis): null
+        // routes text through the full layout path, which measure needs.
+        builtin("Landroid/text/BoringLayout;->isBoring(Ljava/lang/CharSequence;"
+                + "Landroid/text/TextPaint;Landroid/text/TextDirectionHeuristic;Z"
+                + "Landroid/text/BoringLayout$Metrics;)Landroid/text/BoringLayout$Metrics;",
+                (receiver, args) -> null);
+        // StaticLayout builders record their inputs; line breaking in
+        // build() arrives with the first layout that needs it.
+        builtin("Landroid/text/StaticLayout$Builder;->obtain(Ljava/lang/CharSequence;II"
+                + "Landroid/text/TextPaint;I)Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    VmObject builder =
+                            newPlaceholder("Landroid/text/StaticLayout$Builder;");
+                    builder.putField("Landroid/text/StaticLayout$Builder;.mText",
+                            charSequenceText(args[0]));
+                    builder.putField("Landroid/text/StaticLayout$Builder;.mStart",
+                            asInt(args[1]));
+                    builder.putField("Landroid/text/StaticLayout$Builder;.mEnd",
+                            asInt(args[2]));
+                    builder.putField("Landroid/text/StaticLayout$Builder;.mPaint", args[3]);
+                    builder.putField("Landroid/text/StaticLayout$Builder;.mWidth",
+                            asInt(args[4]));
+                    return builder;
+                });
+        // Builder options record and chain; build() consumes them.
+        builtin("Landroid/text/StaticLayout$Builder;->setTextDirection("
+                + "Landroid/text/TextDirectionHeuristic;)"
+                + "Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/text/StaticLayout$Builder;.mTextDir", args[0]);
+                    return receiver;
+                });
+        builtin("Landroid/text/StaticLayout$Builder;->setLineBreakConfig("
+                + "Landroid/graphics/text/LineBreakConfig;)"
+                + "Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/text/StaticLayout$Builder;.mLineBreakConfig", args[0]);
+                    return receiver;
+                });
+        builtin("Landroid/text/StaticLayout$Builder;->setAlignment("
+                + "Landroid/text/Layout$Alignment;)Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/text/StaticLayout$Builder;.mAlignment", args[0]);
+                    return receiver;
+                });
+        builtin("Landroid/text/StaticLayout$Builder;->setLineSpacing(FF)"
+                + "Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    VmObject builder = (VmObject) receiver;
+                    builder.putField("Landroid/text/StaticLayout$Builder;.mSpacingAdd",
+                            asFloatBits(args[0]));
+                    builder.putField("Landroid/text/StaticLayout$Builder;.mSpacingMult",
+                            asFloatBits(args[1]));
+                    return receiver;
+                });
+        builtin("Landroid/text/StaticLayout$Builder;->setIncludePad(Z)"
+                + "Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/text/StaticLayout$Builder;.mIncludePad", asInt(args[0]));
+                    return receiver;
+                });
+        builtin("Landroid/text/StaticLayout$Builder;->setEllipsize("
+                + "Landroid/text/TextUtils$TruncateAt;)Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/text/StaticLayout$Builder;.mEllipsize", args[0]);
+                    return receiver;
+                });
+        builtin("Landroid/text/StaticLayout$Builder;->setEllipsizedWidth(I)"
+                + "Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/text/StaticLayout$Builder;.mEllipsizedWidth",
+                            asInt(args[0]));
+                    return receiver;
+                });
+        builtin("Landroid/text/StaticLayout$Builder;->setMaxLines(I)"
+                + "Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/text/StaticLayout$Builder;.mMaxLines", asInt(args[0]));
+                    return receiver;
+                });
+        builtin("Landroid/text/StaticLayout$Builder;->setBreakStrategy(I)"
+                + "Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/text/StaticLayout$Builder;.mBreakStrategy",
+                            asInt(args[0]));
+                    return receiver;
+                });
+        builtin("Landroid/text/StaticLayout$Builder;->setHyphenationFrequency(I)"
+                + "Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/text/StaticLayout$Builder;.mHyphenation",
+                            asInt(args[0]));
+                    return receiver;
+                });
+        builtin("Landroid/text/StaticLayout$Builder;->setJustificationMode(I)"
+                + "Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/text/StaticLayout$Builder;.mJustification",
+                            asInt(args[0]));
+                    return receiver;
+                });
+        builtin("Landroid/text/StaticLayout$Builder;->setIndents([I[I)"
+                + "Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    VmObject builder = (VmObject) receiver;
+                    builder.putField("Landroid/text/StaticLayout$Builder;.mIndentsLeft",
+                            args[0]);
+                    builder.putField("Landroid/text/StaticLayout$Builder;.mIndentsRight",
+                            args[1]);
+                    return receiver;
+                });
+        builtin("Landroid/text/StaticLayout$Builder;->setUseLineSpacingFromFallbacks(Z)"
+                + "Landroid/text/StaticLayout$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/text/StaticLayout$Builder;.mFallbackLineSpacing",
+                            asInt(args[0]));
+                    return receiver;
+                });
+        // build() breaks lines greedily over the width approximation;
+        // single-line text stays one line, the rest wraps on spaces.
+        builtin("Landroid/text/StaticLayout$Builder;->build()Landroid/text/StaticLayout;",
+                (receiver, args) -> buildStaticLayout((VmObject) receiver));
+        // Layout getters read the broken lines; out-of-range lines read
+        // 0 (device throws, headless stays lenient).
+        builtin("Landroid/text/Layout;->getLineCount()I",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/text/StaticLayout;.mLineCount");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/text/Layout;->getHeight()I",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/text/StaticLayout;.mHeight");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/text/Layout;->getWidth()I",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/text/StaticLayout;.mWidth");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/text/Layout;->getLineWidth(I)F",
+                (receiver, args) -> {
+                    VmArray widths = layoutFloats(receiver,
+                            "Landroid/text/StaticLayout;.mLineWidths");
+                    int line = asInt(args[0]);
+                    return widths == null || line < 0 || line >= widths.length() ? 0.0f
+                            : asFloatBits(widths.get(line));
+                });
+        builtin("Landroid/text/Layout;->getLineTop(I)I",
+                (receiver, args) -> layoutLineInt(receiver,
+                        "Landroid/text/StaticLayout;.mLineTops", asInt(args[0])));
+        builtin("Landroid/text/Layout;->getLineBottom(I)I",
+                (receiver, args) -> {
+                    VmObject layout = (VmObject) receiver;
+                    Object heightValue =
+                            layout.getField("Landroid/text/StaticLayout;.mHeight");
+                    int line = asInt(args[0]);
+                    VmArray tops = layoutFloats(receiver,
+                            "Landroid/text/StaticLayout;.mLineTops");
+                    if (tops == null || line < 0 || line >= tops.length()) {
+                        return 0;
+                    }
+                    if (line + 1 < tops.length()) {
+                        return asInt(tops.get(line + 1));
+                    }
+                    return heightValue == null ? 0 : asInt(heightValue);
+                });
+        builtin("Landroid/text/Layout;->getLineStart(I)I",
+                (receiver, args) -> layoutLineInt(receiver,
+                        "Landroid/text/StaticLayout;.mLineStarts", asInt(args[0])));
+        builtin("Landroid/text/Layout;->getLineEnd(I)I",
+                (receiver, args) -> layoutLineInt(receiver,
+                        "Landroid/text/StaticLayout;.mLineEnds", asInt(args[0])));
+        builtin("Landroid/text/Layout;->getLineLeft(I)F",
+                (receiver, args) -> 0.0f);
+        builtin("Landroid/text/Layout;->getLineRight(I)F",
+                (receiver, args) -> {
+                    VmArray widths = layoutFloats(receiver,
+                            "Landroid/text/StaticLayout;.mLineWidths");
+                    int line = asInt(args[0]);
+                    return widths == null || line < 0 || line >= widths.length() ? 0.0f
+                            : asFloatBits(widths.get(line));
+                });
+        builtin("Landroid/text/Layout;->getEllipsisCount(I)I",
+                (receiver, args) -> 0);
+        builtin("Landroid/text/Layout;->getParagraphDirection(I)I",
+                (receiver, args) -> 1);
+        builtin("Landroid/text/Layout;->getLineBaseline(I)I",
+                (receiver, args) -> {
+                    VmObject layout = (VmObject) receiver;
+                    VmArray tops = layoutFloats(layout,
+                            "Landroid/text/StaticLayout;.mLineTops");
+                    int line = asInt(args[0]);
+                    if (tops == null || line < 0 || line >= tops.length()) {
+                        return 0;
+                    }
+                    return asInt(tops.get(line)) + Math.round(layoutAscent(layout));
+                });
+        builtin("Landroid/text/Layout;->getLineAscent(I)I",
+                (receiver, args) -> Math.round(
+                        layoutAscent((VmObject) receiver)));
+        builtin("Landroid/text/Layout;->getLineDescent(I)I",
+                (receiver, args) -> {
+                    Object paint = ((VmObject) receiver)
+                            .getField("Landroid/text/StaticLayout;.mPaint");
+                    float size = 0.0f;
+                    if (paint instanceof VmObject) {
+                        Object textSize = ((VmObject) paint)
+                                .getField("Landroid/graphics/Paint;.mTextSize");
+                        if (textSize != null) {
+                            size = asFloatBits(textSize);
+                        }
+                    }
+                    return Math.round(size * 0.2f);
+                });
+        builtin("Landroid/text/Layout;->getText()Ljava/lang/CharSequence;",
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/text/StaticLayout;.mText"));
+        builtin("Landroid/text/Layout;->getPaint()Landroid/text/TextPaint;",
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/text/StaticLayout;.mPaint"));
+        builtin("Landroid/text/StaticLayout;->isFallbackLineSpacingEnabled()Z",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/text/StaticLayout;.mFallbackLineSpacing");
+                    return value == null ? 0 : asInt(value);
+                });
+        // Line-break configs record and chain; consumed by text layout.
+        builtin("Landroid/graphics/text/LineBreakConfig$Builder;->setLineBreakStyle(I)"
+                + "Landroid/graphics/text/LineBreakConfig$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/graphics/text/LineBreakConfig$Builder;.mStyle",
+                            asInt(args[0]));
+                    return receiver;
+                });
+        builtin("Landroid/graphics/text/LineBreakConfig$Builder;->setLineBreakWordStyle(I)"
+                + "Landroid/graphics/text/LineBreakConfig$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/graphics/text/LineBreakConfig$Builder;.mWordStyle",
+                            asInt(args[0]));
+                    return receiver;
+                });
+        builtin("Landroid/graphics/text/LineBreakConfig$Builder;->setHyphenation(I)"
+                + "Landroid/graphics/text/LineBreakConfig$Builder;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/graphics/text/LineBreakConfig$Builder;.mHyphenation",
+                            asInt(args[0]));
+                    return receiver;
+                });
+        // build() snapshots the recorded options into an immutable config.
+        builtin("Landroid/graphics/text/LineBreakConfig$Builder;->build()"
+                + "Landroid/graphics/text/LineBreakConfig;",
+                (receiver, args) -> {
+                    VmObject config =
+                            newPlaceholder("Landroid/graphics/text/LineBreakConfig;");
+                    config.copyFieldsFrom((VmObject) receiver);
+                    return config;
+                });
+        // Desired width approximates from stored paint state (average
+        // glyph half the text size, modulated by scale and spacing).
+        // Real font measurement plugs into measureText when draw needs it.
+        builtin("Landroid/text/Layout;->getDesiredWidth(Ljava/lang/CharSequence;II"
+                + "Landroid/text/TextPaint;)F",
+                (receiver, args) -> measureText(args[3], charSequenceText(args[0]),
+                        asInt(args[1]), asInt(args[2])));
+        // Shaders back Brush fills; stored for later draw calls to consume.
+        builtin("Landroid/graphics/Paint;->setShader(Landroid/graphics/Shader;)"
+                + "Landroid/graphics/Shader;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mShader",
+                            args[0]);
+                    return args[0];
+                });
+        builtin("Landroid/graphics/Paint;->getShader()Landroid/graphics/Shader;",
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/graphics/Paint;.mShader"));
+        builtin("Landroid/graphics/Paint;->setTextScaleX(F)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mTextScaleX",
+                            asFloatBits(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->getTextScaleX()F",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mTextScaleX");
+                    return value == null ? 1.0f : asFloatBits(value);
+                });
+        // Remaining text-state round-trips (spacing, skew, flags, locale,
+        // features, shadow, filter, blend, alpha) for measure/draw to read.
+        builtin("Landroid/graphics/Paint;->setLetterSpacing(F)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mLetterSpacing",
+                            asFloatBits(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->getLetterSpacing()F",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mLetterSpacing");
+                    return value == null ? 0.0f : asFloatBits(value);
+                });
+        builtin("Landroid/graphics/Paint;->setWordSpacing(F)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mWordSpacing",
+                            asFloatBits(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->getWordSpacing()F",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mWordSpacing");
+                    return value == null ? 0.0f : asFloatBits(value);
+                });
+        builtin("Landroid/graphics/Paint;->setTextSkewX(F)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mTextSkewX",
+                            asFloatBits(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->getTextSkewX()F",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mTextSkewX");
+                    return value == null ? 0.0f : asFloatBits(value);
+                });
+        builtin("Landroid/graphics/Paint;->setAntiAlias(Z)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mAntiAlias",
+                            asInt(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->isAntiAlias()Z",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mAntiAlias");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/graphics/Paint;->setFilterBitmap(Z)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mFilterBitmap",
+                            asInt(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->isFilterBitmap()Z",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mFilterBitmap");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/graphics/Paint;->setDither(Z)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mDither",
+                            asInt(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->isDither()Z",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mDither");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/graphics/Paint;->setStrikeThruText(Z)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mStrikeThru",
+                            asInt(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->isStrikeThruText()Z",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mStrikeThru");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/graphics/Paint;->setUnderlineText(Z)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mUnderline",
+                            asInt(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->isUnderlineText()Z",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mUnderline");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/graphics/Paint;->setFakeBoldText(Z)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mFakeBold",
+                            asInt(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->isFakeBoldText()Z",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mFakeBold");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/graphics/Paint;->setElegantTextHeight(Z)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mElegant",
+                            asInt(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->isElegantTextHeight()Z",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mElegant");
+                    return value == null ? 0 : asInt(value);
+                });
+        builtin("Landroid/graphics/Paint;->setTextLocale(Ljava/util/Locale;)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mTextLocale",
+                            args[0]);
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->getTextLocale()Ljava/util/Locale;",
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/graphics/Paint;.mTextLocale"));
+        builtin("Landroid/graphics/Paint;->setTextLocales(Landroid/os/LocaleList;)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mTextLocales",
+                            args[0]);
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->getTextLocales()Landroid/os/LocaleList;",
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/graphics/Paint;.mTextLocales"));
+        builtin("Landroid/graphics/Paint;->setFontFeatureSettings(Ljava/lang/String;)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField(
+                            "Landroid/graphics/Paint;.mFontFeature", argString(args, 0));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->getFontFeatureSettings()Ljava/lang/String;",
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/graphics/Paint;.mFontFeature"));
+        builtin("Landroid/graphics/Paint;->setColorFilter(Landroid/graphics/ColorFilter;)"
+                + "Landroid/graphics/ColorFilter;",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mColorFilter",
+                            args[0]);
+                    return args[0];
+                });
+        builtin("Landroid/graphics/Paint;->getColorFilter()Landroid/graphics/ColorFilter;",
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/graphics/Paint;.mColorFilter"));
+        builtin("Landroid/graphics/Paint;->clearColorFilter()V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mColorFilter",
+                            null);
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->setBlendMode(Landroid/graphics/BlendMode;)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mBlendMode",
+                            args[0]);
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->getBlendMode()Landroid/graphics/BlendMode;",
+                (receiver, args) -> ((VmObject) receiver)
+                        .getField("Landroid/graphics/Paint;.mBlendMode"));
+        builtin("Landroid/graphics/Paint;->setAlpha(I)V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mAlpha",
+                            asInt(args[0]));
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->getAlpha()I",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mAlpha");
+                    return value == null ? 255 : asInt(value);
+                });
+        builtin("Landroid/graphics/Paint;->setShadowLayer(FFFI)V",
+                (receiver, args) -> {
+                    VmObject paint = (VmObject) receiver;
+                    paint.putField("Landroid/graphics/Paint;.mShadowRadius",
+                            asFloatBits(args[0]));
+                    paint.putField("Landroid/graphics/Paint;.mShadowDx",
+                            asFloatBits(args[1]));
+                    paint.putField("Landroid/graphics/Paint;.mShadowDy",
+                            asFloatBits(args[2]));
+                    paint.putField("Landroid/graphics/Paint;.mShadowColor", asInt(args[3]));
+                    paint.putField("Landroid/graphics/Paint;.mHasShadow", 1);
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->setShadowLayer(FFFJ)V",
+                (receiver, args) -> {
+                    VmObject paint = (VmObject) receiver;
+                    paint.putField("Landroid/graphics/Paint;.mShadowRadius",
+                            asFloatBits(args[0]));
+                    paint.putField("Landroid/graphics/Paint;.mShadowDx",
+                            asFloatBits(args[1]));
+                    paint.putField("Landroid/graphics/Paint;.mShadowDy",
+                            asFloatBits(args[2]));
+                    paint.putField("Landroid/graphics/Paint;.mShadowColor", args[3]);
+                    paint.putField("Landroid/graphics/Paint;.mHasShadow", 1);
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->clearShadowLayer()V",
+                (receiver, args) -> {
+                    ((VmObject) receiver).putField("Landroid/graphics/Paint;.mHasShadow", 0);
+                    return null;
+                });
+        builtin("Landroid/graphics/Paint;->hasShadowLayer()Z",
+                (receiver, args) -> {
+                    Object value = ((VmObject) receiver)
+                            .getField("Landroid/graphics/Paint;.mHasShadow");
                     return value == null ? 0 : asInt(value);
                 });
         // Color is stored intact for later draw calls to consume.
