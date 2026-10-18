@@ -53,11 +53,21 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addTouchables(Ljava/util/ArrayList;)V");
     }
 
+    // Ported from aosp-mirror/platform_frameworks_base core/java/android/view/ViewGroup.java:
+    // addView null-checks are IllegalArgumentException and live in the addView
+    // overloads (addViewInLayout itself performs none; a null child would trip
+    // NPEs deeper in attachViewToParent on device).
     public void addView(android.view.View arg0) {
+        if (arg0 == null) {
+            throw new IllegalArgumentException("Cannot add a null child view to a ViewGroup");
+        }
         addViewInLayout(arg0, -1, null, false);
     }
 
     public void addView(android.view.View arg0, android.view.ViewGroup.LayoutParams arg1) {
+        if (arg0 == null) {
+            throw new IllegalArgumentException("Cannot add a null child view to a ViewGroup");
+        }
         addViewInLayout(arg0, -1, arg1, false);
     }
 
@@ -98,17 +108,11 @@ package android.view;
 
     protected boolean addViewInLayout(android.view.View arg0, int arg1,
             android.view.ViewGroup.LayoutParams arg2, boolean arg3) {
-        if (arg0 == null) {
-            throw new NullPointerException("Cannot add a null child view to a ViewGroup");
-        }
         java.util.List<android.view.View> children = mChildren;
-        // On device a null params falls back to the container's default
-        // pair; the base implementation measures bare children directly.
-        arg0.setLayoutParams(arg2 == null
-                ? new android.view.ViewGroup.LayoutParams(
-                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
-                : arg2);
+        // Ported from AOSP ViewGroup#addView-to-addViewInLayout flow: null
+        // params falls back to generateDefaultLayoutParams() (the base
+        // returns a WRAP_CONTENT pair, never null).
+        arg0.setLayoutParams(arg2 == null ? generateDefaultLayoutParams() : arg2);
         arg0.mParent = this;
         if (mAttached != 0) {
             arg0.mAttached = 1;
@@ -386,11 +390,16 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->gatherTransparentRegion(Landroid/graphics/Region;)Z");
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/ViewGroup.java ({@code
+     * generateDefaultLayoutParams}): the base returns a WRAP_CONTENT pair,
+     * not null. Containers override; their overrides port per wall.
+     */
     protected android.view.ViewGroup.LayoutParams generateDefaultLayoutParams() {
-        // Base ViewGroup has no default pair: containers override. Compose
-        // attaches with explicit params, so null keeps the contract until
-        // layout-measured containers port their own generate calls.
-        return null;
+        return new android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
     public android.view.ViewGroup.LayoutParams generateLayoutParams(android.util.AttributeSet arg0) {
@@ -405,9 +414,17 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getAccessibilityClassName()Ljava/lang/CharSequence;");
     }
 
+    /**
+     * Ported verbatim from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/ViewGroup.java ({@code getChildAt}): out of
+     * range indexes return {@code null}, matching the Javadoc; only the
+     * ArrayList-backed inner helpers throw. androidx.activity's setContent
+     * probes {@code content.getChildAt(0)} unguarded on a fresh window and
+     * relies on the null return to take its create-new-ComposeView branch.
+     */
     public android.view.View getChildAt(int arg0) {
         if (arg0 < 0 || arg0 >= mChildren.size()) {
-            throw new IndexOutOfBoundsException("index=" + arg0 + ", count=" + mChildren.size());
+            return null;
         }
         return mChildren.get(arg0);
     }

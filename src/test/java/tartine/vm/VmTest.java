@@ -314,6 +314,17 @@ class VmTest {
     }
 
     @Test
+    void getChildAtOutOfRangeIsNull() {
+        // Port parity pin, cited in the ViewGroup.java comment: AOSP
+        // getChildAt(J) returns null out of range; androidx setContent
+        // probes index 0 unguarded on a fresh window and needs the null
+        // branch to create its ComposeView.
+        assertNull(new android.view.ViewGroup().getChildAt(0));
+        assertNull(new android.view.ViewGroup().getChildAt(-1));
+        assertEquals(Integer.valueOf(0), new android.view.ViewGroup().getChildCount());
+    }
+
+    @Test
     void mapDefaultsEmulates() {
         assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "mapDefaults"));
     }
