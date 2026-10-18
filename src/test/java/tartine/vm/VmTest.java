@@ -325,6 +325,17 @@ class VmTest {
     }
 
     @Test
+    void outlineAlphaIsPlainField() {
+        // Port parity pin: AOSP Outline#setAlpha/#getAlpha are a plain
+        // mAlpha float pair (no clamping, defaults to 0); Compose shadow
+        // staging calls setAlpha during measure.
+        android.graphics.Outline outline = new android.graphics.Outline();
+        assertEquals(0.0f, outline.getAlpha(), 0.0f);
+        outline.setAlpha(0.5f);
+        assertEquals(0.5f, outline.getAlpha(), 0.0f);
+    }
+
+    @Test
     void mapDefaultsEmulates() {
         assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "mapDefaults"));
     }

@@ -625,8 +625,27 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->generateDisplayHash(Ljava/lang/String;Landroid/graphics/Rect;Ljava/util/concurrent/Executor;Landroid/view/displayhash/DisplayHashResultCallback;)V");
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/View.java (generateViewId): CAS loop over
+     * sNextGeneratedId, clamped below the aapt-generated (high-byte) ID range.
+     */
+    private static final java.util.concurrent.atomic.AtomicInteger
+            sNextGeneratedId = new java.util.concurrent.atomic.AtomicInteger(1);
+
     public static int generateViewId() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->generateViewId()I");
+        for (;;) {
+            final int result = sNextGeneratedId.get();
+            // aapt-generated IDs have the high byte nonzero; clamp to the
+            // range under that.
+            int newValue = result + 1;
+            if (newValue > 0x00FFFFFF) {
+                newValue = 1; // Roll over to 1, not 0.
+            }
+            if (sNextGeneratedId.compareAndSet(result, newValue)) {
+                return result;
+            }
+        }
     }
 
     public java.lang.CharSequence getAccessibilityClassName() {

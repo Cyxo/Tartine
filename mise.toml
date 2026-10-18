@@ -9,8 +9,8 @@ run = "bash scripts/fetch-tools.sh"
 run_windows = "pwsh -File scripts/fetch-tools.ps1"
 
 [tasks.build]
-description = "Incremental compile + refresh launch classpath"
-run = "gradle compileTestJava writeClasspath"
+description = "Incremental compile + refresh launch classpath + framework jar"
+run = "gradle compileTestJava :framework:jar writeClasspath"
 
 [tasks.test]
 description = "Run the JUnit suite"

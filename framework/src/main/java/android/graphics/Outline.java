@@ -2,8 +2,35 @@ package android.graphics;
 
     public class Outline {
 
+    // Ported from aosp-mirror/platform_frameworks_base
+    // graphics/java/android/graphics/Outline.java (constants, fields, and
+    // the empty Outline() ctor). mRect stays null until the module Rect
+    // gains real bodies: AOSP eagerly inits mRect = new Rect() (final, never
+    // null on device) but our module Rect() is still a gap stub. set()'s
+    // mPath/mRect legs land with that port too. Hand-fields are non-final
+    // so mirror/model field sync can write them (keys Outline;.mMode /
+    // Outline;.mRect / Outline;.mRadius / Outline;.mAlpha).
+
+    private static final float RADIUS_UNDEFINED = Float.NEGATIVE_INFINITY;
+
+    public static final int MODE_EMPTY = 0;
+    public static final int MODE_ROUND_RECT = 1;
+    public static final int MODE_PATH = 2;
+
+    public int mMode = MODE_EMPTY;
+
+    /** Only guaranteed to be non-null when mode == MODE_PATH. */
+    public android.graphics.Path mPath;
+
+    public android.graphics.Rect mRect;
+
+    public float mRadius = RADIUS_UNDEFINED;
+
+    /**{@code setAlpha}/{@code getAlpha} backing field, defaults to 0. */
+    public float mAlpha;
+
+    /** AOSP Outline() is an empty body: the fields carry the empty state. */
     public Outline() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;-><init>()V");
     }
 
     public Outline(android.graphics.Outline arg0) {
@@ -14,8 +41,13 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->canClip()Z");
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * graphics/java/android/graphics/Outline.java ({@code setAlpha}):
+     * plain field assignment, no clamping on the AOSP side.
+     */
     public float getAlpha() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->getAlpha()F");
+        return mAlpha;
     }
 
     public float getRadius() {
@@ -27,7 +59,9 @@ package android.graphics;
     }
 
     public boolean isEmpty() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->isEmpty()Z");
+        // Ported from aosp-mirror/platform_frameworks_base
+        // graphics/java/android/graphics/Outline.java (isEmpty): mode check.
+        return mMode == MODE_EMPTY;
     }
 
     public void offset(int arg0, int arg1) {
@@ -38,16 +72,27 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->set(Landroid/graphics/Outline;)V");
     }
 
+    /** Ported verbatim from AOSP {@code Outline#setAlpha} (same file). */
     public void setAlpha(float arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->setAlpha(F)V");
+        mAlpha = arg0;
     }
 
     public void setConvexPath(android.graphics.Path arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->setConvexPath(Landroid/graphics/Path;)V");
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * graphics/java/android/graphics/Outline.java (setEmpty): mPath rewind
+     * plus mode/radius reset; on-device mRect.setEmpty() runs too, but our
+     * mRect is null pending the module Rect port, so that leg is gated.
+     */
     public void setEmpty() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->setEmpty()V");
+        if (mPath != null) {
+            mPath.rewind();
+        }
+        mMode = MODE_EMPTY;
+        mRadius = RADIUS_UNDEFINED;
     }
 
     public void setOval(android.graphics.Rect arg0) {

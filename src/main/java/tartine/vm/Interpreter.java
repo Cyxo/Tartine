@@ -2439,12 +2439,35 @@ public final class Interpreter {
                 mirror = home.getDeclaredConstructor().newInstance();
             } catch (ReflectiveOperationException | LinkageError
                     | RuntimeException e) {
-                return null;
+                // Generated stub ctors (SDK-native no-arg signatures like
+                // Outline(), Rect()) throw from their own bodies and defeat
+                // plain newInstance; allocate without running any ctor so
+                // mirror creation never masks the real gap. Reflected
+                // on purpose: sun.misc.Unsafe is JDK-internal.
+                mirror = allocateInstance(home);
+                if (mirror == null) {
+                    return null;
+                }
             }
             object.host = mirror;
             mirrorOwners.put(mirror, object);
         }
         return mirror;
+    }
+
+    /** Unsafe.allocateInstance via reflection; null when unavailable. */
+    private static Object allocateInstance(Class<?> home) {
+        try {
+            Class<?> unsafe = Class.forName("sun.misc.Unsafe");
+            java.lang.reflect.Field field = unsafe.getDeclaredField("theUnsafe");
+            field.setAccessible(true);
+            java.lang.reflect.Method alloc =
+                    unsafe.getMethod("allocateInstance", Class.class);
+            return alloc.invoke(field.get(null), (Object) home);
+        } catch (ReflectiveOperationException | LinkageError
+                | RuntimeException e) {
+            return null;
+        }
     }
 
     /**
