@@ -15,6 +15,7 @@ only. Build/test toolchain pins live in `mise.toml` (Java, Gradle) and
 | `com.google.guava:guava` (android flavor) | 31.1-android | dexlib2 runtime dep | Apache-2.0 |
 | `com.google.code.findbugs:jsr305` | 3.0.2 | dexlib2 runtime dep (annotations) | Apache-2.0 |
 | `org.lwjgl:lwjgl` + `lwjgl-glfw` + `lwjgl-opengl` (+ natives for windows/linux/macos/macos-arm64) | 3.4.3 | Desktop windowing (GLFW) + GL context for the GUI step | BSD-3-Clause |
+| `io.github.humbleui:skija-shared` + `skija-<platform>` (windows x64/arm64, linux x64/arm64, macos x64/arm64) | 0.143.18 | Skia engine backing `android.graphics.Canvas` UI drawing (window blit via LWJGL GL) | Apache-2.0 |
 
 dexlib2 migrated 2026-10-17 from `org.smali:dexlib2` 2.5.2 (Central, `org.jf.*`
 namespace) to the Google-maintained fork `com.android.tools.smali:smali-dexlib2`
@@ -61,4 +62,9 @@ java -cp "tools/baksmali-2.5.2.jar;tools/util-2.5.2.jar;tools/jcommander-1.64.ja
   archived; successor `Storyyeller/enjarify`) — translation oracles.
   Both translated the Step 3 fixture cleanly (fetch on demand, scratch-only;
   not included).
-- **AOSP ART / Skia** — reference only, nothing to embed.
+forge private classes. Analysis narrowly looks at request components.
+- **AOSP ART** — reference only, nothing to embed. Skia's Java route is now
+  embedded **via Skija** (`io.github.humbleui:skija-shared` +
+  `skija-windows-x64` etc., 0.143.18, Apache-2.0 — POM license verified at
+  adoption 2026-10-18), so binary Skia no longer sits in this deferred list;
+  `skija-shared` transitively pulls `io.github.humbleui:types`.
