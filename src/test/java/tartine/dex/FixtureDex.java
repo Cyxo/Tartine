@@ -54,6 +54,7 @@ public final class FixtureDex {
     public static final String BASE = "Ltest/Base;";
     public static final String SUB = "Ltest/Sub;";
     public static final String SUB2 = "Ltest/Sub2;";
+    public static final String VG = "Ltest/Vg;";
     public static final String ORPHAN = "Ltest/Orphan;";
     public static final String FW_BASE = "Lfw/Base;";
     public static final String FW_SUB = "Lfw/Sub;";
@@ -135,6 +136,23 @@ public final class FixtureDex {
                 Collections.emptySet(),
                 Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
                 Collections.singletonList(orphanInit));
+
+        // Vg: a dex-defined ViewGroup subclass for mirror-bridging probes.
+        // The init skips the framework super chain (sub2Init convention).
+        MutableMethodImplementation vgInitImpl = new MutableMethodImplementation(1);
+        vgInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
+                0, objectInit));
+        vgInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
+        BuilderMethod vgInit = builder.internMethod(VG, "<init>",
+                Collections.<ImmutableMethodParameter>emptyList(), "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(),
+                Collections.emptySet(), Collections.emptySet(), vgInitImpl);
+        builder.internClassDef(VG, AccessFlags.PUBLIC.getValue(),
+                "Landroid/view/ViewGroup;",
+                Collections.<String>emptyList(), "Vg.java",
+                Collections.emptySet(),
+                Collections.<com.android.tools.smali.dexlib2.writer.builder.BuilderField>emptyList(),
+                Collections.singletonList(vgInit));
 
         // Boom: a dex-defined throwable (stays a model object, unlike
         // java.lang throwables which allocate as host exceptions).
@@ -245,7 +263,7 @@ public final class FixtureDex {
                         demos.get("boolStr"), demos.get("charStr"), demos.get("weakGet"), demos.get("weakClear"), demos.get("colorCmp"), demos.get("colorName"),
                         demos.get("colorValueOf"), demos.get("mapDefaults"), demos.get("mapPutAbsent"), demos.get("repeatDemo"), demos.get("emptyDemo"),
                         demos.get("strictSqrt"), demos.get("linkedMapDemo"), demos.get("blockedExec"), demos.get("txChain"), demos.get("argbDemo"),
-                        demos.get("parseDemo"), demos.get("activityWindow"), demos.get("viewVis"), demos.get("lpDemo"), demos.get("viewLp"), demos.get("paintDemo"), demos.get("textPaintDemo"),
+                        demos.get("parseDemo"), demos.get("activityWindow"), demos.get("viewVis"), demos.get("lpDemo"), demos.get("viewLp"), demos.get("vgAdd"), demos.get("paintDemo"), demos.get("textPaintDemo"),
                         demos.get("paintTextDemo"), demos.get("paintFullDemo"), demos.get("typefaceDemo"), demos.get("heuristicDemo"), demos.get("boringDemo"),
                         demos.get("desiredDemo"), demos.get("desiredSpanDemo"), demos.get("spannableDemo"), demos.get("enumValuesDemo"), demos.get("obtainDemo"),
                         demos.get("directionDemo"), demos.get("builderOptsDemo"), demos.get("lineBreakDemo"), demos.get("buildLayoutDemo"),
@@ -401,6 +419,59 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), viewLpImpl);
         demos.put("viewLp", viewLp);
+
+        // vgAdd(): protected-member mirror dispatch. g = new Vg() (a dex
+        // class extending ViewGroup); child = new View(); params = new
+        // ViewGroup.LayoutParams(30, 40); group.addViewInLayout(child, -1,
+        // params, false) routes through framework-dispatch to the module's
+        // protected ViewGroup port, then group.getChildCount() reads the
+        // same mirror back: addResult + count = 2.
+        MutableMethodImplementation vgAddImpl = new MutableMethodImplementation(9);
+        vgAddImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
+                builder.internTypeReference(VG)));
+        vgAddImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        vgAddImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1,
+                0, 0, 0, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference(VG, "<init>",
+                                Collections.<String>emptyList(), "V"))));
+        vgAddImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Landroid/view/View;")));
+        vgAddImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        vgAddImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1,
+                1, 0, 0, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference("Landroid/view/View;", "<init>",
+                                Collections.<String>emptyList(), "V"))));
+        vgAddImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 2,
+                builder.internTypeReference("Landroid/view/ViewGroup$LayoutParams;")));
+        vgAddImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2));
+        vgAddImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 3, 30));
+        vgAddImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 4, 40));
+        vgAddImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 3,
+                2, 3, 4, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference("Landroid/view/ViewGroup$LayoutParams;",
+                                "<init>", Arrays.asList("I", "I"), "V"))));
+        vgAddImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 5, -1));
+        vgAddImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 6, 0));
+        vgAddImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 5,
+                0, 1, 5, 2, 6, builder.internMethodReference(
+                        new ImmutableMethodReference(VG, "addViewInLayout",
+                                Arrays.asList("Landroid/view/View;", "I",
+                                        "Landroid/view/ViewGroup$LayoutParams;", "Z"),
+                                "Z"))));
+        vgAddImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 7));
+        vgAddImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1,
+                0, 0, 0, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference("Landroid/view/ViewGroup;",
+                                "getChildCount",
+                                Collections.<String>emptyList(), "I"))));
+        vgAddImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 8));
+        vgAddImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 8, 8, 7));
+        vgAddImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 8));
+        BuilderMethod vgAdd = builder.internMethod(HELLO, "vgAdd",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), vgAddImpl);
+        demos.put("vgAdd", vgAdd);
 
         // sum(): int[] a = {7, 8, 9}; return a[0] + a[1] + a[2];
         MutableMethodImplementation sumImpl = new MutableMethodImplementation(3);
@@ -3202,6 +3273,8 @@ public final class FixtureDex {
         demos.put("missFind", missFind);
 
         // contentChild(): the headless content frame starts childless.
+        // Device getChildAt throws when out of range, so the probe counts
+        // instead of poking index 0.
         MutableMethodImplementation contentChildImpl = new MutableMethodImplementation(2);
         contentChildImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
                 builder.internTypeReference("Landroid/view/View;")));
@@ -3216,15 +3289,14 @@ public final class FixtureDex {
                         "Landroid/view/View;", "findViewById",
                         Collections.singletonList("I"), "Landroid/view/View;"))));
         contentChildImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
-        contentChildImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 0));
-        contentChildImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0,
+        contentChildImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
                 0, 0, builder.internMethodReference(new ImmutableMethodReference(
-                        "Landroid/view/ViewGroup;", "getChildAt",
-                        Collections.singletonList("I"), "Landroid/view/View;"))));
-        contentChildImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
-        contentChildImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+                        "Landroid/view/ViewGroup;", "getChildCount",
+                        Collections.<String>emptyList(), "I"))));
+        contentChildImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        contentChildImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
         BuilderMethod contentChild = builder.internMethod(HELLO, "contentChild",
-                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), contentChildImpl);
         demos.put("contentChild", contentChild);

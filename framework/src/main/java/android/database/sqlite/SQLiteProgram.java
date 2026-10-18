@@ -1,6 +1,6 @@
 package android.database.sqlite;
 
-    public abstract class SQLiteProgram extends android.database.sqlite.SQLiteClosable {
+    public class SQLiteProgram extends android.database.sqlite.SQLiteClosable {
 
     public void bindAllArgsAsStrings(java.lang.String[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteProgram;->bindAllArgsAsStrings([Ljava/lang/String;)V");

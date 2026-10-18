@@ -961,16 +961,24 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLayerType()I");
     }
 
-    public int getLayoutDirection() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLayoutDirection()I");
-    }
-
     /**
      * Mirror state for layout params: the SDK stub jar declares no
      * instance fields, so interpreter framework-dispatch synchronizes the
      * {@code View;.mLayoutParams} mapping key onto this field.
      */
     protected android.view.ViewGroup.LayoutParams mLayoutParams;
+
+    /**
+     * Mirror state for the view tree: framework-dispatch syncs the model
+     * keys ({@code View;.mParent}, {@code View;.mAttached}) onto these
+     * fields so ported ViewGroup bodies (addViewInLayout attaches,
+     * removeAllViews detaches) mutate the same state the legacy builtin
+     * readers use, and the interpreter unbridges mirrors back to their
+     * model objects after every dispatch.
+     */
+    protected android.view.ViewParent mParent;
+
+    protected int mAttached;
 
     public android.view.ViewGroup.LayoutParams getLayoutParams() {
         // Real Android throws when no params were attached via inflation
@@ -983,6 +991,10 @@ package android.view;
                     android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
         }
         return mLayoutParams;
+    }
+
+    public int getLayoutDirection() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLayoutDirection()I");
     }
 
     public final int getLeft() {

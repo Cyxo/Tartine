@@ -1,16 +1,26 @@
 package android.hardware.lights;
 
-    public abstract class LightsManager {
+    public class LightsManager {
 
-    public abstract android.hardware.lights.LightState getLightState(android.hardware.lights.Light arg0);
+    public android.hardware.lights.LightState getLightState(android.hardware.lights.Light arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/lights/LightsManager;->getLightState(Landroid/hardware/lights/Light;)Landroid/hardware/lights/LightState;");
+    }
 
-    public abstract java.util.List<android.hardware.lights.Light> getLights();
+    public java.util.List<android.hardware.lights.Light> getLights() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/lights/LightsManager;->getLights()Ljava/util/List;");
+    }
 
-    public abstract android.hardware.lights.LightsManager.LightsSession openSession();
-        public static abstract class LightsSession implements java.lang.AutoCloseable {
+    public android.hardware.lights.LightsManager.LightsSession openSession() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/lights/LightsManager;->openSession()Landroid/hardware/lights/LightsManager$LightsSession;");
+    }
+        public static class LightsSession implements java.lang.AutoCloseable {
 
-        public abstract void close();
+        public void close() {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/lights/LightsManager$LightsSession;->close()V");
+        }
 
-        public abstract void requestLights(android.hardware.lights.LightsRequest arg0);
+        public void requestLights(android.hardware.lights.LightsRequest arg0) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/lights/LightsManager$LightsSession;->requestLights(Landroid/hardware/lights/LightsRequest;)V");
+        }
         }
     }

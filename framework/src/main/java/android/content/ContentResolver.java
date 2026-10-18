@@ -1,6 +1,6 @@
 package android.content;
 
-    public abstract class ContentResolver {
+    public class ContentResolver {
 
     public static final java.lang.String ANY_CURSOR_ITEM_TYPE = "vnd.android.cursor.item/*";
     public static final java.lang.String CURSOR_DIR_BASE_TYPE = "vnd.android.cursor.dir";
@@ -336,6 +336,10 @@ package android.content;
     public static android.content.ContentResolver wrap(android.content.ContentProviderClient arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentResolver;->wrap(Landroid/content/ContentProviderClient;)Landroid/content/ContentResolver;");
     }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public ContentResolver() {
+        }
         public static class MimeTypeInfo {
 
         public java.lang.CharSequence getContentDescription() {

@@ -1,6 +1,6 @@
 package android.view;
 
-    public abstract class ViewOutlineProvider {
+    public class ViewOutlineProvider {
 
     public static android.view.ViewOutlineProvider BACKGROUND;
     public static android.view.ViewOutlineProvider BOUNDS;
@@ -10,5 +10,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewOutlineProvider;-><init>()V");
     }
 
-    public abstract void getOutline(android.view.View arg0, android.graphics.Outline arg1);
+    public void getOutline(android.view.View arg0, android.graphics.Outline arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewOutlineProvider;->getOutline(Landroid/view/View;Landroid/graphics/Outline;)V");
+    }
     }

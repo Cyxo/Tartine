@@ -1,6 +1,6 @@
 package android.view;
 
-    public abstract class ViewGroup extends android.view.View implements android.view.ViewManager, android.view.ViewParent {
+    public class ViewGroup extends android.view.View implements android.view.ViewManager, android.view.ViewParent {
 
     protected static final int CLIP_TO_PADDING_MASK = 34;
     public static final int FOCUS_AFTER_DESCENDANTS = 262144;
@@ -54,11 +54,11 @@ package android.view;
     }
 
     public void addView(android.view.View arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addView(Landroid/view/View;)V");
+        addViewInLayout(arg0, -1, null, false);
     }
 
     public void addView(android.view.View arg0, android.view.ViewGroup.LayoutParams arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V");
+        addViewInLayout(arg0, -1, arg1, false);
     }
 
     public void addView(android.view.View arg0, int arg1) {
@@ -73,13 +73,60 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addView(Landroid/view/View;II)V");
     }
 
-    protected boolean addViewInLayout(android.view.View arg0, int arg1, android.view.ViewGroup.LayoutParams arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addViewInLayout(Landroid/view/View;ILandroid/view/ViewGroup$LayoutParams;)Z");
+    /**
+     * Child registry for the ported child-management surface. Named to
+     * match the model key the interpreter syncs ({@code
+     * ViewGroup;.mChildren}); the interpreter unbridges entries back to
+     * their model objects after every mirror call, so old model-state
+     * readers (window attach, attach propagation) keep working. Not
+     * final: the interpreter swaps in the synced list object per call,
+     * and between syncs the contents are a mirror/model mix.
+     */
+    private java.util.List<android.view.View> mChildren =
+            new java.util.ArrayList<android.view.View>();
+
+    /**
+     * Attach child during an inflight layout pass. Composition attaches the
+     * content root here; the params walk through the child's own
+     * setLayoutParams (identity preserved), index -1 appends, and the
+     * matched View entry keeps reference identity across mirror bridging.
+     */
+    protected boolean addViewInLayout(android.view.View arg0, int arg1,
+            android.view.ViewGroup.LayoutParams arg2) {
+        return addViewInLayout(arg0, arg1, arg2, false);
     }
 
-    protected boolean addViewInLayout(android.view.View arg0, int arg1, android.view.ViewGroup.LayoutParams arg2, boolean arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addViewInLayout(Landroid/view/View;ILandroid/view/ViewGroup$LayoutParams;Z)Z");
+    protected boolean addViewInLayout(android.view.View arg0, int arg1,
+            android.view.ViewGroup.LayoutParams arg2, boolean arg3) {
+        if (arg0 == null) {
+            throw new NullPointerException("Cannot add a null child view to a ViewGroup");
+        }
+        java.util.List<android.view.View> children = mChildren;
+        // On device a null params falls back to the container's default
+        // pair; the base implementation measures bare children directly.
+        arg0.setLayoutParams(arg2 == null
+                ? new android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+                : arg2);
+        arg0.mParent = this;
+        if (mAttached != 0) {
+            arg0.mAttached = 1;
+        }
+        if (arg1 >= 0 && arg1 < children.size()) {
+            children.add(arg1, arg0);
+        } else {
+            children.add(arg0);
+        }
+        return true;
     }
+
+    /**
+     * Base addView family: same attach semantics as the inflight variant,
+     * params null means the (null) base default, index -1 appends. The
+     * (View, int) / (View, int, ...) index overloads route here on device;
+     * their port stays UOE until a probe wall needs them.
+     */
 
     protected void attachLayoutAnimationParameters(android.view.View arg0, android.view.ViewGroup.LayoutParams arg1, int arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->attachLayoutAnimationParameters(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;II)V");
@@ -98,7 +145,9 @@ package android.view;
     }
 
     protected boolean checkLayoutParams(android.view.ViewGroup.LayoutParams arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->checkLayoutParams(Landroid/view/ViewGroup$LayoutParams;)Z");
+        // Base ViewGroup validation: params exist and belong to this family
+        // (each container refines shape checks; bare containers accept any).
+        return arg0 != null;
     }
 
     public void childDrawableStateChanged(android.view.View arg0) {
@@ -338,7 +387,10 @@ package android.view;
     }
 
     protected android.view.ViewGroup.LayoutParams generateDefaultLayoutParams() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->generateDefaultLayoutParams()Landroid/view/ViewGroup$LayoutParams;");
+        // Base ViewGroup has no default pair: containers override. Compose
+        // attaches with explicit params, so null keeps the contract until
+        // layout-measured containers port their own generate calls.
+        return null;
     }
 
     public android.view.ViewGroup.LayoutParams generateLayoutParams(android.util.AttributeSet arg0) {
@@ -354,11 +406,14 @@ package android.view;
     }
 
     public android.view.View getChildAt(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getChildAt(I)Landroid/view/View;");
+        if (arg0 < 0 || arg0 >= mChildren.size()) {
+            throw new IndexOutOfBoundsException("index=" + arg0 + ", count=" + mChildren.size());
+        }
+        return mChildren.get(arg0);
     }
 
     public int getChildCount() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getChildCount()I");
+        return mChildren.size();
     }
 
     public final int getChildDrawingOrder(int arg0) {
@@ -533,7 +588,9 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onInterceptTouchEvent(Landroid/view/MotionEvent;)Z");
     }
 
-    protected abstract void onLayout(boolean arg0, int arg1, int arg2, int arg3, int arg4);
+    protected void onLayout(boolean arg0, int arg1, int arg2, int arg3, int arg4) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onLayout(ZIIII)V");
+    }
 
     public boolean onNestedFling(android.view.View arg0, float arg1, float arg2, boolean arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onNestedFling(Landroid/view/View;FFZ)Z");
@@ -596,11 +653,23 @@ package android.view;
     }
 
     public void removeAllViews() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->removeAllViews()V");
+        for (Object child : mChildren) {
+            if (child instanceof android.view.View) {
+                ((android.view.View) child).mParent = null;
+                ((android.view.View) child).mAttached = 0;
+            }
+        }
+        mChildren.clear();
     }
 
     public void removeAllViewsInLayout() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->removeAllViewsInLayout()V");
+        for (Object child : mChildren) {
+            if (child instanceof android.view.View) {
+                ((android.view.View) child).mParent = null;
+                ((android.view.View) child).mAttached = 0;
+            }
+        }
+        mChildren.clear();
     }
 
     protected void removeDetachedView(android.view.View arg0, boolean arg1) {
@@ -778,6 +847,10 @@ package android.view;
     public void updateViewLayout(android.view.View arg0, android.view.ViewGroup.LayoutParams arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->updateViewLayout(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V");
     }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public ViewGroup() {
+        }
         public static class LayoutParams {
 
         public static final int FILL_PARENT = -1;

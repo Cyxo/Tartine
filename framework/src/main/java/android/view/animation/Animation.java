@@ -1,6 +1,6 @@
 package android.view.animation;
 
-    public abstract class Animation implements java.lang.Cloneable {
+    public class Animation implements java.lang.Cloneable {
 
     public static final int ABSOLUTE = 0;
     public static final int INFINITE = -1;

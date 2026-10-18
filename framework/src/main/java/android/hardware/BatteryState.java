@@ -1,6 +1,6 @@
 package android.hardware;
 
-    public abstract class BatteryState {
+    public class BatteryState {
 
     public static final int STATUS_CHARGING = 2;
     public static final int STATUS_DISCHARGING = 3;
@@ -12,9 +12,15 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/BatteryState;-><init>()V");
     }
 
-    public abstract float getCapacity();
+    public float getCapacity() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/BatteryState;->getCapacity()F");
+    }
 
-    public abstract int getStatus();
+    public int getStatus() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/BatteryState;->getStatus()I");
+    }
 
-    public abstract boolean isPresent();
+    public boolean isPresent() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/BatteryState;->isPresent()Z");
+    }
     }

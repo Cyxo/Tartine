@@ -2263,6 +2263,13 @@ public final class Interpreter {
 
     private final Map<String, Class<?>> hostClasses = new HashMap<>();
     private final Map<String, Method> hostMethods = new HashMap<>();
+    /**
+     * Mirror-owner registry: framework-dispatch tracks which model object a
+     * host mirror belongs to, so values that hosts return (children lists,
+     * child lookups) convert back to the model object the guest allocated,
+     * keeping reference identity stable across the adapter boundary.
+     */
+    private final Map<Object, VmObject> mirrorOwners = new java.util.IdentityHashMap<>();
 
     /**
      * Host-runtime classes a guest may reach reflectively. {@code java.*}
@@ -2298,26 +2305,182 @@ public final class Interpreter {
         if (home == null) {
             return Outcome.MISS;
         }
+        Object mirror = hostMirror(object, home);
+        if (mirror == null) {
+            return Outcome.MISS;
+        }
+        // Guest refs bridge to their own mirrors; real args stay put.
+        List<VmObject> bridged = new ArrayList<>();
+        Object[] hostArgs = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            hostArgs[i] = bridgeMirrorArg(args[i], bridged);
+        }
+        syncFields(object, mirror, true);
+        ReflectResult result = mirrorInvoke(mirror, ref, hostArgs);
+        if (!result.hit) {
+            return Outcome.MISS;
+        }
+        syncFields(object, mirror, false);
+        for (VmObject guest : bridged) {
+            Object guestMirror = guest.host;
+            if (guestMirror != null) {
+                syncFields(guest, guestMirror, false);
+            }
+        }
+        if (ref.returnType.equals("V")) {
+            return Outcome.empty();
+        }
+        return Outcome.value(unbridgeMirrorValue(result.value));
+    }
+
+    /**
+     * Mirror dispatch selector. Protected lifecycle members
+     * (addViewInLayout, onLayout, onMeasure...) are the framework's real
+     * surface and invisible to getMethods, so this walks declared methods
+     * along the mirror's class chain (mirrors are always framework-module
+     * instances; setAccessible is safe here). Same two-phase pick as
+     * {@link #selectMethod}: exact guest descriptor first, guest-assignable
+     * signature second. Virtual invoke keepsOverrides dispatch correct even
+     * when the cache crosses mirror types with identical descriptors.
+     */
+    private ReflectResult mirrorInvoke(Object mirror, MethodRef ref,
+            Object[] args) {
+        Method selected = mirroredMethod(mirror, ref, args);
+        if (selected == null) {
+            return ReflectResult.MISS;
+        }
+        Class<?>[] params = selected.getParameterTypes();
+        Object[] hostArgs = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            hostArgs[i] = bridgeArg(params[i], args[i]);
+        }
+        try {
+            selected.setAccessible(true);
+            Object returned = selected.invoke(mirror, hostArgs);
+            for (int i = 0; i < args.length; i++) {
+                copyBack(hostArgs[i], args[i]);
+            }
+            return new ReflectResult(true, boxReturn(returned));
+        } catch (IllegalAccessException e) {
+            return ReflectResult.MISS;
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            }
+            if (cause instanceof Error) {
+                throw (Error) cause;
+            }
+            throw new VmThrow(cause);
+        }
+    }
+
+    private Method mirroredMethod(Object mirror, MethodRef ref, Object[] args) {
+        StringBuilder key = new StringBuilder("M").append(ref.definingClass)
+                .append('#').append(ref.name).append('#')
+                .append(ref.parameters.size());
+        for (Object arg : args) {
+            key.append('#').append(argKey(arg));
+        }
+        String cacheKey = key.toString();
+        if (hostMethods.containsKey(cacheKey)) {
+            return hostMethods.get(cacheKey);
+        }
+        List<Method> candidates = new ArrayList<>();
+        for (Class<?> c = mirror.getClass(); c != null
+                && c != Object.class; c = c.getSuperclass()) {
+            for (Method m : c.getDeclaredMethods()) {
+                if (m.isBridge() || m.isSynthetic()
+                        || Modifier.isStatic(m.getModifiers())
+                        || !m.getName().equals(ref.name)
+                        || m.getParameterCount() != ref.parameters.size()) {
+                    continue;
+                }
+                candidates.add(m);
+            }
+        }
+        Method selected = null;
+        String wanted = dexDescriptor(ref);
+        for (Method candidate : candidates) {
+            if (methodDescriptor(candidate).equals(wanted)) {
+                selected = candidate;
+                break;
+            }
+        }
+        if (selected == null) {
+            candidates.sort((left, right) ->
+                    methodDescriptor(left).compareTo(methodDescriptor(right)));
+            for (Method candidate : candidates) {
+                Class<?>[] params = candidate.getParameterTypes();
+                boolean ok = true;
+                for (int i = 0; i < params.length; i++) {
+                    if (!argAssignable(params[i], args[i])) {
+                        ok = false;
+                        break;
+                    }
+                }
+                if (ok) {
+                    selected = candidate;
+                    break;
+                }
+            }
+        }
+        hostMethods.put(cacheKey, selected);
+        return selected;
+    }
+
+    /**
+     * Lazily built (and identity-registered) mirror for a model object.
+     * Reused across calls so state keeps accumulating in one place.
+     */    private Object hostMirror(VmObject object, Class<?> home) {
         Object mirror = object.host;
         if (mirror == null || mirror.getClass() != home) {
             try {
                 mirror = home.getDeclaredConstructor().newInstance();
             } catch (ReflectiveOperationException | LinkageError
                     | RuntimeException e) {
-                return Outcome.MISS;
+                return null;
             }
             object.host = mirror;
+            mirrorOwners.put(mirror, object);
         }
-        syncFields(object, mirror, true);
-        ReflectResult result = reflectCall(mirror, ref, args, false);
-        if (!result.hit) {
-            return Outcome.MISS;
+        return mirror;
+    }
+
+    /**
+     * Bridges one call argument toward the host mirror call. Model objects
+     * (VmObject/VmArray holders) whose type resolves to a framework mirror
+     * swap over to that mirror so ported framework bodies see real types;
+     * everything else (primitive boxes, real hosts) passes unchanged.
+     */
+    private Object bridgeMirrorArg(Object arg, List<VmObject> bridged) {
+        if (arg instanceof VmObject) {
+            VmObject object = (VmObject) arg;
+            Class<?> home = mirrorHome(object);
+            if (home == null) {
+                return arg;
+            }
+            Object mirror = hostMirror(object, home);
+            if (mirror == null) {
+                return arg;
+            }
+            syncFields(object, mirror, true);
+            bridged.add(object);
+            return mirror;
         }
-        syncFields(object, mirror, false);
-        if (ref.returnType.equals("V")) {
-            return Outcome.empty();
+        return arg;
+    }
+
+    /**
+     * Converts a host call result back toward the model world: registry
+     * mirrors unbridge to their owning model object (identity), everything
+     * else keeps the reflective conversion.
+     */
+    private Object unbridgeMirrorValue(Object value) {
+        if (value != null && mirrorOwners.containsKey(value)) {
+            return mirrorOwners.get(value);
         }
-        return Outcome.value(result.value);
+        return boxReturn(value);
     }
 
     /**
@@ -2372,20 +2535,68 @@ public final class Interpreter {
                     if (forward) {
                         Object value = object.getField(key);
                         if (value != null) {
-                            f.set(mirror, value);
+                            f.set(mirror, bridgeValue(value));
                         }
                     } else {
                         Object value = f.get(mirror);
-                        if (value != null) {
-                            object.putField(key, value);
+                        if (value != null && !isNullish(value)) {
+                            object.putField(key, unbridgeValue(value));
                         }
                     }
-                } catch (IllegalAccessException ignored) {
+                } catch (IllegalAccessException | IllegalArgumentException ignored) {
                     // Not passable state; skip the field.
                 }
             }
             c = c.getSuperclass();
         }
+    }
+
+    /**
+     * Converts a model value toward the mirror world: list elements that
+     * already carry a registered mirror swap to it, so ported framework
+     * code iterating {@code List<View>} sees hosts instead of placeholders
+     * (the declared {@code View} return of getChildAt would otherwise cast
+     * a VmObject and crash). Lookup-only by design: element field state is
+     * kept coherent by the element's own arg-bridge crossings.
+     */
+    private Object bridgeValue(Object value) {
+        if (!(value instanceof List)) {
+            return value;
+        }
+        List<Object> bridged = new ArrayList<>();
+        for (Object element : (List<?>) value) {
+            if (element instanceof VmObject && ((VmObject) element).host != null) {
+                bridged.add(((VmObject) element).host);
+            } else {
+                bridged.add(element);
+            }
+        }
+        return bridged;
+    }
+
+    /**
+     * Converts a mirror-world value toward the canonical model keys:
+     * registry mirrors become their owning model objects (identity: the
+     * child link points at the same object the guest allocated, not at a
+     * host mirror), lists convert element-wise so model readers like the
+     * attach-propagation builtin keep seeing placeholders.
+     */
+    private Object unbridgeValue(Object value) {
+        if (mirrorOwners.containsKey(value)) {
+            return mirrorOwners.get(value);
+        }
+        if (value instanceof List) {
+            List<Object> unbridged = new ArrayList<>();
+            for (Object element : (List<?>) value) {
+                if (element != null && mirrorOwners.containsKey(element)) {
+                    unbridged.add(mirrorOwners.get(element));
+                } else {
+                    unbridged.add(element);
+                }
+            }
+            return unbridged;
+        }
+        return value;
     }
 
     /**
@@ -4437,54 +4648,9 @@ public final class Interpreter {
                 });
         builtin("Landroid/view/View;->findViewById(I)Landroid/view/View;",
                 (receiver, args) -> findContent((VmObject) receiver, args));
-        // The content frame is childless until views are added.
-        builtin("Landroid/view/ViewGroup;->getChildAt(I)Landroid/view/View;",                (receiver, args) -> {
-                    Object children = ((VmObject) receiver)
-                            .getField("Landroid/view/ViewGroup;.mChildren");
-                    if (!(children instanceof List)) {
-                        return null;
-                    }
-                    int index = asInt(args[0]);
-                    List<?> list = (List<?>) children;
-                    if (index < 0 || index >= list.size()) {
-                        return null;
-                    }
-                    return list.get(index);
-                });
-        builtin("Landroid/view/ViewGroup;->getChildCount()I",
-                (receiver, args) -> {
-                    Object children = ((VmObject) receiver)
-                            .getField("Landroid/view/ViewGroup;.mChildren");
-                    return children instanceof List ? ((List<?>) children).size() : 0;
-                });
-        builtin("Landroid/view/ViewGroup;->addView(Landroid/view/View;)V",
-                (receiver, args) -> {
-                    addChild((VmObject) receiver, (VmObject) args[0], null);
-                    return null;
-                });
-        builtin("Landroid/view/ViewGroup;->addView(Landroid/view/View;"
-                + "Landroid/view/ViewGroup$LayoutParams;)V",
-                (receiver, args) -> {
-                    addChild((VmObject) receiver, (VmObject) args[0], args[1]);
-                    return null;
-                });
-        builtin("Landroid/view/ViewGroup;->removeAllViews()V",
-                (receiver, args) -> {
-                    Object children = ((VmObject) receiver)
-                            .getField("Landroid/view/ViewGroup;.mChildren");
-                    if (children instanceof List) {
-                        for (Object child : (List<?>) children) {
-                            if (child instanceof VmObject) {
-                                ((VmObject) child)
-                                        .putField("Landroid/view/View;.mParent", null);
-                                ((VmObject) child)
-                                        .putField("Landroid/view/View;.mAttached", 0);
-                            }
-                        }
-                        ((List<?>) children).clear();
-                    }
-                    return null;
-                });
+        // ViewGroup's child surface (addView/child reads/removeAll) lives in
+        // the framework module; framework-dispatch serves it through the
+        // mirror and the model keys stay synced (unbridgeValue).
         // View construction bottoms out here: keep the context (getContext
         // is the reader half); attrs/defStyle have no headless consumer yet.
         // All four overloads behave the same (attrs are always null headless,
@@ -7469,7 +7635,9 @@ public final class Interpreter {
         view.putField("Landroid/view/View;.mAttached", 1);
     }
 
-    /** Ordered children of a group, created on demand. */
+    /**
+     * Ordered children of a group, created on demand.
+     */
     private List<Object> childrenOf(VmObject group) {
         Object have = group.getField("Landroid/view/ViewGroup;.mChildren");
         if (have instanceof List) {
@@ -7478,22 +7646,6 @@ public final class Interpreter {
         List<Object> children = new ArrayList<>();
         group.putField("Landroid/view/ViewGroup;.mChildren", children);
         return children;
-    }
-
-    /**
-     * Adds a child like {@code ViewGroup.addView}: linked under the group,
-     * carrying its layout params, and attached when the group is.
-     */
-    private void addChild(VmObject group, VmObject child, Object params) {
-        if (params != null && !isNullish(params)) {
-            child.putField("Landroid/view/View;.mLayoutParams", params);
-        }
-        child.putField("Landroid/view/View;.mParent", group);
-        Object attached = group.getField("Landroid/view/View;.mAttached");
-        if (attached != null && asInt(attached) != 0) {
-            child.putField("Landroid/view/View;.mAttached", 1);
-        }
-        childrenOf(group).add(child);
     }
 
     private static int jump(Map<Integer, Integer> addresses, Insn insn) {

@@ -1,7 +1,10 @@
 package android.os;
 
-    public abstract class CombinedVibration implements android.os.Parcelable {
+    public class CombinedVibration implements android.os.Parcelable {
 
+    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/CombinedVibration;->writeToParcel(Landroid/os/Parcel;I)V");
+    }
     public static android.os.Parcelable.Creator CREATOR;
 
     public static android.os.CombinedVibration createParallel(android.os.VibrationEffect arg0) {

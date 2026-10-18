@@ -67,7 +67,7 @@ package android.view;
             public Bounds() {
             }
         }
-        public static abstract class Callback {
+        public static class Callback {
 
         public static final int DISPATCH_MODE_CONTINUE_ON_SUBTREE = 1;
         public static final int DISPATCH_MODE_STOP = 0;
@@ -88,10 +88,16 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Callback;->onPrepare(Landroid/view/WindowInsetsAnimation;)V");
         }
 
-        public abstract android.view.WindowInsets onProgress(android.view.WindowInsets arg0, java.util.List<android.view.WindowInsetsAnimation> arg1);
+        public android.view.WindowInsets onProgress(android.view.WindowInsets arg0, java.util.List<android.view.WindowInsetsAnimation> arg1) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Callback;->onProgress(Landroid/view/WindowInsets;Ljava/util/List;)Landroid/view/WindowInsets;");
+        }
 
         public android.view.WindowInsetsAnimation.Bounds onStart(android.view.WindowInsetsAnimation arg0, android.view.WindowInsetsAnimation.Bounds arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Callback;->onStart(Landroid/view/WindowInsetsAnimation;Landroid/view/WindowInsetsAnimation$Bounds;)Landroid/view/WindowInsetsAnimation$Bounds;");
         }
+
+            /** Scratch mirror constructor (SkeletonGen). */
+            public Callback() {
+            }
         }
     }

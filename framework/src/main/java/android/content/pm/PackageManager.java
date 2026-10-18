@@ -1,6 +1,6 @@
 package android.content.pm;
 
-    public abstract class PackageManager {
+    public class PackageManager {
 
     public static final int CERT_INPUT_RAW_X509 = 0;
     public static final int CERT_INPUT_SHA256 = 1;
@@ -227,13 +227,21 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;-><init>()V");
     }
 
-    public abstract void addPackageToPreferred(java.lang.String arg0);
+    public void addPackageToPreferred(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->addPackageToPreferred(Ljava/lang/String;)V");
+    }
 
-    public abstract boolean addPermission(android.content.pm.PermissionInfo arg0);
+    public boolean addPermission(android.content.pm.PermissionInfo arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->addPermission(Landroid/content/pm/PermissionInfo;)Z");
+    }
 
-    public abstract boolean addPermissionAsync(android.content.pm.PermissionInfo arg0);
+    public boolean addPermissionAsync(android.content.pm.PermissionInfo arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->addPermissionAsync(Landroid/content/pm/PermissionInfo;)Z");
+    }
 
-    public abstract void addPreferredActivity(android.content.IntentFilter arg0, int arg1, android.content.ComponentName[] arg2, android.content.ComponentName arg3);
+    public void addPreferredActivity(android.content.IntentFilter arg0, int arg1, android.content.ComponentName[] arg2, android.content.ComponentName arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->addPreferredActivity(Landroid/content/IntentFilter;I[Landroid/content/ComponentName;Landroid/content/ComponentName;)V");
+    }
 
     public boolean addWhitelistedRestrictedPermission(java.lang.String arg0, java.lang.String arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->addWhitelistedRestrictedPermission(Ljava/lang/String;Ljava/lang/String;I)Z");
@@ -247,65 +255,117 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->canPackageQuery(Ljava/lang/String;[Ljava/lang/String;)[Z");
     }
 
-    public abstract boolean canRequestPackageInstalls();
+    public boolean canRequestPackageInstalls() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->canRequestPackageInstalls()Z");
+    }
 
-    public abstract java.lang.String[] canonicalToCurrentPackageNames(java.lang.String[] arg0);
+    public java.lang.String[] canonicalToCurrentPackageNames(java.lang.String[] arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->canonicalToCurrentPackageNames([Ljava/lang/String;)[Ljava/lang/String;");
+    }
 
-    public abstract int checkPermission(java.lang.String arg0, java.lang.String arg1);
+    public int checkPermission(java.lang.String arg0, java.lang.String arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->checkPermission(Ljava/lang/String;Ljava/lang/String;)I");
+    }
 
-    public abstract int checkSignatures(int arg0, int arg1);
+    public int checkSignatures(int arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->checkSignatures(II)I");
+    }
 
-    public abstract int checkSignatures(java.lang.String arg0, java.lang.String arg1);
+    public int checkSignatures(java.lang.String arg0, java.lang.String arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->checkSignatures(Ljava/lang/String;Ljava/lang/String;)I");
+    }
 
-    public abstract void clearInstantAppCookie();
+    public void clearInstantAppCookie() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->clearInstantAppCookie()V");
+    }
 
-    public abstract void clearPackagePreferredActivities(java.lang.String arg0);
+    public void clearPackagePreferredActivities(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->clearPackagePreferredActivities(Ljava/lang/String;)V");
+    }
 
-    public abstract java.lang.String[] currentToCanonicalPackageNames(java.lang.String[] arg0);
+    public java.lang.String[] currentToCanonicalPackageNames(java.lang.String[] arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->currentToCanonicalPackageNames([Ljava/lang/String;)[Ljava/lang/String;");
+    }
 
-    public abstract void extendVerificationTimeout(int arg0, int arg1, long arg2);
+    public void extendVerificationTimeout(int arg0, int arg1, long arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->extendVerificationTimeout(IIJ)V");
+    }
 
-    public abstract android.graphics.drawable.Drawable getActivityBanner(android.content.ComponentName arg0);
+    public android.graphics.drawable.Drawable getActivityBanner(android.content.ComponentName arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getActivityBanner(Landroid/content/ComponentName;)Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getActivityBanner(android.content.Intent arg0);
+    public android.graphics.drawable.Drawable getActivityBanner(android.content.Intent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getActivityBanner(Landroid/content/Intent;)Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getActivityIcon(android.content.ComponentName arg0);
+    public android.graphics.drawable.Drawable getActivityIcon(android.content.ComponentName arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getActivityIcon(Landroid/content/ComponentName;)Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getActivityIcon(android.content.Intent arg0);
+    public android.graphics.drawable.Drawable getActivityIcon(android.content.Intent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getActivityIcon(Landroid/content/Intent;)Landroid/graphics/drawable/Drawable;");
+    }
 
     public android.content.pm.ActivityInfo getActivityInfo(android.content.ComponentName arg0, android.content.pm.PackageManager.ComponentInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getActivityInfo(Landroid/content/ComponentName;Landroid/content/pm/PackageManager$ComponentInfoFlags;)Landroid/content/pm/ActivityInfo;");
     }
 
-    public abstract android.content.pm.ActivityInfo getActivityInfo(android.content.ComponentName arg0, int arg1);
+    public android.content.pm.ActivityInfo getActivityInfo(android.content.ComponentName arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getActivityInfo(Landroid/content/ComponentName;I)Landroid/content/pm/ActivityInfo;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getActivityLogo(android.content.ComponentName arg0);
+    public android.graphics.drawable.Drawable getActivityLogo(android.content.ComponentName arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getActivityLogo(Landroid/content/ComponentName;)Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getActivityLogo(android.content.Intent arg0);
+    public android.graphics.drawable.Drawable getActivityLogo(android.content.Intent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getActivityLogo(Landroid/content/Intent;)Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract java.util.List<android.content.pm.PermissionGroupInfo> getAllPermissionGroups(int arg0);
+    public java.util.List<android.content.pm.PermissionGroupInfo> getAllPermissionGroups(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getAllPermissionGroups(I)Ljava/util/List;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getApplicationBanner(android.content.pm.ApplicationInfo arg0);
+    public android.graphics.drawable.Drawable getApplicationBanner(android.content.pm.ApplicationInfo arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getApplicationBanner(Landroid/content/pm/ApplicationInfo;)Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getApplicationBanner(java.lang.String arg0);
+    public android.graphics.drawable.Drawable getApplicationBanner(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getApplicationBanner(Ljava/lang/String;)Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract int getApplicationEnabledSetting(java.lang.String arg0);
+    public int getApplicationEnabledSetting(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getApplicationEnabledSetting(Ljava/lang/String;)I");
+    }
 
-    public abstract android.graphics.drawable.Drawable getApplicationIcon(android.content.pm.ApplicationInfo arg0);
+    public android.graphics.drawable.Drawable getApplicationIcon(android.content.pm.ApplicationInfo arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getApplicationIcon(Landroid/content/pm/ApplicationInfo;)Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getApplicationIcon(java.lang.String arg0);
+    public android.graphics.drawable.Drawable getApplicationIcon(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getApplicationIcon(Ljava/lang/String;)Landroid/graphics/drawable/Drawable;");
+    }
 
     public android.content.pm.ApplicationInfo getApplicationInfo(java.lang.String arg0, android.content.pm.PackageManager.ApplicationInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getApplicationInfo(Ljava/lang/String;Landroid/content/pm/PackageManager$ApplicationInfoFlags;)Landroid/content/pm/ApplicationInfo;");
     }
 
-    public abstract android.content.pm.ApplicationInfo getApplicationInfo(java.lang.String arg0, int arg1);
+    public android.content.pm.ApplicationInfo getApplicationInfo(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getApplicationInfo(Ljava/lang/String;I)Landroid/content/pm/ApplicationInfo;");
+    }
 
-    public abstract java.lang.CharSequence getApplicationLabel(android.content.pm.ApplicationInfo arg0);
+    public java.lang.CharSequence getApplicationLabel(android.content.pm.ApplicationInfo arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getApplicationLabel(Landroid/content/pm/ApplicationInfo;)Ljava/lang/CharSequence;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getApplicationLogo(android.content.pm.ApplicationInfo arg0);
+    public android.graphics.drawable.Drawable getApplicationLogo(android.content.pm.ApplicationInfo arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getApplicationLogo(Landroid/content/pm/ApplicationInfo;)Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getApplicationLogo(java.lang.String arg0);
+    public android.graphics.drawable.Drawable getApplicationLogo(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getApplicationLogo(Ljava/lang/String;)Landroid/graphics/drawable/Drawable;");
+    }
 
     public android.content.pm.ArchivedPackageInfo getArchivedPackage(java.lang.String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getArchivedPackage(Ljava/lang/String;)Landroid/content/pm/ArchivedPackageInfo;");
@@ -315,13 +375,21 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getBackgroundPermissionOptionLabel()Ljava/lang/CharSequence;");
     }
 
-    public abstract android.content.pm.ChangedPackages getChangedPackages(int arg0);
+    public android.content.pm.ChangedPackages getChangedPackages(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getChangedPackages(I)Landroid/content/pm/ChangedPackages;");
+    }
 
-    public abstract int getComponentEnabledSetting(android.content.ComponentName arg0);
+    public int getComponentEnabledSetting(android.content.ComponentName arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getComponentEnabledSetting(Landroid/content/ComponentName;)I");
+    }
 
-    public abstract android.graphics.drawable.Drawable getDefaultActivityIcon();
+    public android.graphics.drawable.Drawable getDefaultActivityIcon() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getDefaultActivityIcon()Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getDrawable(java.lang.String arg0, int arg1, android.content.pm.ApplicationInfo arg2);
+    public android.graphics.drawable.Drawable getDrawable(java.lang.String arg0, int arg1, android.content.pm.ApplicationInfo arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getDrawable(Ljava/lang/String;ILandroid/content/pm/ApplicationInfo;)Landroid/graphics/drawable/Drawable;");
+    }
 
     public void getGroupOfPlatformPermission(java.lang.String arg0, java.util.concurrent.Executor arg1, java.util.function.Consumer<java.lang.String> arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getGroupOfPlatformPermission(Ljava/lang/String;Ljava/util/concurrent/Executor;Ljava/util/function/Consumer;)V");
@@ -335,7 +403,9 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getInstalledApplications(Landroid/content/pm/PackageManager$ApplicationInfoFlags;)Ljava/util/List;");
     }
 
-    public abstract java.util.List<android.content.pm.ApplicationInfo> getInstalledApplications(int arg0);
+    public java.util.List<android.content.pm.ApplicationInfo> getInstalledApplications(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getInstalledApplications(I)Ljava/util/List;");
+    }
 
     public java.util.List<android.content.pm.ModuleInfo> getInstalledModules(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getInstalledModules(I)Ljava/util/List;");
@@ -345,23 +415,37 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getInstalledPackages(Landroid/content/pm/PackageManager$PackageInfoFlags;)Ljava/util/List;");
     }
 
-    public abstract java.util.List<android.content.pm.PackageInfo> getInstalledPackages(int arg0);
+    public java.util.List<android.content.pm.PackageInfo> getInstalledPackages(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getInstalledPackages(I)Ljava/util/List;");
+    }
 
-    public abstract java.lang.String getInstallerPackageName(java.lang.String arg0);
+    public java.lang.String getInstallerPackageName(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getInstallerPackageName(Ljava/lang/String;)Ljava/lang/String;");
+    }
 
-    public abstract byte[] getInstantAppCookie();
+    public byte[] getInstantAppCookie() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getInstantAppCookie()[B");
+    }
 
-    public abstract int getInstantAppCookieMaxBytes();
+    public int getInstantAppCookieMaxBytes() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getInstantAppCookieMaxBytes()I");
+    }
 
-    public abstract android.content.pm.InstrumentationInfo getInstrumentationInfo(android.content.ComponentName arg0, int arg1);
+    public android.content.pm.InstrumentationInfo getInstrumentationInfo(android.content.ComponentName arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getInstrumentationInfo(Landroid/content/ComponentName;I)Landroid/content/pm/InstrumentationInfo;");
+    }
 
-    public abstract android.content.Intent getLaunchIntentForPackage(java.lang.String arg0);
+    public android.content.Intent getLaunchIntentForPackage(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getLaunchIntentForPackage(Ljava/lang/String;)Landroid/content/Intent;");
+    }
 
     public android.content.IntentSender getLaunchIntentSenderForPackage(java.lang.String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getLaunchIntentSenderForPackage(Ljava/lang/String;)Landroid/content/IntentSender;");
     }
 
-    public abstract android.content.Intent getLeanbackLaunchIntentForPackage(java.lang.String arg0);
+    public android.content.Intent getLeanbackLaunchIntentForPackage(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getLeanbackLaunchIntentForPackage(Ljava/lang/String;)Landroid/content/Intent;");
+    }
 
     public java.util.Set<java.lang.String> getMimeGroup(java.lang.String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getMimeGroup(Ljava/lang/String;)Ljava/util/Set;");
@@ -371,7 +455,9 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getModuleInfo(Ljava/lang/String;I)Landroid/content/pm/ModuleInfo;");
     }
 
-    public abstract java.lang.String getNameForUid(int arg0);
+    public java.lang.String getNameForUid(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getNameForUid(I)Ljava/lang/String;");
+    }
 
     public android.content.pm.PackageInfo getPackageArchiveInfo(java.lang.String arg0, android.content.pm.PackageManager.PackageInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageArchiveInfo(Ljava/lang/String;Landroid/content/pm/PackageManager$PackageInfoFlags;)Landroid/content/pm/PackageInfo;");
@@ -381,53 +467,77 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageArchiveInfo(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
     }
 
-    public abstract int[] getPackageGids(java.lang.String arg0);
+    public int[] getPackageGids(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageGids(Ljava/lang/String;)[I");
+    }
 
     public int[] getPackageGids(java.lang.String arg0, android.content.pm.PackageManager.PackageInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageGids(Ljava/lang/String;Landroid/content/pm/PackageManager$PackageInfoFlags;)[I");
     }
 
-    public abstract int[] getPackageGids(java.lang.String arg0, int arg1);
+    public int[] getPackageGids(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageGids(Ljava/lang/String;I)[I");
+    }
 
     public android.content.pm.PackageInfo getPackageInfo(android.content.pm.VersionedPackage arg0, android.content.pm.PackageManager.PackageInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageInfo(Landroid/content/pm/VersionedPackage;Landroid/content/pm/PackageManager$PackageInfoFlags;)Landroid/content/pm/PackageInfo;");
     }
 
-    public abstract android.content.pm.PackageInfo getPackageInfo(android.content.pm.VersionedPackage arg0, int arg1);
+    public android.content.pm.PackageInfo getPackageInfo(android.content.pm.VersionedPackage arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageInfo(Landroid/content/pm/VersionedPackage;I)Landroid/content/pm/PackageInfo;");
+    }
 
     public android.content.pm.PackageInfo getPackageInfo(java.lang.String arg0, android.content.pm.PackageManager.PackageInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String;Landroid/content/pm/PackageManager$PackageInfoFlags;)Landroid/content/pm/PackageInfo;");
     }
 
-    public abstract android.content.pm.PackageInfo getPackageInfo(java.lang.String arg0, int arg1);
+    public android.content.pm.PackageInfo getPackageInfo(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
+    }
 
-    public abstract android.content.pm.PackageInstaller getPackageInstaller();
+    public android.content.pm.PackageInstaller getPackageInstaller() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageInstaller()Landroid/content/pm/PackageInstaller;");
+    }
 
     public int getPackageUid(java.lang.String arg0, android.content.pm.PackageManager.PackageInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageUid(Ljava/lang/String;Landroid/content/pm/PackageManager$PackageInfoFlags;)I");
     }
 
-    public abstract int getPackageUid(java.lang.String arg0, int arg1);
+    public int getPackageUid(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageUid(Ljava/lang/String;I)I");
+    }
 
-    public abstract java.lang.String[] getPackagesForUid(int arg0);
+    public java.lang.String[] getPackagesForUid(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackagesForUid(I)[Ljava/lang/String;");
+    }
 
     public java.util.List<android.content.pm.PackageInfo> getPackagesHoldingPermissions(java.lang.String[] arg0, android.content.pm.PackageManager.PackageInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackagesHoldingPermissions([Ljava/lang/String;Landroid/content/pm/PackageManager$PackageInfoFlags;)Ljava/util/List;");
     }
 
-    public abstract java.util.List<android.content.pm.PackageInfo> getPackagesHoldingPermissions(java.lang.String[] arg0, int arg1);
+    public java.util.List<android.content.pm.PackageInfo> getPackagesHoldingPermissions(java.lang.String[] arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackagesHoldingPermissions([Ljava/lang/String;I)Ljava/util/List;");
+    }
 
-    public abstract android.content.pm.PermissionGroupInfo getPermissionGroupInfo(java.lang.String arg0, int arg1);
+    public android.content.pm.PermissionGroupInfo getPermissionGroupInfo(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPermissionGroupInfo(Ljava/lang/String;I)Landroid/content/pm/PermissionGroupInfo;");
+    }
 
-    public abstract android.content.pm.PermissionInfo getPermissionInfo(java.lang.String arg0, int arg1);
+    public android.content.pm.PermissionInfo getPermissionInfo(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPermissionInfo(Ljava/lang/String;I)Landroid/content/pm/PermissionInfo;");
+    }
 
     public void getPlatformPermissionsForGroup(java.lang.String arg0, java.util.concurrent.Executor arg1, java.util.function.Consumer<java.util.List<java.lang.String>> arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPlatformPermissionsForGroup(Ljava/lang/String;Ljava/util/concurrent/Executor;Ljava/util/function/Consumer;)V");
     }
 
-    public abstract int getPreferredActivities(java.util.List<android.content.IntentFilter> arg0, java.util.List<android.content.ComponentName> arg1, java.lang.String arg2);
+    public int getPreferredActivities(java.util.List<android.content.IntentFilter> arg0, java.util.List<android.content.ComponentName> arg1, java.lang.String arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPreferredActivities(Ljava/util/List;Ljava/util/List;Ljava/lang/String;)I");
+    }
 
-    public abstract java.util.List<android.content.pm.PackageInfo> getPreferredPackages(int arg0);
+    public java.util.List<android.content.pm.PackageInfo> getPreferredPackages(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPreferredPackages(I)Ljava/util/List;");
+    }
 
     public android.content.pm.PackageManager.Property getProperty(java.lang.String arg0, android.content.ComponentName arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getProperty(Ljava/lang/String;Landroid/content/ComponentName;)Landroid/content/pm/PackageManager$Property;");
@@ -441,35 +551,49 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getProviderInfo(Landroid/content/ComponentName;Landroid/content/pm/PackageManager$ComponentInfoFlags;)Landroid/content/pm/ProviderInfo;");
     }
 
-    public abstract android.content.pm.ProviderInfo getProviderInfo(android.content.ComponentName arg0, int arg1);
+    public android.content.pm.ProviderInfo getProviderInfo(android.content.ComponentName arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getProviderInfo(Landroid/content/ComponentName;I)Landroid/content/pm/ProviderInfo;");
+    }
 
     public android.content.pm.ActivityInfo getReceiverInfo(android.content.ComponentName arg0, android.content.pm.PackageManager.ComponentInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getReceiverInfo(Landroid/content/ComponentName;Landroid/content/pm/PackageManager$ComponentInfoFlags;)Landroid/content/pm/ActivityInfo;");
     }
 
-    public abstract android.content.pm.ActivityInfo getReceiverInfo(android.content.ComponentName arg0, int arg1);
+    public android.content.pm.ActivityInfo getReceiverInfo(android.content.ComponentName arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getReceiverInfo(Landroid/content/ComponentName;I)Landroid/content/pm/ActivityInfo;");
+    }
 
-    public abstract android.content.res.Resources getResourcesForActivity(android.content.ComponentName arg0);
+    public android.content.res.Resources getResourcesForActivity(android.content.ComponentName arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getResourcesForActivity(Landroid/content/ComponentName;)Landroid/content/res/Resources;");
+    }
 
-    public abstract android.content.res.Resources getResourcesForApplication(android.content.pm.ApplicationInfo arg0);
+    public android.content.res.Resources getResourcesForApplication(android.content.pm.ApplicationInfo arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getResourcesForApplication(Landroid/content/pm/ApplicationInfo;)Landroid/content/res/Resources;");
+    }
 
     public android.content.res.Resources getResourcesForApplication(android.content.pm.ApplicationInfo arg0, android.content.res.Configuration arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getResourcesForApplication(Landroid/content/pm/ApplicationInfo;Landroid/content/res/Configuration;)Landroid/content/res/Resources;");
     }
 
-    public abstract android.content.res.Resources getResourcesForApplication(java.lang.String arg0);
+    public android.content.res.Resources getResourcesForApplication(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getResourcesForApplication(Ljava/lang/String;)Landroid/content/res/Resources;");
+    }
 
     public android.content.pm.ServiceInfo getServiceInfo(android.content.ComponentName arg0, android.content.pm.PackageManager.ComponentInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getServiceInfo(Landroid/content/ComponentName;Landroid/content/pm/PackageManager$ComponentInfoFlags;)Landroid/content/pm/ServiceInfo;");
     }
 
-    public abstract android.content.pm.ServiceInfo getServiceInfo(android.content.ComponentName arg0, int arg1);
+    public android.content.pm.ServiceInfo getServiceInfo(android.content.ComponentName arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getServiceInfo(Landroid/content/ComponentName;I)Landroid/content/pm/ServiceInfo;");
+    }
 
     public java.util.List<android.content.pm.SharedLibraryInfo> getSharedLibraries(android.content.pm.PackageManager.PackageInfoFlags arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getSharedLibraries(Landroid/content/pm/PackageManager$PackageInfoFlags;)Ljava/util/List;");
     }
 
-    public abstract java.util.List<android.content.pm.SharedLibraryInfo> getSharedLibraries(int arg0);
+    public java.util.List<android.content.pm.SharedLibraryInfo> getSharedLibraries(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getSharedLibraries(I)Ljava/util/List;");
+    }
 
     public android.os.Bundle getSuspendedPackageAppExtras() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getSuspendedPackageAppExtras()Landroid/os/Bundle;");
@@ -479,21 +603,33 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getSyntheticAppDetailsActivityEnabled(Ljava/lang/String;)Z");
     }
 
-    public abstract android.content.pm.FeatureInfo[] getSystemAvailableFeatures();
+    public android.content.pm.FeatureInfo[] getSystemAvailableFeatures() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getSystemAvailableFeatures()[Landroid/content/pm/FeatureInfo;");
+    }
 
-    public abstract java.lang.String[] getSystemSharedLibraryNames();
+    public java.lang.String[] getSystemSharedLibraryNames() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getSystemSharedLibraryNames()[Ljava/lang/String;");
+    }
 
     public int getTargetSdkVersion(java.lang.String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getTargetSdkVersion(Ljava/lang/String;)I");
     }
 
-    public abstract java.lang.CharSequence getText(java.lang.String arg0, int arg1, android.content.pm.ApplicationInfo arg2);
+    public java.lang.CharSequence getText(java.lang.String arg0, int arg1, android.content.pm.ApplicationInfo arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getText(Ljava/lang/String;ILandroid/content/pm/ApplicationInfo;)Ljava/lang/CharSequence;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getUserBadgedDrawableForDensity(android.graphics.drawable.Drawable arg0, android.os.UserHandle arg1, android.graphics.Rect arg2, int arg3);
+    public android.graphics.drawable.Drawable getUserBadgedDrawableForDensity(android.graphics.drawable.Drawable arg0, android.os.UserHandle arg1, android.graphics.Rect arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getUserBadgedDrawableForDensity(Landroid/graphics/drawable/Drawable;Landroid/os/UserHandle;Landroid/graphics/Rect;I)Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getUserBadgedIcon(android.graphics.drawable.Drawable arg0, android.os.UserHandle arg1);
+    public android.graphics.drawable.Drawable getUserBadgedIcon(android.graphics.drawable.Drawable arg0, android.os.UserHandle arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getUserBadgedIcon(Landroid/graphics/drawable/Drawable;Landroid/os/UserHandle;)Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract java.lang.CharSequence getUserBadgedLabel(java.lang.CharSequence arg0, android.os.UserHandle arg1);
+    public java.lang.CharSequence getUserBadgedLabel(java.lang.CharSequence arg0, android.os.UserHandle arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getUserBadgedLabel(Ljava/lang/CharSequence;Landroid/os/UserHandle;)Ljava/lang/CharSequence;");
+    }
 
     public static android.content.pm.SigningInfo getVerifiedSigningInfo(java.lang.String arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getVerifiedSigningInfo(Ljava/lang/String;I)Landroid/content/pm/SigningInfo;");
@@ -503,7 +639,9 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getWhitelistedRestrictedPermissions(Ljava/lang/String;I)Ljava/util/Set;");
     }
 
-    public abstract android.content.res.XmlResourceParser getXml(java.lang.String arg0, int arg1, android.content.pm.ApplicationInfo arg2);
+    public android.content.res.XmlResourceParser getXml(java.lang.String arg0, int arg1, android.content.pm.ApplicationInfo arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getXml(Ljava/lang/String;ILandroid/content/pm/ApplicationInfo;)Landroid/content/res/XmlResourceParser;");
+    }
 
     public boolean hasSigningCertificate(int arg0, byte[] arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->hasSigningCertificate(I[BI)Z");
@@ -513,9 +651,13 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->hasSigningCertificate(Ljava/lang/String;[BI)Z");
     }
 
-    public abstract boolean hasSystemFeature(java.lang.String arg0);
+    public boolean hasSystemFeature(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->hasSystemFeature(Ljava/lang/String;)Z");
+    }
 
-    public abstract boolean hasSystemFeature(java.lang.String arg0, int arg1);
+    public boolean hasSystemFeature(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->hasSystemFeature(Ljava/lang/String;I)Z");
+    }
 
     public boolean isAppArchivable(java.lang.String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->isAppArchivable(Ljava/lang/String;)Z");
@@ -537,9 +679,13 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->isDeviceUpgrading()Z");
     }
 
-    public abstract boolean isInstantApp();
+    public boolean isInstantApp() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->isInstantApp()Z");
+    }
 
-    public abstract boolean isInstantApp(java.lang.String arg0);
+    public boolean isInstantApp(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->isInstantApp(Ljava/lang/String;)Z");
+    }
 
     public boolean isPackageStopped(java.lang.String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->isPackageStopped(Ljava/lang/String;)Z");
@@ -553,9 +699,13 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->isPackageSuspended(Ljava/lang/String;)Z");
     }
 
-    public abstract boolean isPermissionRevokedByPolicy(java.lang.String arg0, java.lang.String arg1);
+    public boolean isPermissionRevokedByPolicy(java.lang.String arg0, java.lang.String arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->isPermissionRevokedByPolicy(Ljava/lang/String;Ljava/lang/String;)Z");
+    }
 
-    public abstract boolean isSafeMode();
+    public boolean isSafeMode() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->isSafeMode()Z");
+    }
 
     public <T> T parseAndroidManifest(android.os.ParcelFileDescriptor arg0, java.util.function.Function<android.content.res.XmlResourceParser, T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->parseAndroidManifest(Landroid/os/ParcelFileDescriptor;Ljava/util/function/Function;)Ljava/lang/Object;");
@@ -577,23 +727,33 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryBroadcastReceivers(Landroid/content/Intent;Landroid/content/pm/PackageManager$ResolveInfoFlags;)Ljava/util/List;");
     }
 
-    public abstract java.util.List<android.content.pm.ResolveInfo> queryBroadcastReceivers(android.content.Intent arg0, int arg1);
+    public java.util.List<android.content.pm.ResolveInfo> queryBroadcastReceivers(android.content.Intent arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryBroadcastReceivers(Landroid/content/Intent;I)Ljava/util/List;");
+    }
 
     public java.util.List<android.content.pm.ProviderInfo> queryContentProviders(java.lang.String arg0, int arg1, android.content.pm.PackageManager.ComponentInfoFlags arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryContentProviders(Ljava/lang/String;ILandroid/content/pm/PackageManager$ComponentInfoFlags;)Ljava/util/List;");
     }
 
-    public abstract java.util.List<android.content.pm.ProviderInfo> queryContentProviders(java.lang.String arg0, int arg1, int arg2);
+    public java.util.List<android.content.pm.ProviderInfo> queryContentProviders(java.lang.String arg0, int arg1, int arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryContentProviders(Ljava/lang/String;II)Ljava/util/List;");
+    }
 
-    public abstract java.util.List<android.content.pm.InstrumentationInfo> queryInstrumentation(java.lang.String arg0, int arg1);
+    public java.util.List<android.content.pm.InstrumentationInfo> queryInstrumentation(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryInstrumentation(Ljava/lang/String;I)Ljava/util/List;");
+    }
 
     public java.util.List<android.content.pm.ResolveInfo> queryIntentActivities(android.content.Intent arg0, android.content.pm.PackageManager.ResolveInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryIntentActivities(Landroid/content/Intent;Landroid/content/pm/PackageManager$ResolveInfoFlags;)Ljava/util/List;");
     }
 
-    public abstract java.util.List<android.content.pm.ResolveInfo> queryIntentActivities(android.content.Intent arg0, int arg1);
+    public java.util.List<android.content.pm.ResolveInfo> queryIntentActivities(android.content.Intent arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryIntentActivities(Landroid/content/Intent;I)Ljava/util/List;");
+    }
 
-    public abstract java.util.List<android.content.pm.ResolveInfo> queryIntentActivityOptions(android.content.ComponentName arg0, android.content.Intent[] arg1, android.content.Intent arg2, int arg3);
+    public java.util.List<android.content.pm.ResolveInfo> queryIntentActivityOptions(android.content.ComponentName arg0, android.content.Intent[] arg1, android.content.Intent arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryIntentActivityOptions(Landroid/content/ComponentName;[Landroid/content/Intent;Landroid/content/Intent;I)Ljava/util/List;");
+    }
 
     public java.util.List<android.content.pm.ResolveInfo> queryIntentActivityOptions(android.content.ComponentName arg0, java.util.List<android.content.Intent> arg1, android.content.Intent arg2, android.content.pm.PackageManager.ResolveInfoFlags arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryIntentActivityOptions(Landroid/content/ComponentName;Ljava/util/List;Landroid/content/Intent;Landroid/content/pm/PackageManager$ResolveInfoFlags;)Ljava/util/List;");
@@ -603,15 +763,21 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryIntentContentProviders(Landroid/content/Intent;Landroid/content/pm/PackageManager$ResolveInfoFlags;)Ljava/util/List;");
     }
 
-    public abstract java.util.List<android.content.pm.ResolveInfo> queryIntentContentProviders(android.content.Intent arg0, int arg1);
+    public java.util.List<android.content.pm.ResolveInfo> queryIntentContentProviders(android.content.Intent arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryIntentContentProviders(Landroid/content/Intent;I)Ljava/util/List;");
+    }
 
     public java.util.List<android.content.pm.ResolveInfo> queryIntentServices(android.content.Intent arg0, android.content.pm.PackageManager.ResolveInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryIntentServices(Landroid/content/Intent;Landroid/content/pm/PackageManager$ResolveInfoFlags;)Ljava/util/List;");
     }
 
-    public abstract java.util.List<android.content.pm.ResolveInfo> queryIntentServices(android.content.Intent arg0, int arg1);
+    public java.util.List<android.content.pm.ResolveInfo> queryIntentServices(android.content.Intent arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryIntentServices(Landroid/content/Intent;I)Ljava/util/List;");
+    }
 
-    public abstract java.util.List<android.content.pm.PermissionInfo> queryPermissionsByGroup(java.lang.String arg0, int arg1);
+    public java.util.List<android.content.pm.PermissionInfo> queryPermissionsByGroup(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryPermissionsByGroup(Ljava/lang/String;I)Ljava/util/List;");
+    }
 
     public java.util.List<android.content.pm.PackageManager.Property> queryProviderProperty(java.lang.String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryProviderProperty(Ljava/lang/String;)Ljava/util/List;");
@@ -629,9 +795,13 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->relinquishUpdateOwnership(Ljava/lang/String;)V");
     }
 
-    public abstract void removePackageFromPreferred(java.lang.String arg0);
+    public void removePackageFromPreferred(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->removePackageFromPreferred(Ljava/lang/String;)V");
+    }
 
-    public abstract void removePermission(java.lang.String arg0);
+    public void removePermission(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->removePermission(Ljava/lang/String;)V");
+    }
 
     public boolean removeWhitelistedRestrictedPermission(java.lang.String arg0, java.lang.String arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->removeWhitelistedRestrictedPermission(Ljava/lang/String;Ljava/lang/String;I)Z");
@@ -645,43 +815,61 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->resolveActivity(Landroid/content/Intent;Landroid/content/pm/PackageManager$ResolveInfoFlags;)Landroid/content/pm/ResolveInfo;");
     }
 
-    public abstract android.content.pm.ResolveInfo resolveActivity(android.content.Intent arg0, int arg1);
+    public android.content.pm.ResolveInfo resolveActivity(android.content.Intent arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->resolveActivity(Landroid/content/Intent;I)Landroid/content/pm/ResolveInfo;");
+    }
 
     public android.content.pm.ProviderInfo resolveContentProvider(java.lang.String arg0, android.content.pm.PackageManager.ComponentInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->resolveContentProvider(Ljava/lang/String;Landroid/content/pm/PackageManager$ComponentInfoFlags;)Landroid/content/pm/ProviderInfo;");
     }
 
-    public abstract android.content.pm.ProviderInfo resolveContentProvider(java.lang.String arg0, int arg1);
+    public android.content.pm.ProviderInfo resolveContentProvider(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->resolveContentProvider(Ljava/lang/String;I)Landroid/content/pm/ProviderInfo;");
+    }
 
     public android.content.pm.ResolveInfo resolveService(android.content.Intent arg0, android.content.pm.PackageManager.ResolveInfoFlags arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->resolveService(Landroid/content/Intent;Landroid/content/pm/PackageManager$ResolveInfoFlags;)Landroid/content/pm/ResolveInfo;");
     }
 
-    public abstract android.content.pm.ResolveInfo resolveService(android.content.Intent arg0, int arg1);
+    public android.content.pm.ResolveInfo resolveService(android.content.Intent arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->resolveService(Landroid/content/Intent;I)Landroid/content/pm/ResolveInfo;");
+    }
 
-    public abstract void setApplicationCategoryHint(java.lang.String arg0, int arg1);
+    public void setApplicationCategoryHint(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->setApplicationCategoryHint(Ljava/lang/String;I)V");
+    }
 
-    public abstract void setApplicationEnabledSetting(java.lang.String arg0, int arg1, int arg2);
+    public void setApplicationEnabledSetting(java.lang.String arg0, int arg1, int arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->setApplicationEnabledSetting(Ljava/lang/String;II)V");
+    }
 
     public boolean setAutoRevokeWhitelisted(java.lang.String arg0, boolean arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->setAutoRevokeWhitelisted(Ljava/lang/String;Z)Z");
     }
 
-    public abstract void setComponentEnabledSetting(android.content.ComponentName arg0, int arg1, int arg2);
+    public void setComponentEnabledSetting(android.content.ComponentName arg0, int arg1, int arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->setComponentEnabledSetting(Landroid/content/ComponentName;II)V");
+    }
 
     public void setComponentEnabledSettings(java.util.List<android.content.pm.PackageManager.ComponentEnabledSetting> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->setComponentEnabledSettings(Ljava/util/List;)V");
     }
 
-    public abstract void setInstallerPackageName(java.lang.String arg0, java.lang.String arg1);
+    public void setInstallerPackageName(java.lang.String arg0, java.lang.String arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->setInstallerPackageName(Ljava/lang/String;Ljava/lang/String;)V");
+    }
 
     public void setMimeGroup(java.lang.String arg0, java.util.Set<java.lang.String> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->setMimeGroup(Ljava/lang/String;Ljava/util/Set;)V");
     }
 
-    public abstract void updateInstantAppCookie(byte[] arg0);
+    public void updateInstantAppCookie(byte[] arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->updateInstantAppCookie([B)V");
+    }
 
-    public abstract void verifyPendingInstall(int arg0, int arg1);
+    public void verifyPendingInstall(int arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->verifyPendingInstall(II)V");
+    }
         public static class ApplicationInfoFlags {
 
         public long getValue() {

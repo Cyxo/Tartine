@@ -1,6 +1,6 @@
 package android.content;
 
-    public abstract class ContentProvider implements android.content.ComponentCallbacks2 {
+    public class ContentProvider implements android.content.ComponentCallbacks2 {
 
     public ContentProvider() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;-><init>()V");
@@ -42,7 +42,9 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->delete(Landroid/net/Uri;Landroid/os/Bundle;)I");
     }
 
-    public abstract int delete(android.net.Uri arg0, java.lang.String arg1, java.lang.String[] arg2);
+    public int delete(android.net.Uri arg0, java.lang.String arg1, java.lang.String[] arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->delete(Landroid/net/Uri;Ljava/lang/String;[Ljava/lang/String;)I");
+    }
 
     public void dump(java.io.FileDescriptor arg0, java.io.PrintWriter arg1, java.lang.String[] arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->dump(Ljava/io/FileDescriptor;Ljava/io/PrintWriter;[Ljava/lang/String;)V");
@@ -80,7 +82,9 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->getStreamTypes(Landroid/net/Uri;Ljava/lang/String;)[Ljava/lang/String;");
     }
 
-    public abstract java.lang.String getType(android.net.Uri arg0);
+    public java.lang.String getType(android.net.Uri arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->getType(Landroid/net/Uri;)Ljava/lang/String;");
+    }
 
     public java.lang.String getTypeAnonymous(android.net.Uri arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->getTypeAnonymous(Landroid/net/Uri;)Ljava/lang/String;");
@@ -90,7 +94,9 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->getWritePermission()Ljava/lang/String;");
     }
 
-    public abstract android.net.Uri insert(android.net.Uri arg0, android.content.ContentValues arg1);
+    public android.net.Uri insert(android.net.Uri arg0, android.content.ContentValues arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->insert(Landroid/net/Uri;Landroid/content/ContentValues;)Landroid/net/Uri;");
+    }
 
     public android.net.Uri insert(android.net.Uri arg0, android.content.ContentValues arg1, android.os.Bundle arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->insert(Landroid/net/Uri;Landroid/content/ContentValues;Landroid/os/Bundle;)Landroid/net/Uri;");
@@ -108,7 +114,9 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->onConfigurationChanged(Landroid/content/res/Configuration;)V");
     }
 
-    public abstract boolean onCreate();
+    public boolean onCreate() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->onCreate()Z");
+    }
 
     public void onLowMemory() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->onLowMemory()V");
@@ -154,7 +162,9 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->query(Landroid/net/Uri;[Ljava/lang/String;Landroid/os/Bundle;Landroid/os/CancellationSignal;)Landroid/database/Cursor;");
     }
 
-    public abstract android.database.Cursor query(android.net.Uri arg0, java.lang.String[] arg1, java.lang.String arg2, java.lang.String[] arg3, java.lang.String arg4);
+    public android.database.Cursor query(android.net.Uri arg0, java.lang.String[] arg1, java.lang.String arg2, java.lang.String[] arg3, java.lang.String arg4) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->query(Landroid/net/Uri;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)Landroid/database/Cursor;");
+    }
 
     public android.database.Cursor query(android.net.Uri arg0, java.lang.String[] arg1, java.lang.String arg2, java.lang.String[] arg3, java.lang.String arg4, android.os.CancellationSignal arg5) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->query(Landroid/net/Uri;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Landroid/os/CancellationSignal;)Landroid/database/Cursor;");
@@ -196,7 +206,9 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->update(Landroid/net/Uri;Landroid/content/ContentValues;Landroid/os/Bundle;)I");
     }
 
-    public abstract int update(android.net.Uri arg0, android.content.ContentValues arg1, java.lang.String arg2, java.lang.String[] arg3);
+    public int update(android.net.Uri arg0, android.content.ContentValues arg1, java.lang.String arg2, java.lang.String[] arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProvider;->update(Landroid/net/Uri;Landroid/content/ContentValues;Ljava/lang/String;[Ljava/lang/String;)I");
+    }
         public static class CallingIdentity {
 
             /** Scratch mirror constructor (SkeletonGen). */

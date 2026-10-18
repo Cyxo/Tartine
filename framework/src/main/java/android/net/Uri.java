@@ -1,11 +1,20 @@
 package android.net;
 
-    public abstract class Uri implements java.lang.Comparable<android.net.Uri>, android.os.Parcelable {
+    public class Uri implements java.lang.Comparable<android.net.Uri>, android.os.Parcelable {
 
+    public int describeContents() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->describeContents()I");
+    }
+
+    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->writeToParcel(Landroid/os/Parcel;I)V");
+    }
     public static android.os.Parcelable.Creator CREATOR;
     public static android.net.Uri EMPTY;
 
-    public abstract android.net.Uri.Builder buildUpon();
+    public android.net.Uri.Builder buildUpon() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->buildUpon()Landroid/net/Uri$Builder;");
+    }
 
     public int compareTo(android.net.Uri arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->compareTo(Landroid/net/Uri;)I");
@@ -35,37 +44,65 @@ package android.net;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->fromParts(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Landroid/net/Uri;");
     }
 
-    public abstract java.lang.String getAuthority();
+    public java.lang.String getAuthority() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getAuthority()Ljava/lang/String;");
+    }
 
     public boolean getBooleanQueryParameter(java.lang.String arg0, boolean arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getBooleanQueryParameter(Ljava/lang/String;Z)Z");
     }
 
-    public abstract java.lang.String getEncodedAuthority();
+    public java.lang.String getEncodedAuthority() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getEncodedAuthority()Ljava/lang/String;");
+    }
 
-    public abstract java.lang.String getEncodedFragment();
+    public java.lang.String getEncodedFragment() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getEncodedFragment()Ljava/lang/String;");
+    }
 
-    public abstract java.lang.String getEncodedPath();
+    public java.lang.String getEncodedPath() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getEncodedPath()Ljava/lang/String;");
+    }
 
-    public abstract java.lang.String getEncodedQuery();
+    public java.lang.String getEncodedQuery() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getEncodedQuery()Ljava/lang/String;");
+    }
 
-    public abstract java.lang.String getEncodedSchemeSpecificPart();
+    public java.lang.String getEncodedSchemeSpecificPart() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getEncodedSchemeSpecificPart()Ljava/lang/String;");
+    }
 
-    public abstract java.lang.String getEncodedUserInfo();
+    public java.lang.String getEncodedUserInfo() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getEncodedUserInfo()Ljava/lang/String;");
+    }
 
-    public abstract java.lang.String getFragment();
+    public java.lang.String getFragment() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getFragment()Ljava/lang/String;");
+    }
 
-    public abstract java.lang.String getHost();
+    public java.lang.String getHost() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getHost()Ljava/lang/String;");
+    }
 
-    public abstract java.lang.String getLastPathSegment();
+    public java.lang.String getLastPathSegment() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getLastPathSegment()Ljava/lang/String;");
+    }
 
-    public abstract java.lang.String getPath();
+    public java.lang.String getPath() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getPath()Ljava/lang/String;");
+    }
 
-    public abstract java.util.List<java.lang.String> getPathSegments();
+    public java.util.List<java.lang.String> getPathSegments() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getPathSegments()Ljava/util/List;");
+    }
 
-    public abstract int getPort();
+    public int getPort() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getPort()I");
+    }
 
-    public abstract java.lang.String getQuery();
+    public java.lang.String getQuery() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getQuery()Ljava/lang/String;");
+    }
 
     public java.lang.String getQueryParameter(java.lang.String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;");
@@ -79,11 +116,17 @@ package android.net;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getQueryParameters(Ljava/lang/String;)Ljava/util/List;");
     }
 
-    public abstract java.lang.String getScheme();
+    public java.lang.String getScheme() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getScheme()Ljava/lang/String;");
+    }
 
-    public abstract java.lang.String getSchemeSpecificPart();
+    public java.lang.String getSchemeSpecificPart() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getSchemeSpecificPart()Ljava/lang/String;");
+    }
 
-    public abstract java.lang.String getUserInfo();
+    public java.lang.String getUserInfo() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->getUserInfo()Ljava/lang/String;");
+    }
 
     public int hashCode() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->hashCode()I");
@@ -93,13 +136,17 @@ package android.net;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->isAbsolute()Z");
     }
 
-    public abstract boolean isHierarchical();
+    public boolean isHierarchical() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->isHierarchical()Z");
+    }
 
     public boolean isOpaque() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->isOpaque()Z");
     }
 
-    public abstract boolean isRelative();
+    public boolean isRelative() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->isRelative()Z");
+    }
 
     public android.net.Uri normalizeScheme() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->normalizeScheme()Landroid/net/Uri;");
@@ -109,7 +156,9 @@ package android.net;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;");
     }
 
-    public abstract java.lang.String toString();
+    public java.lang.String toString() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->toString()Ljava/lang/String;");
+    }
 
     public static android.net.Uri withAppendedPath(android.net.Uri arg0, java.lang.String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->withAppendedPath(Landroid/net/Uri;Ljava/lang/String;)Landroid/net/Uri;");

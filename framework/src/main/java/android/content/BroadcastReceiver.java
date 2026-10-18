@@ -1,6 +1,6 @@
 package android.content;
 
-    public abstract class BroadcastReceiver {
+    public class BroadcastReceiver {
 
     public BroadcastReceiver() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;-><init>()V");
@@ -54,7 +54,9 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->isOrderedBroadcast()Z");
     }
 
-    public abstract void onReceive(android.content.Context arg0, android.content.Intent arg1);
+    public void onReceive(android.content.Context arg0, android.content.Intent arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->onReceive(Landroid/content/Context;Landroid/content/Intent;)V");
+    }
 
     public android.os.IBinder peekService(android.content.Context arg0, android.content.Intent arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->peekService(Landroid/content/Context;Landroid/content/Intent;)Landroid/os/IBinder;");

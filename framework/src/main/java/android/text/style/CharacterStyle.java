@@ -1,6 +1,6 @@
 package android.text.style;
 
-    public abstract class CharacterStyle {
+    public class CharacterStyle {
 
     public CharacterStyle() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/style/CharacterStyle;-><init>()V");
@@ -10,7 +10,9 @@ package android.text.style;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/style/CharacterStyle;->getUnderlying()Landroid/text/style/CharacterStyle;");
     }
 
-    public abstract void updateDrawState(android.text.TextPaint arg0);
+    public void updateDrawState(android.text.TextPaint arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/style/CharacterStyle;->updateDrawState(Landroid/text/TextPaint;)V");
+    }
 
     public static android.text.style.CharacterStyle wrap(android.text.style.CharacterStyle arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/style/CharacterStyle;->wrap(Landroid/text/style/CharacterStyle;)Landroid/text/style/CharacterStyle;");

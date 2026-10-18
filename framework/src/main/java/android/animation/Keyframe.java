@@ -1,12 +1,14 @@
 package android.animation;
 
-    public abstract class Keyframe implements java.lang.Cloneable {
+    public class Keyframe implements java.lang.Cloneable {
 
     public Keyframe() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Keyframe;-><init>()V");
     }
 
-    public abstract android.animation.Keyframe clone();
+    public android.animation.Keyframe clone() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Keyframe;->clone()Landroid/animation/Keyframe;");
+    }
 
     public float getFraction() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Keyframe;->getFraction()F");
@@ -20,7 +22,9 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Keyframe;->getType()Ljava/lang/Class;");
     }
 
-    public abstract java.lang.Object getValue();
+    public java.lang.Object getValue() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Keyframe;->getValue()Ljava/lang/Object;");
+    }
 
     public boolean hasValue() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Keyframe;->hasValue()Z");
@@ -58,5 +62,7 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Keyframe;->setInterpolator(Landroid/animation/TimeInterpolator;)V");
     }
 
-    public abstract void setValue(java.lang.Object arg0);
+    public void setValue(java.lang.Object arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Keyframe;->setValue(Ljava/lang/Object;)V");
+    }
     }

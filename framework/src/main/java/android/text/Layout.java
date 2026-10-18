@@ -1,6 +1,6 @@
 package android.text;
 
-    public abstract class Layout {
+    public class Layout {
 
     public static final int BREAK_STRATEGY_BALANCED = 2;
     public static final int BREAK_STRATEGY_HIGH_QUALITY = 1;
@@ -57,7 +57,9 @@ package android.text;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getAlignment()Landroid/text/Layout$Alignment;");
     }
 
-    public abstract int getBottomPadding();
+    public int getBottomPadding() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getBottomPadding()I");
+    }
 
     public final int getBreakStrategy() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getBreakStrategy()I");
@@ -75,9 +77,13 @@ package android.text;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getDesiredWidth(Ljava/lang/CharSequence;IILandroid/text/TextPaint;)F");
     }
 
-    public abstract int getEllipsisCount(int arg0);
+    public int getEllipsisCount(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getEllipsisCount(I)I");
+    }
 
-    public abstract int getEllipsisStart(int arg0);
+    public int getEllipsisStart(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getEllipsisStart(I)I");
+    }
 
     public final android.text.TextUtils.TruncateAt getEllipsize() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getEllipsize()Landroid/text/TextUtils$TruncateAt;");
@@ -127,13 +133,21 @@ package android.text;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineBreakConfig()Landroid/graphics/text/LineBreakConfig;");
     }
 
-    public abstract boolean getLineContainsTab(int arg0);
+    public boolean getLineContainsTab(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineContainsTab(I)Z");
+    }
 
-    public abstract int getLineCount();
+    public int getLineCount() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineCount()I");
+    }
 
-    public abstract int getLineDescent(int arg0);
+    public int getLineDescent(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineDescent(I)I");
+    }
 
-    public abstract android.text.Layout.Directions getLineDirections(int arg0);
+    public android.text.Layout.Directions getLineDirections(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineDirections(I)Landroid/text/Layout$Directions;");
+    }
 
     public final int getLineEnd(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineEnd(I)I");
@@ -171,9 +185,13 @@ package android.text;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineSpacingMultiplier()F");
     }
 
-    public abstract int getLineStart(int arg0);
+    public int getLineStart(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineStart(I)I");
+    }
 
-    public abstract int getLineTop(int arg0);
+    public int getLineTop(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineTop(I)I");
+    }
 
     public int getLineVisibleEnd(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineVisibleEnd(I)I");
@@ -211,7 +229,9 @@ package android.text;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getParagraphAlignment(I)Landroid/text/Layout$Alignment;");
     }
 
-    public abstract int getParagraphDirection(int arg0);
+    public int getParagraphDirection(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getParagraphDirection(I)I");
+    }
 
     public final int getParagraphLeft(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getParagraphLeft(I)I");
@@ -261,7 +281,9 @@ package android.text;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getTextDirectionHeuristic()Landroid/text/TextDirectionHeuristic;");
     }
 
-    public abstract int getTopPadding();
+    public int getTopPadding() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getTopPadding()I");
+    }
 
     public boolean getUseBoundsForWidth() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getUseBoundsForWidth()Z");
@@ -290,6 +312,10 @@ package android.text;
     protected final boolean isSpanned() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->isSpanned()Z");
     }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public Layout() {
+        }
         public static enum Alignment {
             ALIGN_CENTER, ALIGN_NORMAL, ALIGN_OPPOSITE;
         }

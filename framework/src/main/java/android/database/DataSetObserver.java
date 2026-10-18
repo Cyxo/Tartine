@@ -1,6 +1,6 @@
 package android.database;
 
-    public abstract class DataSetObserver {
+    public class DataSetObserver {
 
     public DataSetObserver() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/DataSetObserver;-><init>()V");

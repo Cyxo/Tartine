@@ -1,6 +1,6 @@
 package android.database.sqlite;
 
-    public abstract class SQLiteClosable implements java.io.Closeable {
+    public class SQLiteClosable implements java.io.Closeable {
 
     public SQLiteClosable() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteClosable;-><init>()V");
@@ -14,7 +14,9 @@ package android.database.sqlite;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteClosable;->close()V");
     }
 
-    protected abstract void onAllReferencesReleased();
+    protected void onAllReferencesReleased() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteClosable;->onAllReferencesReleased()V");
+    }
 
     protected void onAllReferencesReleasedFromContainer() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteClosable;->onAllReferencesReleasedFromContainer()V");

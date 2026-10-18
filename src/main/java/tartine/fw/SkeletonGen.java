@@ -7,11 +7,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Dev-time generator for the {@code framework} module (AGENTS.md "Framework
@@ -24,8 +27,10 @@ import java.util.Map;
  *
  * Emission rules:
  * <ul>
- *   <li>Bodies only for concrete methods; abstract methods stay abstract;
- *       native/synchronized modifiers are dropped.</li>
+ *   <li>Abstract members stay abstract on interfaces and enums; classes
+ *       compile concrete (adapter surface: framework-dispatch mirrors
+ *       construct them) with gap-naming bodies for abstract members.
+ *       Native/synchronized modifiers are dropped.</li>
  *   <li>Nested classes (binary {@code $} names) become {@code static}
  *       nested types inside their top-level source file (documented limit:
  *       {@code $} purely as nesting delimiter; two-plus depth flattens one
@@ -98,7 +103,7 @@ public final class SkeletonGen {
                 continue;
             }
             Files.createDirectories(src.getParent());
-            Files.writeString(src, emitFile(file.getKey(), file.getValue()),
+            Files.writeString(src, emitFile(file.getKey(), file.getValue(), closure),
                     StandardCharsets.UTF_8);
             System.out.println("wrote: " + src);
         }
@@ -258,7 +263,8 @@ public final class SkeletonGen {
     }
 
     /** Emits one source file (package clause + outer class + static nesteds). */
-    static String emitFile(String topBinary, List<FwIndex.FwClass> members) {
+    static String emitFile(String topBinary, List<FwIndex.FwClass> members,
+            Map<String, FwIndex.FwClass> closure) {
         int lastSlash = topBinary.lastIndexOf('/');
         String pkg = lastSlash < 0 ? "" : topBinary.substring(0, lastSlash);
         StringBuilder out = new StringBuilder();
@@ -267,7 +273,7 @@ public final class SkeletonGen {
         }
         for (FwIndex.FwClass cls : members) {
             if (depth(cls) == 1) {
-                emitClass(out, cls, members, 1);
+                emitClass(out, cls, members, 1, closure);
             }
         }
         return out.toString();
@@ -275,14 +281,15 @@ public final class SkeletonGen {
 
     /** Emits one class (possibly nested) from the closure onto {@code out}. */
     private static void emitClass(StringBuilder out, FwIndex.FwClass cls,
-            List<FwIndex.FwClass> members, int level) {
+            List<FwIndex.FwClass> members, int level,
+            Map<String, FwIndex.FwClass> closure) {
         String indent = indent(level);
         out.append(declHeader(cls, indent)).append(" {\n");
         String parentBinary = strip(cls.descriptor);
         if ((cls.access & ACC_ENUM) != 0) {
             emitEnumBody(out, cls, indent);
         } else {
-            emitMembers(out, cls, indent);
+            emitMembers(out, cls, indent, closure);
             emitAdapterCtor(out, cls, indent);
         }
         for (FwIndex.FwClass member : members) {
@@ -291,7 +298,7 @@ public final class SkeletonGen {
                     ? null
                     : binary.substring(0, binary.lastIndexOf('$'));
             if (parent != null && parent.equals(parentBinary) && depth(member) == depth(cls) + 1) {
-                emitClass(out, member, members, level + 1);
+                emitClass(out, member, members, level + 1, closure);
             }
         }
         out.append(indent).append("}\n");
@@ -317,9 +324,10 @@ public final class SkeletonGen {
         } else if (isEnum(cls)) {
             b.append("enum");
         } else {
-            if ((cls.access & ACC_ABSTRACT) != 0) {
-                b.append("abstract ");
-            }
+            // Adapter surface: abstract classes compile concrete so the
+            // interpreter's framework-dispatch mirrors can construct them.
+            // The abstract marker survives in FwIndex for API probing;
+            // bodies still name their gap ("not implemented").
             b.append("class");
         }
         // Signature-aware header when the classfile carries a class-level
@@ -488,8 +496,21 @@ public final class SkeletonGen {
         return (cls.access & ACC_ENUM) != 0;
     }
 
-    private static void emitMembers(StringBuilder out, FwIndex.FwClass cls, String indent) {
+    private static void emitMembers(StringBuilder out, FwIndex.FwClass cls,
+            String indent, Map<String, FwIndex.FwClass> closure) {
         boolean first = true;
+        for (FwIndex.FwMethod f : fillerMethods(cls, closure)) {
+            if (skipMember(f.access)) {
+                continue;
+            }
+            if (first) {
+                out.append('\n');
+                first = false;
+            } else {
+                out.append('\n');
+            }
+            emitMethod(out, cls, f, indent);
+        }
         for (FwIndex.FwField f : cls.fields) {
             if (skipMember(f.access)) {
                 continue;
@@ -528,7 +549,9 @@ public final class SkeletonGen {
      */
     private static void emitAdapterCtor(StringBuilder out, FwIndex.FwClass cls,
             String indent) {
-        if ((cls.access & (ACC_INTERFACE | ACC_ABSTRACT | ACC_ENUM)) != 0) {
+        // Abstract markers vanish in emitted classes (adapter surface), so
+        // only interfaces/enums stay exempt from the mirror constructor.
+        if ((cls.access & (ACC_INTERFACE | ACC_ENUM)) != 0) {
             return;
         }
         for (FwIndex.FwMethod m : cls.methods) {
@@ -541,6 +564,75 @@ public final class SkeletonGen {
                 .append(indent).append("    public ")
                 .append(simpleName(strip(cls.descriptor))).append("() {\n")
                 .append(indent).append("    }\n");
+    }
+
+    /**
+     * Abstract members a generated concrete class must redeclare. The SDK
+     * stub classfiles carry only own-declared members, but the adapter
+     * surface compiles concrete: inherited interface and abstract-super
+     * members that the published class relied on leaving unimplemented
+     * (staying abstract) now need gap-naming bodies in this class. Only
+     * members of the android module closure fill; {@code java.*} ancestry
+     * stays on the host JDK and its members never shadow here.
+     */
+    private static List<FwIndex.FwMethod> fillerMethods(FwIndex.FwClass cls,
+            Map<String, FwIndex.FwClass> closure) {
+        if ((cls.access & (ACC_INTERFACE | ACC_ENUM)) != 0) {
+            return Collections.emptyList();
+        }
+        // Required-abstract accumulator: concrete declarations on the walk
+        // satisfy (and cancel) pending requirements; own declarations
+        // cancel too (they already re-emit).
+        Map<String, FwIndex.FwMethod> required = new LinkedHashMap<>();
+        Set<String> satisfied = new LinkedHashSet<>();
+        Set<String> visited = new LinkedHashSet<>();
+        Deque<String> work = new ArrayDeque<>();
+        if (cls.superclass != null && !"Ljava/lang/Object;".equals(cls.superclass)) {
+            work.add(cls.superclass);
+        }
+        for (String iface : cls.interfaces) {
+            work.add(iface);
+        }
+        while (!work.isEmpty()) {
+            String desc = work.poll();
+            if (!visited.add(desc)) {
+                continue;
+            }
+            // Closure keys are bare binary names ("android/os/Parcelable");
+            // supers/interfaces carry full descriptors ("Landroid/os/...;").
+            String binary = desc.startsWith("L") && desc.endsWith(";")
+                    ? desc.substring(1, desc.length() - 1)
+                    : desc;
+            FwIndex.FwClass type = closure.get(binary);
+            if (type == null) {
+                continue; // java.* subtree or outside the closure: host owned
+            }
+            for (FwIndex.FwMethod m : type.methods) {
+                String key = m.name + "(" + String.join("", m.params)
+                        + ")" + m.ret;
+                if ((m.access & ACC_ABSTRACT) == 0) {
+                    satisfied.add(key);
+                    required.remove(key);
+                } else if (!satisfied.contains(key)) {
+                    required.putIfAbsent(key, m);
+                }
+            }
+            if (type.superclass != null
+                    && !"Ljava/lang/Object;".equals(type.superclass)) {
+                work.add(type.superclass);
+            }
+            for (String iface : type.interfaces) {
+                work.add(iface);
+            }
+        }
+        List<FwIndex.FwMethod> filler = new ArrayList<>();
+        for (FwIndex.FwMethod m : required.values()) {
+            if (cls.hasMethod(m.name, m.params, m.ret)) {
+                continue;
+            }
+            filler.add(m);
+        }
+        return filler;
     }
 
     /** Enum constants first (must be first in source), then other members. */
@@ -653,7 +745,12 @@ public final class SkeletonGen {
         if ((m.access & ACC_STATIC) != 0) {
             b.append("static ");
         }
-        boolean abstractMethod = (m.access & ACC_ABSTRACT) != 0;
+        // Enums keep abstract members (constant-specific bodies we cannot
+        // emit); for classes the adapter surface rule applies: every member
+        // compiles concrete with a gap-naming body, so abstract skeleton
+        // classes (ViewGroup...) construct as mirrors.
+        boolean abstractMethod = (m.access & ACC_ABSTRACT) != 0
+                && (cls.access & (ACC_INTERFACE | ACC_ENUM)) != 0;
         if (abstractMethod) {
             b.append("abstract ");
         } else if ((cls.access & ACC_INTERFACE) != 0 && (m.access & ACC_STATIC) == 0) {

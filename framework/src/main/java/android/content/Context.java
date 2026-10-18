@@ -1,6 +1,6 @@
 package android.content;
 
-    public abstract class Context {
+    public class Context {
 
     public static final java.lang.String ACCESSIBILITY_SERVICE = "accessibility";
     public static final java.lang.String ACCOUNT_SERVICE = "account";
@@ -156,7 +156,9 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->bindService(Landroid/content/Intent;Landroid/content/ServiceConnection;Landroid/content/Context$BindServiceFlags;)Z");
     }
 
-    public abstract boolean bindService(android.content.Intent arg0, android.content.ServiceConnection arg1, int arg2);
+    public boolean bindService(android.content.Intent arg0, android.content.ServiceConnection arg1, int arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->bindService(Landroid/content/Intent;Landroid/content/ServiceConnection;I)Z");
+    }
 
     public boolean bindService(android.content.Intent arg0, int arg1, java.util.concurrent.Executor arg2, android.content.ServiceConnection arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->bindService(Landroid/content/Intent;ILjava/util/concurrent/Executor;Landroid/content/ServiceConnection;)Z");
@@ -170,17 +172,25 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->bindServiceAsUser(Landroid/content/Intent;Landroid/content/ServiceConnection;ILandroid/os/UserHandle;)Z");
     }
 
-    public abstract int checkCallingOrSelfPermission(java.lang.String arg0);
+    public int checkCallingOrSelfPermission(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkCallingOrSelfPermission(Ljava/lang/String;)I");
+    }
 
-    public abstract int checkCallingOrSelfUriPermission(android.net.Uri arg0, int arg1);
+    public int checkCallingOrSelfUriPermission(android.net.Uri arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkCallingOrSelfUriPermission(Landroid/net/Uri;I)I");
+    }
 
     public int[] checkCallingOrSelfUriPermissions(java.util.List<android.net.Uri> arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkCallingOrSelfUriPermissions(Ljava/util/List;I)[I");
     }
 
-    public abstract int checkCallingPermission(java.lang.String arg0);
+    public int checkCallingPermission(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkCallingPermission(Ljava/lang/String;)I");
+    }
 
-    public abstract int checkCallingUriPermission(android.net.Uri arg0, int arg1);
+    public int checkCallingUriPermission(android.net.Uri arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkCallingUriPermission(Landroid/net/Uri;I)I");
+    }
 
     public int[] checkCallingUriPermissions(java.util.List<android.net.Uri> arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkCallingUriPermissions(Ljava/util/List;I)[I");
@@ -190,41 +200,61 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkContentUriPermissionFull(Landroid/net/Uri;III)I");
     }
 
-    public abstract int checkPermission(java.lang.String arg0, int arg1, int arg2);
+    public int checkPermission(java.lang.String arg0, int arg1, int arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkPermission(Ljava/lang/String;II)I");
+    }
 
-    public abstract int checkSelfPermission(java.lang.String arg0);
+    public int checkSelfPermission(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkSelfPermission(Ljava/lang/String;)I");
+    }
 
-    public abstract int checkUriPermission(android.net.Uri arg0, int arg1, int arg2, int arg3);
+    public int checkUriPermission(android.net.Uri arg0, int arg1, int arg2, int arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkUriPermission(Landroid/net/Uri;III)I");
+    }
 
-    public abstract int checkUriPermission(android.net.Uri arg0, java.lang.String arg1, java.lang.String arg2, int arg3, int arg4, int arg5);
+    public int checkUriPermission(android.net.Uri arg0, java.lang.String arg1, java.lang.String arg2, int arg3, int arg4, int arg5) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkUriPermission(Landroid/net/Uri;Ljava/lang/String;Ljava/lang/String;III)I");
+    }
 
     public int[] checkUriPermissions(java.util.List<android.net.Uri> arg0, int arg1, int arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkUriPermissions(Ljava/util/List;III)[I");
     }
 
-    public abstract void clearWallpaper();
+    public void clearWallpaper() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->clearWallpaper()V");
+    }
 
     public android.content.Context createAttributionContext(java.lang.String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->createAttributionContext(Ljava/lang/String;)Landroid/content/Context;");
     }
 
-    public abstract android.content.Context createConfigurationContext(android.content.res.Configuration arg0);
+    public android.content.Context createConfigurationContext(android.content.res.Configuration arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->createConfigurationContext(Landroid/content/res/Configuration;)Landroid/content/Context;");
+    }
 
     public android.content.Context createContext(android.content.ContextParams arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->createContext(Landroid/content/ContextParams;)Landroid/content/Context;");
     }
 
-    public abstract android.content.Context createContextForSplit(java.lang.String arg0);
+    public android.content.Context createContextForSplit(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->createContextForSplit(Ljava/lang/String;)Landroid/content/Context;");
+    }
 
     public android.content.Context createDeviceContext(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->createDeviceContext(I)Landroid/content/Context;");
     }
 
-    public abstract android.content.Context createDeviceProtectedStorageContext();
+    public android.content.Context createDeviceProtectedStorageContext() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->createDeviceProtectedStorageContext()Landroid/content/Context;");
+    }
 
-    public abstract android.content.Context createDisplayContext(android.view.Display arg0);
+    public android.content.Context createDisplayContext(android.view.Display arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->createDisplayContext(Landroid/view/Display;)Landroid/content/Context;");
+    }
 
-    public abstract android.content.Context createPackageContext(java.lang.String arg0, int arg1);
+    public android.content.Context createPackageContext(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->createPackageContext(Ljava/lang/String;I)Landroid/content/Context;");
+    }
 
     public android.content.Context createWindowContext(android.view.Display arg0, int arg1, android.os.Bundle arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->createWindowContext(Landroid/view/Display;ILandroid/os/Bundle;)Landroid/content/Context;");
@@ -234,35 +264,65 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->createWindowContext(ILandroid/os/Bundle;)Landroid/content/Context;");
     }
 
-    public abstract java.lang.String[] databaseList();
+    public java.lang.String[] databaseList() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->databaseList()[Ljava/lang/String;");
+    }
 
-    public abstract boolean deleteDatabase(java.lang.String arg0);
+    public boolean deleteDatabase(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->deleteDatabase(Ljava/lang/String;)Z");
+    }
 
-    public abstract boolean deleteFile(java.lang.String arg0);
+    public boolean deleteFile(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->deleteFile(Ljava/lang/String;)Z");
+    }
 
-    public abstract boolean deleteSharedPreferences(java.lang.String arg0);
+    public boolean deleteSharedPreferences(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->deleteSharedPreferences(Ljava/lang/String;)Z");
+    }
 
-    public abstract void enforceCallingOrSelfPermission(java.lang.String arg0, java.lang.String arg1);
+    public void enforceCallingOrSelfPermission(java.lang.String arg0, java.lang.String arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->enforceCallingOrSelfPermission(Ljava/lang/String;Ljava/lang/String;)V");
+    }
 
-    public abstract void enforceCallingOrSelfUriPermission(android.net.Uri arg0, int arg1, java.lang.String arg2);
+    public void enforceCallingOrSelfUriPermission(android.net.Uri arg0, int arg1, java.lang.String arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->enforceCallingOrSelfUriPermission(Landroid/net/Uri;ILjava/lang/String;)V");
+    }
 
-    public abstract void enforceCallingPermission(java.lang.String arg0, java.lang.String arg1);
+    public void enforceCallingPermission(java.lang.String arg0, java.lang.String arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->enforceCallingPermission(Ljava/lang/String;Ljava/lang/String;)V");
+    }
 
-    public abstract void enforceCallingUriPermission(android.net.Uri arg0, int arg1, java.lang.String arg2);
+    public void enforceCallingUriPermission(android.net.Uri arg0, int arg1, java.lang.String arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->enforceCallingUriPermission(Landroid/net/Uri;ILjava/lang/String;)V");
+    }
 
-    public abstract void enforcePermission(java.lang.String arg0, int arg1, int arg2, java.lang.String arg3);
+    public void enforcePermission(java.lang.String arg0, int arg1, int arg2, java.lang.String arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->enforcePermission(Ljava/lang/String;IILjava/lang/String;)V");
+    }
 
-    public abstract void enforceUriPermission(android.net.Uri arg0, int arg1, int arg2, int arg3, java.lang.String arg4);
+    public void enforceUriPermission(android.net.Uri arg0, int arg1, int arg2, int arg3, java.lang.String arg4) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->enforceUriPermission(Landroid/net/Uri;IIILjava/lang/String;)V");
+    }
 
-    public abstract void enforceUriPermission(android.net.Uri arg0, java.lang.String arg1, java.lang.String arg2, int arg3, int arg4, int arg5, java.lang.String arg6);
+    public void enforceUriPermission(android.net.Uri arg0, java.lang.String arg1, java.lang.String arg2, int arg3, int arg4, int arg5, java.lang.String arg6) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->enforceUriPermission(Landroid/net/Uri;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;)V");
+    }
 
-    public abstract java.lang.String[] fileList();
+    public java.lang.String[] fileList() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->fileList()[Ljava/lang/String;");
+    }
 
-    public abstract android.content.Context getApplicationContext();
+    public android.content.Context getApplicationContext() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getApplicationContext()Landroid/content/Context;");
+    }
 
-    public abstract android.content.pm.ApplicationInfo getApplicationInfo();
+    public android.content.pm.ApplicationInfo getApplicationInfo() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getApplicationInfo()Landroid/content/pm/ApplicationInfo;");
+    }
 
-    public abstract android.content.res.AssetManager getAssets();
+    public android.content.res.AssetManager getAssets() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getAssets()Landroid/content/res/AssetManager;");
+    }
 
     public android.content.AttributionSource getAttributionSource() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getAttributionSource()Landroid/content/AttributionSource;");
@@ -272,11 +332,17 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getAttributionTag()Ljava/lang/String;");
     }
 
-    public abstract java.io.File getCacheDir();
+    public java.io.File getCacheDir() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getCacheDir()Ljava/io/File;");
+    }
 
-    public abstract java.lang.ClassLoader getClassLoader();
+    public java.lang.ClassLoader getClassLoader() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getClassLoader()Ljava/lang/ClassLoader;");
+    }
 
-    public abstract java.io.File getCodeCacheDir();
+    public java.io.File getCodeCacheDir() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getCodeCacheDir()Ljava/io/File;");
+    }
 
     public final int getColor(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getColor(I)I");
@@ -286,17 +352,25 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getColorStateList(I)Landroid/content/res/ColorStateList;");
     }
 
-    public abstract android.content.ContentResolver getContentResolver();
+    public android.content.ContentResolver getContentResolver() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;");
+    }
 
-    public abstract java.io.File getDataDir();
+    public java.io.File getDataDir() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getDataDir()Ljava/io/File;");
+    }
 
-    public abstract java.io.File getDatabasePath(java.lang.String arg0);
+    public java.io.File getDatabasePath(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getDatabasePath(Ljava/lang/String;)Ljava/io/File;");
+    }
 
     public int getDeviceId() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getDeviceId()I");
     }
 
-    public abstract java.io.File getDir(java.lang.String arg0, int arg1);
+    public java.io.File getDir(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getDir(Ljava/lang/String;I)Ljava/io/File;");
+    }
 
     public android.view.Display getDisplay() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getDisplay()Landroid/view/Display;");
@@ -306,51 +380,85 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getDrawable(I)Landroid/graphics/drawable/Drawable;");
     }
 
-    public abstract java.io.File getExternalCacheDir();
+    public java.io.File getExternalCacheDir() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getExternalCacheDir()Ljava/io/File;");
+    }
 
-    public abstract java.io.File[] getExternalCacheDirs();
+    public java.io.File[] getExternalCacheDirs() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getExternalCacheDirs()[Ljava/io/File;");
+    }
 
-    public abstract java.io.File getExternalFilesDir(java.lang.String arg0);
+    public java.io.File getExternalFilesDir(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getExternalFilesDir(Ljava/lang/String;)Ljava/io/File;");
+    }
 
-    public abstract java.io.File[] getExternalFilesDirs(java.lang.String arg0);
+    public java.io.File[] getExternalFilesDirs(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getExternalFilesDirs(Ljava/lang/String;)[Ljava/io/File;");
+    }
 
-    public abstract java.io.File[] getExternalMediaDirs();
+    public java.io.File[] getExternalMediaDirs() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getExternalMediaDirs()[Ljava/io/File;");
+    }
 
-    public abstract java.io.File getFileStreamPath(java.lang.String arg0);
+    public java.io.File getFileStreamPath(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getFileStreamPath(Ljava/lang/String;)Ljava/io/File;");
+    }
 
-    public abstract java.io.File getFilesDir();
+    public java.io.File getFilesDir() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getFilesDir()Ljava/io/File;");
+    }
 
     public java.util.concurrent.Executor getMainExecutor() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getMainExecutor()Ljava/util/concurrent/Executor;");
     }
 
-    public abstract android.os.Looper getMainLooper();
+    public android.os.Looper getMainLooper() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getMainLooper()Landroid/os/Looper;");
+    }
 
-    public abstract java.io.File getNoBackupFilesDir();
+    public java.io.File getNoBackupFilesDir() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getNoBackupFilesDir()Ljava/io/File;");
+    }
 
-    public abstract java.io.File getObbDir();
+    public java.io.File getObbDir() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getObbDir()Ljava/io/File;");
+    }
 
-    public abstract java.io.File[] getObbDirs();
+    public java.io.File[] getObbDirs() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getObbDirs()[Ljava/io/File;");
+    }
 
     public java.lang.String getOpPackageName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getOpPackageName()Ljava/lang/String;");
     }
 
-    public abstract java.lang.String getPackageCodePath();
+    public java.lang.String getPackageCodePath() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getPackageCodePath()Ljava/lang/String;");
+    }
 
-    public abstract android.content.pm.PackageManager getPackageManager();
+    public android.content.pm.PackageManager getPackageManager() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getPackageManager()Landroid/content/pm/PackageManager;");
+    }
 
-    public abstract java.lang.String getPackageName();
+    public java.lang.String getPackageName() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getPackageName()Ljava/lang/String;");
+    }
 
-    public abstract java.lang.String getPackageResourcePath();
+    public java.lang.String getPackageResourcePath() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getPackageResourcePath()Ljava/lang/String;");
+    }
 
     public android.content.ContextParams getParams() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getParams()Landroid/content/ContextParams;");
     }
 
-    public abstract android.content.res.Resources getResources();
+    public android.content.res.Resources getResources() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getResources()Landroid/content/res/Resources;");
+    }
 
-    public abstract android.content.SharedPreferences getSharedPreferences(java.lang.String arg0, int arg1);
+    public android.content.SharedPreferences getSharedPreferences(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getSharedPreferences(Ljava/lang/String;I)Landroid/content/SharedPreferences;");
+    }
 
     public final java.lang.String getString(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getString(I)Ljava/lang/String;");
@@ -364,25 +472,41 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getSystemService(Ljava/lang/Class;)Ljava/lang/Object;");
     }
 
-    public abstract java.lang.Object getSystemService(java.lang.String arg0);
+    public java.lang.Object getSystemService(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;");
+    }
 
-    public abstract java.lang.String getSystemServiceName(java.lang.Class<?> arg0);
+    public java.lang.String getSystemServiceName(java.lang.Class<?> arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getSystemServiceName(Ljava/lang/Class;)Ljava/lang/String;");
+    }
 
     public final java.lang.CharSequence getText(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getText(I)Ljava/lang/CharSequence;");
     }
 
-    public abstract android.content.res.Resources.Theme getTheme();
+    public android.content.res.Resources.Theme getTheme() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getTheme()Landroid/content/res/Resources$Theme;");
+    }
 
-    public abstract android.graphics.drawable.Drawable getWallpaper();
+    public android.graphics.drawable.Drawable getWallpaper() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getWallpaper()Landroid/graphics/drawable/Drawable;");
+    }
 
-    public abstract int getWallpaperDesiredMinimumHeight();
+    public int getWallpaperDesiredMinimumHeight() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getWallpaperDesiredMinimumHeight()I");
+    }
 
-    public abstract int getWallpaperDesiredMinimumWidth();
+    public int getWallpaperDesiredMinimumWidth() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getWallpaperDesiredMinimumWidth()I");
+    }
 
-    public abstract void grantUriPermission(java.lang.String arg0, android.net.Uri arg1, int arg2);
+    public void grantUriPermission(java.lang.String arg0, android.net.Uri arg1, int arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->grantUriPermission(Ljava/lang/String;Landroid/net/Uri;I)V");
+    }
 
-    public abstract boolean isDeviceProtectedStorage();
+    public boolean isDeviceProtectedStorage() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->isDeviceProtectedStorage()Z");
+    }
 
     public boolean isRestricted() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->isRestricted()Z");
@@ -392,9 +516,13 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->isUiContext()Z");
     }
 
-    public abstract boolean moveDatabaseFrom(android.content.Context arg0, java.lang.String arg1);
+    public boolean moveDatabaseFrom(android.content.Context arg0, java.lang.String arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->moveDatabaseFrom(Landroid/content/Context;Ljava/lang/String;)Z");
+    }
 
-    public abstract boolean moveSharedPreferencesFrom(android.content.Context arg0, java.lang.String arg1);
+    public boolean moveSharedPreferencesFrom(android.content.Context arg0, java.lang.String arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->moveSharedPreferencesFrom(Landroid/content/Context;Ljava/lang/String;)Z");
+    }
 
     public final android.content.res.TypedArray obtainStyledAttributes(android.util.AttributeSet arg0, int[] arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->obtainStyledAttributes(Landroid/util/AttributeSet;[I)Landroid/content/res/TypedArray;");
@@ -412,15 +540,25 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->obtainStyledAttributes([I)Landroid/content/res/TypedArray;");
     }
 
-    public abstract java.io.FileInputStream openFileInput(java.lang.String arg0);
+    public java.io.FileInputStream openFileInput(java.lang.String arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->openFileInput(Ljava/lang/String;)Ljava/io/FileInputStream;");
+    }
 
-    public abstract java.io.FileOutputStream openFileOutput(java.lang.String arg0, int arg1);
+    public java.io.FileOutputStream openFileOutput(java.lang.String arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->openFileOutput(Ljava/lang/String;I)Ljava/io/FileOutputStream;");
+    }
 
-    public abstract android.database.sqlite.SQLiteDatabase openOrCreateDatabase(java.lang.String arg0, int arg1, android.database.sqlite.SQLiteDatabase.CursorFactory arg2);
+    public android.database.sqlite.SQLiteDatabase openOrCreateDatabase(java.lang.String arg0, int arg1, android.database.sqlite.SQLiteDatabase.CursorFactory arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->openOrCreateDatabase(Ljava/lang/String;ILandroid/database/sqlite/SQLiteDatabase$CursorFactory;)Landroid/database/sqlite/SQLiteDatabase;");
+    }
 
-    public abstract android.database.sqlite.SQLiteDatabase openOrCreateDatabase(java.lang.String arg0, int arg1, android.database.sqlite.SQLiteDatabase.CursorFactory arg2, android.database.DatabaseErrorHandler arg3);
+    public android.database.sqlite.SQLiteDatabase openOrCreateDatabase(java.lang.String arg0, int arg1, android.database.sqlite.SQLiteDatabase.CursorFactory arg2, android.database.DatabaseErrorHandler arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->openOrCreateDatabase(Ljava/lang/String;ILandroid/database/sqlite/SQLiteDatabase$CursorFactory;Landroid/database/DatabaseErrorHandler;)Landroid/database/sqlite/SQLiteDatabase;");
+    }
 
-    public abstract android.graphics.drawable.Drawable peekWallpaper();
+    public android.graphics.drawable.Drawable peekWallpaper() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->peekWallpaper()Landroid/graphics/drawable/Drawable;");
+    }
 
     public void registerComponentCallbacks(android.content.ComponentCallbacks arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->registerComponentCallbacks(Landroid/content/ComponentCallbacks;)V");
@@ -430,17 +568,29 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->registerDeviceIdChangeListener(Ljava/util/concurrent/Executor;Ljava/util/function/IntConsumer;)V");
     }
 
-    public abstract android.content.Intent registerReceiver(android.content.BroadcastReceiver arg0, android.content.IntentFilter arg1);
+    public android.content.Intent registerReceiver(android.content.BroadcastReceiver arg0, android.content.IntentFilter arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver;Landroid/content/IntentFilter;)Landroid/content/Intent;");
+    }
 
-    public abstract android.content.Intent registerReceiver(android.content.BroadcastReceiver arg0, android.content.IntentFilter arg1, int arg2);
+    public android.content.Intent registerReceiver(android.content.BroadcastReceiver arg0, android.content.IntentFilter arg1, int arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver;Landroid/content/IntentFilter;I)Landroid/content/Intent;");
+    }
 
-    public abstract android.content.Intent registerReceiver(android.content.BroadcastReceiver arg0, android.content.IntentFilter arg1, java.lang.String arg2, android.os.Handler arg3);
+    public android.content.Intent registerReceiver(android.content.BroadcastReceiver arg0, android.content.IntentFilter arg1, java.lang.String arg2, android.os.Handler arg3) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver;Landroid/content/IntentFilter;Ljava/lang/String;Landroid/os/Handler;)Landroid/content/Intent;");
+    }
 
-    public abstract android.content.Intent registerReceiver(android.content.BroadcastReceiver arg0, android.content.IntentFilter arg1, java.lang.String arg2, android.os.Handler arg3, int arg4);
+    public android.content.Intent registerReceiver(android.content.BroadcastReceiver arg0, android.content.IntentFilter arg1, java.lang.String arg2, android.os.Handler arg3, int arg4) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver;Landroid/content/IntentFilter;Ljava/lang/String;Landroid/os/Handler;I)Landroid/content/Intent;");
+    }
 
-    public abstract void removeStickyBroadcast(android.content.Intent arg0);
+    public void removeStickyBroadcast(android.content.Intent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->removeStickyBroadcast(Landroid/content/Intent;)V");
+    }
 
-    public abstract void removeStickyBroadcastAsUser(android.content.Intent arg0, android.os.UserHandle arg1);
+    public void removeStickyBroadcastAsUser(android.content.Intent arg0, android.os.UserHandle arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->removeStickyBroadcastAsUser(Landroid/content/Intent;Landroid/os/UserHandle;)V");
+    }
 
     public void revokeSelfPermissionOnKill(java.lang.String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->revokeSelfPermissionOnKill(Ljava/lang/String;)V");
@@ -450,29 +600,45 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->revokeSelfPermissionsOnKill(Ljava/util/Collection;)V");
     }
 
-    public abstract void revokeUriPermission(android.net.Uri arg0, int arg1);
+    public void revokeUriPermission(android.net.Uri arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->revokeUriPermission(Landroid/net/Uri;I)V");
+    }
 
-    public abstract void revokeUriPermission(java.lang.String arg0, android.net.Uri arg1, int arg2);
+    public void revokeUriPermission(java.lang.String arg0, android.net.Uri arg1, int arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->revokeUriPermission(Ljava/lang/String;Landroid/net/Uri;I)V");
+    }
 
-    public abstract void sendBroadcast(android.content.Intent arg0);
+    public void sendBroadcast(android.content.Intent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendBroadcast(Landroid/content/Intent;)V");
+    }
 
-    public abstract void sendBroadcast(android.content.Intent arg0, java.lang.String arg1);
+    public void sendBroadcast(android.content.Intent arg0, java.lang.String arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendBroadcast(Landroid/content/Intent;Ljava/lang/String;)V");
+    }
 
     public void sendBroadcast(android.content.Intent arg0, java.lang.String arg1, android.os.Bundle arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendBroadcast(Landroid/content/Intent;Ljava/lang/String;Landroid/os/Bundle;)V");
     }
 
-    public abstract void sendBroadcastAsUser(android.content.Intent arg0, android.os.UserHandle arg1);
+    public void sendBroadcastAsUser(android.content.Intent arg0, android.os.UserHandle arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendBroadcastAsUser(Landroid/content/Intent;Landroid/os/UserHandle;)V");
+    }
 
-    public abstract void sendBroadcastAsUser(android.content.Intent arg0, android.os.UserHandle arg1, java.lang.String arg2);
+    public void sendBroadcastAsUser(android.content.Intent arg0, android.os.UserHandle arg1, java.lang.String arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendBroadcastAsUser(Landroid/content/Intent;Landroid/os/UserHandle;Ljava/lang/String;)V");
+    }
 
     public void sendBroadcastWithMultiplePermissions(android.content.Intent arg0, java.lang.String[] arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendBroadcastWithMultiplePermissions(Landroid/content/Intent;[Ljava/lang/String;)V");
     }
 
-    public abstract void sendOrderedBroadcast(android.content.Intent arg0, java.lang.String arg1);
+    public void sendOrderedBroadcast(android.content.Intent arg0, java.lang.String arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendOrderedBroadcast(Landroid/content/Intent;Ljava/lang/String;)V");
+    }
 
-    public abstract void sendOrderedBroadcast(android.content.Intent arg0, java.lang.String arg1, android.content.BroadcastReceiver arg2, android.os.Handler arg3, int arg4, java.lang.String arg5, android.os.Bundle arg6);
+    public void sendOrderedBroadcast(android.content.Intent arg0, java.lang.String arg1, android.content.BroadcastReceiver arg2, android.os.Handler arg3, int arg4, java.lang.String arg5, android.os.Bundle arg6) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendOrderedBroadcast(Landroid/content/Intent;Ljava/lang/String;Landroid/content/BroadcastReceiver;Landroid/os/Handler;ILjava/lang/String;Landroid/os/Bundle;)V");
+    }
 
     public void sendOrderedBroadcast(android.content.Intent arg0, java.lang.String arg1, android.os.Bundle arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendOrderedBroadcast(Landroid/content/Intent;Ljava/lang/String;Landroid/os/Bundle;)V");
@@ -486,47 +652,85 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendOrderedBroadcast(Landroid/content/Intent;Ljava/lang/String;Ljava/lang/String;Landroid/content/BroadcastReceiver;Landroid/os/Handler;ILjava/lang/String;Landroid/os/Bundle;)V");
     }
 
-    public abstract void sendOrderedBroadcastAsUser(android.content.Intent arg0, android.os.UserHandle arg1, java.lang.String arg2, android.content.BroadcastReceiver arg3, android.os.Handler arg4, int arg5, java.lang.String arg6, android.os.Bundle arg7);
+    public void sendOrderedBroadcastAsUser(android.content.Intent arg0, android.os.UserHandle arg1, java.lang.String arg2, android.content.BroadcastReceiver arg3, android.os.Handler arg4, int arg5, java.lang.String arg6, android.os.Bundle arg7) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendOrderedBroadcastAsUser(Landroid/content/Intent;Landroid/os/UserHandle;Ljava/lang/String;Landroid/content/BroadcastReceiver;Landroid/os/Handler;ILjava/lang/String;Landroid/os/Bundle;)V");
+    }
 
-    public abstract void sendStickyBroadcast(android.content.Intent arg0);
+    public void sendStickyBroadcast(android.content.Intent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendStickyBroadcast(Landroid/content/Intent;)V");
+    }
 
     public void sendStickyBroadcast(android.content.Intent arg0, android.os.Bundle arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendStickyBroadcast(Landroid/content/Intent;Landroid/os/Bundle;)V");
     }
 
-    public abstract void sendStickyBroadcastAsUser(android.content.Intent arg0, android.os.UserHandle arg1);
+    public void sendStickyBroadcastAsUser(android.content.Intent arg0, android.os.UserHandle arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendStickyBroadcastAsUser(Landroid/content/Intent;Landroid/os/UserHandle;)V");
+    }
 
-    public abstract void sendStickyOrderedBroadcast(android.content.Intent arg0, android.content.BroadcastReceiver arg1, android.os.Handler arg2, int arg3, java.lang.String arg4, android.os.Bundle arg5);
+    public void sendStickyOrderedBroadcast(android.content.Intent arg0, android.content.BroadcastReceiver arg1, android.os.Handler arg2, int arg3, java.lang.String arg4, android.os.Bundle arg5) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendStickyOrderedBroadcast(Landroid/content/Intent;Landroid/content/BroadcastReceiver;Landroid/os/Handler;ILjava/lang/String;Landroid/os/Bundle;)V");
+    }
 
-    public abstract void sendStickyOrderedBroadcastAsUser(android.content.Intent arg0, android.os.UserHandle arg1, android.content.BroadcastReceiver arg2, android.os.Handler arg3, int arg4, java.lang.String arg5, android.os.Bundle arg6);
+    public void sendStickyOrderedBroadcastAsUser(android.content.Intent arg0, android.os.UserHandle arg1, android.content.BroadcastReceiver arg2, android.os.Handler arg3, int arg4, java.lang.String arg5, android.os.Bundle arg6) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->sendStickyOrderedBroadcastAsUser(Landroid/content/Intent;Landroid/os/UserHandle;Landroid/content/BroadcastReceiver;Landroid/os/Handler;ILjava/lang/String;Landroid/os/Bundle;)V");
+    }
 
-    public abstract void setTheme(int arg0);
+    public void setTheme(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->setTheme(I)V");
+    }
 
-    public abstract void setWallpaper(android.graphics.Bitmap arg0);
+    public void setWallpaper(android.graphics.Bitmap arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->setWallpaper(Landroid/graphics/Bitmap;)V");
+    }
 
-    public abstract void setWallpaper(java.io.InputStream arg0);
+    public void setWallpaper(java.io.InputStream arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->setWallpaper(Ljava/io/InputStream;)V");
+    }
 
-    public abstract void startActivities(android.content.Intent[] arg0);
+    public void startActivities(android.content.Intent[] arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->startActivities([Landroid/content/Intent;)V");
+    }
 
-    public abstract void startActivities(android.content.Intent[] arg0, android.os.Bundle arg1);
+    public void startActivities(android.content.Intent[] arg0, android.os.Bundle arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->startActivities([Landroid/content/Intent;Landroid/os/Bundle;)V");
+    }
 
-    public abstract void startActivity(android.content.Intent arg0);
+    public void startActivity(android.content.Intent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->startActivity(Landroid/content/Intent;)V");
+    }
 
-    public abstract void startActivity(android.content.Intent arg0, android.os.Bundle arg1);
+    public void startActivity(android.content.Intent arg0, android.os.Bundle arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->startActivity(Landroid/content/Intent;Landroid/os/Bundle;)V");
+    }
 
-    public abstract android.content.ComponentName startForegroundService(android.content.Intent arg0);
+    public android.content.ComponentName startForegroundService(android.content.Intent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->startForegroundService(Landroid/content/Intent;)Landroid/content/ComponentName;");
+    }
 
-    public abstract boolean startInstrumentation(android.content.ComponentName arg0, java.lang.String arg1, android.os.Bundle arg2);
+    public boolean startInstrumentation(android.content.ComponentName arg0, java.lang.String arg1, android.os.Bundle arg2) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->startInstrumentation(Landroid/content/ComponentName;Ljava/lang/String;Landroid/os/Bundle;)Z");
+    }
 
-    public abstract void startIntentSender(android.content.IntentSender arg0, android.content.Intent arg1, int arg2, int arg3, int arg4);
+    public void startIntentSender(android.content.IntentSender arg0, android.content.Intent arg1, int arg2, int arg3, int arg4) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->startIntentSender(Landroid/content/IntentSender;Landroid/content/Intent;III)V");
+    }
 
-    public abstract void startIntentSender(android.content.IntentSender arg0, android.content.Intent arg1, int arg2, int arg3, int arg4, android.os.Bundle arg5);
+    public void startIntentSender(android.content.IntentSender arg0, android.content.Intent arg1, int arg2, int arg3, int arg4, android.os.Bundle arg5) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->startIntentSender(Landroid/content/IntentSender;Landroid/content/Intent;IIILandroid/os/Bundle;)V");
+    }
 
-    public abstract android.content.ComponentName startService(android.content.Intent arg0);
+    public android.content.ComponentName startService(android.content.Intent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->startService(Landroid/content/Intent;)Landroid/content/ComponentName;");
+    }
 
-    public abstract boolean stopService(android.content.Intent arg0);
+    public boolean stopService(android.content.Intent arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->stopService(Landroid/content/Intent;)Z");
+    }
 
-    public abstract void unbindService(android.content.ServiceConnection arg0);
+    public void unbindService(android.content.ServiceConnection arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->unbindService(Landroid/content/ServiceConnection;)V");
+    }
 
     public void unregisterComponentCallbacks(android.content.ComponentCallbacks arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->unregisterComponentCallbacks(Landroid/content/ComponentCallbacks;)V");
@@ -536,7 +740,9 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->unregisterDeviceIdChangeListener(Ljava/util/function/IntConsumer;)V");
     }
 
-    public abstract void unregisterReceiver(android.content.BroadcastReceiver arg0);
+    public void unregisterReceiver(android.content.BroadcastReceiver arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->unregisterReceiver(Landroid/content/BroadcastReceiver;)V");
+    }
 
     public void updateServiceGroup(android.content.ServiceConnection arg0, int arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->updateServiceGroup(Landroid/content/ServiceConnection;II)V");

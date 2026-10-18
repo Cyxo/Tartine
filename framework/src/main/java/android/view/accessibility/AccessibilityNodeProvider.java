@@ -1,6 +1,6 @@
 package android.view.accessibility;
 
-    public abstract class AccessibilityNodeProvider {
+    public class AccessibilityNodeProvider {
 
     public static final int HOST_VIEW_ID = -1;
 

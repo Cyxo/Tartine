@@ -332,21 +332,31 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->transfer(Ljava/lang/String;)V");
         }
         }
-        public static abstract class SessionCallback {
+        public static class SessionCallback {
 
         public SessionCallback() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionCallback;-><init>()V");
         }
 
-        public abstract void onActiveChanged(int arg0, boolean arg1);
+        public void onActiveChanged(int arg0, boolean arg1) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionCallback;->onActiveChanged(IZ)V");
+        }
 
-        public abstract void onBadgingChanged(int arg0);
+        public void onBadgingChanged(int arg0) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionCallback;->onBadgingChanged(I)V");
+        }
 
-        public abstract void onCreated(int arg0);
+        public void onCreated(int arg0) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionCallback;->onCreated(I)V");
+        }
 
-        public abstract void onFinished(int arg0, boolean arg1);
+        public void onFinished(int arg0, boolean arg1) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionCallback;->onFinished(IZ)V");
+        }
 
-        public abstract void onProgressChanged(int arg0, float arg1);
+        public void onProgressChanged(int arg0, float arg1) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionCallback;->onProgressChanged(IF)V");
+        }
         }
         public static class SessionInfo implements android.os.Parcelable {
 

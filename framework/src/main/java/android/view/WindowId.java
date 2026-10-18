@@ -35,14 +35,18 @@ package android.view;
     public void writeToParcel(android.os.Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowId;->writeToParcel(Landroid/os/Parcel;I)V");
     }
-        public static abstract class FocusObserver {
+        public static class FocusObserver {
 
         public FocusObserver() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowId$FocusObserver;-><init>()V");
         }
 
-        public abstract void onFocusGained(android.view.WindowId arg0);
+        public void onFocusGained(android.view.WindowId arg0) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowId$FocusObserver;->onFocusGained(Landroid/view/WindowId;)V");
+        }
 
-        public abstract void onFocusLost(android.view.WindowId arg0);
+        public void onFocusLost(android.view.WindowId arg0) {
+            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowId$FocusObserver;->onFocusLost(Landroid/view/WindowId;)V");
+        }
         }
     }

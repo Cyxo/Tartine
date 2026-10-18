@@ -1,6 +1,6 @@
 package android.view;
 
-    public abstract class ActionProvider {
+    public class ActionProvider {
 
     public ActionProvider(android.content.Context arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;-><init>(Landroid/content/Context;)V");
@@ -14,7 +14,9 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;->isVisible()Z");
     }
 
-    public abstract android.view.View onCreateActionView();
+    public android.view.View onCreateActionView() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;->onCreateActionView()Landroid/view/View;");
+    }
 
     public android.view.View onCreateActionView(android.view.MenuItem arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;->onCreateActionView(Landroid/view/MenuItem;)Landroid/view/View;");
@@ -39,6 +41,10 @@ package android.view;
     public void setVisibilityListener(android.view.ActionProvider.VisibilityListener arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;->setVisibilityListener(Landroid/view/ActionProvider$VisibilityListener;)V");
     }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public ActionProvider() {
+        }
         public static interface VisibilityListener {
 
         public abstract void onActionProviderVisibilityChanged(boolean arg0);

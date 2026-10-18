@@ -1,12 +1,14 @@
 package android.util;
 
-    public abstract class Property<T, V> {
+    public class Property<T, V> {
 
     public Property(java.lang.Class arg0, java.lang.String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Property;-><init>(Ljava/lang/Class;Ljava/lang/String;)V");
     }
 
-    public abstract V get(T arg0);
+    public V get(T arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Property;->get(Ljava/lang/Object;)Ljava/lang/Object;");
+    }
 
     public java.lang.String getName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Property;->getName()Ljava/lang/String;");
@@ -27,4 +29,8 @@ package android.util;
     public void set(T arg0, V arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Property;->set(Ljava/lang/Object;Ljava/lang/Object;)V");
     }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public Property() {
+        }
     }

@@ -1,6 +1,6 @@
 package android.graphics;
 
-    public abstract class ColorSpace {
+    public class ColorSpace {
 
     public static float[] ILLUMINANT_A;
     public static float[] ILLUMINANT_B;
@@ -54,7 +54,9 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/ColorSpace;->fromXyz(FFF)[F");
     }
 
-    public abstract float[] fromXyz(float[] arg0);
+    public float[] fromXyz(float[] arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/ColorSpace;->fromXyz([F)[F");
+    }
 
     public static android.graphics.ColorSpace get(android.graphics.ColorSpace.Named arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/ColorSpace;->get(Landroid/graphics/ColorSpace$Named;)Landroid/graphics/ColorSpace;");
@@ -76,9 +78,13 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/ColorSpace;->getId()I");
     }
 
-    public abstract float getMaxValue(int arg0);
+    public float getMaxValue(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/ColorSpace;->getMaxValue(I)F");
+    }
 
-    public abstract float getMinValue(int arg0);
+    public float getMinValue(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/ColorSpace;->getMinValue(I)F");
+    }
 
     public android.graphics.ColorSpace.Model getModel() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/ColorSpace;->getModel()Landroid/graphics/ColorSpace$Model;");
@@ -96,7 +102,9 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/ColorSpace;->isSrgb()Z");
     }
 
-    public abstract boolean isWideGamut();
+    public boolean isWideGamut() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/ColorSpace;->isWideGamut()Z");
+    }
 
     public static android.graphics.ColorSpace match(float[] arg0, android.graphics.ColorSpace.Rgb.TransferParameters arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/ColorSpace;->match([FLandroid/graphics/ColorSpace$Rgb$TransferParameters;)Landroid/graphics/ColorSpace;");
@@ -110,7 +118,9 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/ColorSpace;->toXyz(FFF)[F");
     }
 
-    public abstract float[] toXyz(float[] arg0);
+    public float[] toXyz(float[] arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/ColorSpace;->toXyz([F)[F");
+    }
         public static enum Adaptation {
             BRADFORD, CIECAT02, VON_KRIES;
         }

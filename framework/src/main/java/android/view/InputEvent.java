@@ -1,7 +1,10 @@
 package android.view;
 
-    public abstract class InputEvent implements android.os.Parcelable {
+    public class InputEvent implements android.os.Parcelable {
 
+    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputEvent;->writeToParcel(Landroid/os/Parcel;I)V");
+    }
     public static android.os.Parcelable.Creator CREATOR;
 
     public int describeContents() {
@@ -12,11 +15,17 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputEvent;->getDevice()Landroid/view/InputDevice;");
     }
 
-    public abstract int getDeviceId();
+    public int getDeviceId() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputEvent;->getDeviceId()I");
+    }
 
-    public abstract long getEventTime();
+    public long getEventTime() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputEvent;->getEventTime()J");
+    }
 
-    public abstract int getSource();
+    public int getSource() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputEvent;->getSource()I");
+    }
 
     public boolean isFromSource(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputEvent;->isFromSource(I)Z");

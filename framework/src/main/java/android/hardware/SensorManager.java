@@ -1,6 +1,6 @@
 package android.hardware;
 
-    public abstract class SensorManager {
+    public class SensorManager {
 
     public static final int AXIS_MINUS_X = 129;
     public static final int AXIS_MINUS_Y = 130;
@@ -188,7 +188,7 @@ package android.hardware;
     public void unregisterListener(android.hardware.SensorListener arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->unregisterListener(Landroid/hardware/SensorListener;I)V");
     }
-        public static abstract class DynamicSensorCallback {
+        public static class DynamicSensorCallback {
 
         public DynamicSensorCallback() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager$DynamicSensorCallback;-><init>()V");

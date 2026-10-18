@@ -1,7 +1,10 @@
 package android.os;
 
-    public abstract class VibrationEffect implements android.os.Parcelable {
+    public class VibrationEffect implements android.os.Parcelable {
 
+    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/VibrationEffect;->writeToParcel(Landroid/os/Parcel;I)V");
+    }
     public static android.os.Parcelable.Creator CREATOR;
     public static final int DEFAULT_AMPLITUDE = -1;
     public static final int EFFECT_CLICK = 0;

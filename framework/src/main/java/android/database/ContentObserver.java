@@ -1,6 +1,6 @@
 package android.database;
 
-    public abstract class ContentObserver {
+    public class ContentObserver {
 
     public ContentObserver(android.os.Handler arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/ContentObserver;-><init>(Landroid/os/Handler;)V");
@@ -41,4 +41,8 @@ package android.database;
     public void onChange(boolean arg0, java.util.Collection<android.net.Uri> arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/ContentObserver;->onChange(ZLjava/util/Collection;I)V");
     }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public ContentObserver() {
+        }
     }

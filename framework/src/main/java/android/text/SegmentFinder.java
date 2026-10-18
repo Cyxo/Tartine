@@ -1,6 +1,6 @@
 package android.text;
 
-    public abstract class SegmentFinder {
+    public class SegmentFinder {
 
     public static final int DONE = -1;
 
@@ -8,11 +8,19 @@ package android.text;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/SegmentFinder;-><init>()V");
     }
 
-    public abstract int nextEndBoundary(int arg0);
+    public int nextEndBoundary(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/SegmentFinder;->nextEndBoundary(I)I");
+    }
 
-    public abstract int nextStartBoundary(int arg0);
+    public int nextStartBoundary(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/SegmentFinder;->nextStartBoundary(I)I");
+    }
 
-    public abstract int previousEndBoundary(int arg0);
+    public int previousEndBoundary(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/SegmentFinder;->previousEndBoundary(I)I");
+    }
 
-    public abstract int previousStartBoundary(int arg0);
+    public int previousStartBoundary(int arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/SegmentFinder;->previousStartBoundary(I)I");
+    }
     }

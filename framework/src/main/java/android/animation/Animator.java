@@ -1,6 +1,6 @@
 package android.animation;
 
-    public abstract class Animator implements java.lang.Cloneable {
+    public class Animator implements java.lang.Cloneable {
 
     public static final long DURATION_INFINITE = -1L;
 
@@ -28,7 +28,9 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->end()V");
     }
 
-    public abstract long getDuration();
+    public long getDuration() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->getDuration()J");
+    }
 
     public android.animation.TimeInterpolator getInterpolator() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->getInterpolator()Landroid/animation/TimeInterpolator;");
@@ -38,7 +40,9 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->getListeners()Ljava/util/ArrayList;");
     }
 
-    public abstract long getStartDelay();
+    public long getStartDelay() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->getStartDelay()J");
+    }
 
     public long getTotalDuration() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->getTotalDuration()J");
@@ -48,7 +52,9 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->isPaused()Z");
     }
 
-    public abstract boolean isRunning();
+    public boolean isRunning() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->isRunning()Z");
+    }
 
     public boolean isStarted() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->isStarted()Z");
@@ -74,11 +80,17 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->resume()V");
     }
 
-    public abstract android.animation.Animator setDuration(long arg0);
+    public android.animation.Animator setDuration(long arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->setDuration(J)Landroid/animation/Animator;");
+    }
 
-    public abstract void setInterpolator(android.animation.TimeInterpolator arg0);
+    public void setInterpolator(android.animation.TimeInterpolator arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->setInterpolator(Landroid/animation/TimeInterpolator;)V");
+    }
 
-    public abstract void setStartDelay(long arg0);
+    public void setStartDelay(long arg0) {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->setStartDelay(J)V");
+    }
 
     public void setTarget(java.lang.Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/Animator;->setTarget(Ljava/lang/Object;)V");

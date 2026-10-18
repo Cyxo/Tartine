@@ -1,6 +1,6 @@
 package android.os;
 
-    public abstract class Vibrator {
+    public class Vibrator {
 
     public static final int VIBRATION_EFFECT_SUPPORT_NO = 2;
     public static final int VIBRATION_EFFECT_SUPPORT_UNKNOWN = 0;
@@ -26,7 +26,9 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->arePrimitivesSupported([I)[Z");
     }
 
-    public abstract void cancel();
+    public void cancel() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->cancel()V");
+    }
 
     public android.os.vibrator.VibratorEnvelopeEffectInfo getEnvelopeEffectInfo() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->getEnvelopeEffectInfo()Landroid/os/vibrator/VibratorEnvelopeEffectInfo;");
@@ -52,9 +54,13 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->getResonantFrequency()F");
     }
 
-    public abstract boolean hasAmplitudeControl();
+    public boolean hasAmplitudeControl() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->hasAmplitudeControl()Z");
+    }
 
-    public abstract boolean hasVibrator();
+    public boolean hasVibrator() {
+        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->hasVibrator()Z");
+    }
 
     public void vibrate(android.os.VibrationEffect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->vibrate(Landroid/os/VibrationEffect;)V");

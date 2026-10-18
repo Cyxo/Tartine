@@ -1,6 +1,6 @@
 package android.view.contentcapture;
 
-    public abstract class ContentCaptureSession implements java.lang.AutoCloseable {
+    public class ContentCaptureSession implements java.lang.AutoCloseable {
 
     public void close() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/contentcapture/ContentCaptureSession;->close()V");

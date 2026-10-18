@@ -306,6 +306,14 @@ class VmTest {
     }
 
     @Test
+    void vgAddRoutesProtectedMirrorPort() {
+        interpreter.setFramework(framework());
+        // addViewInLayout returns 1 and getChildCount reads the same
+        // receiver mirror back: 1 + 1 = 2.
+        assertEquals(Integer.valueOf(2), interpreter.call(FixtureDex.HELLO, "vgAdd"));
+    }
+
+    @Test
     void mapDefaultsEmulates() {
         assertEquals(Integer.valueOf(7), interpreter.call(FixtureDex.HELLO, "mapDefaults"));
     }
@@ -997,9 +1005,9 @@ class VmTest {
     }
 
     @Test
-    void contentChildStartsNull() {
+    void contentChildStartsChildless() {
         interpreter.setFramework(framework());
-        assertNull(interpreter.call(FixtureDex.HELLO, "contentChild"));
+        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "contentChild"));
     }
 
     @Test
@@ -1450,6 +1458,11 @@ class VmTest {
                 Collections.<String>emptyList(),
                 Collections.<FwIndex.FwMethod>emptyList(),
                 Collections.singletonList(new FwField("VISIBLE", "I")), viewConstants));
+        index.put(new FwClass("Landroid/view/ViewGroup;", "Landroid/view/View;",
+                Collections.<String>emptyList(),
+                Collections.<FwIndex.FwMethod>emptyList(),
+                Collections.<FwIndex.FwField>emptyList(),
+                Collections.<String, Object>emptyMap()));
         index.put(new FwClass("Landroid/os/Build$VERSION;", "Ljava/lang/Object;",
                 Collections.<String>emptyList(),
                 Collections.<FwIndex.FwMethod>emptyList(),
