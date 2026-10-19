@@ -15,6 +15,19 @@ Tartine is a tool to run Android apps on Desktop OSes natively, in a similar fas
 - **Supported target: pure-DEX apps.** Java/Kotlin/Compose apps whose APK ships no native code. Apps bundling ARM `.so` libraries (Flutter, most games) are out of reach for now: a desktop JVM cannot load Bionic-built ARM binaries.
 - **Status:** the headless pipeline drives a real Compose APK through manifest → DEX → VM into lifecycle, composition, and the first measure pass. The first rendered frame now blits into a real desktop window (Skia raster through the LWJGL GL context — `mise run gui`), and the window carries the app's launcher icon: the manifest `android:icon`/`roundIcon` reference resolves through `resources.arsc`; bitmap sources decode through Skija and vector/adaptive icons (incl. aapt2 inline gradients and group transforms) convert to SVG and render through jsvg at 16/32/48 px. Unsupported sources log an `icon:` gap line and fall back to the platform default icon. Next milestone: the ASM translation spike. Design decisions and roadmap live in `AGENTS.md`.
 
+## What currently works
+
+Tartine can currently parse **pure-Kotlin/Java APKs** (no XML layouts or images) and render their first frame.
+
+<p align="center">
+  <img src="./assets/current.png" />
+  <i>On the left, the app run by Tartine. On the right, the same app running on a real Android device, mirrored with scrcpy.</i>
+</p>
+
+It finds the main activity in the XML manifest, and also extracts the icon from the resources.
+
+For now, there is no render loop, no events handling and no inter-process communication (such as intents).
+
 ## Prerequisites
 
 - [mise](https://mise.jdx.dev/). JDK and Gradle install automatically
