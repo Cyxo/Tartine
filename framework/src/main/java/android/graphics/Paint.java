@@ -43,6 +43,9 @@ package android.graphics;
     private int mFlags = 0;
     private float mStrokeWidth = 0.0f;
     private Paint.Style mStyle = null; // null = FILL (native default)
+    // Text size staging state (AOSP Paint.java:1942/1951: native paint
+    // holds it; plain host field carries the same contract here).
+    private float mTextSize = 0.0f;
     // AOSP Paint.java:356-357: HIDDEN_DEFAULT_PAINT_FLAGS (all set on new/reset).
     private static final int HOST_HIDDEN_DEFAULT_PAINT_FLAGS =
             DEV_KERN_TEXT_FLAG | EMBEDDED_BITMAP_TEXT_FLAG | FILTER_BITMAP_FLAG;
@@ -55,12 +58,14 @@ package android.graphics;
     }
 
     public Paint(android.graphics.Paint arg0) {
-        // AOSP Paint.java:718-722 (copy constructor; setClassVariablesFrom).
-        // Deviation: copies the state we carry (flags/color/style/width).
+        // AOSP Paint.java:718-722 (copy constructor; :765 set →
+        // setClassVariablesFrom :777-801). Deviation: copies the state we
+        // carry (flags/color/style/width/text size).
         mFlags = arg0.getFlags();
         mColor = arg0.mColor;
         mStyle = arg0.mStyle;
         mStrokeWidth = arg0.mStrokeWidth;
+        mTextSize = arg0.mTextSize;
     }
 
     public Paint(int arg0) {
@@ -71,7 +76,10 @@ package android.graphics;
     }
 
     public float ascent() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->ascent()F");
+        // AOSP Paint.java:2296 (nAscent native there; negative y-up value).
+        // Staging reads the skija metrics of the staging font directly.
+        io.github.humbleui.skija.Font font = tartineSkiaFont();
+        return font.getMetrics().getAscent();
     }
 
     public int breakText(char[] arg0, int arg1, int arg2, float arg3, float[] arg4) {
@@ -292,6 +300,60 @@ package android.graphics;
         return out;
     }
 
+    /**
+     * Host-only Skia font for text draws (staging): the default host
+     * typeface at the paint's text size with subpixel antialiasing. The
+     * Typeface state model (paint.mTypeface) is still a placeholder until
+     * a Typeface module port lands; until then every text draw uses a
+     * desktop system face (Roboto first, mirroring the Android default).
+     *
+     * <p>Skija 0.143.18 note (standalone probe, 2026-10-19): {@code new
+     * Font()} binds a typeface with no glyph coverage and
+     * {@code FontMgr.getDefault().matchFamilyStyle(null, ...)} answers
+     * {@code null}, so the Skia-default-family conventions render
+     * zero-extent output. The host FontMgr is real ({@code
+     * getFamiliesCount() > 0}); match against it explicitly instead.
+     */
+    private static final String[] TARTINE_FONT_FAMILIES = {
+            "Roboto", "Segoe UI", "Noto Sans", "DejaVu Sans", "Liberation Sans",
+            "Helvetica Neue"
+    };
+
+    private static io.github.humbleui.skija.Typeface tartineDefaultTypeface;
+
+    private static io.github.humbleui.skija.Typeface tartineDefaultTypeface() {
+        io.github.humbleui.skija.Typeface found = tartineDefaultTypeface;
+        if (found == null) {
+            io.github.humbleui.skija.FontMgr mgr = io.github.humbleui.skija.FontMgr.getDefault();
+            for (String family : TARTINE_FONT_FAMILIES) {
+                found = mgr.matchFamilyStyle(family, io.github.humbleui.skija.FontStyle.NORMAL);
+                if (found != null) {
+                    break;
+                }
+            }
+            if (found == null) {
+                // A text draw needs some real face; no-desktop-font hosts
+                // surface as the named gap instead of silent zero-extent
+                // output.
+                throw new UnsupportedOperationException(
+                        "Tartine: not implemented: host typeface lookup"
+                                + " (none of " + java.util.Arrays.toString(TARTINE_FONT_FAMILIES)
+                                + " present)");
+            }
+            tartineDefaultTypeface = found;
+        }
+        return found;
+    }
+
+    io.github.humbleui.skija.Font tartineSkiaFont() {
+        float size = mTextSize > 0.0f ? mTextSize : 14.0f;
+        io.github.humbleui.skija.Font font = new io.github.humbleui.skija.Font(
+                tartineDefaultTypeface(), size);
+        font.setSubpixel(true);
+        font.setEdging(io.github.humbleui.skija.FontEdging.SUBPIXEL_ANTI_ALIAS);
+        return font;
+    }
+
     public android.graphics.Paint.Align getTextAlign() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getTextAlign()Landroid/graphics/Paint$Align;");
     }
@@ -341,7 +403,8 @@ package android.graphics;
     }
 
     public float getTextSize() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getTextSize()F");
+        // AOSP Paint.java:1942 (nGetTextSize native there; plain field here).
+        return mTextSize;
     }
 
     public float getTextSkewX() {
@@ -451,7 +514,16 @@ package android.graphics;
     }
 
     public void set(android.graphics.Paint arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->set(Landroid/graphics/Paint;)V");
+        // AOSP Paint.java:765-771 set(Paint src): skip self-copy, then
+        // setClassVariablesFrom (:777-801; same state the copy ctor above
+        // carries, including text size staging state).
+        if (arg0 != this) {
+            mFlags = arg0.getFlags();
+            mColor = arg0.mColor;
+            mStyle = arg0.mStyle;
+            mStrokeWidth = arg0.mStrokeWidth;
+            mTextSize = arg0.mTextSize;
+        }
     }
 
     public void setARGB(int arg0, int arg1, int arg2, int arg3) {
@@ -606,7 +678,8 @@ package android.graphics;
     }
 
     public void setTextSize(float arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setTextSize(F)V");
+        // AOSP Paint.java:1951 (nSetTextSize native there; plain field).
+        mTextSize = arg0;
     }
 
     public void setTextSkewX(float arg0) {

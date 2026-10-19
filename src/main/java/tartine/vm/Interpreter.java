@@ -3718,6 +3718,74 @@ public final class Interpreter {
         return value instanceof VmArray ? (VmArray) value : null;
     }
 
+    /**
+     * Draws the layout's lines onto the bridged canvas (Layout.draw staging
+     * port; see the builtin above for the AOSP derivation). Reads the same
+     * StaticLayout state keys the per-line accessors serve, then dispatches
+     * {@code Canvas.drawText} through the interpreter (guest-first virtual
+     * dispatch, invokeModelVirtual) so guest canvas wrappers like compose's
+     * TextAndroidCanvas forward through their own overrides to the real
+     * canvas; a direct host-mirror call would bypass them and draw nothing.
+     */
+    private void layoutDraw(VmObject layout, Object canvasArg) {
+        Object text = layout.getField("Landroid/text/StaticLayout;.mText");
+        if (!(text instanceof String) || !(canvasArg instanceof VmObject)) {
+            return;
+        }
+        Object paintValue = layout.getField("Landroid/text/StaticLayout;.mPaint");
+        if (!(paintValue instanceof VmObject)) {
+            return;
+        }
+        Object countValue = layout.getField("Landroid/text/StaticLayout;.mLineCount");
+        int lineCount = countValue == null ? 0 : asInt(countValue);
+        if (lineCount <= 0) {
+            return;
+        }
+        Object heightValue = layout.getField("Landroid/text/StaticLayout;.mHeight");
+        int height = heightValue == null ? 0 : asInt(heightValue);
+        Object sizeValue = ((VmObject) paintValue)
+                .getField("Landroid/graphics/Paint;.mTextSize");
+        float descent = sizeValue == null ? 0.0f : asFloatBits(sizeValue) * 0.2f;
+        MethodRef drawText = MethodRef.parse(
+                "Landroid/graphics/Canvas;->drawText"
+                        + "(Ljava/lang/String;IIFFLandroid/graphics/Paint;)V");
+        for (int line = 0; line < lineCount; line++) {
+            int start = layoutLineInt(layout, "Landroid/text/StaticLayout;.mLineStarts", line);
+            int end = layoutLineInt(layout, "Landroid/text/StaticLayout;.mLineEnds", line);
+            int bottom = line + 1 < lineCount
+                    ? layoutLineInt(layout, "Landroid/text/StaticLayout;.mLineTops", line + 1)
+                    : height;
+            int baseline = bottom - Math.round(descent);
+            invokeModelVirtual(canvasArg, drawText, new Object[]{text, start,
+                    end, 0.0f, (float) baseline, paintValue});
+        }
+    }
+
+    /**
+     * Guest-first virtual dispatch for host drawing callers: resolves the
+     * receiver's runtime class exactly like the interpreter's invoke-virtual
+     * arm, runs the DEX override when the guest class declares one (guest
+     * canvas wrappers such as compose's TextAndroidCanvas forward through
+     * their overrides), then legacy builtins, then framework mirror
+     * dispatch (args stay model values; frameworkDispatch bridges them).
+     */
+    private void invokeModelVirtual(Object receiver, MethodRef ref, Object[] args) {
+        Resolved resolved = resolve(runtimeClass(receiver), ref.definingClass, ref, true);
+        if (resolved.dexMethod != null) {
+            execute(resolved.dexHome, resolved.dexMethod, receiver, args);
+            return;
+        }
+        if (resolved.builtin != null) {
+            resolved.builtin.invoke(receiver, args);
+            return;
+        }
+        Outcome outcome = frameworkDispatch(receiver, ref, args);
+        if (!outcome.handled) {
+            throw new VmException("no such method: " + ref.definingClass
+                    + "->" + ref.name + " (host virtual dispatch)");
+        }
+    }
+
     /** Approximated ascent (0.8 of text size) backing baseline/ascent reads. */
     private static float layoutAscent(VmObject layout) {
         Object paint = layout.getField("Landroid/text/StaticLayout;.mPaint");
@@ -5148,11 +5216,8 @@ public final class Interpreter {
         builtin("Landroid/content/Context;->unregisterComponentCallbacks("
                 + "Landroid/content/ComponentCallbacks;)V",
                 (receiver, args) -> null);
-        // No resources are parsed headless: color lookups read 0.
-        builtin("Landroid/content/res/Resources;->getColor(I)I",
-                (receiver, args) -> 0);
-        builtin("Landroid/content/res/Resources;->getColor(ILandroid/content/res/Resources$Theme;)I",
-                (receiver, args) -> 0);
+        // Resources.getColor is real Java in the framework module now (the
+        // android-package system palette baseline; app-package ids gap).
         // Settings URIs are pure names; values stay unread headless.
         builtin("Landroid/provider/Settings$Global;->getUriFor(Ljava/lang/String;)"
                 + "Landroid/net/Uri;",
@@ -5813,6 +5878,23 @@ public final class Interpreter {
         builtin("Landroid/text/Layout;->getPaint()Landroid/text/TextPaint;",
                 (receiver, args) -> ((VmObject) receiver)
                         .getField("Landroid/text/StaticLayout;.mPaint"));
+        builtin("Landroid/text/Layout;->draw(Landroid/graphics/Canvas;)V",
+                (receiver, args) -> {
+                    // AOSP Layout.java draw(Canvas) → draw(c, (Path) null,
+                    // (Paint) null, 0) (mainline main, fetched 2026-10-19);
+                    // no selection/quals there. Line geometry per drawText
+                    // (Canvas, int firstLine, int lastLine): per line,
+                    // lbaseline = lbottom - getLineDescent(line) with x=0
+                    // (ALIGN_NORMAL + DIR_LEFT_TO_RIGHT + no indent). Plain
+                    // unspanned text takes AOSP's own direct-drawText leg
+                    // (directions LTR && !spanned && !hasTab && !justify);
+                    // line ends already exclude trailing whitespace, so
+                    // start/end stand in for getLineVisibleEnd. Globals set
+                    // aside: no TextLine run machinery, no bidi, no spans
+                    // (staging grimace while the run engine stays unported).
+                    layoutDraw((VmObject) receiver, args[0]);
+                    return null;
+                });
         builtin("Landroid/text/StaticLayout;->isFallbackLineSpacingEnabled()Z",
                 (receiver, args) -> {
                     Object value = ((VmObject) receiver)

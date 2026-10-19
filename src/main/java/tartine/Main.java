@@ -654,15 +654,29 @@ public final class Main {
         try {
             int[] pixels = tartine.graphics.SkiaPresenter.readPixels(surface, 480, 960);
             long painted = 0;
+            int modeColor = 0;
+            int modeCount = 0;
+            java.util.Map<Integer, Integer> histogram = new java.util.HashMap<>();
             for (int pixel : pixels) {
                 if ((pixel >>> 24) != 0) {
                     painted++;
                 }
+                Integer count = histogram.get(pixel);
+                count = count == null ? 1 : count + 1;
+                histogram.put(pixel, count);
+                if (count > modeCount) {
+                    modeCount = count;
+                    modeColor = pixel;
+                }
             }
+            long offMode = pixels.length - modeCount;
             System.out.println("pixels: " + painted + "/" + pixels.length
                     + " painted, center=0x"
                     + Integer.toHexString(pixels[480 / 2 + (960 / 2) * 480])
-                    + ", corner=0x" + Integer.toHexString(pixels[0]));
+                    + ", corner=0x" + Integer.toHexString(pixels[0])
+                    + ", distinct=" + histogram.size()
+                    + ", mode=0x" + Integer.toHexString(modeColor)
+                    + " (" + modeCount + "), offMode=" + offMode);
         } catch (RuntimeException | LinkageError e) {
             System.out.println("readback failed: " + e);
         }

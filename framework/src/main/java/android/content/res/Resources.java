@@ -1,5 +1,7 @@
 package android.content.res;
 
+import tartine.fw.SystemColors;
+
     public class Resources {
 
     public static final int ID_NULL = 0;
@@ -36,12 +38,32 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getBoolean(I)Z");
     }
 
+    /**
+     * Ported behavior. AOSP: {@code Resources.getColor(int)} returns
+     * {@code getColorStateList(id).getDefaultColor()} (frameworks/base
+     * core/java/android/content/res/Resources.java). Only android-package
+     * system color ids carry a baseline here (see {@link SystemColors});
+     * app-package resources would need the guest {@code resources.arsc},
+     * still an explicit gap.
+     */
     public int getColor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getColor(I)I");
+        Integer value = SystemColors.get(arg0);
+        if (value == null) {
+            throw new UnsupportedOperationException(
+                    "Tartine: not implemented: Landroid/content/res/Resources;->getColor(I)I"
+                            + " (id=" + Integer.toHexString(arg0) + ")");
+        }
+        return value;
     }
 
+    /**
+     * Ported behavior. AOSP: {@code Resources.getColor(int, Theme)} resolves
+     * through theme-based getValue; the system palette entries below are not
+     * theme-resolved (no RRO/theme overlay runs here), so both overloads read
+     * the same baseline table. App-package resources remain a gap.
+     */
     public int getColor(int arg0, android.content.res.Resources.Theme arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getColor(ILandroid/content/res/Resources$Theme;)I");
+        return getColor(arg0);
     }
 
     public android.content.res.ColorStateList getColorStateList(int arg0) {

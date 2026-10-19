@@ -951,9 +951,13 @@ class VmTest {
     }
 
     @Test
-    void resourceColorsReadZero() {
+    void appPackageColorIsNamedGap() {
         interpreter.setFramework(framework());
-        assertEquals(Integer.valueOf(0), interpreter.call(FixtureDex.HELLO, "resColorDemo"));
+        VmException e = assertThrows(VmException.class,
+                () -> interpreter.call(FixtureDex.HELLO, "resColorDemo"));
+        // App-package resources have no host arsc yet; android-package system
+        // colors read the baseline palette (see Resources.getColor).
+        assertTrue(e.getMessage().contains("getColor"), e.getMessage());
     }
 
     @Test

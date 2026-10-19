@@ -389,19 +389,39 @@ package android.graphics;
     }
 
     public void drawText(char[] arg0, int arg1, int arg2, float arg3, float arg4, android.graphics.Paint arg5) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawText([CIIFFLandroid/graphics/Paint;)V");
+        // AOSP Canvas.java:2176-2180 drawText(char[], int, int, float, float,
+        // Paint): base nDrawText contract — glyph baseline runs at (x.y).
+        // Staging renders the substring via Skija drawString (staging font =
+        // paint's text size on the default typeface, see Paint.tartineSkia).
+        drawTextChars(String.valueOf(arg0, arg1, arg2), arg3, arg4, arg5);
     }
 
     public void drawText(java.lang.CharSequence arg0, int arg1, int arg2, float arg3, float arg4, android.graphics.Paint arg5) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawText(Ljava/lang/CharSequence;IIFFLandroid/graphics/Paint;)V");
+        // AOSP Canvas.java:2221 drawText(CharSequence, int, int, float, float,
+        // Paint) — same base contract; [start, end) slice.
+        drawTextChars(arg0.subSequence(arg1, arg2).toString(), arg3, arg4, arg5);
     }
 
     public void drawText(java.lang.String arg0, float arg1, float arg2, android.graphics.Paint arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawText(Ljava/lang/String;FFLandroid/graphics/Paint;)V");
+        // AOSP Canvas.java:2190-2194 drawText(String, float, float, Paint) —
+        // full-string base contract.
+        drawTextChars(arg0, arg1, arg2, arg3);
     }
 
     public void drawText(java.lang.String arg0, int arg1, int arg2, float arg3, float arg4, android.graphics.Paint arg5) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawText(Ljava/lang/String;IIFFLandroid/graphics/Paint;)V");
+        // AOSP Canvas.java:2205 drawText(String, int, int, float, float,
+        // Paint) — [start, end) slice of the full-string contract.
+        drawTextChars(arg0.substring(arg1, arg2), arg3, arg4, arg5);
+    }
+
+    /** Shared drawText body: skija drawString at the baseline (padding
+     *  none). Rootless canvases skip (no device to draw onto). */
+    private void drawTextChars(String text, float x, float y, android.graphics.Paint paint) {
+        if (skija == null || paint == null || text.isEmpty()) {
+            return;
+        }
+        skija.drawString(text, x, y,
+                paint.tartineSkiaFont(), paint.tartineSkia());
     }
 
     public void drawTextOnPath(char[] arg0, int arg1, int arg2, android.graphics.Path arg3, float arg4, float arg5, android.graphics.Paint arg6) {
