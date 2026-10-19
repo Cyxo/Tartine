@@ -51,6 +51,9 @@ public final class Main {
             return;
         }
         tartine.config.HostConfig.load();
+        // Seed the default virtual sdcard (no-op when TARTINE_SDCARD or
+        // sdcard.mount already configured an explicit mount).
+        tartine.runtime.Vfs.ensureDefaultCard();
         try {
             switch (args[0]) {
                 case "apk":

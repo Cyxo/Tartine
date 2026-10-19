@@ -2,7 +2,9 @@ package tartine.config;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +13,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import tartine.runtime.Vfs;
 
 /**
  * Pins the host config file seam: per-id system-color overrides beat the
@@ -25,12 +29,14 @@ class HostConfigTest {
     void resetSeams() {
         tartine.fw.SystemColors.clearOverrides();
         android.graphics.Paint.tartineSetPreferredFamilies(null);
+        Vfs.resetCard();
     }
 
     @AfterEach
     void restoreSeams() {
         tartine.fw.SystemColors.clearOverrides();
         android.graphics.Paint.tartineSetPreferredFamilies(null);
+        Vfs.resetCard();
     }
 
     private void config(String... lines) throws Exception {
@@ -111,5 +117,59 @@ class HostConfigTest {
         // Default behavior: no overrides at all (real id 999 absent from
         // the baseline table).
         assertNull(tartine.fw.SystemColors.get(999));
+    }
+
+    @Test
+    void sdcardMountAppliesReadOnlyByDefault() throws Exception {
+        Path shared = temp.resolve("shared");
+        Files.createDirectories(shared);
+        // Forward slashes: JDK Properties eats lone backslashes as escapes,
+        // so config values spell Windows paths the portable way.
+        config("sdcard.mount = " + shared.toString().replace('\\', '/'));
+        Vfs.Sdcard card = Vfs.policy().sdcard();
+        assertEquals(shared.toRealPath().normalize(), card.hostRoot());
+        assertTrue(card.readOnly(),
+                "the audit mounts override storage read-only by default");
+    }
+
+    @Test
+    void sdcardReadonlyClearsOnConfig() throws Exception {
+        Path shared = temp.resolve("shared");
+        Files.createDirectories(shared);
+        config("sdcard.mount = " + shared.toString().replace('\\', '/'),
+                "sdcard.mount.readonly = false");
+        assertFalse(Vfs.policy().sdcard().readOnly());
+    }
+
+    @Test
+    void sdcardMountRefusedKeepsDefault() throws Exception {
+        config("sdcard.mount = " + temp.resolve("absent-dir").toString().replace('\\', '/'));
+        Vfs.Sdcard card = Vfs.policy().sdcard();
+        assertEquals(Vfs.root().resolve("sdcard"), card.hostRoot());
+        assertFalse(card.readOnly());
+    }
+
+    @Test
+    void sdcardReadonlyWithoutMountIgnored() throws Exception {
+        config("sdcard.mount.readonly = false");
+        Vfs.Sdcard card = Vfs.policy().sdcard();
+        assertEquals(Vfs.root().resolve("sdcard"), card.hostRoot());
+        assertFalse(card.readOnly());
+    }
+
+    @Test
+    void badSdcardReadonlyValueIgnored() throws Exception {
+        config("sdcard.mount.readonly = sure");
+        assertEquals(Vfs.root().resolve("sdcard"), Vfs.policy().sdcard().hostRoot());
+    }
+
+    @Test
+    void sdcardMountOrderIndependent() throws Exception {
+        // The readonly key may precede the mount it qualifies.
+        Path shared = temp.resolve("shared");
+        Files.createDirectories(shared);
+        config("sdcard.mount.readonly = true",
+                "sdcard.mount = " + shared.toString().replace('\\', '/'));
+        assertTrue(Vfs.policy().sdcard().readOnly());
     }
 }

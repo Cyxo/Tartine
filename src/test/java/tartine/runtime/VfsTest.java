@@ -3,32 +3,62 @@ package tartine.runtime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Behavioral pins for the guest-path seam (tartine.runtime.Vfs). */
 class VfsTest {
     @TempDir
     Path root;
 
-    @TempDir
-    Path home;
+    private Vfs.Sdcard card() {
+        // Default-tier shape for tests: the card lives inside the temp root.
+        return new Vfs.Sdcard(root.resolve("sdcard"), false);
+    }
 
     private Path t(String guest) {
-        return Vfs.target(guest, root, home);
+        return Vfs.target(guest, root, card());
     }
 
     @Test
-    void sdcardMapsToHostHome() {
-        assertEquals(home, t("/sdcard"));
-        assertEquals(home.resolve("Documents").resolve("a.txt"), t("/sdcard/Documents/a.txt"));
+    void sdcardMapsToTheVirtualCard() {
+        Path card = root.resolve("sdcard");
+        assertEquals(card, t("/sdcard"));
+        assertEquals(card.resolve("Documents").resolve("a.txt"),
+                t("/sdcard/Documents/a.txt"));
+        assertFalse(card().readOnly());
     }
 
     @Test
     void emulatedStorageAliasesSdcard() {
-        assertEquals(home.resolve("Music"), t("/storage/emulated/0/Music"));
+        assertEquals(root.resolve("sdcard").resolve("Music"), t("/storage/emulated/0/Music"));
+    }
+
+    @Test
+    void explicitMountReplacesTheCard() {
+        Path external = root.resolve("shared");
+        Vfs.Sdcard override = new Vfs.Sdcard(external, false);
+        assertEquals(external.resolve("Download"), Vfs.target("/sdcard/Download",
+                root, override));
+        assertEquals(external.resolve("x"), Vfs.target("/storage/emulated/0/x",
+                root, override));
+        // App-private mounts are unaffected by the card choice.
+        assertEquals(root.resolve("data").resolve("com.example").resolve("files"),
+                Vfs.target("/data/data/com.example/files", root, override));
+    }
+
+    @Test
+    void overrideRootsAnswerReadOnlyPerConfig() {
+        Vfs.Policy policy = new Vfs.Policy(root, new Vfs.Sdcard(root.resolve("shared"), true));
+        assertTrue(policy.readOnlyHost(root.resolve("shared").resolve("Download").resolve("d")));
+        assertFalse(policy.readOnlyHost(root.resolve("data").resolve("com.example")));
+        Vfs.Policy rw = new Vfs.Policy(root, new Vfs.Sdcard(root.resolve("shared"), false));
+        assertFalse(rw.readOnlyHost(root.resolve("shared").resolve("Download").resolve("d")));
     }
 
     @Test
@@ -56,8 +86,7 @@ class VfsTest {
 
     @Test
     void longestPrefixWins() {
-        // /data/data/com.example vs a (non-mounted) /data/data/com.example/files/extra tie-break:
-        // deeper mount prefixes must never be shadowed by shorter ones.
+        // Deep prefixes must never be shadowed by shorter ones.
         assertEquals(root.resolve("data").resolve("com.example").resolve("databases").resolve("x.db"),
                 t("/data/data/com.example/databases/x.db"));
         assertEquals(root.resolve("tmp").resolve("y"), t("/data/local/tmp/y"));
@@ -96,14 +125,33 @@ class VfsTest {
 
     @Test
     void doubleAndTrailingSlashesCleanUp() {
-        assertEquals(home.resolve("a").resolve("b"), t("/sdcard//a//b/"));
-        assertEquals(home.resolve("x"),
-                Vfs.target("/sdcard/./x", root, home));
+        assertEquals(root.resolve("sdcard").resolve("a").resolve("b"), t("/sdcard//a//b/"));
+        assertEquals(root.resolve("sdcard").resolve("x"),
+                Vfs.target("/sdcard/./x", root, card()));
     }
 
     @Test
     void exactMountRootResolvesToItsDirectory() {
         assertEquals(root.resolve("data").resolve("com.example"), t("/data/data/com.example"));
-        assertEquals(home, Vfs.target("/storage/emulated/0", root, home));
+        assertEquals(root.resolve("sdcard"), t("/storage/emulated/0"));
+    }
+
+    @Test
+    void acceptOverrideRefusesBadMounts() {
+        // Missing, relative, root, and root-enclosing mounts are refused
+        // (warning path), the static only kept once valid.
+        assertNull(Vfs.acceptOverride(""));
+        assertNull(Vfs.acceptOverride(null));
+        assertNull(Vfs.acceptOverride(root.resolve("not-there").toString()));
+        assertNull(Vfs.acceptOverride("C:\\"));
+        assertNull(Vfs.acceptOverride("/"));
+        // A valid existing directory outside the root is accepted.
+        Path shared = root.resolve("shared");
+        try {
+            Files.createDirectories(shared);
+            assertEquals(shared.toRealPath().normalize(), Vfs.acceptOverride(shared.toString()));
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

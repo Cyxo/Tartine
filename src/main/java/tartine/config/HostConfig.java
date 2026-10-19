@@ -32,6 +32,13 @@ import tartine.runtime.Vfs;
  *   <li>{@code font.families} = comma-separated preferred desktop font
  *       families (config wins over a {@code TARTINE_FONT_FAMILIES} env
  *       value; the built-in list is last).</li>
+ *   <li>{@code sdcard.mount} = an existing host directory that replaces
+ *       the default private virtual sdcard (<code>&lt;root&gt;/sdcard</code>);
+ *       refused unless absolute, existing, not a junction/symlink, not
+ *       a filesystem root, and not enclosing the Tartine root.
+ *       Read-only by default; {@code sdcard.mount.readonly=false}
+ *       clears that. {@code TARTINE_SDCARD} env acts as the same
+ *       override when the config key is absent (config wins).</li>
  * </ul>
  *
  * <p>A missing or unreadable file loads defaults; values apply once at
@@ -89,11 +96,72 @@ public final class HostConfig {
                 }
                 android.graphics.Paint.tartineSetPreferredFamilies(
                         families.toArray(new String[0]));
+            } else if (name.equals("sdcard.mount") || name.equals("sdcard.mount.readonly")) {
+                // Handled once below (order-independent read: readonly may
+                // appear before the mount it qualifies).
             } else {
                 System.err.println("Tartine: config ignored: unknown key '"
                         + name + "'");
             }
         }
+        applySdcard(props);
+    }
+
+    /**
+     * Shared-storage card mounts (AGENTS VFS tiers, decided 2026-10-19):
+     * {@code sdcard.mount} = an existing host directory replacing the
+     * default virtual card; it is read-only by default, cleared by
+     * {@code sdcard.mount.readonly=false}. Without a config mount,
+     * {@code TARTINE_SDCARD} provides the same override (config wins).
+     * Both dirs validate through {@link Vfs#acceptOverride}
+     * (absolute, existing, no root/junction/indirection, never enclosing
+     * the Tartine root).
+     */
+    private static void applySdcard(Properties props) {
+        Boolean readOnly = parseBool(props.getProperty("sdcard.mount.readonly"));
+        String mountRaw = props.getProperty("sdcard.mount");
+        boolean fromConfig = mountRaw != null;
+        if (!fromConfig) {
+            mountRaw = System.getenv("TARTINE_SDCARD");
+            if (mountRaw == null || mountRaw.isBlank()) {
+                if (readOnly != null) {
+                    System.err.println("Tartine: config ignored: "
+                            + "sdcard.mount.readonly=" + boolLiteral(readOnly)
+                            + " (no sdcard.mount or TARTINE_SDCARD to qualify)");
+                }
+                return;
+            }
+        }
+        Path mount = Vfs.acceptOverride(mountRaw);
+        if (mount == null) {
+            return; // acceptOverride explained the refusal
+        }
+        if (readOnly == null) {
+            System.err.println("Tartine: sdcard mount '" + mount
+                    + "' is read-only by default; set"
+                    + " sdcard.mount.readonly=false for write access");
+            readOnly = Boolean.TRUE;
+        }
+        Vfs.configure(new Vfs.Sdcard(mount, readOnly));
+    }
+
+    /** The boolean literal the caller handed us, for warning text. */
+    private static String boolLiteral(Boolean value) {
+        return value == Boolean.TRUE ? "true" : "false";
+    }
+
+    /** {@code true}/{@code false} case-insensitive, else null with a warning. */
+    private static Boolean parseBool(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String text = raw.trim();
+        if (text.equalsIgnoreCase("true") || text.equalsIgnoreCase("false")) {
+            return Boolean.parseBoolean(text);
+        }
+        System.err.println("Tartine: config ignored: sdcard.mount.readonly="
+                + text + " (need true or false)");
+        return null;
     }
 
     private static void applyColor(String name, String value) {

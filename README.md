@@ -95,19 +95,45 @@ color.system_on_background_light = #E7EBEF
 # > built-in list (Roboto, Segoe UI, Noto Sans, DejaVu Sans,
 # Liberation Sans, Helvetica Neue).
 font.families = Segoe UI, Roboto
+
+# Shared storage (the guest /sdcard tree). Default: a private virtual
+# card at <root>/sdcard, seeded with Download, Documents, Pictures,
+# DCIM, Music and Movies on first run - apps can read and write it, but
+# nothing outside the Tartine folder is reachable.
+#
+# An explicit mount points /sdcard (and /storage/emulated/0) at an
+# existing host directory instead - opt in, Wine-style. The directory
+# must be absolute, must already exist, may not be a junction or symlink
+# (mount the real location), never a filesystem root, and never a
+# folder that encloses the Tartine root. Spell Windows paths with
+# forward slashes: the JDK properties parser treats a lone backslash as
+# an escape and would eat it. The mount is READ-ONLY unless this flag
+# clears it:
+sdcard.mount = C:/Users/me/Downloads
+# sdcard.mount.readonly = false
 ```
 
 Environment knobs:
 
 - `TARTINE_HOME` / `tartine.home` - move the root folder itself (config
   file included).
+- `TARTINE_SDCARD` - the same override as `sdcard.mount` when the config
+  key is absent (the config file wins). Same directory validation and
+  read-only default.
 - `TARTINE_FONT_FAMILIES` - same family list as `font.families` (the
   config file wins).
 - `TARTINE_MAX_STEPS` - caps the interpreter step counter for the
   headless probes (dev tool).
 
-Planned keys (decided in `AGENTS.md`, not wired yet): `sdcard.*` tier
-configuration (private virtual card default, per-folder read-only or
-read-write maps, file-pick grants) lands with the sdcard tier work. Every
-configuration knob documents here in the same commit that lands it
-(`AGENTS.md` commits rule).
+Guest files: apps only ever see Android paths. App-private dirs
+(`/data/data/<pkg>`, `/data/user/0/<pkg>`, `/data/local/tmp`) map under
+the Tartine root; `/sdcard` maps to the card tier above; device trees
+(`/system`, `/proc`, `/dev` and friends) do not exist. Every guest file
+operation goes through this mapping (`java.io.File`), unmapped paths
+answer as nonexistent, and read-only mounts deny writes - the guest
+never learns a host path. Raw `java.nio.file`/`java.io` stream classes
+stay inaccessible to guest code. Planned (decided in `AGENTS.md`, not
+wired yet): per-folder user maps (`/sdcard/Download` -> `~/Downloads`),
+file-picker grants, whole-home mounting as an explicit read-only option.
+Every configuration knob documents here in the same commit that lands
+it (`AGENTS.md` commits rule).
