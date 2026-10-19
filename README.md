@@ -82,10 +82,13 @@ Keys (unknown keys or bad values are warned on stderr and skipped):
 # names; AOSP colors.xml is the baseline this translation layer serves).
 # A decimal or 0x numeric id works too. Value: Android hex notation
 # (#RRGGBB answers opaque, #AARRGGBB literal), 0xAARRGGBB, or plain
-# decimal. Example: the sample app paints its background with the light
-# surface tone and its text with the light ink:
+# decimal. Example (the sample app renders exactly this pair): the
+# Surface paints from the scheme's background slot and the text from its
+# paired content slot (contentColorFor ties the "on" color to the drawn
+# color - an app painting the surface slot instead reads
+# system_on_surface_light):
 color.system_background_light = #102433
-color.system_neutral1_900 = #E7EBEF
+color.system_on_background_light = #E7EBEF
 
 # Comma-separated desktop font families, tried in order when a Paint has
 # no explicit typeface. Precedence: this key > TARTINE_FONT_FAMILIES env
