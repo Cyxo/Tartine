@@ -50,6 +50,7 @@ public final class Main {
             usage();
             return;
         }
+        tartine.config.HostConfig.load();
         try {
             switch (args[0]) {
                 case "apk":

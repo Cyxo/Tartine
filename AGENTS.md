@@ -42,7 +42,7 @@
 
 ## Virtual filesystem (decided 2026-10)
 - Seam: `tartine.runtime.Vfs` maps guest absolute paths to host paths; unmapped paths resolve to `null` and the future java.io/java.nio.file guest bridge must fail closed (deny), never fall back to the host cwd.
-- Root = app data, not config: Windows `%LOCALAPPDATA%\Tartine`, macOS `~/Library/Application Support/Tartine`, Linux `$XDG_DATA_HOME/tartine` (default `~/.local/share/tartine`); `TARTINE_HOME` env or `tartine.home` property override everything.
+- Root = app data, not config: Windows `%LOCALAPPDATA%\Tartine`, macOS `~/Library/Application Support/Tartine`, Linux `$XDG_DATA_HOME/tartine` (default `~/.local/share/tartine`); `TARTINE_HOME` env or `tartine.home` property override everything. The HOST config file sits at this root too (`config.properties`, loaded once at startup by `tartine.config.HostConfig`): host-only, never guest-mapped — the mount rules below keep it hidden from guests. Keys today: `color.<systemResourceId>` (per-id overrides beating the `tartine.fw.SystemColors` baseline) and `font.families` (preferred desktop families; config > `TARTINE_FONT_FAMILIES` env > built-in list). README documents every knob (see Commits).
 - Guest mounts (longest prefix wins): `/data/data/<pkg>` and `/data/user/0/<pkg>` (incl. `files|cache|databases|shared_prefs`) → `<root>/data/<pkg>`; `/data/app/<pkg>` → `<root>/apps/<pkg>` (installed `base.apk` / guest-visible sourceDir); `/data/local/tmp` → `<root>/tmp`. `/sdcard` mounts follow the tiers below (decision 2026-10-19). `/system`, `/proc`, `/dev`... stay unmapped.
 - Traversal (`..`) and Windows-unsafe segments (drive letters, reserved device names, `:` streams) are denied at the seam (tested in `VfsTest`).
 - Shared storage, tiered (follow-up audit 2026-10-19, user-approved; supersedes "sdcard = real home read-write Wine-style"):
@@ -69,6 +69,7 @@
 
 ## Commits
 - Conventional Commits required (`feat:`, `fix:`, `chore:`, etc.). No other convention is defined.
+- A commit adding or changing a user-facing configuration knob (config-file key, env var, CLI flag) updates README's Configuration section — and the AGENTS config bullet when the seam changes — in the same commit.
 
 ## Third-party policy
 - Reuse-first: prefer OSS/AOSP over hand-rolled (dexlib2 for DEX, baksmali/apktool CLIs as decode oracles, dex2jar/Enjarify as translation oracles, LWJGL3 for windowing/GLES, AOSP ART/Skia as reference only).

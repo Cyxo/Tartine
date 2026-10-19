@@ -200,10 +200,36 @@ public final class SystemColors {
     }
 
     /**
+     * Host config overrides (loaded by {@code tartine.config.HostConfig}
+     * from {@code config.properties}; see README Configuration). Config
+     * responses win over the generated baseline per resource id; guests
+     * never touch this seam directly - it only colors what {@code
+     * getColor} answers on the host. Cosmetic-only if a guest ever
+     * reached it, but it is not part of framework behavior.
+     */
+    private static final Map<Integer, Integer> OVERRIDES = new HashMap<>();
+
+    /** Applies a per-id config override; {@code null} removes the id. */
+    public static void setOverride(int id, Integer argb) {
+        if (argb == null) {
+            OVERRIDES.remove(id);
+        } else {
+            OVERRIDES.put(id, argb);
+        }
+    }
+
+    /** Restores the pure baseline (host config lifecycle). */
+    public static void clearOverrides() {
+        OVERRIDES.clear();
+    }
+
+    /**
      * Color value for an android-package resource id (0x01xxxxxx), or
-     * {@code null} when the table has no baseline entry for {@code id}.
+     * {@code null} when the table has neither a config override nor a
+     * baseline entry for {@code id}.
      */
     public static Integer get(int id) {
-        return VALUES.get(id);
+        Integer override = OVERRIDES.get(id);
+        return override != null ? override : VALUES.get(id);
     }
 }

@@ -314,10 +314,31 @@ package android.graphics;
      * zero-extent output. The host FontMgr is real ({@code
      * getFamiliesCount() > 0}); match against it explicitly instead.
      */
-    private static final String[] TARTINE_FONT_FAMILIES = {
+    private static final String[] TARTINE_DEFAULT_FAMILIES = {
             "Roboto", "Segoe UI", "Noto Sans", "DejaVu Sans", "Liberation Sans",
             "Helvetica Neue"
     };
+
+    /** Preferred families from host config ({@code font.families}, README
+     * Configuration); null falls back to the built-in list. Set once at
+     * startup by {@code tartine.config.HostConfig}; cosmetic-only surface,
+     * not guest framework behavior. */
+    private static volatile String[] tartinePreferredFamilies;
+
+    /** Host config seam: preferred desktop font families, tried in order
+     * when a Paint has no explicit typeface; {@code null} restores the
+     * built-in list and re-resolves the cached typeface. */
+    public static void tartineSetPreferredFamilies(String[] families) {
+        tartinePreferredFamilies =
+                families == null || families.length == 0 ? null : families;
+        tartineDefaultTypeface = null;
+    }
+
+    /** Current preferred list (host config introspection/tests). */
+    public static String[] tartinePreferredFamilies() {
+        return tartinePreferredFamilies != null
+                ? tartinePreferredFamilies : TARTINE_DEFAULT_FAMILIES;
+    }
 
     private static io.github.humbleui.skija.Typeface tartineDefaultTypeface;
 
@@ -325,7 +346,7 @@ package android.graphics;
         io.github.humbleui.skija.Typeface found = tartineDefaultTypeface;
         if (found == null) {
             io.github.humbleui.skija.FontMgr mgr = io.github.humbleui.skija.FontMgr.getDefault();
-            for (String family : TARTINE_FONT_FAMILIES) {
+            for (String family : tartinePreferredFamilies()) {
                 found = mgr.matchFamilyStyle(family, io.github.humbleui.skija.FontStyle.NORMAL);
                 if (found != null) {
                     break;
@@ -337,7 +358,8 @@ package android.graphics;
                 // output.
                 throw new UnsupportedOperationException(
                         "Tartine: not implemented: host typeface lookup"
-                                + " (none of " + java.util.Arrays.toString(TARTINE_FONT_FAMILIES)
+                                + " (none of "
+                                + java.util.Arrays.toString(tartinePreferredFamilies())
                                 + " present)");
             }
             tartineDefaultTypeface = found;
