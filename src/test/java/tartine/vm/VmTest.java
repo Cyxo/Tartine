@@ -1184,6 +1184,53 @@ class VmTest {
     }
 
     @Test
+    void fileDemoAnswersGuestForm() {
+        // The bridge keeps the guest-form path; no host layout leaks.
+        assertEquals("/sdcard/Hello.txt",
+                interpreter.call(FixtureDex.HELLO, "fileDemo"));
+    }
+
+    @Test
+    void fileDenyDemoFailsClosed() {
+        // Unmapped device trees answer nonexistent for the guest.
+        assertEquals(Integer.valueOf(0),
+                interpreter.call(FixtureDex.HELLO, "fileDenyDemo"));
+    }
+
+    @Test
+    void fileMkdirCreatesUnderPolicy() {
+        Path card = tempDir.resolve("sdcard");
+        interpreter.sdcardPolicy = new tartine.runtime.Vfs.Policy(tempDir,
+                new tartine.runtime.Vfs.Sdcard(card, false));
+        assertEquals(Integer.valueOf(1),
+                interpreter.call(FixtureDex.HELLO, "fileMkdirDemo"));
+        assertTrue(java.nio.file.Files.isDirectory(
+                card.resolve("TartineProbeDir")));
+    }
+
+    @Test
+    void fileMkdirReadOnlyDenied() {
+        Path card = tempDir.resolve("sdcard");
+        interpreter.sdcardPolicy = new tartine.runtime.Vfs.Policy(tempDir,
+                new tartine.runtime.Vfs.Sdcard(card, true));
+        // Read-only mounts deny writes before touching the host: return
+        // false and the card directory itself never comes into being.
+        assertEquals(Integer.valueOf(0),
+                interpreter.call(FixtureDex.HELLO, "fileMkdirDemo"));
+        assertFalse(java.nio.file.Files.exists(card.resolve("TartineProbeDir")));
+        assertFalse(java.nio.file.Files.exists(card));
+    }
+
+    @Test
+    void forNameDeniedStaysUnresolvable() {
+        // Audit bypass pin: Class.forName("java.lang.Runtime") may not
+        // hand out host reflection targets. Lookup answers the dex and
+        // framework universe only; the guest sees ClassNotFoundException.
+        assertEquals(Integer.valueOf(0),
+                interpreter.call(FixtureDex.HELLO, "forNameDenied"));
+    }
+
+    @Test
     void parentIfDemoStaysNull() {
         interpreter.setFramework(framework());
         assertNull(interpreter.call(FixtureDex.HELLO, "parentIfDemo"));

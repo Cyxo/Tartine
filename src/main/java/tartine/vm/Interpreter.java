@@ -1,9 +1,14 @@
 package tartine.vm;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +29,7 @@ import tartine.dex.DexSet;
 import tartine.fw.VirtualCall;
 import tartine.dex.Insn;
 import tartine.fw.FwIndex;
+import tartine.runtime.Vfs;
 
 /**
  * Tree-walking DEX interpreter over our IR.
@@ -64,9 +70,19 @@ public final class Interpreter {
     private int sdkInt = 36;
     private final String[] trace = new String[16384];
     private int traceAt = 0;
+    /**
+     * Filesystem seam for the {@code java.io.File} bridge (Vfs mapping +
+     * sdcard write policy). Snapshotted at construction; package-visible
+     * so tests can point it at temp directories.
+     */
+    Vfs.Policy sdcardPolicy;
 
     public Interpreter(DexSet dexes) {
         this.dexes = dexes;
+        // Capture the filesystem seam once (HostConfig applies any config
+        // or TARTINE_SDCARD override before constructors run; tests may
+        // re-seat the field for temp-root behavior).
+        this.sdcardPolicy = Vfs.policy();
         registerBuiltins();
         // Reverse bridge for framework mirror virtual dispatch (see
         // guestVirtualCall): mirror call sites reach guest overrides here.
@@ -1102,7 +1118,8 @@ public final class Interpreter {
                         }
                         ReflectResult reflected = reflectCall(null, ref,
                                 readRefArgs(ref, g, 0, regs), true);
-                        if (reflected.hit) {                            if (ref.returnType.equals("V")) {
+                        if (reflected.hit) {
+                            if (ref.returnType.equals("V")) {
                                 pending = null;
                                 hasPending = false;
                             } else {
@@ -1124,36 +1141,6 @@ public final class Interpreter {
                     case "invoke-interface":
                     case "invoke-interface-range": {
                         MethodRef ref = MethodRef.parse(insn.reference);
-                        // TEMP-DIAG (revert): font-scale table contents.
-                        if (insn.reference.contains("FontScaleConverterFactory;->getKey(")) {
-                            System.out.println("SC-GETKEY scale=" + regs[g.get(1)]);
-                        }
-                        if (insn.reference.contains("SparseArrayCompat;->put(")) {
-                            System.out.println("SC-PUT key=" + regs[g.get(1)]);
-                        }
-                        if (insn.reference.contains("SparseArrayCompat;->keyAt")) {
-                            Object table = regs[g.get(0)];
-                            Object keys = table instanceof VmObject ? ((VmObject) table)
-                                    .getField(
-                                            "Landroidx/collection/SparseArrayCompat;.mKeys")
-                                    : null;
-                            Object size = table instanceof VmObject ? ((VmObject) table)
-                                    .getField(
-                                            "Landroidx/collection/SparseArrayCompat;.mSize")
-                                    : null;
-                            StringBuilder dump = new StringBuilder("SC-TABLE size=")
-                                    .append(size).append(" keys=[");
-                            if (keys instanceof VmArray) {
-                                VmArray array = (VmArray) keys;
-                                for (int i = 0; i < array.length(); i++) {
-                                    if (i > 0) {
-                                        dump.append(',');
-                                    }
-                                    dump.append(array.get(i));
-                                }
-                            }
-                            System.out.println(dump.append(']'));
-                        }
                         if (ref.definingClass.equals("Ljava/lang/Object;")
                                 && ref.name.equals("<init>")) {
                             pending = null;
@@ -1354,6 +1341,12 @@ public final class Interpreter {
         if (descriptor.equals("Ljava/util/HashSet;")) {
             return new java.util.HashSet<Object>();
         }
+        // File is guest-managed, never a bare host object: the <init>
+        // builtins below remap the guest path through the Vfs seam and
+        // store the mapping on the placeholder (fail-closed sandbox).
+        if (descriptor.equals("Ljava/io/File;")) {
+            return newPlaceholder(descriptor);
+        }
         // Bundles are string-keyed value maps; a host map carries the
         // semantics (casts against Bundle stay approximate, as with
         // other host-allocated model types).
@@ -1399,6 +1392,118 @@ public final class Interpreter {
         return new VmObject(
                 new DexClass(descriptor, superDesc, ifaces, new ArrayList<DexMethod>(),
                         new ArrayList<DexClass.DexField>()));
+    }
+
+    // java.io.File bridge state (keys live on the File placeholder;
+    // guest code has no access to these — file ops all route via the
+    // builtins above) plus the path helpers they share.
+
+    /** Key on the placeholder carrying the guest-form path. */
+    private static final String FILE_GUEST = "Ljava/io/File;.path";
+    /** Key carrying the mapped host path (never shown to the guest). */
+    private static final String FILE_HOST = "Ljava/io/File;.host";
+    /** Key carrying the effective read-only verdict of the mount. */
+    private static final String FILE_RO = "Ljava/io/File;.ro";
+
+    /**
+     * Binds a File placeholder: the guest path is kept verbatim (cleaned),
+     * the host remap comes from the Vfs seam, and unmapped paths (denied)
+     * bind a sentinel that never exists — subsequent ops fail closed.
+     */
+    void installFileFields(VmObject file, String guestPath) {
+        Vfs.Policy policy = this.sdcardPolicy;
+        String clean = cleanGuestPath(guestPath);
+        file.putField(FILE_GUEST, clean);
+        Path host = policy.target(clean);
+        if (host == null) {
+            file.putField(FILE_HOST,
+                    policy.root().resolve("denied-file-access").toString());
+            file.putField(FILE_RO, Boolean.TRUE);
+            return;
+        }
+        file.putField(FILE_HOST, host.toString());
+        file.putField(FILE_RO, policy.readOnlyHost(host));
+    }
+
+    private static String fileGuestPath(VmObject file) {
+        return (String) file.getField(FILE_GUEST);
+    }
+
+    private static Path fileHostPath(VmObject file) {
+        return Paths.get((String) file.getField(FILE_HOST));
+    }
+
+    private static boolean fileReadOnly(VmObject file) {
+        return Boolean.TRUE.equals(file.getField(FILE_RO));
+    }
+
+    /** A fresh File placeholder bound to the same guest path. */
+    private VmObject cloneFileFields(VmObject source) {
+        VmObject out = newPlaceholder("Ljava/io/File;");
+        installFileFields(out, fileGuestPath(source));
+        return out;
+    }
+
+    /**
+     * Collapses repeated separators and drops a trailing one (the root
+     * itself stays {@code "/"}); Android paths use POSIX spelling.
+     */
+    private static String cleanGuestPath(String path) {
+        String canon = path.replace('\\', '/');
+        StringBuilder out = new StringBuilder(canon.length());
+        boolean onSlash = false;
+        for (int i = 0; i < canon.length(); i++) {
+            char c = canon.charAt(i);
+            if (c == '/') {
+                if (!onSlash) {
+                    out.append('/');
+                    onSlash = true;
+                }
+                continue;
+            }
+            out.append(c);
+            onSlash = false;
+        }
+        String text = out.toString();
+        if (!text.equals("/") && text.endsWith("/")) {
+            return text.substring(0, text.length() - 1);
+        }
+        return text;
+    }
+
+    /** POSIX parent of a guest path, or {@code null} when none. */
+    private static String parentOfPath(String path) {
+        String canon = path.replace('\\', '/');
+        int cut = canon.lastIndexOf('/');
+        if (cut <= 0) {
+            return null;
+        }
+        return canon.substring(0, cut);
+    }
+
+    /** Last segment of a guest path ({@code ""} for the empty path). */
+    private static String nameOfPath(String path) {
+        String canon = path.replace('\\', '/');
+        int cut = canon.lastIndexOf('/');
+        return cut < 0 ? canon : canon.substring(cut + 1);
+    }
+
+    /**
+     * Joins parent + child the way the two-argument File constructors do:
+     * a null/empty parent degrades to the child, separators are inserted.
+     */
+    private static String joinGuestPath(String parent, String child) {
+        if (child == null) {
+            throw new NullPointerException("child");
+        }
+        if (parent == null || parent.isEmpty()) {
+            return child;
+        }
+        String canon = parent.replace('\\', '/');
+        if (canon.endsWith("/")) {
+            return canon + child;
+        }
+        return canon + "/" + child;
     }
 
     /**
@@ -1484,6 +1589,9 @@ public final class Interpreter {
         Object value = staticRead(ref.definingClass, ref.name, ref.type);
         if (value instanceof Number) {
             return ((Number) value).intValue();
+        }
+        if (value instanceof Character) {
+            return (int) (char) (Character) value;
         }
         if (value == null && isDexClass(fieldReference)) {
             return 0;
@@ -1747,6 +1855,12 @@ public final class Interpreter {
      * rule as instance fields), then jar constants.
      */
     private Object staticRead(String definingClass, String name, String type) {
+        if (definingClass.equals("Ljava/io/File;")) {
+            Object fileStatic = fileStatic(name);
+            if (fileStatic != null) {
+                return fileStatic;
+            }
+        }
         String current = definingClass;
         while (current != null) {
             String key = current + "." + name;
@@ -1762,6 +1876,24 @@ public final class Interpreter {
             current = superDesc(current);
         }
         return null;
+    }
+
+    /**
+     * {@code java.io.File} class constants (POSIX values, as on device).
+     * The class is deny-listed for generic reflection, so its approved
+     * statics answer inline instead. {@code null} keeps the general walk.
+     */
+    private static Object fileStatic(String name) {
+        switch (name) {
+            case "separator":
+            case "pathSeparator":
+                return "/";
+            case "separatorChar":
+            case "pathSeparatorChar":
+                return '/';
+            default:
+                return null;
+        }
     }
 
     private Object field(Object target, String fieldReference) {
@@ -2270,6 +2402,7 @@ public final class Interpreter {
         deny.add("Ljava/lang/Runtime;");
         deny.add("Ljava/lang/ProcessBuilder;");
         deny.add("Ljava/lang/Process;");
+        deny.add("Ljava/lang/ProcessHandle;");
         deny.add("Ljava/lang/System;");
         deny.add("Ljava/lang/Thread;");
         deny.add("Ljava/lang/ThreadGroup;");
@@ -2278,6 +2411,25 @@ public final class Interpreter {
         deny.add("Ljava/lang/SecurityManager;");
         REFLECT_DENY = Collections.unmodifiableSet(deny);
     }
+
+    /**
+     * Vetted {@code java.*} modules the guest may cross onto the live
+     * JDK reflectively (a prefix match, with {@link #REFLECT_DENY}
+     * overriding inside them). Everything else — notably {@code java.io},
+     * {@code java.nio} and {@code java.net} — fails closed; the File
+     * bridge below is the only guest filesystem path.
+     */
+    private static final List<String> REFLECT_ALLOW_PREFIXES = List.of(
+            "Ljava/lang/",
+            "Ljava/lang/reflect/",
+            "Ljava/lang/annotation/",
+            "Ljava/util/",
+            "Ljava/util/concurrent/",
+            "Ljava/util/function/",
+            "Ljava/util/stream/",
+            "Ljava/util/regex/",
+            "Ljava/text/",
+            "Ljava/math/");
 
     private final Map<String, Class<?>> hostClasses = new HashMap<>();
     private final Map<String, Method> hostMethods = new HashMap<>();
@@ -2290,17 +2442,41 @@ public final class Interpreter {
     private final Map<Object, VmObject> mirrorOwners = new java.util.IdentityHashMap<>();
 
     /**
-     * Host-runtime classes a guest may reach reflectively. {@code java.*}
-     * minus the deny list resolves against the live JDK; {@code android.*}
-     * resolves against the framework module (generated skeletons ported
-     * there). Presence is still confirmed by {@link Class#forName}, so
-     * unported android classes simply resolve to nothing.
+     * Host-runtime classes a guest may reach reflectively.
+     * Deny-by-default (follow-up audit 2026-10-19): the allowlist names
+     * the vetted {@code java.*} modules that cross onto the live JDK
+     * (value types, collections, primitives boxing, reflection machinery,
+     * text/regex), {@code android.*} resolves against the framework
+     * module (skeletons ported there). {@code java.io}, {@code java.nio}
+     * and {@code java.net} are NOT on the list — guest filesystem and
+     * network reach does not cross reflection; filesystem access goes
+     * through the dedicated {@code File} bridge builtins, which remap
+     * every path via {@code tartine.runtime.Vfs} and fail closed.
+     * {@code REFLECT_DENY} overrides the prefixes: process/thread
+     * control, loaders and the security surface never cross, exactly the
+     * classes the earlier blocklist named. Presence of a listed class is
+     * still confirmed by {@link Class#forName}, so unported android
+     * classes simply resolve to nothing.
      */
     private static boolean isReflectable(String descriptor) {
         if (descriptor.startsWith("Landroid/")) {
             return true;
         }
-        return descriptor.startsWith("Ljava/") && !REFLECT_DENY.contains(descriptor);
+        for (String prefix : REFLECT_ALLOW_PREFIXES) {
+            if (descriptor.startsWith(prefix)) {
+                return !REFLECT_DENY.contains(descriptor);
+            }
+        }
+        return false;
+    }
+
+    /** Descriptor form of a host reference type (verbose arrays kept). */
+    private static String descriptorOf(Class<?> type) {
+        if (type.isArray()) {
+            return "[" + descriptorOf(type.getComponentType());
+        }
+        String name = type.getName().replace('.', '/');
+        return "L" + name + ";";
     }
 
     /**
@@ -3240,11 +3416,20 @@ public final class Interpreter {
     /**
      * Reflective fallback for {@code java.*} calls the table does not cover.
      * Host receivers (or none, for static) only; model objects never cross.
+     * Deny-by-default gates (follow-up audit 2026-10-19): static calls
+     * resolve only through an allowlisted defining class, and an instance
+     * receiver's runtime class must be allowlisted too — a host object of
+     * a non-listed type can never become a reflective receiver, whatever
+     * the declared claim (dex subclasses delegate on guest declaring
+     * classes, so the instance gate keys the runtime class).
      */
     private ReflectResult reflectCall(Object receiver, MethodRef ref, Object[] args,
             boolean wantStatic) {
         Class<?> host;
         if (receiver == null) {
+            if (!isReflectable(ref.definingClass)) {
+                return ReflectResult.MISS;
+            }
             host = hostClass(ref.definingClass);
             if (host == null) {
                 return ReflectResult.MISS;
@@ -3256,6 +3441,16 @@ public final class Interpreter {
                 return ReflectResult.MISS;
             }
             host = receiver.getClass();
+            // Deny java.* receivers the allowlist does not name (a leaked
+            // Runtime/File/ClassLoader object could never become a
+            // reflective receiver). Interpreter-internal models (BoxedZero
+            // extends Number) stay legitimate receivers; the declared-class
+            // check below keeps their dispatch honest.
+            String runtimeDesc = descriptorOf(host);
+            if (runtimeDesc.startsWith("Ljava/")
+                    && !isReflectable(runtimeDesc)) {
+                return ReflectResult.MISS;
+            }
             Class<?> declared = hostClass(ref.definingClass);
             if (declared != null && !declared.isInstance(receiver)) {
                 return ReflectResult.MISS;
@@ -4776,6 +4971,199 @@ public final class Interpreter {
         // without them); callers null-check, and host values must not leak.
         builtin("Ljava/lang/System;->getProperty(Ljava/lang/String;)Ljava/lang/String;",
                 (receiver, args) -> null);
+
+        // java.io.File bridge (audit 2026-10 security batch): the ONLY
+        // guest filesystem path. Constructors remap the guest path through
+        // the Vfs seam; unmapped paths bind a fail-closed sentinel that
+        // ops answer as nonexistent, and read-only mounts deny writes.
+        // Getters report the guest-form path, never the mapped host
+        // location. java.nio.file/java.io raw access stays off the reflect
+        // allowlist, so this bridge has no second route.
+        builtin("Ljava/io/File;-><init>(Ljava/lang/String;)V",
+                (receiver, args) -> {
+                    if (args[0] == null) {
+                        throw new NullPointerException("pathname");
+                    }
+                    installFileFields((VmObject) receiver, argString(args, 0));
+                    return null;
+                });
+        builtin("Ljava/io/File;-><init>(Ljava/lang/String;Ljava/lang/String;)V",
+                (receiver, args) -> {
+                    if (args[1] == null) {
+                        throw new NullPointerException("child");
+                    }
+                    installFileFields((VmObject) receiver,
+                            joinGuestPath(args[0] == null ? null : argString(args, 0),
+                                    argString(args, 1)));
+                    return null;
+                });
+        builtin("Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V",
+                (receiver, args) -> {
+                    if (args[1] == null) {
+                        throw new NullPointerException("child");
+                    }
+                    String parentPath = args[0] == null ? null
+                            : fileGuestPath((VmObject) args[0]);
+                    installFileFields((VmObject) receiver,
+                            joinGuestPath(parentPath, argString(args, 1)));
+                    return null;
+                });
+        // Path getters answer the guest form; the mapped host path stays
+        // internal (no host layout leak to guest code).
+        builtin("Ljava/io/File;->getPath()Ljava/lang/String;",
+                (receiver, args) -> fileGuestPath((VmObject) receiver));
+        builtin("Ljava/io/File;->getAbsolutePath()Ljava/lang/String;",
+                (receiver, args) -> fileGuestPath((VmObject) receiver));
+        builtin("Ljava/io/File;->getCanonicalPath()Ljava/lang/String;",
+                (receiver, args) -> fileGuestPath((VmObject) receiver));
+        builtin("Ljava/io/File;->toString()Ljava/lang/String;",
+                (receiver, args) -> fileGuestPath((VmObject) receiver));
+        builtin("Ljava/io/File;->getAbsoluteFile()Ljava/io/File;",
+                (receiver, args) -> cloneFileFields((VmObject) receiver));
+        builtin("Ljava/io/File;->getCanonicalFile()Ljava/io/File;",
+                (receiver, args) -> cloneFileFields((VmObject) receiver));
+        builtin("Ljava/io/File;->getParent()Ljava/lang/String;",
+                (receiver, args) -> parentOfPath(fileGuestPath((VmObject) receiver)));
+        builtin("Ljava/io/File;->getParentFile()Ljava/io/File;",
+                (receiver, args) -> {
+                    String parent = parentOfPath(fileGuestPath((VmObject) receiver));
+                    if (parent == null) {
+                        return null;
+                    }
+                    VmObject out = newPlaceholder("Ljava/io/File;");
+                    installFileFields(out, parent);
+                    return out;
+                });
+        builtin("Ljava/io/File;->getName()Ljava/lang/String;",
+                (receiver, args) -> nameOfPath(fileGuestPath((VmObject) receiver)));
+        builtin("Ljava/io/File;->exists()Z",
+                (receiver, args) -> bool(Files.exists(fileHostPath((VmObject) receiver))));
+        builtin("Ljava/io/File;->isDirectory()Z",
+                (receiver, args) -> bool(Files.isDirectory(
+                        fileHostPath((VmObject) receiver))));
+        builtin("Ljava/io/File;->isFile()Z",
+                (receiver, args) -> bool(Files.isRegularFile(
+                        fileHostPath((VmObject) receiver))));
+        builtin("Ljava/io/File;->canRead()Z",
+                (receiver, args) -> bool(Files.isReadable(
+                        fileHostPath((VmObject) receiver))));
+        builtin("Ljava/io/File;->canWrite()Z",
+                (receiver, args) -> bool(!fileReadOnly((VmObject) receiver)
+                        && Files.isWritable(fileHostPath((VmObject) receiver))));
+        builtin("Ljava/io/File;->length()J",
+                (receiver, args) -> {
+                    try {
+                        return Files.size(fileHostPath((VmObject) receiver));
+                    } catch (IOException e) {
+                        return 0L;
+                    }
+                });
+        builtin("Ljava/io/File;->lastModified()J",
+                (receiver, args) -> {
+                    try {
+                        return Files.getLastModifiedTime(
+                                fileHostPath((VmObject) receiver)).toMillis();
+                    } catch (IOException e) {
+                        return 0L;
+                    }
+                });
+        // Write-shaped ops consult the read-only flag and short-circuit
+        // before touching the host (the denied sentinel inherits TRUE).
+        builtin("Ljava/io/File;->mkdir()Z",
+                (receiver, args) -> {
+                    VmObject file = (VmObject) receiver;
+                    if (fileReadOnly(file)) {
+                        return bool(false);
+                    }
+                    try {
+                        Files.createDirectory(fileHostPath(file));
+                        return bool(true);
+                    } catch (IOException e) {
+                        return bool(false);
+                    }
+                });
+        builtin("Ljava/io/File;->mkdirs()Z",
+                (receiver, args) -> {
+                    VmObject file = (VmObject) receiver;
+                    if (fileReadOnly(file)) {
+                        return bool(false);
+                    }
+                    try {
+                        Files.createDirectories(fileHostPath(file));
+                        return bool(true);
+                    } catch (IOException e) {
+                        return bool(false);
+                    }
+                });
+        builtin("Ljava/io/File;->createNewFile()Z",
+                (receiver, args) -> {
+                    VmObject file = (VmObject) receiver;
+                    if (fileReadOnly(file)) {
+                        return bool(false);
+                    }
+                    try {
+                        Files.createFile(fileHostPath(file));
+                        return bool(true);
+                    } catch (IOException e) {
+                        return bool(false); // exists, or parent missing
+                    }
+                });
+        builtin("Ljava/io/File;->delete()Z",
+                (receiver, args) -> {
+                    VmObject file = (VmObject) receiver;
+                    if (fileReadOnly(file)) {
+                        return bool(false);
+                    }
+                    try {
+                        return bool(Files.deleteIfExists(fileHostPath(file)));
+                    } catch (IOException e) {
+                        return bool(false);
+                    }
+                });
+        builtin("Ljava/io/File;->list()[Ljava/lang/String;",
+                (receiver, args) -> {
+                    VmObject file = (VmObject) receiver;
+                    try {
+                        List<String> names = new ArrayList<>();
+                        try (DirectoryStream<Path> stream = Files.newDirectoryStream(
+                                fileHostPath(file))) {
+                            for (Path entry : stream) {
+                                names.add(entry.getFileName().toString());
+                            }
+                        }
+                        VmArray out = new VmArray("Ljava/lang/String;", names.size());
+                        for (int i = 0; i < names.size(); i++) {
+                            out.set(i, names.get(i));
+                        }
+                        return out;
+                    } catch (IOException e) {
+                        return null;
+                    }
+                });
+        builtin("Ljava/io/File;->listFiles()[Ljava/io/File;",
+                (receiver, args) -> {
+                    VmObject file = (VmObject) receiver;
+                    try {
+                        List<Path> entries = new ArrayList<>();
+                        try (DirectoryStream<Path> stream = Files.newDirectoryStream(
+                                fileHostPath(file))) {
+                            for (Path entry : stream) {
+                                entries.add(entry);
+                            }
+                        }
+                        VmArray out = new VmArray("Ljava/io/File;", entries.size());
+                        for (int i = 0; i < entries.size(); i++) {
+                            VmObject child = newPlaceholder("Ljava/io/File;");
+                            installFileFields(child,
+                                    joinGuestPath(fileGuestPath(file),
+                                            entries.get(i).getFileName().toString()));
+                            out.set(i, child);
+                        }
+                        return out;
+                    } catch (IOException e) {
+                        return null;
+                    }
+                });
 
         builtin("Ljava/util/Objects;->equals(Ljava/lang/Object;Ljava/lang/Object;)Z",
                 (receiver, args) -> bool(java.util.Objects.equals(args[0], args[1])));

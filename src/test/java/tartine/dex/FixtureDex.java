@@ -274,6 +274,7 @@ public final class FixtureDex {
                         demos.get("drawDemo"), demos.get("vtoLayoutDemo"), demos.get("vtoScrollDemo"), demos.get("vtoClusterDemo"),
                         demos.get("contentViewDemo"), demos.get("choreoDemo"), demos.get("handlerAsyncDemo"),
                         demos.get("high16Demo"), demos.get("wideHigh16Demo"), demos.get("fillDemo"), demos.get("runtimeDemo"),
+                        demos.get("forNameDenied"),
                         demos.get("cpuDemo"), demos.get("propDemo"), demos.get("windowDemo"), demos.get("parentLinkDemo"),
                         demos.get("attachLinkDemo"), demos.get("parentIfDemo"), demos.get("idDemo"), demos.get("viewHandlerDemo"),
                         demos.get("detachedHandlerDemo"), demos.get("reflectDemo"), demos.get("reflectMissDemo"), demos.get("reflectPubDemo"),
@@ -296,7 +297,9 @@ public final class FixtureDex {
                         demos.get("hostFillDemo"), demos.get("sysServiceDemo"), demos.get("a11yDemo"), demos.get("a11yEnabledDemo"), demos.get("sortDemo"),
                         demos.get("autofillDemo"), demos.get("autofillCbDemo"),
                         demos.get("importantDemo"), demos.get("captureDemo"), demos.get("clipboardDemo"), demos.get("treeDemo"), demos.get("viewConfigDemo"),
-                        demos.get("appCtxDemo"), demos.get("ctorDemo")));
+                        demos.get("appCtxDemo"),
+                        demos.get("ctorDemo"), demos.get("fileDemo"),
+                        demos.get("fileDenyDemo"), demos.get("fileMkdirDemo")));
         builder.writeTo(new FileDataStore(dexFile.toFile()));
     }
 
@@ -3808,6 +3811,107 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), cpuImpl);
         demos.put("cpuDemo", cpuDemo);
+
+        // fileDemo(): new File("/sdcard/Hello.txt").getAbsolutePath()
+        // answers the guest form: the bridge remaps paths through the Vfs
+        // seam and reports no host layout.
+        MutableMethodImplementation fileImpl = new MutableMethodImplementation(2);
+        fileImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("/sdcard/Hello.txt")));
+        fileImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Ljava/io/File;")));
+        fileImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        fileImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 1, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/File;", "<init>",
+                        Collections.singletonList("Ljava/lang/String;"), "V"))));
+        fileImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 1, 0, 0, 0,
+                0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/File;", "getAbsolutePath",
+                        Collections.<String>emptyList(), "Ljava/lang/String;"))));
+        fileImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        fileImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod fileDemo = builder.internMethod(HELLO, "fileDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/String;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), fileImpl);
+        demos.put("fileDemo", fileDemo);
+
+        // fileDenyDemo(): an unmapped device path fails closed — the File
+        // exists for nobody (the sandbox answers nonexistent).
+        MutableMethodImplementation fileDenyImpl = new MutableMethodImplementation(2);
+        fileDenyImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("/proc/self/maps")));
+        fileDenyImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Ljava/io/File;")));
+        fileDenyImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        fileDenyImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/File;", "<init>",
+                        Collections.singletonList("Ljava/lang/String;"), "V"))));
+        fileDenyImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/File;", "exists",
+                        Collections.<String>emptyList(), "Z"))));
+        fileDenyImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        fileDenyImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod fileDenyDemo = builder.internMethod(HELLO, "fileDenyDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), fileDenyImpl);
+        demos.put("fileDenyDemo", fileDenyDemo);
+
+        // fileMkdirDemo(): mkdirs under the card succeed once (guest RW).
+        MutableMethodImplementation fileMkdirImpl = new MutableMethodImplementation(2);
+        fileMkdirImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("/sdcard/TartineProbeDir")));
+        fileMkdirImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Ljava/io/File;")));
+        fileMkdirImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        fileMkdirImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/File;", "<init>",
+                        Collections.singletonList("Ljava/lang/String;"), "V"))));
+        fileMkdirImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/File;", "mkdirs",
+                        Collections.<String>emptyList(), "Z"))));
+        fileMkdirImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
+        fileMkdirImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod fileMkdirDemo = builder.internMethod(HELLO, "fileMkdirDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), fileMkdirImpl);
+        demos.put("fileMkdirDemo", fileMkdirDemo);
+
+        // forNameDenied(): Class.forName("java.lang.Runtime") stays
+        // unresolvable — the audit's reflection-bypass probe. Class lookup
+        // resolves the dex+framework universe only; a host class the
+        // allowlist never carries answers ClassNotFoundException.
+        MutableMethodImplementation forNameImpl = new MutableMethodImplementation(2);
+        forNameImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("java.lang.Runtime")));
+        forNameImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "forName",
+                        Collections.singletonList("Ljava/lang/String;"),
+                        "Ljava/lang/Class;"))));
+        forNameImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        forNameImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 1));
+        forNameImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        forNameImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_EXCEPTION, 0));
+        forNameImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 0));
+        forNameImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        // Try covers const-string + invoke-static; the handler starts at
+        // the move-exception (instruction index 5).
+        Label forNameStart = forNameImpl.newLabelForIndex(0);
+        Label forNameEnd = forNameImpl.newLabelForIndex(3);
+        forNameImpl.addCatch(forNameStart, forNameEnd, forNameImpl.newLabelForIndex(5));
+        BuilderMethod forNameDenied = builder.internMethod(HELLO, "forNameDenied",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), forNameImpl);
+        demos.put("forNameDenied", forNameDenied);
 
         // propDemo(): unknown system properties stay null headless.
         MutableMethodImplementation propImpl = new MutableMethodImplementation(1);
