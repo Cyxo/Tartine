@@ -38,6 +38,13 @@ public final class Main {
     private Main() {
     }
 
+    /**
+     * Frame drawn by the first-draw pass, handed to the desktop window in
+     * gui mode ({@code runOnCreate -> ... -> driveDraw} writes it). Staging
+     * until Choreographer-driven redraws replace the one-shot handoff.
+     */
+    private static io.github.humbleui.skija.Surface firstDrawFrame;
+
     public static void main(String[] args) {
         if (args.length == 0) {
             usage();
@@ -131,12 +138,15 @@ public final class Main {
     }
 
     private static void guiRun(File apk, long timeoutSecs) throws Exception {
+        firstDrawFrame = null;
         String activity = runOnCreate(apk);
         if (activity == null) {
             System.out.println("gui: onCreate did not return; no window");
             return;
         }
-        DesktopWindow.show(activity, timeoutSecs);
+        System.out.println("gui: window ready (frame: "
+                + (firstDrawFrame != null ? "present" : "absent") + ")");
+        DesktopWindow.show(activity, timeoutSecs, firstDrawFrame);
         System.out.println("window closed");
     }
 
@@ -640,6 +650,9 @@ public final class Main {
                 tartine.graphics.SkiaPresenter.createSurfaceCanvas(surface);
         VmObject canvasObject =
                 interpreter.hostObjectFor("Landroid/graphics/Canvas;", hostCanvas);
+        // Frame handed to the desktop window (gui mode); a blocked draw still
+        // shows the partially composed surface, like the first on-device frame.
+        firstDrawFrame = surface;
         try {
             invokeVirtual(dexes, interpreter, owner, "dispatchDraw", 1, canvasObject);
             System.out.println(
