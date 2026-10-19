@@ -38,6 +38,9 @@ dependencies {
     runtimeOnly 'io.github.humbleui:skija-linux-arm64:0.143.18'
     runtimeOnly 'io.github.humbleui:skija-macos-x64:0.143.18'
     runtimeOnly 'io.github.humbleui:skija-macos-arm64:0.143.18'
+    // SVG rendering for converted Android vector drawables (window icons;
+    // MIT). Used by IntelliJ/NetBeans/Eclipse SWT upstream.
+    implementation 'com.github.weisj:jsvg:2.2.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
 }

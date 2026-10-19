@@ -3,12 +3,15 @@ package tartine.graphics;
 import io.github.humbleui.skija.Bitmap;
 import io.github.humbleui.skija.Pixmap;
 import io.github.humbleui.skija.Surface;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
 import static org.lwjgl.glfw.GLFW.GLFW_RESIZABLE;
@@ -97,6 +100,16 @@ public final class DesktopWindow {
      * reached the surface): the window then shows the dark clear color.
      */
     public static void show(String title, long timeoutSecs, Surface frame) {
+        show(title, timeoutSecs, frame, List.of());
+    }
+
+    /**
+     * Same as {@link #show(String, long, Surface)} with window icons (the
+     * app's launcher artwork, resolving through the APK). Empty means the
+     * platform default icon stands.
+     */
+    public static void show(String title, long timeoutSecs, Surface frame,
+            List<WindowIcon> icons) {
         GLFWErrorCallback.createPrint(System.err).set();
         if (!glfwInit()) {
             throw new IllegalStateException("glfwInit failed (no display?)");
@@ -110,6 +123,7 @@ public final class DesktopWindow {
                 throw new IllegalStateException("glfwCreateWindow failed");
             }
             try {
+                setWindowIcon(window, icons);
                 glfwMakeContextCurrent(window);
                 glfwSwapInterval(1);
                 glfwShowWindow(window);
@@ -138,6 +152,30 @@ public final class DesktopWindow {
             glfwTerminate();
             glfwSetErrorCallback(null).free();
         }
+    }
+
+    /**
+     * Sets the OS window icons (title bar, taskbar, alt-tab). GLFW copies
+     * the pixels at call time, so stack allocation is safe; icons arrive
+     * straight-alpha RGBA ready for {@code GLFWImage}.
+     */
+    private static void setWindowIcon(long window, List<WindowIcon> icons) {
+        if (icons == null || icons.isEmpty()) {
+            return;
+        }
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            GLFWImage.Buffer images = GLFWImage.malloc(icons.size(), stack);
+            for (int index = 0; index < icons.size(); index++) {
+                WindowIcon icon = icons.get(index);
+                ByteBuffer pixels = stack.malloc(icon.rgba().length);
+                pixels.put(icon.rgba()).flip();
+                images.get(index).set(icon.width(), icon.height(), pixels);
+            }
+            GLFW.glfwSetWindowIcon(window, images);
+        }
+        List<String> sizes = icons.stream()
+                .map(icon -> icon.width() + "x" + icon.height()).toList();
+        System.out.println("window icon: " + String.join(", ", sizes));
     }
 
     /**

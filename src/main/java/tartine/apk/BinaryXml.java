@@ -27,24 +27,44 @@ public final class BinaryXml {
     private static final int UTF8_FLAG = 1 << 8;
     private static final int NO_INDEX = -1;
 
-    // Res_value data types (androidfw/ResourceTypes.h).
-    private static final int TYPE_REFERENCE = 0x01;
-    private static final int TYPE_STRING = 0x03;
-    private static final int TYPE_FLOAT = 0x04;
-    private static final int TYPE_INT_DEC = 0x10;
-    private static final int TYPE_INT_HEX = 0x11;
-    private static final int TYPE_INT_BOOLEAN = 0x12;
+    // Res_value data types (subset of androidfw/ResourceTypes.h).
+    public static final int TYPE_ATTRIBUTE = 0x02;
+    public static final int TYPE_REFERENCE = 0x01;
+    public static final int TYPE_STRING = 0x03;
+    public static final int TYPE_FLOAT = 0x04;
+    public static final int TYPE_DIMENSION = 0x05;
+    public static final int TYPE_FRACTION = 0x06;
+    public static final int TYPE_DYNAMIC_REFERENCE = 0x07;
+    public static final int TYPE_INT_DEC = 0x10;
+    public static final int TYPE_INT_HEX = 0x11;
+    public static final int TYPE_INT_BOOLEAN = 0x12;
+    public static final int TYPE_COLOR_ARGB4 = 0x1c;
+    public static final int TYPE_COLOR_RGB4 = 0x1d;
+    public static final int TYPE_COLOR_ARGB8 = 0x1e;
+    public static final int TYPE_COLOR_RGB8 = 0x1f;
 
-    /** A decoded attribute with its value resolved to text. */
+    /**
+     * A decoded attribute with its value resolved to text and, when the
+     * value is a typed value (dimension, float, color, reference...), its
+     * raw {@code Res_value} so numeric data survives round-trips (the
+     * text form is lossy for those).
+     */
     public static final class Attribute {
         public final String namespaceUri;
         public final String name;
         public final String value;
+        /** Res_value dataType (0 when not loaded from a typed value). */
+        public final int dataType;
+        /** Res_value raw data word. */
+        public final int data;
 
-        Attribute(String namespaceUri, String name, String value) {
+        Attribute(String namespaceUri, String name, String value,
+                int dataType, int data) {
             this.namespaceUri = namespaceUri;
             this.name = name;
             this.value = value;
+            this.dataType = dataType;
+            this.data = data;
         }
     }
 
@@ -65,6 +85,16 @@ public final class BinaryXml {
             for (Attribute attribute : attributes) {
                 if (attribute.name.equals(name)) {
                     return attribute.value;
+                }
+            }
+            return null;
+        }
+
+        /** Full (typed) attribute with the given local name, or null. */
+        public Attribute typed(String name) {
+            for (Attribute attribute : attributes) {
+                if (attribute.name.equals(name)) {
+                    return attribute;
                 }
             }
             return null;
@@ -265,7 +295,7 @@ public final class BinaryXml {
             buf.position(attrStart + attributeSize);
             element.attributes.add(new Attribute(
                     poolString(pool, attrNs, ""), poolName(pool, attrName),
-                    resolveValue(pool, rawValue, dataType, data)));
+                    resolveValue(pool, rawValue, dataType, data), dataType, data));
         }
         return element;
     }

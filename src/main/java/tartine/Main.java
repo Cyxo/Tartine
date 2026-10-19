@@ -1,6 +1,7 @@
 package tartine;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -8,6 +9,7 @@ import java.util.TreeSet;
 
 import tartine.apk.Abi;
 import tartine.apk.ApkReader;
+import tartine.apk.AppIcon;
 import tartine.apk.BinaryXml;
 import tartine.dex.Dex;
 import tartine.dex.DexClass;
@@ -17,6 +19,7 @@ import tartine.dex.DexSet;
 import tartine.fw.FwIndex;
 import tartine.fw.Sdk;
 import tartine.graphics.DesktopWindow;
+import tartine.graphics.WindowIcon;
 import tartine.vm.Interpreter;
 import tartine.vm.VmException;
 import tartine.vm.VmObject;
@@ -150,8 +153,24 @@ public final class Main {
         }
         System.out.println("gui: window ready (frame: "
                 + (firstDrawFrame != null ? "present" : "absent") + ")");
-        DesktopWindow.show(activity, timeoutSecs, firstDrawFrame);
+        DesktopWindow.show(activity, timeoutSecs, firstDrawFrame,
+                loadWindowIcons(apk));
         System.out.println("window closed");
+    }
+
+    /**
+     * Resolves the app's launcher icon for the desktop window (a second
+     * read of the APK; resolution never throws — an empty list keeps the
+     * platform default icon).
+     */
+    private static List<WindowIcon> loadWindowIcons(File apkFile) {
+        try (ApkReader reader = ApkReader.open(apkFile.toPath())) {
+            return AppIcon.load(reader, System.out::println);
+        } catch (IOException error) {
+            System.out.println("icon: cannot reopen apk ("
+                    + error.getMessage() + ")");
+            return List.of();
+        }
     }
 
     /**
