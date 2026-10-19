@@ -13,7 +13,7 @@ Tartine is a tool to run Android apps on Desktop OSes natively, in a similar fas
 ## Scope
 
 - **Supported target: pure-DEX apps.** Java/Kotlin/Compose apps whose APK ships no native code. Apps bundling ARM `.so` libraries (Flutter, most games) are out of reach for now: a desktop JVM cannot load Bionic-built ARM binaries.
-- **Status:** the headless pipeline drives a real Compose APK through manifest → DEX → VM into lifecycle, composition, and the first measure pass. Windowing (GUI) is the next milestone; design decisions and roadmap live in `AGENTS.md`.
+- **Status:** the headless pipeline drives a real Compose APK through manifest → DEX → VM into lifecycle, composition, and the first measure pass. The first rendered frame now blits into a real desktop window (Skia raster through the LWJGL GL context — `mise run gui`); next milestone: the ASM translation spike. Design decisions and roadmap live in `AGENTS.md`.
 
 ## Prerequisites
 
