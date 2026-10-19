@@ -33,16 +33,41 @@ package android.graphics;
     public static final int UNDERLINE_TEXT_FLAG = 8;
     public static final int VERTICAL_TEXT_FLAG = 4096;
 
+    /*
+     * Skia-backed paint state. Deviation: AOSP Paint.java:707/1208-1211 keeps
+     * a native paint plus a ColorLong (mColor = Color.pack(...)); here plain
+     * host fields carry the same Java contracts, sRGB-only. ColorLong decode
+     * and ColorSpace branches land when a wall needs them.
+     */
+    private int mColor = 0xFF000000; // black, per AOSP ctor (:707 mColor = Color.pack(Color.BLACK))
+    private int mFlags = 0;
+    private float mStrokeWidth = 0.0f;
+    private Paint.Style mStyle = null; // null = FILL (native default)
+    // AOSP Paint.java:356-357: HIDDEN_DEFAULT_PAINT_FLAGS (all set on new/reset).
+    private static final int HOST_HIDDEN_DEFAULT_PAINT_FLAGS =
+            DEV_KERN_TEXT_FLAG | EMBEDDED_BITMAP_TEXT_FLAG | FILTER_BITMAP_FLAG;
+
     public Paint() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;-><init>()V");
+        // AOSP Paint.java:680-682: Paint() == Paint(ANTI_ALIAS_FLAG)
+        // ("On devices running Build.VERSION_CODES#S and above, ANTI_ALIAS_FLAG
+        // is set by this constructor").
+        this(ANTI_ALIAS_FLAG);
     }
 
     public Paint(android.graphics.Paint arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;-><init>(Landroid/graphics/Paint;)V");
+        // AOSP Paint.java:718-722 (copy constructor; setClassVariablesFrom).
+        // Deviation: copies the state we carry (flags/color/style/width).
+        mFlags = arg0.getFlags();
+        mColor = arg0.mColor;
+        mStyle = arg0.mStyle;
+        mStrokeWidth = arg0.mStrokeWidth;
     }
 
     public Paint(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;-><init>(I)V");
+        // AOSP Paint.java:697-709 (flags ctor): setFlags(flags | HIDDEN),
+        // color = packed BLACK. Deviation: text-locale/hinting bits wait.
+        setFlags(arg0 | HOST_HIDDEN_DEFAULT_PAINT_FLAGS);
+        mColor = 0xFF000000;
     }
 
     public float ascent() {
@@ -74,7 +99,8 @@ package android.graphics;
     }
 
     public int getAlpha() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getAlpha()I");
+        // AOSP Paint.java:1239-1241: alpha of the color, [0..255].
+        return (mColor >>> 24) & 0xFF;
     }
 
     public android.graphics.BlendMode getBlendMode() {
@@ -82,7 +108,8 @@ package android.graphics;
     }
 
     public int getColor() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getColor()I");
+        // AOSP Paint.java:1182-1184: sRGB ARGB view of the packed color.
+        return mColor;
     }
 
     public android.graphics.ColorFilter getColorFilter() {
@@ -102,7 +129,8 @@ package android.graphics;
     }
 
     public int getFlags() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getFlags()I");
+        // AOSP Paint.java:880-882.
+        return mFlags;
     }
 
     public java.lang.String getFontFeatureSettings() {
@@ -238,11 +266,30 @@ package android.graphics;
     }
 
     public float getStrokeWidth() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getStrokeWidth()F");
+        // AOSP Paint.java: getStrokeWidth returns the mStrokeWidth state.
+        return mStrokeWidth;
     }
 
     public android.graphics.Paint.Style getStyle() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getStyle()Landroid/graphics/Paint$Style;");
+        // AOSP Paint.java:1158-1160. null state = native default FILL.
+        return mStyle == null ? Paint.Style.FILL : mStyle;
+    }
+
+    /** Host-only Skia view of this paint (see Canvas.tartineCreate docs). */
+    io.github.humbleui.skija.Paint tartineSkia() {
+        io.github.humbleui.skija.Paint out = new io.github.humbleui.skija.Paint();
+        out.setColor(mColor);
+        out.setAntiAlias((mFlags & ANTI_ALIAS_FLAG) != 0);
+        switch (mStyle == null ? Paint.Style.FILL : mStyle) {
+            case STROKE: out.setMode(io.github.humbleui.skija.PaintMode.STROKE); break;
+            case FILL_AND_STROKE: out.setMode(
+                    io.github.humbleui.skija.PaintMode.STROKE_AND_FILL); break;
+            default: out.setMode(io.github.humbleui.skija.PaintMode.FILL);
+        }
+        if (mStrokeWidth > 0.0f) {
+            out.setStrokeWidth(mStrokeWidth);
+        }
+        return out;
     }
 
     public android.graphics.Paint.Align getTextAlign() {
@@ -394,7 +441,13 @@ package android.graphics;
     }
 
     public void reset() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->reset()V");
+        // AOSP Paint.java:725-739: flags back to HIDDEN|ANTI_ALIAS, color
+        // black, filters cleared. Deviation: text-locale/hinting untouched;
+        // we only carry color/flags/style/width.
+        setFlags(HOST_HIDDEN_DEFAULT_PAINT_FLAGS | ANTI_ALIAS_FLAG);
+        mColor = 0xFF000000;
+        mStyle = null;
+        mStrokeWidth = 0.0f;
     }
 
     public void set(android.graphics.Paint arg0) {
@@ -406,11 +459,18 @@ package android.graphics;
     }
 
     public void setAlpha(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setAlpha(I)V");
+        // AOSP Paint.java:1250-1259: set the alpha channel, keep r,g,b.
+        int rgb = mColor & 0x00FFFFFF;
+        mColor = rgb | ((arg0 & 0xFF) << 24);
     }
 
     public void setAntiAlias(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setAntiAlias(Z)V");
+        // AOSP Paint.java:929-946: helper setting or clearing the flag bit.
+        if (arg0) {
+            setFlags(getFlags() | ANTI_ALIAS_FLAG);
+        } else {
+            setFlags(getFlags() & ~ANTI_ALIAS_FLAG);
+        }
     }
 
     public void setBlendMode(android.graphics.BlendMode arg0) {
@@ -418,7 +478,8 @@ package android.graphics;
     }
 
     public void setColor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setColor(I)V");
+        // AOSP Paint.java:1208-1211.
+        mColor = arg0;
     }
 
     public void setColor(long arg0) {
@@ -450,7 +511,8 @@ package android.graphics;
     }
 
     public void setFlags(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setFlags(I)V");
+        // AOSP Paint.java:889-891.
+        mFlags = arg0;
     }
 
     public void setFontFeatureSettings(java.lang.String arg0) {
@@ -514,11 +576,13 @@ package android.graphics;
     }
 
     public void setStrokeWidth(float arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setStrokeWidth(F)V");
+        // AOSP Paint.java:1294-1296 (mStrokeWidth state, "> 0" = strokeWidth).
+        mStrokeWidth = arg0;
     }
 
     public void setStyle(android.graphics.Paint.Style arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V");
+        // AOSP Paint.java:1169-1171.
+        mStyle = arg0;
     }
 
     public void setSubpixelText(boolean arg0) {

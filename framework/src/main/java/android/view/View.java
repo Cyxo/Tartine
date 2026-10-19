@@ -362,7 +362,8 @@ package android.view;
     }
 
     public void computeScroll() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->computeScroll()V");
+        // AOSP View.java:21594: default View computes nothing; Scroller-driven
+        // scroll overrides later (no scroll model ported).
     }
 
     public android.view.WindowInsets computeSystemWindowInsets(android.view.WindowInsets arg0, android.graphics.Rect arg1) {
@@ -418,7 +419,8 @@ package android.view;
     }
 
     protected void dispatchDraw(android.graphics.Canvas arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchDraw(Landroid/graphics/Canvas;)V");
+        // AOSP View.java: default View dispatchDraw is empty (ViewGroup
+        // overrides to walk children — its port lands in ViewGroup).
     }
 
     public void dispatchDrawableHotspotChanged(float arg0, float arg1) {
@@ -569,8 +571,121 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchWindowVisibilityChanged(I)V");
     }
 
+    /**
+     * AOSP View.java:25032-25114: the common (no fading edges) path. Step 1
+     * drawBackground; step 3 onDraw; step 4 dispatchDraw; step 6
+     * onDrawForeground; step 7 default focus highlight. Staging deviations:
+     * fading-edge branch unreachable (mViewFlags edge bits are 0 by
+     * construction of the reduced field set — see fields comment);
+     * overlay/autofill/focus-highlight decorations are inert until their
+     * models land (AOSP:25188-25216, :25216-25230 no-op without state).
+     */
     public void draw(android.graphics.Canvas arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->draw(Landroid/graphics/Canvas;)V");
+        drawBackground(arg0);
+        // Overridable hooks reach guest overrides via the VirtualCall seam
+        // (framework-in-Java (2)); NOT_GUEST falls back to the framework
+        // default inline, matching AOSP's empty View defaults.
+        if (tartine.fw.VirtualCall.on(this, "onDraw",
+                "(Landroid/graphics/Canvas;)V",
+                new Object[]{arg0}) == tartine.fw.VirtualCall.NOT_GUEST) {
+            onDraw(arg0);
+        }
+        if (tartine.fw.VirtualCall.on(this, "dispatchDraw",
+                "(Landroid/graphics/Canvas;)V",
+                new Object[]{arg0}) == tartine.fw.VirtualCall.NOT_GUEST) {
+            dispatchDraw(arg0);
+        }
+        // drawAutofilledHighlight: no autofill model yet (AOSP needs
+        // PFLAG3_AUTOFILLED_HIGHLIGHTED state); no-op.
+        if (tartine.fw.VirtualCall.on(this, "onDrawForeground",
+                "(Landroid/graphics/Canvas;)V",
+                new Object[]{arg0}) == tartine.fw.VirtualCall.NOT_GUEST) {
+            onDrawForeground(arg0);
+        }
+        // drawDefaultFocusHighlight: no focus-highlight state yet
+        // (AOSP draws only under PFLAG3_DEFAULT_FOCUS_HIGHLIGHTED); no-op.
+    }
+
+    /** AOSP View.java:25267-25275: no background, nothing to draw here. */
+    private void drawBackground(android.graphics.Canvas canvas) {
+        android.graphics.drawable.Drawable background = mBackground;
+        if (background == null) {
+            return;
+        }
+        // Deviation: background dimension/alpha sync (mBackgroundSizeChanged,
+        // :25267-25335) waits for a Drawable model.
+    }
+
+    /**
+     * AOSP View.java:24709-24980, reduced to the software (no RenderNode)
+     * leg our pipeline runs: no AttachInfo yet, so drawsWithRenderNode
+     * (AOSP:24691-2495) is false; no legacy animation (getAnimation null, see
+     * that port); no static-transform flag group; no drawing cache (layer
+     * types are NONE by construction). Deviations, each a wall away from
+     * being revisited: private-flag dirty bookkeeping omitted (no
+     * invalidation-driven redraw model yet): PFLAG_DRAWN/PFLAG_DIRTY_MASK
+     * writes dropped (AOSP:24736); PFLAG2_VIEW_QUICK_REJECTED store dropped
+     * (AOSP:24800-24799) — the quickReject skip itself stays because it
+     * changes observable draw calls.
+     */
+    boolean draw(android.graphics.Canvas canvas, ViewGroup parent, long drawingTime) {
+        boolean drawingWithRenderNode = false; // drawsWithRenderNode: mAttachInfo null
+        boolean hardwareAcceleratedCanvas = canvas.isHardwareAccelerated();
+
+        final boolean childHasIdentityMatrix = hasIdentityMatrix();
+        // Parent flags default is set in the ViewGroup ctor port (AOSP :726-727).
+        final int parentFlags = parent.mGroupFlags;
+
+        if (!childHasIdentityMatrix) {
+            // concatMatrix only matters with a real transform apply below;
+            // staging views carry identity or plain translate props, both
+            // covered by the transform getters, so no matrix concat yet.
+        }
+
+        if (!childHasIdentityMatrix && hardwareAcceleratedCanvas == false
+                && (parentFlags & ViewGroup.FLAG_CLIP_CHILDREN)
+                        == ViewGroup.FLAG_CLIP_CHILDREN
+                && canvas.quickReject(getLeft(), getTop(), getRight(), getBottom())) {
+            return false; // AOSP:24796-24799 (more = false here)
+        }
+
+        int restoreTo = canvas.save(); // offsetForScroll = true
+        canvas.translate(getLeft() - mScrollX, getTop() - mScrollY);
+
+        // Alpha block (AOSP:24844-24884) collapses: no transformation state,
+        // alpha 1. mClipBounds clip (AOSP:24907-24910) has no port state yet.
+        if ((parentFlags & ViewGroup.FLAG_CLIP_CHILDREN) != 0) {
+            canvas.clipRect(mScrollX, mScrollY,
+                    mScrollX + getWidth(), mScrollY + getHeight());
+        }
+
+        if ((mPrivateFlags & PFLAG_SKIP_DRAW) == PFLAG_SKIP_DRAW) {
+            // AOSP:24966-24969 — skip-draw views dispatch their children;
+            // the hook is virtual (guest overrides first, VirtualCall seam).
+            if (tartine.fw.VirtualCall.on(this, "dispatchDraw",
+                    "(Landroid/graphics/Canvas;)V",
+                    new Object[]{canvas}) == tartine.fw.VirtualCall.NOT_GUEST) {
+                dispatchDraw(canvas);
+            }
+        } else {
+            // AOSP:24971-24973 — normal views run the full draw(Canvas).
+            if (tartine.fw.VirtualCall.on(this, "draw",
+                    "(Landroid/graphics/Canvas;)V",
+                    new Object[]{canvas}) == tartine.fw.VirtualCall.NOT_GUEST) {
+                draw(canvas);
+            }
+        }
+        canvas.restoreToCount(restoreTo);
+        return false; // 'more' stays false without animation progress
+    }
+
+    boolean hasIdentityMatrix() {
+        // AOSP: view matrix identity check over the RenderNode transform
+        // props. Staging reads the ported transform getters (defaults are
+        // identity until a transform port sets them).
+        return getTranslationX() == 0 && getTranslationY() == 0
+                && getRotation() == 0 && getRotationX() == 0 && getRotationY() == 0
+                && getScaleX() == 1 && getScaleY() == 1;
     }
 
     public void drawableHotspotChanged(float arg0, float arg1) {
@@ -685,11 +800,17 @@ package android.view;
     }
 
     public float getAlpha() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAlpha()F");
+        // AOSP View.java getAlpha(): mTransformationInfo != null ? ... : 1.
+        // No transformation-info model yet, so the default-identity answer
+        // is the whole port; setAlpha lands with it.
+        return 1;
     }
 
     public android.view.animation.Animation getAnimation() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAnimation()Landroid/view/animation/Animation;");
+        // AOSP View.java: getAnimation returns the legacy animation state;
+        // no animation model yet, so no animation is reported (null leg of
+        // AOSP draw(Canvas,ViewGroup,long)).
+        return null;
     }
 
     public android.graphics.Matrix getAnimationMatrix() {
@@ -725,7 +846,9 @@ package android.view;
     }
 
     public android.graphics.drawable.Drawable getBackground() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getBackground()Landroid/graphics/drawable/Drawable;");
+        // AOSP View.java: mBackground (null without a background set/setter —
+        // setBackground is a wall when anything calls it).
+        return mBackground;
     }
 
     public android.graphics.BlendMode getBackgroundTintBlendMode() {
@@ -772,6 +895,22 @@ package android.view;
      * field sync (key {@code View;.mClipBounds}); null means no clipping.
      */
     protected android.graphics.Rect mClipBounds;
+
+    /*
+     * Draw-chain state (AOSP View.java fields, staging reductions noted at
+     * each use site). mBackground backs getBackground (AOSP View.java mBackground,
+     * default null); mPrivateFlags carries only the bits the draw port reads;
+     * scroll offsets default to theunscrolled view.
+     */
+    protected android.graphics.drawable.Drawable mBackground;
+
+    // AOSP View.java:2752: PFLAG_SKIP_DRAW = 0x80 (@hide constant, cited).
+    private static final int PFLAG_SKIP_DRAW = 0x00000080;
+
+    protected int mPrivateFlags;
+
+    protected int mScrollX;
+    protected int mScrollY;
 
     /** Ported from AOSP {@code View#getClipBounds()}: copy or null. */
     public android.graphics.Rect getClipBounds() {
@@ -849,7 +988,10 @@ package android.view;
     }
 
     public long getDrawingTime() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDrawingTime()J");
+        // AOSP View.java:23414: mAttachInfo != null ? mAttachInfo.mDrawingTime
+        // : 0. Staging has no AttachInfo yet, so the unattached leg (0) is
+        // the whole port until a real ViewRootImpl-style attach exists.
+        return 0;
     }
 
     /** Ported from AOSP {@code View#getElevation}: RenderNode read. */
@@ -1375,11 +1517,13 @@ package android.view;
     }
 
     public final int getScrollX() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getScrollX()I");
+        // AOSP View.java: mScrollX field read (scroll model lands later).
+        return mScrollX;
     }
 
     public final int getScrollY() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getScrollY()I");
+        // AOSP View.java: mScrollY field read (scroll model lands later).
+        return mScrollY;
     }
 
     public int getSolidColor() {
@@ -1460,7 +1604,8 @@ package android.view;
     }
 
     public float getTransitionAlpha() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTransitionAlpha()F");
+        // AOSP View.java: transitions alpha (transition/overlay path, default 1).
+        return 1;
     }
 
     public java.lang.String getTransitionName() {
@@ -2040,11 +2185,13 @@ package android.view;
     }
 
     protected void onDraw(android.graphics.Canvas arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onDraw(Landroid/graphics/Canvas;)V");
+        // AOSP View.java:22474: default View draws nothing here; subclasses
+        // override (guest overrides dispatch through the interpreter).
     }
 
     public void onDrawForeground(android.graphics.Canvas arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onDrawForeground(Landroid/graphics/Canvas;)V");
+        // AOSP View.java onDrawForeground: draws only with a foreground set
+        // (mForegroundInfo); no foreground model yet, so the null leg runs.
     }
 
     protected final void onDrawScrollBars(android.graphics.Canvas arg0) {

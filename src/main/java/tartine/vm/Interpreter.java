@@ -21,6 +21,7 @@ import tartine.dex.Descriptors;
 import tartine.dex.DexClass;
 import tartine.dex.DexMethod;
 import tartine.dex.DexSet;
+import tartine.fw.VirtualCall;
 import tartine.dex.Insn;
 import tartine.fw.FwIndex;
 
@@ -67,6 +68,9 @@ public final class Interpreter {
     public Interpreter(DexSet dexes) {
         this.dexes = dexes;
         registerBuiltins();
+        // Reverse bridge for framework mirror virtual dispatch (see
+        // guestVirtualCall): mirror call sites reach guest overrides here.
+        VirtualCall.install(this::guestVirtualCall);
     }
 
     /** Framework type universe (hierarchy, signatures, constants). Optional. */
@@ -1397,6 +1401,20 @@ public final class Interpreter {
                         new ArrayList<DexClass.DexField>()));
     }
 
+    /**
+     * Dev-driver bridge: binds a host-built framework mirror to a fresh
+     * placeholder of the given descriptor. Without this, the first guest
+     * dispatch on such an object would lazily build a bare second mirror and
+     * lose any renderer-attached state (the draw chain's surface canvas).
+     * Registering the mirror also makes identity unbridging work both ways.
+     */
+    public VmObject hostObjectFor(String descriptor, Object mirror) {
+        VmObject placeholder = newPlaceholder(descriptor);
+        placeholder.host = mirror;
+        mirrorOwners.put(mirror, placeholder);
+        return placeholder;
+    }
+
     /** Host {@link Throwable} subclass for a framework descriptor, else null. */
     private static Class<?> hostThrowable(String descriptor) {
         if (!descriptor.startsWith("Ljava/lang/") || !descriptor.endsWith(";")) {
@@ -2330,7 +2348,77 @@ public final class Interpreter {
         if (ref.returnType.equals("V")) {
             return Outcome.empty();
         }
-        return Outcome.value(unbridgeMirrorValue(result.value));
+        return Outcome.value(unbridgeMirrorValue(result.value, ref));
+    }
+
+    /**
+     * Virtual-call seam handler (tartine.fw.VirtualCall). Framework mirror
+     * bodies must reach guest overrides (View.draw's onDraw/dispatchDraw/
+     * onDrawForeground legs, ViewGroup.drawChild's child.draw). Host Java
+     * cannot virtual-dispatch into guest DEX, so mirror call sites route
+     * through here: a receiver that mirrors a guest model whose DEX class
+     * chain overrides the method runs the guest body (args converted
+     * mirror-ward to model-ward, result bridged back); anything else returns
+     * NOT_GUEST and the call site runs its framework default inline. Step
+     * accounting stays with the single interpreter probe budget.
+     */
+    private Object guestVirtualCall(Object receiver, String name,
+            String descriptor, Object[] args) {
+        VmObject model = receiver == null ? null : mirrorOwners.get(receiver);
+        if (model == null) {
+            return VirtualCall.NOT_GUEST;
+        }
+        int arity = descriptorArity(descriptor);
+        DexClass home = model.type;
+        DexMethod target = null;
+        DexClass targetHome = null;
+        while (home != null && target == null) {
+            for (DexMethod m : home.methods) {
+                if (m.name.equals(name) && m.parameterTypes.size() == arity
+                        && (m.accessFlags & ACC_STATIC) == 0) {
+                    target = m;
+                    targetHome = home;
+                    break;
+                }
+            }
+            if (target == null) {
+                home = home.superclass == null ? null
+                        : dexes.findClass(home.superclass);
+            }
+        }
+        if (target == null) {
+            return VirtualCall.NOT_GUEST;
+        }
+        Object[] guestArgs = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            guestArgs[i] = mirrorOwners.containsKey(args[i])
+                    ? mirrorOwners.get(args[i]) : args[i];
+        }
+        Object result = invoke(targetHome, target, model, guestArgs);
+        if (result != null && mirrorOwners.containsKey(result)) {
+            return mirrorOwners.get(result);
+        }
+        return result instanceof VmObject
+                ? bridgeMirrorArg(result, new ArrayList<>()) : result;
+    }
+
+    /** Parameter count of a DEX-style descriptor, for seam lookups. */
+    private static int descriptorArity(String descriptor) {
+        int count = 0;
+        int i = 1; // past '('
+        while (descriptor.charAt(i) != ')') {
+            char c = descriptor.charAt(i);
+            if (c == 'L') {
+                i = descriptor.indexOf(';', i) + 1;
+            } else if (c == '[') {
+                i++;
+                continue;
+            } else {
+                i++;
+            }
+            count++;
+        }
+        return count;
     }
 
     /**
@@ -2497,13 +2585,38 @@ public final class Interpreter {
     /**
      * Converts a host call result back toward the model world: registry
      * mirrors unbridge to their owning model object (identity), everything
-     * else keeps the reflective conversion.
+     * else keeps the reflective conversion. Framework-typed returns are the
+     * remaining case: a module instance the body minted itself (RenderNode
+     * beginRecording's RecordingCanvas) has no registration yet, so it gets
+     * one and becomes directly callable from guest code. Unbounded growth of
+     * the registry is accepted at staging pace; per-frame replacements are
+     * garbage only on the host side while the model keeps the last entry.
      */
-    private Object unbridgeMirrorValue(Object value) {
+    private Object unbridgeMirrorValue(Object value, MethodRef ref) {
         if (value != null && mirrorOwners.containsKey(value)) {
             return mirrorOwners.get(value);
         }
-        return boxReturn(value);
+        Object boxed = boxReturn(value);
+        if (boxed != null && boxed instanceof Object && !(boxed instanceof VmObject)
+                && !boxed.getClass().isArray()) {
+            String type = ref.returnType;
+            if (type != null && type.startsWith("Landroid/")) {
+                FwIndex.FwClass fw = framework == null ? null : framework.find(type);
+                if (fw != null) {
+                    // Register the fresh mirror (identity for later calls,
+                    // hostObjectFor semantics) but return the host value
+                    // itself: guest iget on non-VmObject targets reads host
+                    // fields reflectively (LayoutParams.width round-trip),
+                    // while a returning placeholder would leave the iget on
+                    // an empty field map reading zero-bits.
+                    VmObject placeholder = newPlaceholder(type);
+                    placeholder.host = boxed;
+                    mirrorOwners.put(boxed, placeholder);
+                    return boxed;
+                }
+            }
+        }
+        return boxed;
     }
 
     /**
@@ -2952,7 +3065,40 @@ public final class Interpreter {
                 && host.isAssignableFrom(java.util.Comparator.class)) {
             return new VmComparator(this, (VmObject) arg);
         }
+        if (arg instanceof VmObject && host.isEnum()) {
+            Object bridged = hostEnumConstant(host, (VmObject) arg);
+            if (bridged != null) {
+                return bridged;
+            }
+        }
         return toHost(host, arg);
+    }
+
+    /**
+     * Framework enum constants cross the adapter boundary as placeholders
+     * (frameworkEnumValue); mirror methods whose parameters take the host
+     * enum resolve back to the module constant by descriptor + ordinal.
+     * Ordinal parity holds because the skeleton enum was generated from the
+     * same android.jar the APK compiled against (see frameworkEnumValue).
+     */
+    private Object hostEnumConstant(Class<?> host, VmObject model) {
+        String descriptor = model.type == null ? null : model.type.type;
+        if (descriptor == null) {
+            return null;
+        }
+        String wanted = "L" + host.getName().replace('.', '/') + ";";
+        if (!wanted.equals(descriptor) || framework == null
+                || framework.find(descriptor) == null) {
+            return null;
+        }
+        Object ordinal = model.getField("Ljava/lang/Enum;.ordinal");
+        Object[] constants = host.getEnumConstants();
+        int index = ordinal instanceof Integer ? (Integer) ordinal : -1;
+        if (index < 0 || index >= constants.length) {
+            throw new VmException("enum ordinal out of range: " + descriptor
+                    + " ordinal " + index);
+        }
+        return constants[index];
     }
 
     /**

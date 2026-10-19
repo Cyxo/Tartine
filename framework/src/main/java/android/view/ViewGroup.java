@@ -222,8 +222,51 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchDragEvent(Landroid/view/DragEvent;)Z");
     }
 
+    /**
+     * AOSP ViewGroup.java:282/286/302 draw-related group flags. Staging
+     * carries only the two the draw chain reads; padding model is absent so
+     * CLIP_TO_PADDING_MASK semantics reduce to explicit CLIP_TO_PADDING for
+     * now (mGroupFlags defaults set at first dispatch — Unsafe-mirrors skip
+     * field initializers, see syncFields note in Interpreter).
+     */
+    protected int mGroupFlags;
+
+    // AOSP ViewGroup.java:282: FLAG_CLIP_CHILDREN = 0x1.
+    static final int FLAG_CLIP_CHILDREN = 0x1;
+    // AOSP ViewGroup.java:286: FLAG_CLIP_TO_PADDING = 0x2.
+    static final int FLAG_CLIP_TO_PADDING = 0x2;
+
+    /** Lazy initViewGroup() default for the flags the draw chain reads
+     *  (AOSP ViewGroup.java:726-727). */
+    int stagingGroupFlags() {
+        if (mGroupFlags == 0) {
+            mGroupFlags = FLAG_CLIP_CHILDREN | FLAG_CLIP_TO_PADDING;
+        }
+        return mGroupFlags;
+    }
+
+    /**
+     * AOSP ViewGroup.java:4253-4382 staging reduction: no run-animation leg
+     * (FLAG_RUN_ANIMATION unset), no transient/disappearing views (models
+     * absent), no Z preordering (plain index order), children counted
+     * VISIBLE (no mViewFlags model yet). The clipToPadding save is dropped
+     * until the padding model lands (fresh groups have FLAG_PADDING_NOT_NULL
+     * unset, AOSP:3999-4005, so on-device the clip does not happen either).
+     */
+    @Override
     protected void dispatchDraw(android.graphics.Canvas arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchDraw(Landroid/graphics/Canvas;)V");
+        final java.util.List<android.view.View> children = mChildren;
+        final int childrenCount = children.size();
+        int flags = stagingGroupFlags();
+        boolean more = false;
+        final long drawingTime = getDrawingTime();
+        for (int i = 0; i < childrenCount; i++) {
+            final android.view.View child = children.get(i);
+            more |= drawChild(arg0, child, drawingTime);
+        }
+        // AOSP:4371-4376 FLAG_INVALIDATE_REQUIRED/animation-listener legs and
+        // canvas.enableZ/disableZ stay inert without their models (base
+        // Canvas enableZ/disableZ are no-ops, see those ports).
     }
 
     public void dispatchDrawableHotspotChanged(float arg0, float arg1) {
@@ -354,8 +397,19 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchWindowVisibilityChanged(I)V");
     }
 
+    /** AOSP ViewGroup.java:4567: drawChild forwards to the child's
+     *  draw(canvas, parent, drawingTime). The 3-arg draw is virtual:
+     *  guest overrides of {@code draw} run first via the VirtualCall seam
+     *  (framework-in-Java (2) reverse bridge), then the framework software
+     *  leg (View.draw(C,V,J)) runs for non-guest receivers. */
     protected boolean drawChild(android.graphics.Canvas arg0, android.view.View arg1, long arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->drawChild(Landroid/graphics/Canvas;Landroid/view/View;J)Z");
+        Object drawn = tartine.fw.VirtualCall.on(arg1, "draw",
+                "(Landroid/graphics/Canvas;Landroid/view/ViewGroup;J)Z",
+                new Object[]{arg0, this, arg2});
+        if (drawn != tartine.fw.VirtualCall.NOT_GUEST) {
+            return drawn instanceof Boolean ? (Boolean) drawn : false;
+        }
+        return arg1.draw(arg0, this, arg2);
     }
 
     protected void drawableStateChanged() {

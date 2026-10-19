@@ -61,16 +61,39 @@ package android.graphics;
 
     protected float mCameraDistance = -326.4f;
 
+    /*
+     * Recording state (AOSP RenderNode.java:485-526): the RecordingCanvas in
+     * progress plus the finished SkPicture that drawRenderNode replays.
+     */
+    android.graphics.RecordingCanvas mCurrentRecordingCanvas;
+    io.github.humbleui.skija.Picture tartinePicture;
+
+    /** The sealed recorded picture, replayed by Canvas#drawRenderNode. */
+    io.github.humbleui.skija.Picture tartinePicture() {
+        return tartinePicture;
+    }
+
+    void tartineSetPicture(io.github.humbleui.skija.Picture picture) {
+        this.tartinePicture = picture;
+    }
+
     /** AOSP ctor keeps the name on the native side only; body is empty. */
     public RenderNode(java.lang.String arg0) {
     }
 
     public android.graphics.RecordingCanvas beginRecording() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->beginRecording()Landroid/graphics/RecordingCanvas;");
+        // AOSP RenderNode.java:505-507: records at the node's own size.
+        return beginRecording(getWidth(), getHeight());
     }
 
     public android.graphics.RecordingCanvas beginRecording(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->beginRecording(II)Landroid/graphics/RecordingCanvas;");
+        // AOSP RenderNode.java:485-492: one recording at a time.
+        if (mCurrentRecordingCanvas != null) {
+            throw new IllegalStateException(
+                    "Recording currently in progress - missing #endRecording() call?");
+        }
+        mCurrentRecordingCanvas = new RecordingCanvas(arg0, arg1);
+        return mCurrentRecordingCanvas;
     }
 
     public long computeApproximateMemoryUsage() {
@@ -82,7 +105,16 @@ package android.graphics;
     }
 
     public void endRecording() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->endRecording()V");
+        // AOSP RenderNode.java:517-526: seal and recycle; null state after.
+        if (mCurrentRecordingCanvas == null) {
+            throw new IllegalStateException(
+                    "No recording in progress, forgot to call #beginRecording()?");
+        }
+        Canvas canvas = mCurrentRecordingCanvas;
+        mCurrentRecordingCanvas = null;
+        if (canvas instanceof RecordingCanvas) {
+            ((RecordingCanvas) canvas).finishRecording(this);
+        }
     }
 
     public float getAlpha() {
@@ -132,7 +164,8 @@ package android.graphics;
     }
 
     public int getHeight() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->getHeight()I");
+        // AOSP RenderNode.java:1477-1483: height is bottom - top.
+        return mBottom - mTop;
     }
 
     public void getInverseMatrix(android.graphics.Matrix arg0) {
@@ -194,15 +227,20 @@ package android.graphics;
     }
 
     public float getTranslationX() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->getTranslationX()F");
+        // AOSP RenderNode.java:1131 (nGetTranslationX native there; plain
+        // field substitute here, see fields note).
+        return mTranslationX;
     }
 
     public float getTranslationY() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->getTranslationY()F");
+        // AOSP RenderNode.java:1152 (nGetTranslationY; plain field).
+        return mTranslationY;
     }
 
     public float getTranslationZ() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->getTranslationZ()F");
+        // AOSP RenderNode.java translated-Z leg (nGetTranslationZ native
+        // there; plain field substitute).
+        return mTranslationZ;
     }
 
     public long getUniqueId() {
@@ -214,11 +252,14 @@ package android.graphics;
     }
 
     public int getWidth() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->getWidth()I");
+        // AOSP RenderNode.java:1468-1475: width is right - left.
+        return mRight - mLeft;
     }
 
     public boolean hasDisplayList() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->hasDisplayList()Z");
+        // AOSP RenderNode.java:573-575 (nIsValid): a valid picture marks the
+        // display list.
+        return tartinePicture != null;
     }
 
     public boolean hasIdentityMatrix() {

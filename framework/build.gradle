@@ -12,6 +12,13 @@ repositories {
     mavenCentral()
 }
 
+dependencies {
+    // Skia renderer backend for android.graphics (Canvas/RenderNode etc.).
+    // The main module declares the platform jars as runtimeOnly so both join
+    // the same classpath at launch.
+    implementation 'io.github.humbleui:skija-shared:0.143.18'
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.release = 21
 }

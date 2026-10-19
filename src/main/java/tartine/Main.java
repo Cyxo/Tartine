@@ -582,6 +582,7 @@ public final class Main {
                     : null;
             System.out.println("root children after frame: " + childCount);
             driveMeasureLayout(dexes, interpreter, owner);
+            driveDraw(dexes, interpreter, owner);
         } catch (RuntimeException e) {
             System.out.println("frame blocked at: " + e.getMessage());
             if (e instanceof VmThrow) {
@@ -620,6 +621,50 @@ public final class Main {
             }
             printTrace(interpreter);
             e.printStackTrace(System.err);
+        }
+    }
+
+    /**
+     * Drives the first draw pass: a host-built Skia surface canvas (the
+     * renderer role per AGENTS graphics mapping) is bound through
+     * {@link Interpreter#hostObjectFor} and handed to the guest
+     * {@code dispatchDraw}, the AndroidComposeView entry on-device draws
+     * take after ViewRootImpl's traversal. Painted-pixel counts are the
+     * first-draw evidence, independent of the desktop window.
+     */
+    private static void driveDraw(DexSet dexes, Interpreter interpreter,
+            VmObject owner) {
+        io.github.humbleui.skija.Surface surface =
+                tartine.graphics.SkiaPresenter.createSurface(480, 960);
+        android.graphics.Canvas hostCanvas =
+                tartine.graphics.SkiaPresenter.createSurfaceCanvas(surface);
+        VmObject canvasObject =
+                interpreter.hostObjectFor("Landroid/graphics/Canvas;", hostCanvas);
+        try {
+            invokeVirtual(dexes, interpreter, owner, "dispatchDraw", 1, canvasObject);
+            System.out.println(
+                    "dispatchDraw completed at " + interpreter.steps() + " steps");
+        } catch (RuntimeException e) {
+            System.out.println("draw blocked at: " + e.getMessage());
+            if (e instanceof VmThrow) {
+                System.out.println("thrown: " + describe(((VmThrow) e).value));
+            }
+            printTrace(interpreter);
+        }
+        try {
+            int[] pixels = tartine.graphics.SkiaPresenter.readPixels(surface, 480, 960);
+            long painted = 0;
+            for (int pixel : pixels) {
+                if ((pixel >>> 24) != 0) {
+                    painted++;
+                }
+            }
+            System.out.println("pixels: " + painted + "/" + pixels.length
+                    + " painted, center=0x"
+                    + Integer.toHexString(pixels[480 / 2 + (960 / 2) * 480])
+                    + ", corner=0x" + Integer.toHexString(pixels[0]));
+        } catch (RuntimeException | LinkageError e) {
+            System.out.println("readback failed: " + e);
         }
     }
 
