@@ -43,12 +43,12 @@ Single test/class:
 mise exec -- gradle test --tests "tartine.apk.*"
 ```
 
-## Headless APK probes (no GUI yet)
+## APK probes
 
 ```sh
 mise run apk [apks/app-debug.apk]              # manifest, code, and library summary
-mise run run [apks/app-debug.apk]              # launcher onCreate until the first gap
-mise run gui [apks/app-debug.apk] [timeout]   # GUI probe: show the activity window
+mise run run [apks/app-debug.apk]              # headless probe: onCreate until the first gap
+mise run gui [apks/app-debug.apk] [timeout]    # show the activity window (first frame blits)
 mise run dump <file.dex>                       # instruction dump of one dex file
 ```
 
