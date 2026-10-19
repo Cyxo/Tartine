@@ -75,15 +75,17 @@ Location (whole folder moves with the `TARTINE_HOME` env or the
 Keys (unknown keys or bad values are warned on stderr and skipped):
 
 ```properties
-# One Android system color resource id per line: overrides what the host
-# answers when an app calls getColor. Android hex notation works
-# (#RRGGBB answers opaque, #AARRGGBB literal), as do 0xAARRGGBB or
-# plain decimal. Ids are the android.R.color stub constants from the
-# LOCAL SDK android.jar (for example `color.17170538` is the light
-# surface tone the sample app paints its background with,
-# `color.17170472` its light ink).
-color.17170538 = #102433
-color.17170472 = #E7EBEF
+# One Android system color resource per line: overrides what the host
+# answers when an app calls getColor. The key is the canonical
+# android.R.color constant name - the spelling every ROM overlay
+# customizes (each manufacturer overlays different values for the same
+# names; AOSP colors.xml is the baseline this translation layer serves).
+# A decimal or 0x numeric id works too. Value: Android hex notation
+# (#RRGGBB answers opaque, #AARRGGBB literal), 0xAARRGGBB, or plain
+# decimal. Example: the sample app paints its background with the light
+# surface tone and its text with the light ink:
+color.system_background_light = #102433
+color.system_neutral1_900 = #E7EBEF
 
 # Comma-separated desktop font families, tried in order when a Paint has
 # no explicit typeface. Precedence: this key > TARTINE_FONT_FAMILIES env

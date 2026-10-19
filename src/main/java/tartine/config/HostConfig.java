@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Properties;
 
 import tartine.fw.SystemColors;
+import tartine.fw.SystemResourceNames;
 import tartine.runtime.Vfs;
 
 /**
@@ -22,10 +23,12 @@ import tartine.runtime.Vfs;
  * <p>Keys — unknown keys and bad values are reported on stderr and
  * skipped (fail-open per key, never silently):
  * <ul>
- *   <li>{@code color.<resourceId>} = 32-bit ARGB — Android notation
+ *   <li>{@code color.<key>} = 32-bit ARGB — Android notation
  *       ({@code #RRGGBB}, answered opaque, or {@code #AARRGGBB}), or
  *       literal {@code 0xAARRGGBB}, or decimal — overrides
- *       one android-system color resource id for this run.</li>
+ *       one android-system color resource for this run, keyed by the
+ *       canonical {@code android.R$color} constant name (e.g.
+ *       {@code color.system_accent1_10}) or a decimal/0x numeric id.</li>
  *   <li>{@code font.families} = comma-separated preferred desktop font
  *       families (config wins over a {@code TARTINE_FONT_FAMILIES} env
  *       value; the built-in list is last).</li>
@@ -94,15 +97,36 @@ public final class HostConfig {
     }
 
     private static void applyColor(String name, String value) {
-        Integer id = parseId(name.substring("color.".length()));
+        Integer id = namedColorId(name.substring("color.".length()));
         Integer argb = parseColor(value);
         if (id == null || argb == null) {
             System.err.println("Tartine: config ignored: " + name + "=" + value
-                    + " (need a decimal-or-0x system color id and a"
-                    + " 0xAARRGGBB / #AARRGGBB / decimal ARGB value)");
+                    + " (need a canonical android.R$color name like"
+                    + " system_accent1_10, a decimal-or-0x color id, and a"
+                    + " #RRGGBB (opaque) / #AARRGGBB / 0xAARRGGBB / decimal"
+                    + " ARGB value)");
             return;
         }
         SystemColors.setOverride(id, argb);
+    }
+
+    /**
+     * A color key is either a canonical {@code android.R$color} constant
+     * name (the spelling every ROM overlay uses; canonical because it is
+     * the jar constant, not an alias we invent) or a numeric id. Names
+     * resolve through the generated
+     * {@code tartine.fw.SystemResourceNames} table (extracted from the
+     * LOCAL SDK jar); {@code android.R$color} itself lives only in the
+     * dev-time jar, never at runtime (see the audit's SDK-free-runtime
+     * finding).
+     */
+    private static Integer namedColorId(String raw) {
+        String text = raw.trim();
+        Integer id = SystemResourceNames.idForName(text);
+        if (id != null) {
+            return id;
+        }
+        return parseId(text);
     }
 
     /** Decimal or {@code 0x}-hex id; positive, int-range. */

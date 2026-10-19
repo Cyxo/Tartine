@@ -47,6 +47,24 @@ class HostConfigTest {
     }
 
     @Test
+    void namedColorKeyResolvesToJarId() throws Exception {
+        // system_accent1_10 is the same id the numeric pin already locks:
+        // config speaks canonical android.R$color names (jar truth), the
+        // generated table translate them to ids.
+        config("color.system_accent1_10 = 0xFF112233");
+        assertEquals(0xFF112233,
+                tartine.fw.SystemColors.get(17170488).intValue());
+    }
+
+    @Test
+    void unknownNameSkipped() throws Exception {
+        config("color.not_a_color_name = #102433");
+        // No override took effect: the baseline row answers untouched.
+        assertEquals(0xFFFAF8FF,
+                tartine.fw.SystemColors.get(17170538).intValue());
+    }
+
+    @Test
     void idAndValueFormsParse() throws Exception {
         config("color.17170538 = #FAF8FF", "color.17170539 = 0x123456",
                 "color.17170540 = 1193046");
