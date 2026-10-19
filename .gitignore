@@ -1,8 +1,11 @@
 out/
+bin/
 build/
 .gradle/
 *.class
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
 .DS_Store
-apks/
+apks/*
+# THE one committed fixture APK (probe target for fresh clones) — never ignored:
+!apks/app-debug.apk
