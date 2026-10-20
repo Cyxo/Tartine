@@ -49,7 +49,14 @@ import java.util.Set;
  * {@code SkeletonGen <outDir> [androidJarPath] [--force]}.
  */
 public final class SkeletonGen {
-    /** Seed descriptors for the closure (grow as classes port). */
+    /**
+     * Seed descriptors for the closure (grow as classes port). NOTE: heavy
+     * seeds whose closure references nested types inside already-existing
+     * parent files fail additively (the generator cannot merge into an
+     * existing file, e.g. Activity -> ActionBar -> ViewGroup$MarginLayoutParams
+     * with a stale committed ViewGroup); those grow only after a regen
+     * story exists. Activity grew a hand-minimal skeleton instead.
+     */
     private static final List<String> DEFAULT_SEEDS = List.of(
             "android/graphics/Paint", "android/view/View");
 
