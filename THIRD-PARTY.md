@@ -17,6 +17,7 @@ only. Build/test toolchain pins live in `mise.toml` (Java, Gradle) and
 | `org.lwjgl:lwjgl` + `lwjgl-glfw` + `lwjgl-opengl` (+ natives for windows/linux/macos/macos-arm64) | 3.4.3 | Desktop windowing (GLFW) + GL context for the GUI step | BSD-3-Clause |
 | `io.github.humbleui:skija-shared` + `skija-<platform>` (windows x64/arm64, linux x64/arm64, macos x64/arm64) | 0.143.18 | Skia engine backing `android.graphics.Canvas` UI drawing (window blit via LWJGL GL) | Apache-2.0 |
 | `com.github.weisj:jsvg` ([github.com/weisJ/jsvg](https://github.com/weisJ/jsvg)) | 2.2.0 | SVG renderer for Android vector drawables converted at icon resolution (window/taskbar icon) | MIT |
+| `org.ow2.asm:asm` | 9.6 | JVM bytecode emitter for the DEX→JVM translation spike (`tartine.tx`) | BSD 3-Clause |
 
 dexlib2 migrated 2026-10-17 from `org.smali:dexlib2` 2.5.2 (Central, `org.jf.*`
 namespace) to the Google-maintained fork `com.android.tools.smali:smali-dexlib2`

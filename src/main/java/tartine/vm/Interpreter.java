@@ -1390,7 +1390,7 @@ public final class Interpreter {
             }
         }
         return new VmObject(
-                new DexClass(descriptor, superDesc, ifaces, new ArrayList<DexMethod>(),
+                new DexClass(descriptor, 0, superDesc, ifaces, new ArrayList<DexMethod>(),
                         new ArrayList<DexClass.DexField>()));
     }
 

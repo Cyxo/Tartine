@@ -26,15 +26,18 @@ public final class DexClass {
 
     /** Type descriptor, e.g. {@code Ltest/Hello;}. */
     public final String type;
+    /** Class-level access flags from the dex {@code class_def_item}. */
+    public final int accessFlags;
     /** Superclass descriptor, or null (only {@code Ljava/lang/Object;}). */
     public final String superclass;
     public final List<String> interfaces;
     public final List<DexMethod> methods;
     public final List<DexField> fields;
 
-    public DexClass(String type, String superclass, List<String> interfaces,
-            List<DexMethod> methods, List<DexField> fields) {
+    public DexClass(String type, int accessFlags, String superclass,
+            List<String> interfaces, List<DexMethod> methods, List<DexField> fields) {
         this.type = type;
+        this.accessFlags = accessFlags;
         this.superclass = superclass;
         this.interfaces = Collections.unmodifiableList(new ArrayList<>(interfaces));
         this.methods = Collections.unmodifiableList(new ArrayList<>(methods));
@@ -72,7 +75,7 @@ public final class DexClass {
             fields.add(new DexField(field.getName(), field.getType(),
                     field.getAccessFlags()));
         }
-        return new DexClass(classDef.getType(), classDef.getSuperclass(), interfaces, methods,
-                fields);
+        return new DexClass(classDef.getType(), classDef.getAccessFlags(),
+                classDef.getSuperclass(), interfaces, methods, fields);
     }
 }

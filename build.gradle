@@ -32,6 +32,8 @@ dependencies {
     // Skia via Skija (Java bindings; Apache-2.0) backs android.graphics.Canvas
     // drawing (AGENTS.md decision 2026-10-18: Skia for UI draws, not pure GL).
     implementation 'io.github.humbleui:skija-shared:0.143.18'
+    // Translation spike: DEX -> JVM bytecode emitter (BSD-3-Clause).
+    implementation 'org.ow2.asm:asm:9.6'
     runtimeOnly 'io.github.humbleui:skija-windows-x64:0.143.18'
     runtimeOnly 'io.github.humbleui:skija-windows-arm64:0.143.18'
     runtimeOnly 'io.github.humbleui:skija-linux-x64:0.143.18'
