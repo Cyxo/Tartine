@@ -910,11 +910,36 @@ final class TxMethodWriter implements Opcodes {
                 return k;
             }
             // Conversions consume by from-kind (int-to-double reads int);
-            // neg/not carry their kind in the suffix handled below.
+            // neg/not carry their kind in the suffix handled below. The dst
+            // needs a split: dst-only writes leave the to-side kind in the
+            // register and the chase continues past them (the wide-high16
+            // NaN const in averageOfInt crossed an int-to-double chase,
+            // stored J, and the div-double arm's D store joined {D,J}); a
+            // register the conversion also READS (int-to-long v2, v2 — the
+            // rs.indexOf(scan) lands on the dst) keeps the from-side read —
+            // the const-16 #10000 in ReportFullyDrawnExecutorImpl.<init>
+            // is consumed as an int there, and storing it J breaks the load.
             int cut = op.indexOf("-to-");
             if (cut > 0) {
+                boolean dstOnly = pos == 0;
+                if (dstOnly) {
+                    for (int p = 1; p < rs.size(); p++) {
+                        if (rs.get(p) == reg) {
+                            dstOnly = false;
+                            break;
+                        }
+                    }
+                }
+                if (dstOnly) {
+                    switch (op.substring(cut + 4)) {
+                        case "long": return LONG;
+                        case "double": return DOUBLE;
+                        case "float": return FLOAT;
+                        default: return INT;
+                    }
+                }
                 switch (op.substring(0, cut)) {
-                    case "int": return wide ? LONG : INT;
+                    case "int": return INT;
                     case "long": return LONG;
                     case "float": return FLOAT;
                     case "double": return DOUBLE;
