@@ -102,8 +102,15 @@ package android.content.res;
     public int touchscreen;
     public int uiMode;
 
+    /**
+     * AOSP Configuration ctor (lines 1059-1061) runs unset() — the device
+     * setToDefaults lands uiMode at UI_MODE_TYPE_UNDEFINED (0, i.e. no
+     * night info; dark-mode detection then reads light), and every other
+     * device default is zero for now — so the skeleton's zero-initialized
+     * fields match the current consumer surface (nonzero device defaults
+     * like fontScale trail until a wall reads one).
+     */
     public Configuration() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;-><init>()V");
     }
 
     public Configuration(android.content.res.Configuration arg0) {

@@ -47,8 +47,10 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->argb(FFFF)I");
     }
 
+    /** AOSP graphics/java/android/graphics/Color.java line 1326
+     *  {@code (alpha << 24) | (red << 16) | (green << 8) | blue}. */
     public static int argb(int arg0, int arg1, int arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->argb(IIII)I");
+        return (arg0 << 24) | (arg1 << 16) | (arg2 << 8) | arg3;
     }
 
     public float blue() {

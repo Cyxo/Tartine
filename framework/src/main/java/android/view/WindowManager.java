@@ -223,8 +223,13 @@ package android.view;
         public int x;
         public int y;
 
+        /** AOSP LayoutParams ctor (WindowManager.java lines 4974-4978): the
+         * device seeds MATCH_PARENT sizes, TYPE_APPLICATION and OPAQUE
+         * format. */
         public LayoutParams() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager$LayoutParams;-><init>()V");
+            super(MATCH_PARENT, MATCH_PARENT);
+            type = TYPE_APPLICATION;
+            format = android.graphics.PixelFormat.OPAQUE;
         }
 
         public LayoutParams(android.os.Parcel arg0) {

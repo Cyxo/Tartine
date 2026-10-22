@@ -1,25 +1,77 @@
 package android.os;
 
-    public class BaseBundle {
+import java.util.HashMap;
+import java.util.Set;
+
+/**
+ * Desktop mapping (Tartine). Ported per-method from
+ * aosp-frameworks-base/core/java/android/os/BaseBundle.java (AOSP):
+ * <ul>
+ *   <li>{@code mMap} (AOSP line 105, {@code ArrayMap<String, Object>}) — a
+ *       host {@link HashMap} stand-in until android.util.ArrayMap ports;
+ *       put/get/remove semantics match.</li>
+ *   <li>AOSP's parcel-backed lazy table is not ported: a desktop Bundle is
+ *       always materialized, so {@code unparcel()} is a no-op.</li>
+ *   <li>{@code mClassLoader} (AOSP line 140/157): a null construction loader
+ *       resolves to the bundle's own classloader, so it is never null.</li>
+ *   <li>Typed getters mirror AOSP's {@code (Boolean) o} casts: a null value
+ *       yields the documented default and a wrong-typed value logs through
+ *       AOSP {@code typeWarning()} then returns the default — mirrored
+ *       without a logging backend.</li>
+ * </ul>
+ * Methods still throwing below are unreferenced gaps, keeping the
+ * gap-driven loop.
+ */
+public class BaseBundle {
+
+    /** AOSP BaseBundle line 105. */
+    HashMap<String, Object> mMap = new HashMap<>();
+
+    /** AOSP BaseBundle line 140. */
+    private ClassLoader mClassLoader;
+
+    /** AOSP BaseBundle(ClassLoader, capacity): null loader -> own loader. */
+    BaseBundle(ClassLoader loader, int capacity) {
+        mClassLoader = loader == null ? getClass().getClassLoader() : loader;
+        mMap = new HashMap<>();
+    }
+
+    BaseBundle() {
+        this((ClassLoader) null, 0);
+    }
+
+    BaseBundle(BaseBundle from) {
+        mClassLoader = from.mClassLoader;
+        mMap = new HashMap<>(from.mMap);
+    }
 
     public void clear() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->clear()V");
+        mMap.clear();
     }
 
     public boolean containsKey(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->containsKey(Ljava/lang/String;)Z");
+        return mMap.containsKey(arg0);
     }
 
     public java.lang.Object get(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->get(Ljava/lang/String;)Ljava/lang/Object;");
+        return mMap.get(arg0);
     }
 
     public boolean getBoolean(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->getBoolean(Ljava/lang/String;)Z");
+        return getBoolean(arg0, false);
     }
 
+    /** AOSP getBoolean(key, defaultValue): null -> default; cast-miss -> default. */
     public boolean getBoolean(java.lang.String arg0, boolean arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->getBoolean(Ljava/lang/String;Z)Z");
+        Object o = mMap.get(arg0);
+        if (o == null) {
+            return arg1;
+        }
+        try {
+            return (Boolean) o;
+        } catch (ClassCastException e) {
+            return arg1;
+        }
     }
 
     public boolean[] getBooleanArray(java.lang.String arg0) {
@@ -38,12 +90,22 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->getDoubleArray(Ljava/lang/String;)[D");
     }
 
+    /** AOSP getInt(key): getInt(key, 0). */
     public int getInt(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->getInt(Ljava/lang/String;)I");
+        return getInt(arg0, 0);
     }
 
+    /** AOSP getInt(key, defaultValue). */
     public int getInt(java.lang.String arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->getInt(Ljava/lang/String;I)I");
+        Object o = mMap.get(arg0);
+        if (o == null) {
+            return arg1;
+        }
+        try {
+            return (Integer) o;
+        } catch (ClassCastException e) {
+            return arg1;
+        }
     }
 
     public int[] getIntArray(java.lang.String arg0) {
@@ -51,11 +113,19 @@ package android.os;
     }
 
     public long getLong(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->getLong(Ljava/lang/String;)J");
+        return getLong(arg0, 0L);
     }
 
     public long getLong(java.lang.String arg0, long arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->getLong(Ljava/lang/String;J)J");
+        Object o = mMap.get(arg0);
+        if (o == null) {
+            return arg1;
+        }
+        try {
+            return (Long) o;
+        } catch (ClassCastException e) {
+            return arg1;
+        }
     }
 
     public long[] getLongArray(java.lang.String arg0) {
@@ -63,11 +133,19 @@ package android.os;
     }
 
     public java.lang.String getString(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->getString(Ljava/lang/String;)Ljava/lang/String;");
+        return getString(arg0, null);
     }
 
     public java.lang.String getString(java.lang.String arg0, java.lang.String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
+        Object o = mMap.get(arg0);
+        if (o == null) {
+            return arg1;
+        }
+        try {
+            return (String) o;
+        } catch (ClassCastException e) {
+            return arg1;
+        }
     }
 
     public java.lang.String[] getStringArray(java.lang.String arg0) {
@@ -75,11 +153,16 @@ package android.os;
     }
 
     public boolean isEmpty() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->isEmpty()Z");
+        return mMap.isEmpty();
     }
 
-    public java.util.Set<java.lang.String> keySet() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->keySet()Ljava/util/Set;");
+    public Set<java.lang.String> keySet() {
+        return mMap.keySet();
+    }
+
+    /** AOSP BaseBundle(ClassLoader, capacity): host loader pairing. */
+    public ClassLoader getClassLoader() {
+        return mClassLoader;
     }
 
     public void putAll(android.os.PersistableBundle arg0) {
@@ -87,7 +170,7 @@ package android.os;
     }
 
     public void putBoolean(java.lang.String arg0, boolean arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->putBoolean(Ljava/lang/String;Z)V");
+        mMap.put(arg0, arg1);
     }
 
     public void putBooleanArray(java.lang.String arg0, boolean[] arg1) {
@@ -103,7 +186,7 @@ package android.os;
     }
 
     public void putInt(java.lang.String arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->putInt(Ljava/lang/String;I)V");
+        mMap.put(arg0, arg1);
     }
 
     public void putIntArray(java.lang.String arg0, int[] arg1) {
@@ -111,7 +194,7 @@ package android.os;
     }
 
     public void putLong(java.lang.String arg0, long arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->putLong(Ljava/lang/String;J)V");
+        mMap.put(arg0, arg1);
     }
 
     public void putLongArray(java.lang.String arg0, long[] arg1) {
@@ -119,7 +202,7 @@ package android.os;
     }
 
     public void putString(java.lang.String arg0, java.lang.String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->putString(Ljava/lang/String;Ljava/lang/String;)V");
+        mMap.put(arg0, arg1);
     }
 
     public void putStringArray(java.lang.String arg0, java.lang.String[] arg1) {
@@ -127,10 +210,10 @@ package android.os;
     }
 
     public void remove(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->remove(Ljava/lang/String;)V");
+        mMap.remove(arg0);
     }
 
     public int size() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/BaseBundle;->size()I");
+        return mMap.size();
     }
-    }
+}

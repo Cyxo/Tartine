@@ -63,4 +63,24 @@ package android.content;
 
         public abstract void onSendFinished(android.content.IntentSender arg0, android.content.Intent arg1, int arg2, java.lang.String arg3, android.os.Bundle arg4);
         }
+
+    /**
+     * AOSP aosp-frameworks-base/core/java/android/content/IntentSender.java,
+     * class SendIntentException: plain marker exception, three constructors,
+     * thrown from IntentSender-send failures ("problems encountered while
+     * sending through the IntentSender").
+     */
+    public static class SendIntentException extends android.util.AndroidException {
+
+        public SendIntentException() {
+        }
+
+        public SendIntentException(java.lang.String name) {
+            super(name);
+        }
+
+        public SendIntentException(java.lang.Exception cause) {
+            super(cause);
+        }
     }
+}

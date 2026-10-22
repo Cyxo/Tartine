@@ -2,8 +2,40 @@ package android.view;
 
     public class ViewTreeObserver {
 
+    /** AOSP ViewTreeObserver.java:80 — mutated only by kill()/merge(); a
+     * floating observer (unmerged, pre-window-attachment) stays alive. */
+    private boolean mAlive = true;
+
+    /** AOSP ViewTreeObserver.java:377-380 — package-private ctor. The
+     * device seeds sIllegalOnDrawModificationIsFatal from the app's
+     * targetSdkVersion; our draw chain has no on-draw modification guard
+     * yet, so nothing is tracked here. */
+    ViewTreeObserver(android.content.Context arg0) {
+    }
+
+    /** AOSP ViewTreeObserver.isAlive (ViewTreeObserver.java:1043-1045). */
+    public boolean isAlive() {
+        return mAlive;
+    }
+
+    /** AOSP ViewTreeObserver.checkIsAlive (ViewTreeObserver.java:1027-1031). */
+    private void checkIsAlive() {
+        if (!mAlive) {
+            throw new IllegalStateException("This ViewTreeObserver is not alive, call "
+                    + "getViewTreeObserver() again");
+        }
+    }
+
+    /** AOSP ViewTreeObserver.java:773-790. The mInDispatchOnDraw guard
+     * (780-788) is unreachable here — no dispatch-on-draw exists yet. */
+    private java.util.ArrayList<OnDrawListener> mOnDrawListeners;
+
     public void addOnDrawListener(android.view.ViewTreeObserver.OnDrawListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewTreeObserver;->addOnDrawListener(Landroid/view/ViewTreeObserver$OnDrawListener;)V");
+        checkIsAlive();
+        if (mOnDrawListeners == null) {
+            mOnDrawListeners = new java.util.ArrayList<OnDrawListener>();
+        }
+        mOnDrawListeners.add(arg0);
     }
 
     public void addOnGlobalFocusChangeListener(android.view.ViewTreeObserver.OnGlobalFocusChangeListener arg0) {
@@ -54,10 +86,6 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewTreeObserver;->dispatchOnPreDraw()Z");
     }
 
-    public boolean isAlive() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewTreeObserver;->isAlive()Z");
-    }
-
     public void registerFrameCommitCallback(java.lang.Runnable arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewTreeObserver;->registerFrameCommitCallback(Ljava/lang/Runnable;)V");
     }
@@ -67,7 +95,11 @@ package android.view;
     }
 
     public void removeOnDrawListener(android.view.ViewTreeObserver.OnDrawListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewTreeObserver;->removeOnDrawListener(Landroid/view/ViewTreeObserver$OnDrawListener;)V");
+        checkIsAlive();
+        if (mOnDrawListeners == null) {
+            return;
+        }
+        mOnDrawListeners.remove(arg0);
     }
 
     public void removeOnGlobalFocusChangeListener(android.view.ViewTreeObserver.OnGlobalFocusChangeListener arg0) {

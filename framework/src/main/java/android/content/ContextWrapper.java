@@ -2,12 +2,25 @@ package android.content;
 
     public class ContextWrapper extends android.content.Context {
 
+    /** AOSP ContextWrapper: the package-visible base (file line 78). */
+    android.content.Context mBase;
+
+    /** AOSP ContextWrapper ctor (lines 95-96). */
     public ContextWrapper(android.content.Context arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;-><init>(Landroid/content/Context;)V");
+        mBase = arg0;
     }
 
+    /** AOSP ContextWrapper.attachBaseContext (lines 106-111). */
     protected void attachBaseContext(android.content.Context arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->attachBaseContext(Landroid/content/Context;)V");
+        if (mBase != null) {
+            throw new IllegalStateException("Base context already set");
+        }
+        mBase = arg0;
+    }
+
+    /** AOSP ContextWrapper.getBaseContext (line 116-118). */
+    public android.content.Context getBaseContext() {
+        return mBase;
     }
 
     public boolean bindIsolatedService(android.content.Intent arg0, int arg1, java.lang.String arg2, java.util.concurrent.Executor arg3, android.content.ServiceConnection arg4) {
@@ -198,10 +211,6 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getAttributionTag()Ljava/lang/String;");
     }
 
-    public android.content.Context getBaseContext() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getBaseContext()Landroid/content/Context;");
-    }
-
     public java.io.File getCacheDir() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getCacheDir()Ljava/io/File;");
     }
@@ -310,8 +319,19 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getParams()Landroid/content/ContextParams;");
     }
 
+    /**
+     * AOSP ContextWrapper.getResources (lines 126-128) delegates to the
+     * base; the shell deviates when a wrapper is its own context root —
+     * shell-owned activities run without attachBaseContext (no
+     * ActivityThread attach), so an unattached wrapper answers its own
+     * Context.getResources() instead of NPE-ing on the null base (context
+     * flows back for real once the launch pipeline fills attach()).
+     */
     public android.content.res.Resources getResources() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getResources()Landroid/content/res/Resources;");
+        if (mBase != null) {
+            return mBase.getResources();
+        }
+        return super.getResources();
     }
 
     public android.content.SharedPreferences getSharedPreferences(java.lang.String arg0, int arg1) {

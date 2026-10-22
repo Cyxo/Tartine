@@ -1,16 +1,26 @@
 package android.os;
 
+/**
+ * Desktop mapping (Tartine). Ported per-method from
+ * aosp-frameworks-base/core/java/android/os/Bundle.java (AOSP): the
+ * table lives in BaseBundle (mMap); the reference-type putters/getters
+ * below are plain value stores (AOSP putBundle/putParcelable family:
+ * {@code mMap.put(key, value)}) and typed getters with the documented
+ * default on absence or wrong-typed value. Parcel game (CREATOR,
+ * writeToParcel) stays a named gap until the Parcel seam lands.
+ */
     public class Bundle extends android.os.BaseBundle implements java.lang.Cloneable, android.os.Parcelable {
 
     public static android.os.Parcelable.Creator CREATOR;
     public static android.os.Bundle EMPTY;
 
     public Bundle() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;-><init>()V");
+        super(null, 0);
     }
 
+    /** AOSP Bundle(Bundle): super copy + mFlags; flags are host-irrelevant. */
     public Bundle(android.os.Bundle arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;-><init>(Landroid/os/Bundle;)V");
+        super(arg0);
     }
 
     public Bundle(android.os.PersistableBundle arg0) {
@@ -18,11 +28,11 @@ package android.os;
     }
 
     public Bundle(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;-><init>(I)V");
+        super(null, arg0);
     }
 
     public Bundle(java.lang.ClassLoader arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;-><init>(Ljava/lang/ClassLoader;)V");
+        super(arg0, 0);
     }
 
     public void clear() {
@@ -45,8 +55,14 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getBinder(Ljava/lang/String;)Landroid/os/IBinder;");
     }
 
+    /** AOSP getBundle(key). */
     public android.os.Bundle getBundle(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getBundle(Ljava/lang/String;)Landroid/os/Bundle;");
+        Object o = mMap.get(arg0);
+        try {
+            return (android.os.Bundle) o;
+        } catch (ClassCastException e) {
+            return null;
+        }
     }
 
     public byte getByte(java.lang.String arg0) {
@@ -73,12 +89,21 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getCharArray(Ljava/lang/String;)[C");
     }
 
+    /** AOSP getCharSequence(key): null -> null; cast-miss -> null. */
     public java.lang.CharSequence getCharSequence(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getCharSequence(Ljava/lang/String;)Ljava/lang/CharSequence;");
+        return getCharSequence(arg0, null);
     }
 
     public java.lang.CharSequence getCharSequence(java.lang.String arg0, java.lang.CharSequence arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getCharSequence(Ljava/lang/String;Ljava/lang/CharSequence;)Ljava/lang/CharSequence;");
+        Object o = mMap.get(arg0);
+        if (o == null) {
+            return arg1;
+        }
+        try {
+            return (CharSequence) o;
+        } catch (ClassCastException e) {
+            return arg1;
+        }
     }
 
     public java.lang.CharSequence[] getCharSequenceArray(java.lang.String arg0) {
@@ -89,24 +114,44 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getCharSequenceArrayList(Ljava/lang/String;)Ljava/util/ArrayList;");
     }
 
+    /** AOSP getClassLoader(): super (BaseBundle never leaves it null). */
     public java.lang.ClassLoader getClassLoader() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getClassLoader()Ljava/lang/ClassLoader;");
+        return super.getClassLoader();
     }
 
     public float getFloat(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getFloat(Ljava/lang/String;)F");
+        return getFloat(arg0, 0.0f);
     }
 
+    /** AOSP getFloat(key, defaultValue). */
     public float getFloat(java.lang.String arg0, float arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getFloat(Ljava/lang/String;F)F");
+        Object o = mMap.get(arg0);
+        if (o == null) {
+            return arg1;
+        }
+        try {
+            return (Float) o;
+        } catch (ClassCastException e) {
+            return arg1;
+        }
     }
 
     public float[] getFloatArray(java.lang.String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getFloatArray(Ljava/lang/String;)[F");
     }
 
+    /** AOSP getIntegerArrayList(key): value-or-null typed get. */
     public java.util.ArrayList<java.lang.Integer> getIntegerArrayList(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getIntegerArrayList(Ljava/lang/String;)Ljava/util/ArrayList;");
+        return typedList(arg0, java.util.ArrayList.class);
+    }
+
+    private <T extends java.util.List<?>> T typedList(String arg0, Class<T> cls) {
+        Object o = mMap.get(arg0);
+        try {
+            return cls.cast(o);
+        } catch (ClassCastException e) {
+            return null;
+        }
     }
 
     public <T> T getParcelable(java.lang.String arg0) {
@@ -126,15 +171,27 @@ package android.os;
     }
 
     public <T> java.util.ArrayList<T> getParcelableArrayList(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getParcelableArrayList(Ljava/lang/String;)Ljava/util/ArrayList;");
+        // Erased AOSP contract: (ArrayList<T>) mMap.get(key) or null.
+        Object o = mMap.get(arg0);
+        try {
+            return (java.util.ArrayList<T>) o;
+        } catch (ClassCastException e) {
+            return null;
+        }
     }
 
     public <T> java.util.ArrayList<T> getParcelableArrayList(java.lang.String arg0, java.lang.Class<? extends T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getParcelableArrayList(Ljava/lang/String;Ljava/lang/Class;)Ljava/util/ArrayList;");
     }
 
+    /** AOSP getSerializable(key). */
     public java.io.Serializable getSerializable(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getSerializable(Ljava/lang/String;)Ljava/io/Serializable;");
+        Object o = mMap.get(arg0);
+        try {
+            return (java.io.Serializable) o;
+        } catch (ClassCastException e) {
+            return null;
+        }
     }
 
     public <T> T getSerializable(java.lang.String arg0, java.lang.Class<T> arg1) {
@@ -169,24 +226,27 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getSparseParcelableArray(Ljava/lang/String;Ljava/lang/Class;)Landroid/util/SparseArray;");
     }
 
+    /** AOSP getStringArrayList(key): value-or-null typed get. */
     public java.util.ArrayList<java.lang.String> getStringArrayList(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getStringArrayList(Ljava/lang/String;)Ljava/util/ArrayList;");
+        return typedList(arg0, java.util.ArrayList.class);
     }
 
     public boolean hasFileDescriptors() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->hasFileDescriptors()Z");
     }
 
+    /** AOSP Bundle.putAll(bundle): unparcel() is a no-op; table copy. */
     public void putAll(android.os.Bundle arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putAll(Landroid/os/Bundle;)V");
+        mMap.putAll(arg0.mMap);
     }
 
     public void putBinder(java.lang.String arg0, android.os.IBinder arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putBinder(Ljava/lang/String;Landroid/os/IBinder;)V");
     }
 
+    /** AOSP putBundle(key, value). */
     public void putBundle(java.lang.String arg0, android.os.Bundle arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putBundle(Ljava/lang/String;Landroid/os/Bundle;)V");
+        mMap.put(arg0, arg1);
     }
 
     public void putByte(java.lang.String arg0, byte arg1) {
@@ -205,8 +265,9 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putCharArray(Ljava/lang/String;[C)V");
     }
 
+    /** AOSP putCharSequence(key, value). */
     public void putCharSequence(java.lang.String arg0, java.lang.CharSequence arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putCharSequence(Ljava/lang/String;Ljava/lang/CharSequence;)V");
+        mMap.put(arg0, arg1);
     }
 
     public void putCharSequenceArray(java.lang.String arg0, java.lang.CharSequence[] arg1) {
@@ -217,32 +278,38 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putCharSequenceArrayList(Ljava/lang/String;Ljava/util/ArrayList;)V");
     }
 
+    /** AOSP putFloat(key, value). */
     public void putFloat(java.lang.String arg0, float arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putFloat(Ljava/lang/String;F)V");
+        mMap.put(arg0, arg1);
     }
 
     public void putFloatArray(java.lang.String arg0, float[] arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putFloatArray(Ljava/lang/String;[F)V");
     }
 
+    /** AOSP putIntegerArrayList(key, value). */
     public void putIntegerArrayList(java.lang.String arg0, java.util.ArrayList<java.lang.Integer> arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putIntegerArrayList(Ljava/lang/String;Ljava/util/ArrayList;)V");
+        mMap.put(arg0, arg1);
     }
 
+    /** AOSP putParcelable(key, value): the Parcelable is stored as-is. */
     public void putParcelable(java.lang.String arg0, android.os.Parcelable arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putParcelable(Ljava/lang/String;Landroid/os/Parcelable;)V");
+        mMap.put(arg0, arg1);
     }
 
+    /** AOSP putParcelableArray(key, value). */
     public void putParcelableArray(java.lang.String arg0, android.os.Parcelable[] arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putParcelableArray(Ljava/lang/String;[Landroid/os/Parcelable;)V");
+        mMap.put(arg0, arg1);
     }
 
+    /** AOSP putParcelableArrayList(key, value). */
     public void putParcelableArrayList(java.lang.String arg0, java.util.ArrayList<? extends android.os.Parcelable> arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putParcelableArrayList(Ljava/lang/String;Ljava/util/ArrayList;)V");
+        mMap.put(arg0, arg1);
     }
 
+    /** AOSP putSerializable(key, value). */
     public void putSerializable(java.lang.String arg0, java.io.Serializable arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putSerializable(Ljava/lang/String;Ljava/io/Serializable;)V");
+        mMap.put(arg0, arg1);
     }
 
     public void putShort(java.lang.String arg0, short arg1) {
@@ -265,8 +332,9 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putSparseParcelableArray(Ljava/lang/String;Landroid/util/SparseArray;)V");
     }
 
+    /** AOSP putStringArrayList(key, value). */
     public void putStringArrayList(java.lang.String arg0, java.util.ArrayList<java.lang.String> arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->putStringArrayList(Ljava/lang/String;Ljava/util/ArrayList;)V");
+        mMap.put(arg0, arg1);
     }
 
     public void readFromParcel(android.os.Parcel arg0) {

@@ -136,8 +136,10 @@ package android.content;
     public static final java.lang.String WIFI_SERVICE = "wifi";
     public static final java.lang.String WINDOW_SERVICE = "window";
 
+    // Host-side placeholder allocation: guest activities bottom out here
+    // through Activity's no-op <init>; real android Context state (resource
+    // refs, base context) arrives with the Framework-in-Java migration.
     public Context() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;-><init>()V");
     }
 
     public boolean bindIsolatedService(android.content.Intent arg0, android.content.Context.BindServiceFlags arg1, java.lang.String arg2, java.util.concurrent.Executor arg3, android.content.ServiceConnection arg4) {
@@ -452,8 +454,19 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getParams()Landroid/content/ContextParams;");
     }
 
+    /**
+     * The device answers the per-process Resources held by ContextImpl
+     * (seeded through ResourcesManager#getResources); the shell lazily owns
+     * one Resources per context, carrying the configuration surface only —
+     * assets/dimensions land with the resource pipeline.
+     */
+    private android.content.res.Resources mResources;
+
     public android.content.res.Resources getResources() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getResources()Landroid/content/res/Resources;");
+        if (mResources == null) {
+            mResources = new android.content.res.Resources();
+        }
+        return mResources;
     }
 
     public android.content.SharedPreferences getSharedPreferences(java.lang.String arg0, int arg1) {

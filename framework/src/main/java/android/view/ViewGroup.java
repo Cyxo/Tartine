@@ -13,20 +13,48 @@ package android.view;
     public static final int PERSISTENT_NO_CACHE = 0;
     public static final int PERSISTENT_SCROLLING_CACHE = 2;
 
+    /** AOSP ViewGroup(Context) (line 702-704): chains this(context, null). */
     public ViewGroup(android.content.Context arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;-><init>(Landroid/content/Context;)V");
+        this(arg0, null);
     }
 
+    /** AOSP ViewGroup(Context, AttributeSet) (line 706-708): chains
+     * this(context, attrs, 0); the shell keeps the chain (the
+     * attribute-flavored members flatten onto the View seed). */
     public ViewGroup(android.content.Context arg0, android.util.AttributeSet arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;)V");
+        this(arg0, arg1, 0);
     }
 
+    /** AOSP ViewGroup(Context, AttributeSet, int defStyleAttr) (lines
+     * 710-712): chains this(..., defStyleAttr, 0). */
     public ViewGroup(android.content.Context arg0, android.util.AttributeSet arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V");
+        this(arg0, arg1, arg2, 0);
     }
 
-    public ViewGroup(android.content.Context arg0, android.util.AttributeSet arg1, int arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;II)V");
+    /**
+     * AOSP ViewGroup(Context, AttributeSet, int, int) (lines 714-718):
+     * super-chains then runs initViewGroup()/initFromAttributes(). The
+     * shell carries the super seed plus the staged flag seeds
+     * (initViewGroup); initFromAttributes defers with the XML-attr
+     * machinery.
+     */
+    public ViewGroup(android.content.Context arg0, android.util.AttributeSet arg1, int arg2,
+            int arg3) {
+        super(arg0, arg1, arg2, arg3);
+        initViewGroup();
+    }
+
+    /**
+     * AOSP ViewGroup.initViewGroup (lines 721-739): the device seeds
+     * WILL_NOT_DRAW, the clip/animation flag family, descendant
+     * focusability and the mChildren array; the shell seeds the staged
+     * flag bits only (see the mGroupFlags staging note — draw-chain
+     * readers), while the children live in the mChildren list defaulting
+     * empty.
+     */
+    private void initViewGroup() {
+        mGroupFlags |= FLAG_CLIP_CHILDREN;
+        mGroupFlags |= FLAG_CLIP_TO_PADDING;
     }
 
     public void addChildrenForAccessibility(java.util.ArrayList<android.view.View> arg0) {
@@ -507,12 +535,16 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getChildVisibleRect(Landroid/view/View;Landroid/graphics/Rect;Landroid/graphics/Point;)Z");
     }
 
+    /** AOSP ViewGroup.getClipChildren (lines 4596-4598): reads the
+     * staged mGroupFlags bit. */
     public boolean getClipChildren() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getClipChildren()Z");
+        return (mGroupFlags & FLAG_CLIP_CHILDREN) != 0;
     }
 
+    /** AOSP ViewGroup.getClipToPadding (lines 4654-4656): reads the
+     * staged mGroupFlags bit. */
     public boolean getClipToPadding() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getClipToPadding()Z");
+        return (mGroupFlags & FLAG_CLIP_TO_PADDING) != 0;
     }
 
     public int getDescendantFocusability() {
@@ -823,12 +855,38 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setChildrenDrawnWithCacheEnabled(Z)V");
     }
 
+    /**
+     * AOSP ViewGroup.setClipChildren (lines 4608-4620): the device compares
+     * against the flag, updates via setBooleanFlag, syncs every child's
+     * RenderNode clip bounds and invalidates; the shell keeps the flag
+     * update (children render-node plumbing and invalidate land with the
+     * draw chain).
+     */
     public void setClipChildren(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setClipChildren(Z)V");
+        boolean previousValue = (mGroupFlags & FLAG_CLIP_CHILDREN) == FLAG_CLIP_CHILDREN;
+        if (arg0 != previousValue) {
+            if (arg0) {
+                mGroupFlags |= FLAG_CLIP_CHILDREN;
+            } else {
+                mGroupFlags &= ~FLAG_CLIP_CHILDREN;
+            }
+        }
     }
 
+    /**
+     * AOSP ViewGroup.setClipToPadding (lines 4633-4638): flag compare + bit
+     * update + invalidate(true); the shell keeps the flag update
+     * (invalidate rides the draw chain).
+     */
     public void setClipToPadding(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setClipToPadding(Z)V");
+        boolean previousValue = (mGroupFlags & FLAG_CLIP_TO_PADDING) == FLAG_CLIP_TO_PADDING;
+        if (arg0 != previousValue) {
+            if (arg0) {
+                mGroupFlags |= FLAG_CLIP_TO_PADDING;
+            } else {
+                mGroupFlags &= ~FLAG_CLIP_TO_PADDING;
+            }
+        }
     }
 
     public void setDescendantFocusability(int arg0) {

@@ -74,8 +74,16 @@ import tartine.fw.SystemColors;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getColorStateList(ILandroid/content/res/Resources$Theme;)Landroid/content/res/ColorStateList;");
     }
 
+    /**
+     * The device answers its AssetManager-scoped configuration (the
+     * ResourcesKey's shared mMetrics.config); the shell owns one
+     * Configuration per Resources with zero-default fields.
+     */
+    private final android.content.res.Configuration mConfiguration =
+            new android.content.res.Configuration();
+
     public android.content.res.Configuration getConfiguration() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getConfiguration()Landroid/content/res/Configuration;");
+        return mConfiguration;
     }
 
     public float getDimension(int arg0) {

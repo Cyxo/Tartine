@@ -193,20 +193,39 @@ package android.view;
     public static android.util.Property Y;
     public static android.util.Property Z;
 
+    /**
+     * AOSP View.View(Context) (lines 5853-5855): stores the context and
+     * seeds mResources from it. The shell keeps the same seed (androidx
+     * EdgeToEdge flows assert the decor's resources non-null, so the
+     * window's context must flow in through the decor's ctor).
+     */
     public View(android.content.Context arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;-><init>(Landroid/content/Context;)V");
+        mContext = arg0;
+        mResources = arg0 != null ? arg0.getResources() : null;
     }
 
+    /** AOSP View.View(Context, AttributeSet) (lines 5938-5939): the device
+     * delegates to the 3-arg ctor with defStyleAttr 0; the shell flattens
+     * the chain onto the 1-arg constructor's seed (mContext + mResources).
+     */
     public View(android.content.Context arg0, android.util.AttributeSet arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;)V");
+        this(arg0);
     }
 
+    /** AOSP View.View(Context, AttributeSet, int defStyleAttr)
+     * (lines 5959-5960): the device delegates to the 4-arg ctor with a
+     * zero-def style resource; the shell flattens onto the 1-arg seed. */
     public View(android.content.Context arg0, android.util.AttributeSet arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V");
+        this(arg0);
     }
 
-    public View(android.content.Context arg0, android.util.AttributeSet arg1, int arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;II)V");
+    /** AOSP View.View(Context, AttributeSet, int, int) (line 5996): the
+     * device runs full attribute-flavored init; the shell (no attr sets
+     * yet) flattens onto the 1-arg seed which carries only the context and
+     * resources. */
+    public View(android.content.Context arg0, android.util.AttributeSet arg1, int arg2,
+            int arg3) {
+        this(arg0);
     }
 
     public void addChildrenForAccessibility(java.util.ArrayList<android.view.View> arg0) {
@@ -229,8 +248,20 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->addKeyboardNavigationClusters(Ljava/util/Collection;I)V");
     }
 
+    /** AOSP field mOnAttachStateChangeListeners (View.java line 5118 — the
+     * device nests it in ListenerInfo); the shell keeps one list per view. */
+    private java.util.concurrent.CopyOnWriteArrayList<OnAttachStateChangeListener>
+            mOnAttachStateChangeListeners;
+
+    /** AOSP View.addOnAttachStateChangeListener (lines 7826-7833): device
+     * stores into the ListenerInfo bag; same store on the shell (attach
+     * dispatch trails with the window-attach chain). */
     public void addOnAttachStateChangeListener(android.view.View.OnAttachStateChangeListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->addOnAttachStateChangeListener(Landroid/view/View$OnAttachStateChangeListener;)V");
+        if (mOnAttachStateChangeListeners == null) {
+            mOnAttachStateChangeListeners =
+                    new java.util.concurrent.CopyOnWriteArrayList<OnAttachStateChangeListener>();
+        }
+        mOnAttachStateChangeListeners.add(arg0);
     }
 
     public void addOnLayoutChangeListener(android.view.View.OnLayoutChangeListener arg0) {
@@ -704,8 +735,23 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->findOnBackInvokedDispatcher()Landroid/window/OnBackInvokedDispatcher;");
     }
 
-    public final <T> T findViewById(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->findViewById(I)Landroid/view/View;");
+    /**
+     * AOSP View.findViewById (lines 27782-27787, final): NO_ID answers
+     * null, otherwise the traversal; the device plain-View traversal
+     * (findViewTraversal, lines 27732-27737) answers the view itself only
+     * when the id matches mID — the shell mirrors both verbatim (a child
+     * walk belongs to the ViewGroup port). The bound {@code extends View}
+     * matters: it fixes the erasure to {@code (I)Landroid/view/View;}, the
+     * descriptor guest call sites resolve (a bare {@code <T>} erases to
+     * Object and the invoke misses — same hazard flagged for SkeletonGen's
+     * bare type-param emission).
+     */
+    @SuppressWarnings("unchecked")
+    public final <T extends android.view.View> T findViewById(int arg0) {
+        if (arg0 == NO_ID) {
+            return null;
+        }
+        return (T) (arg0 == mID ? this : null);
     }
 
     public final <T> T findViewWithTag(java.lang.Object arg0) {
@@ -1107,9 +1153,13 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHorizontalScrollbarTrackDrawable()Landroid/graphics/drawable/Drawable;");
     }
 
+    /** AOSP View.getId (lines 27987-27989): the raw mID field. */
     public int getId() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getId()I");
+        return mID;
     }
+
+    /** AOSP View field mID, defaulting to NO_ID. */
+    private int mID = NO_ID;
 
     public int getImportantForAccessibility() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getImportantForAccessibility()I");
@@ -1334,8 +1384,10 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingTop()I");
     }
 
+    /** AOSP View.getParent (View.java:18873-18875) — final in AOSP; guests
+     * cannot override it. */
     public final android.view.ViewParent getParent() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getParent()Landroid/view/ViewParent;");
+        return mParent;
     }
 
     public android.view.ViewParent getParentForAccessibility() {
@@ -1433,8 +1485,14 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRequestedFrameRate()F");
     }
 
+    /** AOSP View.getResources() (lines 25854-25856 return the field seeded
+     * from the context — shell ctor seeds the same, lines 5853-5855). */
+    private android.content.Context mContext;
+
+    private android.content.res.Resources mResources;
+
     public android.content.res.Resources getResources() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getResources()Landroid/content/res/Resources;");
+        return mResources;
     }
 
     public final boolean getRevealOnFocusHint() {
@@ -1558,16 +1616,34 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getSystemGestureExclusionRects()Ljava/util/List;");
     }
 
+    /** AOSP field mSystemUiVisibility; setter/getter below. */
+    private int mSystemUiVisibility;
+
+    /**
+     * AOSP View.getSystemUiVisibility (lines 29011-29013): plain field
+     * return of the flags stored by setSystemUiVisibility — the shell
+     * stores the same value with no visibility dispatch (nothing presents
+     * it at the display layer yet).
+     */
     public int getSystemUiVisibility() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getSystemUiVisibility()I");
+        return mSystemUiVisibility;
     }
 
     public java.lang.Object getTag() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTag()Ljava/lang/Object;");
     }
 
+    /**
+     * AOSP View.getTag(int) (lines 28042-28045) — null when no keyed tag
+     * was stored. The device holds mKeyedTags in a SparseArray<Object>;
+     * the shell mirrors the store through a host HashMap (framework-internal
+     * storage only — guests cross it as opaque java.lang.Object).
+     */
     public java.lang.Object getTag(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTag(I)Ljava/lang/Object;");
+        if (mKeyedTags != null) {
+            return mKeyedTags.get(arg0);
+        }
+        return null;
     }
 
     public int getTextAlignment() {
@@ -1656,8 +1732,20 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getViewTranslationResponse()Landroid/view/translation/ViewTranslationResponse;");
     }
 
+    /** AOSP View.getViewTreeObserver (View.java:27442-27450). The device's
+     * attached branch returns mAttachInfo.mTreeObserver; our AttachInfo is
+     * still a bare null-or-present ref (window-attach chain not landed), so
+     * only the floating-observer path exists here — one lazily-created
+     * observer per view, which is exactly the pre-attach device behavior. */
+    private android.view.ViewTreeObserver mFloatingTreeObserver;
+
     public android.view.ViewTreeObserver getViewTreeObserver() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;");
+        // The mAttachInfo branch (AOSP 27443-27445) lands with the real
+        // AttachInfo holder; the ref is always null until then.
+        if (mFloatingTreeObserver == null) {
+            mFloatingTreeObserver = new android.view.ViewTreeObserver(mContext);
+        }
+        return mFloatingTreeObserver;
     }
 
     public int getVisibility() {
@@ -1822,8 +1910,16 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isActivated()Z");
     }
 
+    /** AOSP View.java:14146-14148 — attach state == the ViewRootImpl's
+     * AttachInfo reference (null until the window attaches this view tree).
+     * The shell holds the same single ref; the window-attach chain sets it
+     * when that migration lands. Field is package-private so only framework
+     * classes flip it — guests never reference the hidden mAttachInfo. */
+    Object mAttachInfo;
+
+    /** AOSP View.isAttachedToWindow (View.java:14146-14148). */
     public boolean isAttachedToWindow() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isAttachedToWindow()Z");
+        return mAttachInfo != null;
     }
 
     public boolean isAutoHandwritingEnabled() {
@@ -2493,8 +2589,12 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->removeCallbacks(Ljava/lang/Runnable;)Z");
     }
 
+    /** AOSP View.removeOnAttachStateChangeListener (lines 7842-7848). */
     public void removeOnAttachStateChangeListener(android.view.View.OnAttachStateChangeListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->removeOnAttachStateChangeListener(Landroid/view/View$OnAttachStateChangeListener;)V");
+        if (mOnAttachStateChangeListeners == null) {
+            return;
+        }
+        mOnAttachStateChangeListeners.remove(arg0);
     }
 
     public void removeOnLayoutChangeListener(android.view.View.OnLayoutChangeListener arg0) {
@@ -2901,8 +3001,14 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setHovered(Z)V");
     }
 
+    /**
+     * AOSP View.setId (lines 27941-27946) — device body stores the id and
+     * auto-reserves one when clearing to NO_ID while mLabelForId points
+     * at another view; the shell carries the store only (the labelFor
+     * auto-id branch lands with the labelFor port).
+     */
     public void setId(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setId(I)V");
+        mID = arg0;
     }
 
     public void setImportantForAccessibility(int arg0) {
@@ -3266,17 +3372,42 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setSystemGestureExclusionRects(Ljava/util/List;)V");
     }
 
+    /**
+     * AOSP View.setSystemUiVisibility (lines 28990+): the device stores the
+     * flag and dispatches visibility changes; the shell keeps the field
+     * store only (no window/display layer listens yet). The androidx
+     * shim layer reads the same value back through getSystemUiVisibility
+     * and merges system-ui flags on top, so round-tripping the int is what
+     * the compat path needs.
+     */
     public void setSystemUiVisibility(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setSystemUiVisibility(I)V");
+        mSystemUiVisibility = arg0;
     }
 
+    /**
+     * AOSP View.setTag(int, Object) (lines 28068-28077): rejects keys
+     * below the 0x02000000 package-id floor (undefined/framework keys) the
+     * same way, then stores the keyed tag.
+     */
     public void setTag(int arg0, java.lang.Object arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTag(ILjava/lang/Object;)V");
+        if ((arg0 >>> 24) < 2) {
+            throw new IllegalArgumentException("The key must be an application-specific "
+                    + "resource id.");
+        }
+        if (mKeyedTags == null) {
+            mKeyedTags = new java.util.HashMap<Integer, java.lang.Object>();
+        }
+        mKeyedTags.put(arg0, arg1);
     }
 
+    private java.util.HashMap<Integer, java.lang.Object> mKeyedTags;
+
+    /** AOSP View.setTag(Object): plain mTag store. */
     public void setTag(java.lang.Object arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTag(Ljava/lang/Object;)V");
+        mTag = arg0;
     }
+
+    private java.lang.Object mTag;
 
     public void setTextAlignment(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTextAlignment(I)V");
