@@ -2,6 +2,7 @@ package tartine;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +33,9 @@ import tartine.vm.VmThrow;
  * <li>{@code apk <file.apk>} — headless APK summary: manifest, code, libraries.
  * <li>{@code run <file.apk>} — headless probe: executes the launcher
  * activity's {@code onCreate} until the first gap (no GUI yet).
+ * <li>{@code txrun <file.apk>} — the same probe through the translation
+ * loader ({@code tartine.tx}: real JVM bytecode, framework module classes,
+ * host JDK), until the first gap.
  * <li>{@code gui <file.apk> [timeoutSecs]} — headless {@code onCreate}, then
  * shows the activity window on desktop (blank until composition runs).
  * <li>{@code dump <file.dex>} — prints our instruction dump of a dex file.
@@ -67,20 +71,30 @@ public final class Main {
                     require(args, 2);
                     probeRun(new File(args[1]));
                     break;
+                case "txrun":
+                    require(args, 2);
+                    txRun(new File(args[1]));
+                    break;
                 case "gui":
                     require(args, 2);
                     guiRun(new File(args[1]),
                             args.length > 2 ? Long.parseLong(args[2]) : 0);
                     break;
+                case "txdump":
+                    require(args, 3);
+                    txDump(new File(args[1]), args[2],
+                            args.length > 3 ? args[3] : null);
+                    break;
                 case "dump":
-                    require(args, 2);
-                    dumpDex(new File(args[1]));
+                    dumpDex(new File(args[1]),
+                            args.length > 2 ? args[2] : null);
                     break;
                 default:
                     if (args[0].endsWith(".apk")) {
                         printApkSummary(new File(args[0]));
                     } else {
-                        dumpDex(new File(args[0]));
+                        dumpDex(new File(args[0]),
+                                args.length > 1 ? args[1] : null);
                     }
                     break;
             }
@@ -91,7 +105,7 @@ public final class Main {
     }
 
     private static void usage() {
-        System.out.println("Usage: tartine.Main (apk|run|dump) <file>");
+        System.out.println("Usage: tartine.Main (apk|run|txrun|dump) <file>");
     }
 
     private static void require(String[] args, int count) {
@@ -100,10 +114,15 @@ public final class Main {
         }
     }
 
-    private static void dumpDex(File file) throws Exception {
-        Dex dex = Dex.load(file);
-        for (DexClass cls : dex.classes()) {
-            System.out.print(DexDump.dump(cls));
+    private static void dumpDex(File file, String fqnPrefix) throws Exception {
+        ApkReader reader = ApkReader.open(file.toPath());
+        DexSet dexes = reader.dexSet();
+        for (Dex dex : dexes.dexes()) {
+            for (DexClass cls : dex.classes()) {
+                if (fqnPrefix == null || cls.type.contains(fqnPrefix)) {
+                    System.out.print(DexDump.dump(cls));
+                }
+            }
         }
     }
 
@@ -140,8 +159,165 @@ public final class Main {
         }
     }
 
+    /**
+     * Translates one dex class (temp probe mode) and prints the result
+     * through ASM's TraceClassVisitor, naming methods to filter on.
+     */
+    private static void txDump(File apk, String dottedOrSlash,
+            String methodFilter) throws Exception {
+        try (ApkReader reader = ApkReader.open(apk.toPath())) {
+            DexSet dexes = reader.dexSet();
+            tartine.tx.TranslatedLoader loader = new tartine.tx.TranslatedLoader(
+                    Main.class.getClassLoader(), dexes);
+            String desc = dottedOrSlash.contains("/")
+                    ? dottedOrSlash
+                    : dottedOrSlash.replace('.', '/');
+            byte[] bytes;
+            if (methodFilter != null) {
+                tartine.dex.DexClass cls =
+                        loader.dexLookup().apply("L" + desc + ";");
+                bytes = tartine.tx.TxTranslator.emitProbeSingle(cls,
+                        loader.fieldSynths(), loader.guestInterfaces(),
+                        loader.dexLookup(), loader.getParent(), methodFilter);
+            } else {
+                bytes = loader.translateClass(desc);
+            }
+            org.objectweb.asm.util.TraceClassVisitor printer =
+                    new org.objectweb.asm.util.TraceClassVisitor(new PrintWriter(
+                            System.err));
+            new org.objectweb.asm.ClassReader(bytes).accept(printer, 0);
+        }
+    }
+
     private static void probeRun(File apk) throws Exception {
         runOnCreate(apk);
+    }
+
+    /**
+     * Translated-run probe (the {@code tartine.tx} counterpart of
+     * {@link #runOnCreate}: launcher {@code <init>} then {@code onCreate}
+     * as real JVM bytecode. The framework module supplies android.*
+     * skeletons (UOE bodies = the gap census); the dex classes come from
+     * {@link TranslatedLoader}.
+     */
+    /** Root-cause stack frames shown by the txrun probe wall (debug only). */
+    private static int frameDepth = 16;
+
+    private static void txRun(File apk) throws Exception {        try (ApkReader reader = ApkReader.open(apk.toPath())) {
+            BinaryXml.Element manifest = reader.manifest();
+            String packageName = manifest.attr("package");
+            String activity = findLauncher(manifest);
+            if (activity == null) {
+                System.out.println("no launcher activity in manifest");
+                return;
+            }
+            activity = qualify(packageName, activity);
+            System.out.println("launcher: " + activity);
+            DexSet dexes = reader.dexSet();
+            System.out.println("dex classes: " + dexes.classCount());
+            tartine.tx.TranslatedLoader loader = new tartine.tx.TranslatedLoader(
+                    Main.class.getClassLoader(), dexes);
+            Class<?> task;
+            try {
+                task = loader.loadClass(activity);
+            } catch (ClassNotFoundException | LinkageError | RuntimeException e) {
+                System.out.println("load " + activity + ": " + sanitize(e));
+                Throwable root = e;
+                while (root.getCause() != null && root.getCause() != root) {
+                    root = root.getCause();
+                }
+                for (StackTraceElement frame : root.getStackTrace()) {
+                    System.out.println("    at " + frame);
+                    if (--frameDepth <= 0) {
+                        break;
+                    }
+                }
+                return;
+            }
+            System.out.println("loaded: " + task.getName());
+            // Device parity with ActivityThread.main(): the guest's main
+            // thread carries the main Looper before any Activity code runs.
+            android.os.Looper.prepareMainLooper();
+            Object receiver;
+            try {
+                receiver = task.getDeclaredConstructor().newInstance();
+            } catch (ReflectiveOperationException | LinkageError e) {
+                System.out.println("<init>: " + sanitize(e));
+                Throwable root = e;
+                while (root.getCause() != null && root.getCause() != root) {
+                    root = root.getCause();
+                }
+                for (StackTraceElement frame : root.getStackTrace()) {
+                    System.out.println("    at " + frame);
+                    if (--frameDepth <= 0) {
+                        break;
+                    }
+                }
+                return;
+            }
+            java.lang.reflect.Method onCreate;
+            try {
+                // Android Activity.onCreate(Bundle) is protected — getMethod
+                // (public only) misses it; walk the chain with accessibility.
+                onCreate = null;
+                for (Class<?> c = task; c != null && onCreate == null;
+                        c = c.getSuperclass()) {
+                    try {
+                        onCreate = c.getDeclaredMethod("onCreate",
+                                android.os.Bundle.class);
+                    } catch (NoSuchMethodException ignored) {
+                        // continue up the chain
+                    }
+                }
+                if (onCreate == null) {
+                    throw new NoSuchMethodException(
+                            "onCreate(android.os.Bundle)");
+                }
+                onCreate.setAccessible(true);
+            } catch (ReflectiveOperationException e) {
+                System.out.println("no onCreate(Bundle): " + sanitize(e));
+                return;
+            }
+            try {
+                onCreate.invoke(receiver, new Object[] { null });
+                System.out.println("onCreate returned");
+            } catch (java.lang.reflect.InvocationTargetException x) {
+                System.out.println("onCreate threw: " + sanitize(x));
+                Throwable root = x;
+                while (root.getCause() != null && root.getCause() != root) {
+                    root = root.getCause();
+                }
+                for (StackTraceElement frame : root.getStackTrace()) {
+                    System.out.println("    at " + frame);
+                    if (--frameDepth <= 0) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Translates a reflective/launch failure to one printable line: the
+     * exception chain with host frames trimmed away.
+     */
+    private static String sanitize(Throwable error) {
+        StringBuilder text = new StringBuilder();
+        for (Throwable t = error; t != null && text.length() < 2000;
+                t = t.getCause() instanceof Throwable ? t.getCause() : null) {
+            if (text.length() > 0) {
+                text.append(" <- ");
+            }
+            text.append(t.getClass().getSimpleName());
+            String message = t.getMessage();
+            if (message != null) {
+                text.append(" (").append(message.replace("\n", " ")).append(')');
+            }
+            if (t.getCause() == t) {
+                break;
+            }
+        }
+        return text.toString();
     }
 
     private static void guiRun(File apk, long timeoutSecs) throws Exception {

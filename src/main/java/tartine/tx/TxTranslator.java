@@ -1,8 +1,14 @@
 package tartine.tx;
 
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.analysis.Analyzer;
+import org.objectweb.asm.tree.analysis.AnalyzerException;
+import org.objectweb.asm.tree.analysis.BasicVerifier;
 import tartine.dex.DexClass;
 import tartine.dex.DexMethod;
 
@@ -75,7 +81,8 @@ public final class TxTranslator implements Opcodes {
                                     rest.substring(0, colon),
                                     rest.substring(colon + 1),
                                     ACC_PUBLIC | ACC_VOLATILE
-                                            | (stat ? ACC_STATIC : 0)));
+                                            | (stat ? ACC_STATIC : 0),
+                                    null)); // synthesized: no dex initial value
                 }
             }
         }
@@ -96,8 +103,13 @@ public final class TxTranslator implements Opcodes {
     static final int ACC_VOLATILE = 0x40;
     static final int ACC_TRANSIENT = 0x80;
     static final int ACC_NATIVE = 0x100;
+    /** Same value in dex and JVM flag spaces. */
+    static final int ACC_INTERFACE = 0x200;
     static final int ACC_ABSTRACT = 0x400;
     static final int ACC_STRICT = 0x800;
+    static final int ACC_SYNTHETIC = 0x1000;
+    static final int ACC_ANNOTATION = 0x2000;
+    static final int ACC_ENUM = 0x4000;
     static final int ACC_CONSTRUCTOR = 0x10000;
 
     /** Exceptions who cannot be translated surface as this named failure. */
@@ -114,20 +126,32 @@ public final class TxTranslator implements Opcodes {
     }
 
     public static byte[] translate(DexClass cls) {
-        return translate(cls, Map.of(), java.util.Set.of());
+        return translate(cls, Map.of(), java.util.Set.of(), null, null);
     }
 
     public static byte[] translate(DexClass cls,
             Map<String, List<DexClass.DexField>> synthsByOwner) {
-        return translate(cls, synthsByOwner, java.util.Set.of());
+        return translate(cls, synthsByOwner, java.util.Set.of(), null, null);
+    }
+
+    public static byte[] translate(DexClass cls,
+            Map<String, List<DexClass.DexField>> synthsByOwner,
+            java.util.Set<String> guestInterfaces) {
+        return translate(cls, synthsByOwner, guestInterfaces, null, null);
     }
 
     /** {@code guestInterfaces}: dex-owned interface descriptors, consulted
      *  when an invoke-virtual names an interface owner (DEX lets it; the JVM
-     *  needs invokeinterface). */
+     *  needs invokeinterface). {@code dexLookup}/{@code hostLoader} resolve
+     *  the merge hierarchy for computed frames (guest types never reflect
+     *  onto the host loader). Classfile v1_8: the v1_5 inference path lost
+     *  its JVM failover, and default interface methods (androidx) do not
+     *  encode before v1_8 — StackMapTable frames on, computed by ASM. */
     public static byte[] translate(DexClass cls,
             Map<String, List<DexClass.DexField>> synthsByOwner,
-            java.util.Set<String> guestInterfaces) {
+            java.util.Set<String> guestInterfaces,
+            java.util.function.Function<String, DexClass> dexLookup,
+            ClassLoader hostLoader) {
         // Class-level flags come from the dex class_def_item (interfaces are
         // emitted ACC_INTERFACE: implementers fail at defineClass time
         // otherwise). ACC_SUPER only applies to class files.
@@ -135,12 +159,13 @@ public final class TxTranslator implements Opcodes {
         if ((access & ACC_INTERFACE) == 0) {
             access |= ACC_SUPER;
         }
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         String name = TxDescriptors.internal(cls.type);
-        String parent = cls.superclass == null ? null : TxDescriptors.internal(cls.superclass);
+        String parent = cls.superclass == null ? null
+                : TxDescriptors.internal(cls.superclass);
         String[] ifaces = cls.interfaces.stream().map(TxDescriptors::internal)
                 .toArray(String[]::new);
-        cw.visit(V1_5, access, name, null, parent, ifaces);
+        FrameWriter cw = new FrameWriter(dexLookup, hostLoader);
+        cw.visit(Opcodes.V1_8, access, name, null, parent, ifaces);
 
         // Synthesized members for undeclared referenced fields (see
         // fieldSynths). Declared fields always win.
@@ -159,9 +184,30 @@ public final class TxTranslator implements Opcodes {
             cw.visitField(asmAccess(field.accessFlags), field.name,
                     field.type, null, null).visitEnd();
         }
+        List<DexClass.DexField> staticSeeds = new ArrayList<>();
+        boolean sawClinit = false;
         for (DexClass.DexField field : cls.fields) {
+            if ((field.accessFlags & ACC_STATIC) != 0
+                    && field.initialValue != null
+                    && (field.accessFlags & ACC_FINAL) == 0) {
+                // Non-final statics cannot carry a JVM ConstantValue (JVMS
+                // §4.7.3 is static-final-only) yet the dex seeds them via
+                // static_values before <clinit> runs — survive through a
+                // head-of-<clinit> assignment (TxMethodWriter).
+                staticSeeds.add(field);
+            }
+        }
+        for (DexClass.DexField field : cls.fields) {
+            // JVM ConstantValue applies to static finals only (JVMS §4.7.3)
+            // and Java primitive/String types; the dex initial value is
+            // pre-boxed into exactly those (DexClass#javaInitialValue), so
+            // R.id-style ints survive translation. Non-final/instance
+            // fields keep null — the guest <clinit> keeps setting those.
+            boolean staticFinal = ((field.accessFlags
+                    & (ACC_STATIC | ACC_FINAL)) == (ACC_STATIC | ACC_FINAL));
             cw.visitField(asmAccess(field.accessFlags), field.name,
-                    field.type, null, null).visitEnd();
+                    field.type, null,
+                    staticFinal ? field.initialValue : null).visitEnd();
         }
         for (DexMethod method : cls.methods) {
             int flags = method.accessFlags;
@@ -178,30 +224,280 @@ public final class TxTranslator implements Opcodes {
                         asmDesc(method), null, null).visitEnd();
                 continue;
             }
-            // Two-pass: probe the method on a throwaway writer so a crash
-            // never half-visits the real one (ClassWriter cannot abandon an
-            // opened MethodVisitor — the stub would duplicate the method).
-            // emit() is deterministic, so a successful probe is safe to
-            // re-run on the real writer.
+            // Two-pass: probe the method on a throwaway one-method class so
+            // a crash never half-visits the real one (ClassWriter cannot
+            // abandon an opened MethodVisitor — the stub would duplicate
+            // the method). Frame computation happens at toByteArray, so the
+            // probe class forces it: frames are load-bearing at defineClass
+            // now (the v1_5 inference verifier has no failover on current
+            // JVMs).
             boolean ok = false;
             String msg = "unknown failure";
+            if (method.name.equals("<clinit>")) {
+                sawClinit = true;
+            }
             try {
-                new TxMethodWriter(new ClassWriter(0), method,
-                        guestInterfaces).emit();
+                FrameWriter probe = new FrameWriter(dexLookup, hostLoader);
+                probe.visit(Opcodes.V1_8, access, name, null, parent, ifaces);
+                new TxMethodWriter(probe, method, guestInterfaces,
+                        staticSeeds).emit();
+                byte[] probeBytes = probe.toByteArray();
+                // COMPUTE_FRAMES writes per-path frames and does not reject
+                // an int/reference conflict at a merge (d8 reuses registers
+                // polymorphically); the JVM fails the whole class instead.
+                // Replaying the probe through ASM's BasicVerifier (kind
+                // lattice, no hierarchy needed) degrades such methods to
+                // their named stub.
+                verifyKindwise(probeBytes, method.name, asmDesc(method),
+                        method.signature());
                 ok = true;
-            } catch (RuntimeException x) {
+            } catch (RuntimeException | LinkageError x) {
                 msg = x instanceof TxTranslator.TxGap
                         ? x.getMessage()
                         : "writer crash: " + x;
             }
             if (ok) {
-                new TxMethodWriter(cw, method, guestInterfaces).emit();
+                new TxMethodWriter(cw, method, guestInterfaces,
+                        staticSeeds).emit();
             } else {
                 emitGapStub(cw, method, base, msg);
             }
         }
+        if (!staticSeeds.isEmpty() && !sawClinit) {
+            // The class seeds non-final statics but carries no <clinit>:
+            // synthesize one that assigns the static_values (dex static field
+            // initial values apply to any static field before <clinit>; the
+            // JVM has no ConstantValue lane for non-final statics).
+            MethodVisitor mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V",
+                    null, null);
+            mv.visitCode();
+            for (DexClass.DexField f : staticSeeds) {
+                mv.visitLdcInsn(f.initialValue);
+                mv.visitFieldInsn(PUTSTATIC, name, f.name, f.type);
+            }
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
         cw.visitEnd();
         return cw.toByteArray();
+    }
+
+    /**
+     * ClassWriter computing StackMapTable frames (v1_8 requires them):
+     * merge hierarchy resolves through the dex model first, then host
+     * reflection on the class name only — guest types are never defined
+     * onto the host loader.
+     */
+    private static final class FrameWriter extends ClassWriter {
+        private final java.util.function.Function<String, DexClass> dexLookup;
+        private final ClassLoader hostLoader;
+
+        FrameWriter(java.util.function.Function<String, DexClass> dexLookup,
+                ClassLoader hostLoader) {
+            super(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+            this.dexLookup = dexLookup;
+            this.hostLoader = hostLoader;
+        }
+
+        @Override
+        protected String getCommonSuperClass(String type1, String type2) {
+            if (type1.equals(type2)) {
+                return type1;
+            }
+            boolean array1 = !type1.isEmpty() && type1.charAt(0) == '[';
+            boolean array2 = !type2.isEmpty() && type2.charAt(0) == '[';
+            if (array1 != array2) {
+                return "java/lang/Object";
+            }
+            if (array1) {
+                // Both arrays: merge the components; differing depths or an
+                // Object-degraded merge fall back to Object (ASM's default
+                // for anything nontrivial).
+                String c1 = commonComponent(type1);
+                String c2 = commonComponent(type2);
+                String merged = getCommonSuperClass(c1, c2);
+                int depth = commonDepth(type1, type2);
+                if (depth < 0 || merged.charAt(0) == '[') {
+                    return "java/lang/Object";
+                }
+                return "[".repeat(depth) + "L" + merged + ";";
+            }
+            java.util.LinkedHashSet<String> first = ancestors(type1);
+            java.util.LinkedHashSet<String> second = ancestors(type2);
+            for (String candidate : first) {
+                if (second.contains(candidate)) {
+                    return candidate;
+                }
+            }
+            return "java/lang/Object";
+        }
+
+        /**
+         * Types of the lineage of {@code type}, most specific first (BFS:
+         * superclass before interfaces), including interfaces — the JVM's
+         * frame merge legitimately yields a common interface.
+         */
+        private java.util.LinkedHashSet<String> ancestors(String type) {
+            java.util.LinkedHashSet<String> set = new java.util.LinkedHashSet<>();
+            java.util.ArrayDeque<String> queue = new java.util.ArrayDeque<>();
+            set.add(type);
+            queue.add(type);
+            while (!queue.isEmpty()) {
+                for (String sup : supers(queue.poll())) {
+                    if (set.add(sup)) {
+                        queue.add(sup);
+                    }
+                }
+            }
+            return set;
+        }
+
+        /** Superclass then interfaces of {@code type} (internal name). */
+        private java.util.List<String> supers(String type) {
+            if (type.equals("java/lang/Object")) {
+                return java.util.List.of();
+            }
+            java.util.ArrayList<String> list = new java.util.ArrayList<>();
+            DexClass dex = dexLookup == null ? null
+                    : dexLookup.apply("L" + type + ";");
+            if (dex != null) {
+                if (dex.superclass != null) {
+                    list.add(TxDescriptors.internal(dex.superclass));
+                }
+                for (String iface : dex.interfaces) {
+                    list.add(TxDescriptors.internal(iface));
+                }
+                return list;
+            }
+            try {
+                Class<?> host = Class.forName(type.replace('/', '.'), false,
+                        hostLoader != null ? hostLoader
+                                : FrameWriter.class.getClassLoader());
+                if (host.getSuperclass() != null) {
+                    list.add(host.getSuperclass().getName().replace('.', '/'));
+                }
+                for (Class<?> iface : host.getInterfaces()) {
+                    list.add(iface.getName().replace('.', '/'));
+                }
+            } catch (ClassNotFoundException | LinkageError e) {
+                // Type unknown everywhere: this lineage stops here and the
+                // merge falls back to Object (a later verification error
+                // names the real gap if the frame depended on it).
+            }
+            return list;
+        }
+
+        private static String commonComponent(String arrayType) {
+            String body = arrayType.substring(1);
+            while (body.charAt(0) == '[') {
+                body = body.substring(1);
+            }
+            if (body.charAt(0) == 'L' && body.endsWith(";")) {
+                return body.substring(1, body.length() - 1);
+            }
+            return "java/lang/Object";
+        }
+
+        private static int commonDepth(String type1, String type2) {
+            int depth = 0;
+            while (depth < type1.length() && depth < type2.length()
+                    && type1.charAt(depth) == '[' && type2.charAt(depth) == '[') {
+                depth++;
+            }
+            return depth;
+        }
+    }
+
+    /**
+     * TEMP probe: emits one method with frames and without verifier gating
+     * (for {@code txdump} forensics of a degraded method).
+     */
+    public static byte[] emitProbeSingle(DexClass cls,
+            Map<String, List<DexClass.DexField>> synthsByOwner,
+            java.util.Set<String> guestInterfaces,
+            java.util.function.Function<String, DexClass> dexLookup,
+            ClassLoader hostLoader, String methodFilter) {
+        int access = asmAccess(cls.accessFlags);
+        if ((access & ACC_INTERFACE) == 0) {
+            access |= ACC_SUPER;
+        }
+        String name = TxDescriptors.internal(cls.type);
+        String parent = cls.superclass == null ? null
+                : TxDescriptors.internal(cls.superclass);
+        String[] ifaces = cls.interfaces.stream().map(TxDescriptors::internal)
+                .toArray(String[]::new);
+        FrameWriter probe = new FrameWriter(dexLookup, hostLoader);
+        probe.visit(Opcodes.V1_8, access, name, null, parent, ifaces);
+        for (DexMethod method : cls.methods) {
+            String want = methodFilter;
+            String descFilter = null;
+            int paren = want.indexOf('(');
+            if (paren >= 0) {
+                descFilter = want.substring(paren);
+                want = want.substring(0, paren);
+            }
+            if (!method.name.equals(want)
+                    || (descFilter != null
+                        && !TxTranslator.asmDesc(method).equals(descFilter))) {
+                continue;
+            }
+            new TxMethodWriter(probe, method, guestInterfaces,
+                    List.of()).emit();
+        }
+        probe.visitEnd();
+        return probe.toByteArray();
+    }
+
+    /**
+     * Kind-lattice replay of the probe bytes: ASM's Analyzer with
+     * {@code BasicVerifier} merge-conflicts an int/reference local the same
+     * way the JVM's frame verifier would, before the whole class proves
+     * und definable. Throws {@link TxGap} naming the method.
+     */
+    private static void verifyKindwise(byte[] bytes, String name, String desc,
+            String sig) {
+        ClassNode node = new ClassNode();
+        new ClassReader(bytes).accept(node, ClassReader.SKIP_FRAMES);
+        for (MethodNode mn : node.methods) {
+            if (mn.name.equals(name) && mn.desc.equals(desc)) {
+                try {
+                    new Analyzer<org.objectweb.asm.tree.analysis.BasicValue>(
+                            new BasicVerifier()).analyze(node.name, mn);
+                } catch (AnalyzerException e) {
+                    throw new TxGap(sig + " @frame: kind conflict: "
+                            + e.getMessage() + " @ " + brief(e.node));
+                }
+                return;
+            }
+        }
+    }
+
+    /** One-line description of a failing ASM instruction for the census. */
+    private static String brief(org.objectweb.asm.tree.AbstractInsnNode n) {
+        if (n == null) {
+            return "?";
+        }
+        String head = n.getClass().getSimpleName();
+        if (n instanceof org.objectweb.asm.tree.FieldInsnNode f) {
+            return head + " " + f.owner + "." + f.name + " " + f.desc;
+        }
+        if (n instanceof org.objectweb.asm.tree.MethodInsnNode m) {
+            return head + " " + m.owner + "." + m.name + m.desc;
+        }
+        if (n instanceof org.objectweb.asm.tree.VarInsnNode v) {
+            return head + " var=" + v.var;
+        }
+        if (n instanceof org.objectweb.asm.tree.IntInsnNode ii) {
+            return head + " " + ii.operand;
+        }
+        if (n instanceof org.objectweb.asm.tree.TypeInsnNode t) {
+            return head + " " + t.desc;
+        }
+        if (n instanceof org.objectweb.asm.tree.LdcInsnNode ld) {
+            return head + " " + ld.cst;
+        }
+        return head + " op=" + n.getOpcode();
     }
 
     /**
@@ -251,6 +547,21 @@ public final class TxTranslator implements Opcodes {
         }
         if ((dexFlags & ACC_TRANSIENT) != 0) {
             out |= ACC_TRANSIENT;
+        }
+        // Class-shape bits sharing values across dex and JVM flag spaces
+        // (interface 0x200, synthetic, annotation, enum); ASM validates the
+        // interface bit on every `implements` referencing these classes.
+        if ((dexFlags & ACC_INTERFACE) != 0) {
+            out |= ACC_INTERFACE;
+        }
+        if ((dexFlags & ACC_SYNTHETIC) != 0) {
+            out |= ACC_SYNTHETIC;
+        }
+        if ((dexFlags & ACC_ANNOTATION) != 0) {
+            out |= ACC_ANNOTATION;
+        }
+        if ((dexFlags & ACC_ENUM) != 0) {
+            out |= ACC_ENUM;
         }
         if ((dexFlags & ACC_ABSTRACT) != 0) {
             out |= ACC_ABSTRACT;

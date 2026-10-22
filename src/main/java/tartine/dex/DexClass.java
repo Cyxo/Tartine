@@ -16,11 +16,21 @@ public final class DexClass {
         public final String name;
         public final String type;
         public final int accessFlags;
+        /**
+         * DEX static-field initial value (dex {@code static_values_off},
+         * via dexlib2 Field#getInitialValue), pre-boxed to its Java value
+         * (Integer/Long/String/...); null when the dex carries none. Java
+         * folds it into the class's ConstantValue attribute for static
+         * final primitives/strings so {@code R.id.*} ints resolve without
+         * <clinit> bytecode (DEX applies these before <clinit> too).
+         */
+        public final Object initialValue;
 
-        public DexField(String name, String type, int accessFlags) {
+        public DexField(String name, String type, int accessFlags, Object initialValue) {
             this.name = name;
             this.type = type;
             this.accessFlags = accessFlags;
+            this.initialValue = initialValue;
         }
     }
 
@@ -73,9 +83,51 @@ public final class DexClass {
         List<DexField> fields = new ArrayList<>();
         for (Field field : classDef.getFields()) {
             fields.add(new DexField(field.getName(), field.getType(),
-                    field.getAccessFlags()));
+                    field.getAccessFlags(), javaInitialValue(field.getInitialValue())));
         }
         return new DexClass(classDef.getType(), classDef.getAccessFlags(),
                 classDef.getSuperclass(), interfaces, methods, fields);
+    }
+
+    /**
+     * Boxes a dexlib2 EncodedValue into its Java constant representative
+     * for the classfile ConstantValue attribute. Arrays/enums/type/method
+     * refs cannot be ConstantValues — they answer null (the loader seeds
+     * nothing; the guest's <clinit> keeps owning any runtime setup for
+     * those, exactly as today's no-value path behaves).
+     */
+    private static Object javaInitialValue(
+            com.android.tools.smali.dexlib2.iface.value.EncodedValue ev) {
+        if (ev instanceof com.android.tools.smali.dexlib2.iface.value.IntEncodedValue v) {
+            return v.getValue();
+        }
+        if (ev instanceof com.android.tools.smali.dexlib2.iface.value.LongEncodedValue v) {
+            return v.getValue();
+        }
+        if (ev instanceof com.android.tools.smali.dexlib2.iface.value.ShortEncodedValue v) {
+            return v.getValue();
+        }
+        if (ev instanceof com.android.tools.smali.dexlib2.iface.value.ByteEncodedValue v) {
+            return v.getValue();
+        }
+        if (ev instanceof com.android.tools.smali.dexlib2.iface.value.CharEncodedValue v) {
+            return v.getValue();
+        }
+        if (ev instanceof com.android.tools.smali.dexlib2.iface.value.FloatEncodedValue v) {
+            return v.getValue();
+        }
+        if (ev instanceof
+                com.android.tools.smali.dexlib2.iface.value.DoubleEncodedValue v) {
+            return v.getValue();
+        }
+        if (ev instanceof
+                com.android.tools.smali.dexlib2.iface.value.BooleanEncodedValue v) {
+            return v.getValue();
+        }
+        if (ev instanceof
+                com.android.tools.smali.dexlib2.iface.value.StringEncodedValue v) {
+            return v.getValue();
+        }
+        return null;
     }
 }

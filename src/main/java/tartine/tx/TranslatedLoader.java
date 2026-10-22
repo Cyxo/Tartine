@@ -5,9 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import tartine.dex.DexClass;
 
 import tartine.dex.DexClass;
 import tartine.dex.DexSet;
@@ -22,7 +19,6 @@ public final class TranslatedLoader extends ClassLoader {
     private final Map<String, List<DexClass.DexField>> fieldSynths;
     /** DEX interfaces, for invoke-virtual-on-interface-owner rewriting. */
     private final Set<String> guestInterfaces;
-    private final Map<String, Class<?>> cache = new ConcurrentHashMap<>();
 
     public TranslatedLoader(ClassLoader parent, DexSet dex) {
         super(parent);
@@ -32,7 +28,7 @@ public final class TranslatedLoader extends ClassLoader {
         for (tartine.dex.Dex d : dex.dexes()) {
             all.addAll(d.classes());
             for (DexClass c : d.classes()) {
-                if ((c.accessFlags & 0x400) != 0) { // ACC_INTERFACE (dex)
+                if ((c.accessFlags & TxTranslator.ACC_INTERFACE) != 0) {
                     ifaces.add(c.type);
                 }
             }
@@ -48,15 +44,30 @@ public final class TranslatedLoader extends ClassLoader {
         if (cls == null) {
             throw new ClassNotFoundException(name);
         }
-        return cache.computeIfAbsent(name, n -> {
+        // defineClass is reentrant here: defining a guest resolves its
+        // superclass (also a guest) through this very method, nested on the
+        // same thread. So translate happens lock-free and pure (it only
+        // reads the dex model), and the definition itself is serialized:
+        // ConcurrentHashMap.computeIfAbsent would abort that recursion with
+        // "Recursive update".
+        Class<?> loaded = findLoadedClass(name);
+        if (loaded == null) {
+            final byte[] bytes;
             try {
-                byte[] bytes = TxTranslator.translate(cls, fieldSynths,
-                        guestInterfaces);
-                return defineClass(n, bytes, 0, bytes.length);
+                bytes = TxTranslator.translate(cls, fieldSynths,
+                        guestInterfaces, d -> dex.findClass(d), getParent());
             } catch (RuntimeException e) {
-                throw new IllegalStateException("translate " + cls.type + " failed", e);
+                throw new IllegalStateException(
+                        "translate " + cls.type + " failed", e);
             }
-        });
+            synchronized (this) {
+                loaded = findLoadedClass(name); // another thread may have won
+                if (loaded == null) {
+                    loaded = defineClass(name, bytes, 0, bytes.length);
+                }
+            }
+        }
+        return loaded;
     }
 
     @Override
@@ -72,6 +83,21 @@ public final class TranslatedLoader extends ClassLoader {
     @Override
     public String toString() {
         return "TranslatedLoader(" + dex.classCount() + " classes)";
+    }
+
+    /** Guest dex-owned interface descriptors (probe harness seam). */
+    public Set<String> guestInterfaces() {
+        return guestInterfaces;
+    }
+
+    /** Undeclared referenced fields (probe harness seam). */
+    public Map<String, List<DexClass.DexField>> fieldSynths() {
+        return fieldSynths;
+    }
+
+    /** Dex model lookup by descriptor (probe harness seam). */
+    public java.util.function.Function<String, DexClass> dexLookup() {
+        return d -> dex.findClass(d);
     }
 
     /** Translates eagerly, creating an ISE on the first TxGap. */

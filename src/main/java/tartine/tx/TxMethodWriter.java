@@ -1,6 +1,7 @@
 package tartine.tx;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -11,6 +12,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import tartine.dex.DexClass;
 import tartine.dex.DexMethod;
 import tartine.dex.Insn;
 
@@ -38,10 +40,27 @@ final class TxMethodWriter implements Opcodes {
 
     private final DexMethod method;
     private final List<Insn> insns;
-    private final MethodVisitor mv;
+    private MethodVisitor mv;
 
     private final Map<Integer, Label> labels = new HashMap<>();
     private final Set<Integer> labelsVisited = new HashSet<>();
+
+    /**
+     * Per join-label (offset): predecessor state snapshots captured at jump
+     * sites. At a join the state is the union of crossings, so:
+     * <ul>
+     *   <li>regZero — a register reads statically zero only when every
+     *       crossing pred delivered zero. Linear replay alone keeps the
+     *       last-emitted pred's view (e.g. the {@code const v0,#0} of one
+     *       branch leaking past the merge point where the other branch
+     *       carried {@code #1} — androidx Lifecycle's isMainThread then
+     *       returned literal 0).</li>
+     *   <li>regKind — the same for DEX value kinds: {@code if-ge} on a
+     *       register both preds typed int must not inherit the Object kind
+     *       a <i>returned</i> branch left (Lifecycling's adapter loop).</li>
+     * </ul>
+     */
+    private final Map<Integer, List<JoinPred>> joinPreds = new HashMap<>();
 
     private final char[] regKind;
     private final String[] regArray;
@@ -55,6 +74,26 @@ final class TxMethodWriter implements Opcodes {
      *  both an int and the null reference at each use site). */
     private final boolean[] regZero;
 
+    /** One crossing's flow state, snapshot at its jump site. */
+    private static final class JoinPred {
+        final boolean[] zero;
+        final char[] kind;
+
+        JoinPred(boolean[] zero, char[] kind) {
+            this.zero = zero;
+            this.kind = kind;
+        }
+    }
+
+    /** Preview pass: silent emission that only records store kinds. */
+    private boolean previewing;
+    /** Per-register store kinds observed by the preview pass. */
+    private Map<Integer, Set<Character>> storeKinds;
+    /** Registers whose stores take conflicting kinds (int on one path, a
+     *  reference on another — d8 reuses registers polymorphically). All
+     *  their writes unify Object-typed so frame merges stay compatible. */
+    private Set<Integer> mixedSlots;
+
     /** Result of the previous instruction still on the stack: descriptor. */
     private String pendingResult;
     /** Array descriptor for the pending result (array clone), else null. */
@@ -63,11 +102,31 @@ final class TxMethodWriter implements Opcodes {
     private Insn currentInsn;
     /** DEX-owned interface type descriptors, for virtual-on-interface refs. */
     private final java.util.Set<String> guestInterfaces;
+    /**
+     * Non-final static fields carrying dex static_values initial values.
+     * The JVM ConstantValue cannot seed those (JVMS §4.7.3 restricts it to
+     * static finals), so the translator assigns them at the head of
+     * {@code <clinit>} — the same ordering the device uses (dex static
+     * field initial values apply before {@code <clinit>} body code runs).
+     */
+    private final List<DexClass.DexField> staticSeeds;
+    /**
+     * Registers a loop body stores, keyed by the loop-header offset. A
+     * backward branch's pred state is captured only after the header label
+     * was already visited (emission is one linear pass), so the header
+     * merge can never see the back edge. Entry-edge constants (const-4 #0
+     * folded to null via regZero) must be killed for every register the
+     * body re-stores — Compose's SnapshotKt.readable carried its
+     * candidate-tracking register as literal null through the whole loop.
+     */
+    private Map<Integer, Set<Integer>> loopWritten;
 
     TxMethodWriter(ClassWriter cw, DexMethod method,
-            java.util.Set<String> guestInterfaces) {
+            java.util.Set<String> guestInterfaces,
+            List<DexClass.DexField> staticSeeds) {
         this.method = method;
         this.guestInterfaces = guestInterfaces;
+        this.staticSeeds = staticSeeds == null ? List.of() : staticSeeds;
         this.insns = method.instructions;
         int regCount = Math.max(method.registerCount, paramRegs());
         this.regKind = new char[regCount + 1];
@@ -88,6 +147,99 @@ final class TxMethodWriter implements Opcodes {
     }
 
     void emit() {
+        // Pass 1 — silent preview echoing the whole emission to record which
+        // kinds each register's stores take. Real d8 reuses one register
+        // polymorphically (an ordinal int on one path, a reference on
+        // another); typed stores then collide at the JVM's frame merges and
+        // the verifier rejects the entire class. Pass 2 unifies conflicting
+        // registers Object-typed: numeric writes box through their valueOf
+        // bridge, references store as-is, and reads adapt through load()'s
+        // existing box/unbox contract.
+        MethodVisitor real = mv;
+        try {
+            mv = new MethodVisitor(Opcodes.ASM9) {
+            };
+            previewing = true;
+            Map<Integer, Set<Character>> kinds = new HashMap<>();
+            storeKinds = kinds;
+            emitBody();
+            mixedSlots = conflicting(kinds);
+        } finally {
+            previewing = false;
+            storeKinds = null;
+            mv = real;
+        }
+        resetRegisterState();
+        emitBody();
+    }
+
+    /**
+     * Wipes mutable emission state so the real pass replays from the same
+     * starting conditions (the preview pass mutates these fields).
+     */
+    private void resetRegisterState() {
+        java.util.Arrays.fill(regKind, UNKNOWN);
+        java.util.Arrays.fill(regArray, null);
+        java.util.Arrays.fill(regZero, false);
+        java.util.Arrays.fill(regUninit, false);
+        labels.clear();
+        labelsVisited.clear();
+        joinPreds.clear();
+        pendingResult = null;
+        pendingArray = null;
+        currentInsn = null;
+    }
+
+    /** Registers whose stores carry conflicting kinds unify Object-typed. */
+    private Set<Integer> conflicting(Map<Integer, Set<Character>> kinds) {
+        Set<Integer> out = new HashSet<>();
+        for (Map.Entry<Integer, Set<Character>> e : kinds.entrySet()) {
+            Set<Character> ks = e.getValue();
+            // {reference + int}/{reference + long} stores unify: the real
+            // d8 shape is a numeric landing in a register that also carries
+            // a reference (the merged merge then rejects int in one path
+            // and the ref type in another; SnapshotIdSet.set(I) joins a
+            // long-typed arm with a ref arm at one label; Long.valueOf
+            // boxes the numeric arm, loads unbox per demand).
+            // {int,long} joins unify too: d8 never bit-reinterprets
+            // through a merged register (the dex verifier rejects
+            // width-mixed register pairs at the read), so boxing stays
+            // exact.
+            // Float/long/double joins WITHOUT an int/reference arm stay
+            // raw-typed: their bit-reinterpret semantics (aget of a
+            // float[] read as int bits) die under boxing, and
+            // int-to-float vN,vN reuses a register in straight-line code
+            // without any merge. A truly merging numeric conflict degrades
+            // loudly through the BasicVerifier probe instead.
+            if ((ks.contains(OBJ) && (ks.contains(INT) || ks.contains(LONG)))
+                    || (ks.contains(INT) && ks.contains(LONG))) {
+                out.add(e.getKey());
+            }
+        }
+        return out;
+    }
+
+    void emitBody() {
+        // Head-of-<clinit> seeding for the non-final static_values: LDC the
+        // dex initial value and PUTSTATIC it before any body instruction —
+        // device ordering (exploring dex-format static field initial
+        // values); an explicit <clinit> sput still overwrites after, exactly
+        // as on device.
+        if (method.name.equals("<clinit>") && !staticSeeds.isEmpty()) {
+            for (DexClass.DexField f : staticSeeds) {
+                mv.visitLdcInsn(f.initialValue);
+                mv.visitFieldInsn(Opcodes.PUTSTATIC, method.owner,
+                        f.name, f.type);
+            }
+        }
+        // Pre-register every branch target before the emission pass: inline
+        // label visits only see labels created earlier in the stream, so a
+        // backward goto (loop) would otherwise keep its label unvisited and
+        // flush past the method end — a jump target with no code, which the
+        // verifier rejects ("Execution can fall off the end").
+        preRegisterBranchTargets();
+        preScanLoops();
+        visitTries();
         // Interpreter semantics: reading a register never written in a path
         // yields zero/null. The JVM verifier forbids reads of unassigned
         // locals, so pre-initialize every non-parameter slot to null (the
@@ -99,7 +251,6 @@ final class TxMethodWriter implements Opcodes {
             mv.visitInsn(ACONST_NULL);
             mv.visitVarInsn(ASTORE, slot);
         }
-        visitTries();
         copyParams();
         for (int i = 0; i < insns.size(); i++) {
             if (skipInsn.contains(i)) {
@@ -107,12 +258,15 @@ final class TxMethodWriter implements Opcodes {
             }
             int off = insns.get(i).codeOffset;
             if (labels.containsKey(off)) {
-                visitLabel(off);
+                visitLabel(off, i);
             }
             if (isPayloadOp(insns.get(i))) {
                 // Payload bytes are DATA; real control flow never falls in.
                 if (i + 1 < insns.size()) {
-                    mv.visitJumpInsn(GOTO, labelAt(insns.get(i + 1).codeOffset));
+                    int target = insns.get(i + 1).codeOffset;
+                    labelAt(target);
+                    snapshotJoin(target);
+                    mv.visitJumpInsn(GOTO, labels.get(target));
                 }
                 continue;
             }
@@ -136,19 +290,206 @@ final class TxMethodWriter implements Opcodes {
     // Labels / tries / entry copy
     // ---------------------------------------------------------------------
 
+    /**
+     * Labels every branch/switch target (same arithmetic as the inline
+     * emitters) so a target earlier in the stream already carries its label
+     * when the emission loop crosses it.
+     */
+    private void preRegisterBranchTargets() {
+        for (int i = 0; i < insns.size(); i++) {
+            Insn in = insns.get(i);
+            String op = in.opcode;
+            if (op.startsWith("goto") || op.startsWith("if-")) {
+                labelAt(in.codeOffset + in.branchOffset);
+            } else if (op.equals("packed-switch")
+                    || op.equals("sparse-switch")) {
+                labelAt(fallthroughOf(i));
+                Insn payload = payloadAt(in.codeOffset + in.branchOffset);
+                for (int target : payload.payloadTargets) {
+                    labelAt(in.codeOffset + target);
+                }
+            }
+        }
+    }
+
     private Label labelAt(int off) {
         return labels.computeIfAbsent(off, k -> new Label());
     }
 
-    private void visitLabel(int off) {
+    /**
+     * Backward-branch arcs (loop headers) and the registers each loop body
+     * stores. Mirrors the branch enumeration of
+     * {@link #preRegisterBranchTargets()}. The header merge kills regZero
+     * for those registers — the back edge re-enters with body-written
+     * values, so entry-edge constants are stale across the join.
+     */
+    private void preScanLoops() {
+        Map<Integer, List<Integer>> arcs = new HashMap<>();
+        for (int i = 0; i < insns.size(); i++) {
+            Insn in = insns.get(i);
+            String op = in.opcode;
+            if (op.startsWith("goto") || op.startsWith("if-")) {
+                arcs.computeIfAbsent(in.codeOffset + in.branchOffset,
+                        x -> new ArrayList<>()).add(in.codeOffset);
+            } else if (op.equals("packed-switch") || op.equals("sparse-switch")) {
+                arcs.computeIfAbsent(fallthroughOf(i),
+                        x -> new ArrayList<>()).add(in.codeOffset);
+                Insn payload = payloadAt(in.codeOffset + in.branchOffset);
+                if (payload != null) {
+                    for (int target : payload.payloadTargets) {
+                        arcs.computeIfAbsent(in.codeOffset + target,
+                                x -> new ArrayList<>()).add(in.codeOffset);
+                    }
+                }
+            }
+        }
+        loopWritten = new HashMap<>();
+        for (Map.Entry<Integer, List<Integer>> e : arcs.entrySet()) {
+            int head = e.getKey();
+            for (int source : e.getValue()) {
+                if (head >= source) {
+                    // forward arc (or a branch to its own offset) — not a loop
+                    continue;
+                }
+                // backward edge: the body spans [head, source]
+                Set<Integer> regs = loopWritten.get(head);
+                if (regs == null) {
+                    regs = new HashSet<>();
+                    loopWritten.put(head, regs);
+                }
+                for (Insn in : insns) {
+                    if (in.codeOffset < head || in.codeOffset > source) {
+                        continue;
+                    }
+                    if (!storesRegister(in.opcode) || in.registers == null
+                            || in.registers.isEmpty()) {
+                        continue;
+                    }
+                    int dst = in.registers.get(0);
+                    regs.add(dst);
+                    if (in.opcode.endsWith("-wide")
+                            || in.opcode.startsWith("const-wide")) {
+                        regs.add(dst + 1);
+                    }
+                }
+            }
+        }
+    }
+
+    /** DEX opcodes whose first register is a value destination. */
+    private static boolean storesRegister(String op) {
+        return op.startsWith("const") || op.startsWith("move")
+                || op.startsWith("aget") || op.startsWith("iget")
+                || op.startsWith("sget") || op.startsWith("new-")
+                || op.startsWith("cmp") || op.startsWith("instance-of")
+                || op.startsWith("array-length") || op.startsWith("add")
+                || op.startsWith("sub") || op.startsWith("mul")
+                || op.startsWith("div") || op.startsWith("rem")
+                || op.startsWith("and") || op.startsWith("or")
+                || op.startsWith("xor") || op.startsWith("shl")
+                || op.startsWith("shr") || op.startsWith("ushr")
+                || op.startsWith("neg") || op.contains("-to-")
+                || op.equals("fill-array-data");
+    }
+
+    /** Captures the current flow state as a join pred for `target`. */
+    private void snapshotJoin(int target) {
+        joinPreds.computeIfAbsent(target, x -> new ArrayList<>()).add(
+                new JoinPred(regZero.clone(), regKind.clone()));
+    }
+
+    /** Code whose flow never falls through to a following label. */
+    private boolean isDeadEnd(Insn in) {
+        return in.opcode.startsWith("goto") || isPayloadOp(in)
+                || in.opcode.startsWith("return") || in.opcode.equals("throw");
+    }
+
+    private void visitLabel(int off, int insnIndex) {
         labelsVisited.add(off);
         mv.visitLabel(labels.get(off));
+        if (loopWritten != null) {
+            Set<Integer> regs = loopWritten.get(off);
+            if (regs != null) {
+                // The backward edge re-enters the header with fresh values
+                // for these registers; the entry-edge zero-fact is stale for
+                // them no matter what the (known) preds say.
+                for (int r : regs) {
+                    regZero[r] = false;
+                }
+            }
+        }
+        List<JoinPred> preds = joinPreds.get(off);
+        if (preds == null || preds.isEmpty()) {
+            return;
+        }
+        // The fall-in pred is the live state at the visit — unless the
+        // previous instruction ends the flow (goto/return/throw/payload),
+        // in which case the stale replay state must not participate.
+        boolean fallIn = true;
+        if (insnIndex >= 0) {
+            int p = insnIndex - 1;
+            while (p >= 0 && skipInsn.contains(p)) {
+                p--;
+            }
+            fallIn = p >= 0 && !isDeadEnd(insns.get(p));
+        }
+        for (int r = 0; r < regZero.length; r++) {
+            // Zero view: only clear, never set — all crossing preds must
+            // agree the register is the universal zero.
+            boolean allZero = true;
+            for (JoinPred pred : preds) {
+                if (!pred.zero[r]) {
+                    allZero = false;
+                    break;
+                }
+            }
+            if (fallIn) {
+                regZero[r] &= allZero;
+            } else {
+                regZero[r] = allZero;
+            }
+            // Kind view: single-agreed pred kind wins; {obj,int} pred mixes
+            // live in unified slots (the frame merges as Object and load()
+            // adapts per demand); any other disagreement is a real gap.
+            Set<Character> ks = new HashSet<>();
+            for (JoinPred pred : preds) {
+                if (pred.kind[r] != UNKNOWN) {
+                    ks.add(pred.kind[r]);
+                }
+            }
+            if (fallIn && regKind[r] != UNKNOWN) {
+                ks.add(regKind[r]);
+            }
+            if (ks.isEmpty()) {
+                continue;
+            }
+            if (ks.size() == 1) {
+                regKind[r] = ks.iterator().next();
+                continue;
+            }
+            if ((ks.contains(OBJ) && (ks.contains(INT)
+                    || ks.contains(LONG)))
+                    || (ks.contains(INT) && ks.contains(LONG))) {
+                // {obj,int}/{obj,long} joins live in unified slots: numerics
+                // box through the store's mixed-slot lane and loads unbox
+                // per demand (SnapshotIdSet.set(I) joins a long-typed arm
+                // with a ref arm at one label). {int,long} merges box too:
+                // d8 never bit-reinterprets through a merged register (the
+                // dex verifier rejects width-mixed register pairs at the
+                // read), so the value world stays exact.
+                regKind[r] = OBJ;
+                continue;
+            }
+            throw new TxTranslator.TxGap(method.owner + "->"
+                    + method.signature() + " @" + off
+                    + " : register v" + r + " joins with kinds " + ks);
+        }
     }
 
     private void flushLabels() {
         for (Map.Entry<Integer, Label> e : labels.entrySet()) {
             if (!labelsVisited.contains(e.getKey())) {
-                visitLabel(e.getKey());
+                visitLabel(e.getKey(), -1);
             }
         }
     }
@@ -168,37 +509,54 @@ final class TxMethodWriter implements Opcodes {
         boolean instance = (method.accessFlags & ACC_STATIC) == 0;
         int first = method.registerCount - paramRegs();
         int paramBase = first;
+        // Parameters start after the receiver's register.
+        if (instance) {
+            paramBase = first + 1;
+        }
+        int count = method.parameterTypes.size();
+        int[] jvmSlots = new int[count];
+        int[] regSlots = new int[count];
+        int slot = instance ? 1 : 0;
+        int reg = instance ? paramBase : first;
+        for (int p = 0; p < count; p++) {
+            jvmSlots[p] = slot;
+            regSlots[p] = reg;
+            boolean wide = TxDescriptors.isWide(method.parameterTypes.get(p));
+            slot += wide ? 2 : 1;
+            // Wide DEX parameters span two registers: the mapping must
+            // stride by the parameter's width, not one register per
+            // parameter (SnapshotIdSet.<init>(JJI[I)V: with unit strides the
+            // int parameter stored its kind onto the second J's low half and
+            // the [I never reached its register).
+            reg += wide ? 2 : 1;
+        }
+        // Params copy HIGH-to-LOW: strided register slots (2*reg) can
+        // overlap the compact JVM parameter layout, and a copy into an
+        // overlapping slot must not fire before the not-yet-read JVM value
+        // is lifted out (enum <init>(String,I): copying the name into slot
+        // 2 would wipe the ordinal slot 2 still carries). The receiver
+        // copies LAST for the same reason: its strided slot can equal a
+        // not-yet-read JVM parameter slot (first == 1 puts the receiver at
+        // slot 2, where a boolean parameter still lives).
+        for (int p = count - 1; p >= 0; p--) {
+            String type = method.parameterTypes.get(p);
+            int reg0 = regSlots[p];
+            loadFromJvmSlot(jvmSlots[p], type);
+            store(reg0, kindOf(type));
+            // An array parameter pays its descriptor forward: a later
+            // array-length/aget resolves the element kind from it (Kotlin
+            // listOf([L...nnn;) variadics array-length the param directly).
+            if (type.startsWith("[")) {
+                regArray[reg0] = type;
+            }
+        }
         if (instance) {
             mv.visitVarInsn(ALOAD, 0);
             store(first, OBJ);
-            regKind[first] = OBJ;
             // In a constructor the receiver parameter IS the
             // uninitialized-this: the verifier admits exactly one <init>
             // call on it, which the uninit-tracking then clears.
             regUninit[first] = method.name.equals("<init>");
-            // Parameters start after the receiver's register.
-            paramBase = first + 1;
-        }
-        // Compute each parameter's JVM source slot first (compact JVM
-        // layout), then copy HIGH-to-LOW: the strided register slots
-        // (2*reg) can overlap the compact JVM parameter slots, and a copy
-        // into an overlapping slot must not fire before the not-yet-read
-        // JVM value is lifted out (enum <init>(String,I): copying the
-        // name into slot 2 would wipe the ordinal that slot 2 still
-        // carries).
-        int count = method.parameterTypes.size();
-        int[] jvmSlots = new int[count];
-        int slot = instance ? 1 : 0;
-        for (int p = 0; p < count; p++) {
-            jvmSlots[p] = slot;
-            slot += TxDescriptors.isWide(method.parameterTypes.get(p)) ? 2 : 1;
-        }
-        for (int p = count - 1; p >= 0; p--) {
-            String type = method.parameterTypes.get(p);
-            int reg = paramBase + p;
-            loadFromJvmSlot(jvmSlots[p], type);
-            store(reg, kindOf(type));
-            regKind[reg] = kindOf(type);
         }
     }
 
@@ -217,11 +575,50 @@ final class TxMethodWriter implements Opcodes {
         }
     }
 
-    /** Stack -> slot store for the given kind. */
+    /** Stack -> slot store for the given kind; records the slot kind. */
     private void store(int reg, char k) {
         regZero[reg] = false;
         int slot = slotOf(reg);
-        switch (k) {
+        if (previewing) {
+            storeKinds.computeIfAbsent(reg, x -> new HashSet<Character>())
+                    .add(k);
+            return;
+        }
+        // regKind tracks the DEX VALUE world (what the slot conceptually
+        // holds); the mixed-slot boxing below is an emission detail and must
+        // not rewrite it — ops replaying kinds (moveNarrow, branches,
+        // compares, loads) would otherwise see a different register picture
+        // in pass 2 than pass 1 recorded, and the conflict census misses
+        // exactly the registers this machinery exists for.
+        regKind[reg] = k;
+        char emitKind = k;
+        if (mixedSlots.contains(reg)) {
+            // Polymorphic register: every write is Object-typed (numerics
+            // box through their valueOf bridge), so frame merges never see
+            // int versus reference conflicts on these slots.
+            emitKind = OBJ;
+            switch (k) {
+                case INT:
+                    mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer",
+                            "valueOf", "(I)Ljava/lang/Integer;", false);
+                    break;
+                case FLOAT:
+                    mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float",
+                            "valueOf", "(F)Ljava/lang/Float;", false);
+                    break;
+                case LONG:
+                    mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long",
+                            "valueOf", "(J)Ljava/lang/Long;", false);
+                    break;
+                case DOUBLE:
+                    mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double",
+                            "valueOf", "(D)Ljava/lang/Double;", false);
+                    break;
+                default:
+                    break;
+            }
+        }
+        switch (emitKind) {
             case LONG: mv.visitVarInsn(LSTORE, slot); break;
             case DOUBLE: mv.visitVarInsn(DSTORE, slot); break;
             case FLOAT: mv.visitVarInsn(FSTORE, slot); break;
@@ -290,7 +687,6 @@ final class TxMethodWriter implements Opcodes {
             }
             int dst = in.registers.get(0);
             store(dst, k);
-            regKind[dst] = k;
             // Track arrays from any invoke returning an array (e.g.
             // Arrays.copyOf) so aget/aput/array-length stay verifiable.
             regArray[dst] = pendingArray != null ? pendingArray
@@ -398,7 +794,18 @@ final class TxMethodWriter implements Opcodes {
                 return (k == LONG || k == DOUBLE) ? INT : k;
             }
             if (op.startsWith("if")) {
-                return wide ? LONG : INT; // zero-test or compare; int default
+                // A conditional test never pins the register's kind: in the
+                // DEX register world if-eqz tests null-or-zero as ONE value
+                // (an object arm tests null, a numeric arm zero), so both
+                // shapes are valid at the test and the first consuming
+                // instruction after it — the member of the join that reads
+                // the slot as data — decides (androidx setContent's
+                // existing-ComposeView probe: const-4 #0 joins with the
+                // check-cast ComposeView arm; boxing the zero made the
+                // null test fall into the wrong cast and blow up CCE).
+                // consumer-less tails still default to the numeric zero
+                // below.
+                continue;
             }
             if (op.equals("monitor-enter") || op.equals("monitor-exit")
                     || op.equals("throw") || op.equals("check-cast")
@@ -527,8 +934,71 @@ final class TxMethodWriter implements Opcodes {
     // ---------------------------------------------------------------------
 
     private void load(int reg, char want) {
+        boolean mixed = mixedSlots != null && mixedSlots.contains(reg);
         char have = regKind[reg];
         char k = have == UNKNOWN ? want : have;
+        if (mixed) {
+            // Unified slot: its JVM-typed value is always an Object — the
+            // raw reference or the box the numeric store left. load() routes
+            // by demand; value-kind tracking (regKind) only shapes which
+            // bridge fits, never a raw-typed local access (ILOAD would read
+            // the box).
+            int slot = slotOf(reg);
+            if (regZero[reg]) {
+                switch (want) {
+                    case OBJ:
+                        mv.visitInsn(ACONST_NULL);
+                        return;
+                    case LONG:
+                        mv.visitInsn(LCONST_0);
+                        return;
+                    case DOUBLE:
+                        mv.visitInsn(DCONST_0);
+                        return;
+                    case FLOAT:
+                        mv.visitInsn(FCONST_0);
+                        return;
+                    default:
+                        mv.visitInsn(ICONST_0);
+                        return;
+                }
+            }
+            switch (want) {
+                case OBJ:
+                    mv.visitVarInsn(ALOAD, slot);
+                    return;
+                default:
+                    // Numerics unbox the last store's box family. Number is
+                    // the safe decode: a {obj,int} slot that also met a
+                    // float/long store still decodes through the same
+                    // interface instead of failing checkcast Integer.
+                    System.err.println("tx: unbox " + method.owner + "->"
+                            + method.name + " slot v" + reg + gapSite());
+                    mv.visitVarInsn(ALOAD, slot);
+                    mv.visitTypeInsn(CHECKCAST, "java/lang/Number");
+                    String accessor = want == FLOAT ? "floatValue"
+                            : want == LONG ? "longValue"
+                            : want == DOUBLE ? "doubleValue"
+                            : "intValue";
+                    String accDesc = want == FLOAT ? "()F"
+                            : want == LONG ? "()J"
+                            : want == DOUBLE ? "()D"
+                            : "()I";
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Number",
+                            accessor, accDesc, false);
+                    return;
+            }
+        }
+        if (want == OBJ && regZero[reg]) {
+            // DEX's universal zero (const 0) on this register: a reference
+            // demand reads null. load() consulted this lane only for
+            // numeric-typed slots before; {obj,int}-unified slots make
+            // regKind OBJ up front, so it must gate the plain ALOAD too —
+            // otherwise the boxed zero flows into typed fields
+            // (SafeIterableMap.remove zeroing Entry.mNext/mPrevious).
+            mv.visitInsn(ACONST_NULL);
+            return;
+        }
         if (want == OBJ && k != OBJ && k != UNKNOWN) {
             // Interpreter-style mixed numeric slot: the value stays numeric
             // in the register and the reference demand autoboxes it (the
@@ -599,6 +1069,44 @@ final class TxMethodWriter implements Opcodes {
         }
         if (want == DOUBLE && k == LONG) {
             bitReinterpret(reg, want, k);
+            return;
+        }
+        if (k == OBJ && regZero[reg]
+                && (want == LONG || want == DOUBLE || want == FLOAT)) {
+            // Zero-typed mixed slot read by arithmetic: numeric zero.
+            mv.visitInsn(want == LONG ? LCONST_0
+                    : want == DOUBLE ? DCONST_0 : FCONST_0);
+            return;
+        }
+        if ((want == LONG || want == FLOAT || want == DOUBLE) && k == OBJ) {
+            // Unified polymorphic slot: the box family matches the last
+            // numeric store (each store kind boxed its own value type), so
+            // a checkcast of the matching box is safe.
+            System.err.println("tx: unbox " + method.owner + "->"
+                    + method.name + " slot v" + reg + gapSite());
+            mv.visitVarInsn(ALOAD, slotOf(reg));
+            String box;
+            String method0;
+            String desc;
+            switch (want) {
+                case LONG:
+                    box = "java/lang/Long";
+                    method0 = "longValue";
+                    desc = "()J";
+                    break;
+                case FLOAT:
+                    box = "java/lang/Float";
+                    method0 = "floatValue";
+                    desc = "()F";
+                    break;
+                default:
+                    box = "java/lang/Double";
+                    method0 = "doubleValue";
+                    desc = "()D";
+                    break;
+            }
+            mv.visitTypeInsn(CHECKCAST, box);
+            mv.visitMethodInsn(INVOKEVIRTUAL, box, method0, desc, false);
             return;
         }
         if (want != k && k != UNKNOWN && want != 'B' && want != 'C' && want != 'S') {
@@ -687,12 +1195,23 @@ final class TxMethodWriter implements Opcodes {
             // Integer.valueOf (whose int param scans INT), and the
             // interpreter kept the value with autoboxing at the bridge.
             // Zero remains zero-typed: load() pushes ACONST_NULL there.
+            boolean objScan = k == OBJ;
             if (k == OBJ) {
                 k = INT;
             }
-            pushLiteral(in.literal, k);
-            store(dst, k);
-            regKind[dst] = k;
+            if (objScan && in.literal == 0) {
+                // Reference-domain zero: the first-consumer scan typed this
+                // register by its reference uses, so the slot VALUE is the
+                // null reference. Boxing the zero leaks Integer(0) into
+                // later cast sites on flows where the register is never
+                // reassigned (LifecycleRegistry.calculateTargetState's
+                // nullable observer state hitting the min() argument cast).
+                mv.visitInsn(ACONST_NULL);
+                store(dst, OBJ);
+            } else {
+                pushLiteral(in.literal, k);
+                store(dst, k);
+            }
             regArray[dst] = null;
             regZero[dst] = k == INT && in.literal == 0;
             return;
@@ -708,7 +1227,6 @@ final class TxMethodWriter implements Opcodes {
             }
             pushLiteral(in.literal, k);
             store(dst, k);
-            regKind[dst] = k;
             regZero[dst] = k == LONG && in.literal == 0;
             return;
         }
@@ -716,7 +1234,6 @@ final class TxMethodWriter implements Opcodes {
             int dst = in.registers.get(0);
             mv.visitLdcInsn(stripStringRef(in.reference));
             store(dst, OBJ);
-            regKind[dst] = OBJ;
             regArray[dst] = null;
             return;
         }
@@ -724,7 +1241,6 @@ final class TxMethodWriter implements Opcodes {
             int dst = in.registers.get(0);
             mv.visitLdcInsn(org.objectweb.asm.Type.getType(in.reference));
             store(dst, OBJ);
-            regKind[dst] = OBJ;
             regArray[dst] = null;
             return;
         }
@@ -733,8 +1249,7 @@ final class TxMethodWriter implements Opcodes {
         }
         if (op.equals("move-exception")) {
             int dst = in.registers.get(0);
-            mv.visitVarInsn(ASTORE, slotOf(dst));
-            regKind[dst] = OBJ;
+            store(dst, OBJ);
             regArray[dst] = null;
             regZero[dst] = false;
             return;
@@ -756,6 +1271,7 @@ final class TxMethodWriter implements Opcodes {
             return;
         }
         if (op.startsWith("goto")) {
+            snapshotJoin(in.codeOffset + in.branchOffset);
             mv.visitJumpInsn(GOTO, labelAt(in.codeOffset + in.branchOffset));
             return;
         }
@@ -775,7 +1291,6 @@ final class TxMethodWriter implements Opcodes {
             int dst = in.registers.get(0);
             mv.visitTypeInsn(NEW, TxDescriptors.internal(in.reference));
             store(dst, OBJ);
-            regKind[dst] = OBJ;
             regArray[dst] = null;
             regUninit[dst] = true;
             // The fixture also emits move-result-object right after
@@ -799,7 +1314,6 @@ final class TxMethodWriter implements Opcodes {
                 mv.visitTypeInsn(ANEWARRAY, TxDescriptors.internal(elem));
             }
             store(dst, OBJ);
-            regKind[dst] = OBJ;
             regArray[dst] = in.reference;
             return;
         }
@@ -841,7 +1355,6 @@ final class TxMethodWriter implements Opcodes {
             load(dst, OBJ);
             mv.visitTypeInsn(CHECKCAST, TxDescriptors.internal(in.reference));
             store(dst, OBJ);
-            regKind[dst] = OBJ;
             regArray[dst] = in.reference.startsWith("[") ? in.reference : null;
             return;
         }
@@ -851,7 +1364,6 @@ final class TxMethodWriter implements Opcodes {
             load(src, OBJ);
             mv.visitTypeInsn(INSTANCEOF, TxDescriptors.internal(in.reference));
             store(dst, INT);
-            regKind[dst] = INT;
             regArray[dst] = null;
             return;
         }
@@ -869,7 +1381,6 @@ final class TxMethodWriter implements Opcodes {
             mv.visitTypeInsn(CHECKCAST, TxDescriptors.internal(arrDesc));
             mv.visitInsn(ARRAYLENGTH);
             store(dst, INT);
-            regKind[dst] = INT;
             regArray[dst] = null;
             return;
         }
@@ -933,7 +1444,6 @@ final class TxMethodWriter implements Opcodes {
         int src = in.registers.get(1);
         load(src, OBJ);
         store(dst, OBJ);
-        regKind[dst] = OBJ;
         regArray[dst] = regArray[src];
         regZero[dst] = regZero[src];
     }
@@ -944,7 +1454,6 @@ final class TxMethodWriter implements Opcodes {
         char k = regKind[src] != UNKNOWN ? regKind[src] : narrowScan(i, src);
         load(src, k);
         store(dst, k);
-        regKind[dst] = k;
         regArray[dst] = regArray[src];
         regZero[dst] = regZero[src];
     }
@@ -955,7 +1464,6 @@ final class TxMethodWriter implements Opcodes {
         char k = regKind[src] != UNKNOWN ? regKind[src] : wideScan(i, src);
         load(src, k);
         store(dst, k);
-        regKind[dst] = k;
     }
 
     private void emitReturn(Insn in) {
@@ -982,6 +1490,13 @@ final class TxMethodWriter implements Opcodes {
                 throw gap("return-object needed for " + rt, in);
             }
             load(in.registers.get(0), OBJ);
+            // Unified slots declare Object: the verifier wants the stack
+            // top assignable to the declared return type (same discipline
+            // as the field-put cast). Idempotent when the slot already
+            // holds the narrow value; null passes any reference type.
+            if (!rt.equals("Ljava/lang/Object;")) {
+                mv.visitTypeInsn(CHECKCAST, TxDescriptors.internal(rt));
+            }
             mv.visitInsn(ARETURN);
             return;
         }
@@ -996,6 +1511,7 @@ final class TxMethodWriter implements Opcodes {
     private void emitBranch(Insn in) {
         int target = in.codeOffset + in.branchOffset;
         Label to = labelAt(target);
+        snapshotJoin(target);
         String op = in.opcode;
         boolean wideZ = op.endsWith("eqz") || op.endsWith("nez") || op.endsWith("ltz")
                 || op.endsWith("gez") || op.endsWith("gtz") || op.endsWith("lez");
@@ -1004,17 +1520,19 @@ final class TxMethodWriter implements Opcodes {
             char k = regKind[reg];
             int minus = op.indexOf("-");
             String cmp = op.substring(minus + 1, op.length() - 1).replace("z", "");
-            if (k == OBJ) {
+            boolean nullCmp = cmp.equals("eq") || cmp.equals("ne");
+            if (k == OBJ && nullCmp) {
                 load(reg, OBJ);
                 if (cmp.equals("eq")) {
                     mv.visitJumpInsn(IFNULL, to);
-                } else if (cmp.equals("ne")) {
-                    mv.visitJumpInsn(IFNONNULL, to);
                 } else {
-                    throw gap("object branch " + op, in);
+                    mv.visitJumpInsn(IFNONNULL, to);
                 }
                 return;
             }
+            // Numeric z-comparisons (ltz/gez/gtz/lez, and eqz/neqz on typed
+            // int slots) unbox through load(reg, INT): {obj,int}-unified
+            // slots read Integer and precedent (negative value) flows on.
             load(reg, INT); // unknown defaults to int/family shape
             int opc;
             switch (cmp) {
@@ -1091,6 +1609,11 @@ final class TxMethodWriter implements Opcodes {
         int payloadOff = in.codeOffset + in.branchOffset;
         Insn payload = payloadAt(payloadOff);
         Label dflt = labelAt(fallthroughOf(i));
+        // Every switch arm is a join pred, default included.
+        snapshotJoin(fallthroughOf(i));
+        for (int k = 0; k < payload.payloadTargets.size(); k++) {
+            snapshotJoin(base + payload.payloadTargets.get(k));
+        }
         if (in.opcode.equals("packed-switch")) {
             int min = payload.payloadKeys.get(0);
             int max = payload.payloadKeys.get(payload.payloadKeys.size() - 1);
@@ -1175,7 +1698,13 @@ final class TxMethodWriter implements Opcodes {
                 if (regUninit[recv]) {
                     throw gap("virtual call on uninitialized instance", in);
                 }
-                mv.visitTypeInsn(CHECKCAST, TxDescriptors.internal(owner));
+                // Skip casting Object-owned calls (clone(), hashCode()): the
+                // JVM's protected-member check wants the receiver's own
+                // narrow type (an array receiver for Object.clone()), and an
+                // idempotent-but-typed Object cast erases exactly that.
+                if (!owner.equals("Ljava/lang/Object;")) {
+                    mv.visitTypeInsn(CHECKCAST, TxDescriptors.internal(owner));
+                }
             } else if (opcode == INVOKESPECIAL && name.equals("<init>")) {
                 if (!regUninit[recv]) {
                     // Calls a constructor twice on one new-instance. The
@@ -1240,6 +1769,16 @@ final class TxMethodWriter implements Opcodes {
             itf = true;
             opcode = INVOKEINTERFACE;
         }
+        // TEMPORARY trace: did the guest's main-thread gate run?
+        if (isStatic && (owner.startsWith("Landroid/os/Looper;")
+                || owner.contains("arch/core/executor")
+                || owner.contains("LifecycleRegistry_androidKt"))) {
+            mv.visitFieldInsn(GETSTATIC, "java/lang/System", "err",
+                    "Ljava/io/PrintStream;");
+            mv.visitLdcInsn("tx: site " + owner + "->" + name);
+            mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream",
+                    "println", "(Ljava/lang/Object;)V", false);
+        }
         mv.visitMethodInsn(opcode, TxDescriptors.internal(owner), name, desc,
                 itf);
         pended(ref.substring(close + 1), i);
@@ -1276,7 +1815,6 @@ final class TxMethodWriter implements Opcodes {
         if (op.equals("aget-object")) {
             mv.visitInsn(AALOAD);
             store(dst, OBJ);
-            regKind[dst] = OBJ;
             regArray[dst] = null;
             return;
         }
@@ -1284,7 +1822,6 @@ final class TxMethodWriter implements Opcodes {
             char k = wideElement(arr);
             mv.visitInsn(k == DOUBLE ? DALOAD : LALOAD);
             store(dst, k);
-            regKind[dst] = k;
             return;
         }
         if (op.equals("aget") || op.equals("aget-boolean") || op.equals("aget-byte")
@@ -1296,27 +1833,27 @@ final class TxMethodWriter implements Opcodes {
                 case "B": case "Z":
                     mv.visitInsn(BALOAD);
                     store(dst, INT);
-                    regKind[dst] = INT;
+
                     break;
                 case "C":
                     mv.visitInsn(CALOAD);
                     store(dst, INT);
-                    regKind[dst] = INT;
+
                     break;
                 case "S":
                     mv.visitInsn(SALOAD);
                     store(dst, INT);
-                    regKind[dst] = INT;
+
                     break;
                 case "I":
                     mv.visitInsn(IALOAD);
                     store(dst, INT);
-                    regKind[dst] = INT;
+
                     break;
                 case "F":
                     mv.visitInsn(FALOAD);
                     store(dst, FLOAT);
-                    regKind[dst] = FLOAT;
+
                     break;
                 default:
                     throw gap("bare aget element " + elem, in);
@@ -1522,8 +2059,10 @@ final class TxMethodWriter implements Opcodes {
             mv.visitFieldInsn(GETFIELD, TxDescriptors.internal(owner), name, desc);
         }
         store(dst, k);
-        regKind[dst] = k;
-        regArray[dst] = null;
+        // A read of an array-typed field carries its descriptor: a later
+        // aget/aput resolves the element kind from it (SnapshotIdSet.belowBound
+        // is [I and lowest(I) immediately agets it).
+        regArray[dst] = ftype.startsWith("[") ? ftype : null;
     }
 
     private void emitPutField(Insn in, boolean isStatic) {
@@ -1535,14 +2074,25 @@ final class TxMethodWriter implements Opcodes {
         String ftype = ref.substring(colon + 1);
         char k = kindOf(ftype);
         int valueReg = in.registers.get(0);
+        // Slot types widen through CFG merges ({obj,int}-unified slots
+        // declare Object); the JVM wants the field's own type on putfield.
+        // Same narrowing as invoke args; idempotent, JIT elides. The cast
+        // applies to the stack top (the value), after both loads.
+        boolean refField = ftype.startsWith("L") || ftype.startsWith("[");
         if (isStatic) {
             load(valueReg, k == OBJ || k == INT || k == FLOAT || k == LONG || k == DOUBLE
                     ? valueKindFor(ftype) : k);
+            if (refField) {
+                mv.visitTypeInsn(CHECKCAST, TxDescriptors.internal(ftype));
+            }
             mv.visitFieldInsn(PUTSTATIC, TxDescriptors.internal(owner), name, ftype);
         } else {
             int objReg = in.registers.get(1);
             load(objReg, OBJ);
             load(valueReg, valueKindFor(ftype));
+            if (refField) {
+                mv.visitTypeInsn(CHECKCAST, TxDescriptors.internal(ftype));
+            }
             mv.visitFieldInsn(PUTFIELD, TxDescriptors.internal(owner), name, ftype);
         }
     }
@@ -1584,7 +2134,7 @@ final class TxMethodWriter implements Opcodes {
         load(b, kind);
         mv.visitInsn(opc);
         store(dst, INT);
-        regKind[dst] = INT;
+
         regArray[dst] = null;
     }
 
@@ -1685,7 +2235,6 @@ final class TxMethodWriter implements Opcodes {
                 throw gap("unop " + op, in);
         }
         store(dst, k);
-        regKind[dst] = k;
         regArray[dst] = null;
     }
 
@@ -1734,7 +2283,6 @@ final class TxMethodWriter implements Opcodes {
             mv.visitInsn(LSHR);
             mv.visitInsn(L2I);
             store(a, INT);
-            regKind[a] = INT;
             regArray[a] = null;
             return;
         }
@@ -1745,16 +2293,16 @@ final class TxMethodWriter implements Opcodes {
             pushInt((int) in.literal);
             mv.visitInsn(binOpcode(family, k));
             store(a, k);
-            regKind[a] = k;
             regArray[a] = null;
             return;
         }
         if (addr) {
             load(a, k);
             load(in.registers.get(1), rhsKind(family));
-            mv.visitInsn(binOpcode(family, rhsKind(family)));
+            // JVM opcode keys on the LHS kind: shifts carry an int rhs with
+            // a wide lhs (shl-long/2addr is LSHL, not ISHL).
+            mv.visitInsn(binOpcode(family, k));
             store(a, k);
-            regKind[a] = k;
             regArray[a] = null;
             return;
         }
@@ -1762,9 +2310,9 @@ final class TxMethodWriter implements Opcodes {
         int c = in.registers.get(2);
         load(b2, k);
         load(c, rhsKind(family));
-        mv.visitInsn(binOpcode(family, rhsKind(family)));
+        // Same LHS-kind key for the 3-arg form.
+        mv.visitInsn(binOpcode(family, k));
         store(a, k);
-        regKind[a] = k;
         regArray[a] = null;
     }
 
