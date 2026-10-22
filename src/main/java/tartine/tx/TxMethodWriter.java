@@ -68,6 +68,15 @@ final class TxMethodWriter implements Opcodes {
      *  verifier only permits <init> and astore on such refs, so a virtual
      *  call on one is a loud gap (fixture-only shape; real dx never emits). */
     private final boolean[] regUninit;
+    /** Debug: "owner,method,reg" from the tartine.tx.storeTrace property to
+     *  trace kind writes to that register in that method (probe-only,
+     *  never shipped). */
+    private static final String[] STORE_TRACE = initTrace();
+
+    private static String[] initTrace() {
+        String s = System.getProperty("tartine.tx.storeTrace");
+        return s == null ? null : s.split(",");
+    }
     /** Fixture shim: move-result slots whose value was already stored. */
     private final Set<Integer> skipInsn = new HashSet<>();
     /** Register currently holds the literal zero (DEX zero-type: usable as
@@ -578,6 +587,15 @@ final class TxMethodWriter implements Opcodes {
     /** Stack -> slot store for the given kind; records the slot kind. */
     private void store(int reg, char k) {
         regZero[reg] = false;
+        if (STORE_TRACE != null && k != regKind[reg]
+                && method.owner.equals(STORE_TRACE[0])
+                && method.name.equals(STORE_TRACE[1])
+                && reg == Integer.parseInt(STORE_TRACE[2])) {
+            System.err.println("tx: trace store v" + reg + " " + k + " @site "
+                    + (currentInsn == null ? "?" : currentInsn.opcode + "@"
+                    + currentInsn.codeOffset));
+            new Exception("store kind site").printStackTrace();
+        }
         int slot = slotOf(reg);
         if (previewing) {
             storeKinds.computeIfAbsent(reg, x -> new HashSet<Character>())
@@ -861,6 +879,35 @@ final class TxMethodWriter implements Opcodes {
                     return (k == LONG || k == DOUBLE) ? k : LONG;
                 }
                 return (k == LONG || k == DOUBLE) ? INT : k;
+            }
+            // Binop operands demand the family kind; the wide shifts' count
+            // register (the last operand) stays an int (rhsKind). Without
+            // this arm the "-long"-suffix catch-all below typed the count
+            // register J, so its const stored a J-typed zero/value
+            // (ScatterSet.hashCode's const-16 v12, #8 feeding
+            // shr-long/2addr) and the shift demanded int from a J register.
+            if (isBinop(op)) {
+                boolean addr = op.endsWith("-2addr");
+                String fam;
+                if (addr) {
+                    fam = op.substring(0, op.length() - 6);
+                } else if (op.endsWith("-lit8") || op.endsWith("-lit16")) {
+                    fam = op.substring(0, op.length()
+                            - (op.endsWith("-lit8") ? 5 : 6));
+                } else {
+                    fam = familyOf(op);
+                }
+                char k = familyKind(fam);
+                if (pos == 0) {
+                    continue; // dst overwrites; later consumers decide
+                }
+                String head = fam.substring(0, fam.indexOf('-'));
+                boolean wideShift = (head.equals("shl") || head.equals("shr")
+                        || head.equals("ushr")) && fam.endsWith("-long");
+                if (wideShift && pos == (addr ? 1 : 2)) {
+                    return INT;
+                }
+                return k;
             }
             // Conversions consume by from-kind (int-to-double reads int);
             // neg/not carry their kind in the suffix handled below.
@@ -2142,7 +2189,8 @@ final class TxMethodWriter implements Opcodes {
         return op.startsWith("add-") || op.startsWith("sub-") || op.startsWith("mul-")
                 || op.startsWith("div-") || op.startsWith("rem-")
                 || op.startsWith("and-") || op.startsWith("or-") || op.startsWith("xor-")
-                || op.startsWith("shl-") || op.startsWith("shr-") || op.startsWith("ushr-");
+                || op.startsWith("shl-") || op.startsWith("shr-") || op.startsWith("ushr-")
+                || op.startsWith("rsub-");
     }
 
     private boolean isUnop(String op) {
@@ -2289,6 +2337,18 @@ final class TxMethodWriter implements Opcodes {
         if (lit) {
             // lit16/lit8 binops exist for the int family only.
             int src = in.registers.get(1);
+            if (family.startsWith("rsub")) {
+                // dalvik rsub-int (lit8): vAA = -vBB + CC, i.e. lit - src —
+                // the only subtract with the literal as the LEFT operand
+                // (source.android.com dalvik-bytecode rsub-int). The JVM has
+                // no reversed-sub opcode; push the literal first.
+                pushInt((int) in.literal);
+                load(src, k);
+                mv.visitInsn(ISUB);
+                store(a, k);
+                regArray[a] = null;
+                return;
+            }
             load(src, k);
             pushInt((int) in.literal);
             mv.visitInsn(binOpcode(family, k));
