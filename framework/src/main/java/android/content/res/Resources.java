@@ -82,6 +82,26 @@ import tartine.fw.SystemColors;
     private final android.content.res.Configuration mConfiguration =
             new android.content.res.Configuration();
 
+    /**
+     * AOSP Resources.getDisplayMetrics (Resources.java:2238-2240) returns the
+     * ResourcesImpl metrics; the desktop shell has no ResourcesImpl, so the
+     * probe display's metrics are owned here. Values mirror the interpreter's
+     * display builtins (480x960 at density 1.0, 160 dpi).
+     */
+    private final android.util.DisplayMetrics mMetrics = probeDisplayMetrics();
+
+    private static android.util.DisplayMetrics probeDisplayMetrics() {
+        android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+        metrics.widthPixels = 480;
+        metrics.heightPixels = 960;
+        metrics.density = 1.0f;
+        metrics.densityDpi = 160;
+        metrics.scaledDensity = 1.0f;
+        metrics.xdpi = 160.0f;
+        metrics.ydpi = 160.0f;
+        return metrics;
+    }
+
     public android.content.res.Configuration getConfiguration() {
         return mConfiguration;
     }
@@ -99,7 +119,7 @@ import tartine.fw.SystemColors;
     }
 
     public android.util.DisplayMetrics getDisplayMetrics() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDisplayMetrics()Landroid/util/DisplayMetrics;");
+        return mMetrics;
     }
 
     public android.graphics.drawable.Drawable getDrawable(int arg0) {

@@ -348,7 +348,8 @@ package android.content;
     public static final int URI_INTENT_SCHEME = 1;
 
     public Intent() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Intent;-><init>()V");
+        // AOSP frameworks-base core/java/android/content/Intent.java:7906-7908
+        // Intent(): empty body. Nothing else to initialize on the shell.
     }
 
     public Intent(android.content.Context arg0, java.lang.Class arg1) {
@@ -484,7 +485,12 @@ package android.content;
     }
 
     public android.os.Bundle getExtras() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Intent;->getExtras()Landroid/os/Bundle;");
+        // AOSP frameworks-base core/java/android/content/Intent.java
+        // getExtras: (mExtras != null) ? new Bundle(mExtras) : null. The
+        // shell Intent keeps no extras state (handless launch intent),
+        // so the walk-through answers null (matches the interpreter's
+        // empty-Intent builtin).
+        return null;
     }
 
     public int getFlags() {

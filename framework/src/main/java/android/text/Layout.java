@@ -22,295 +22,294 @@ package android.text;
     public static final int JUSTIFICATION_MODE_NONE = 0;
 
     protected Layout(java.lang.CharSequence arg0, android.text.TextPaint arg1, int arg2, android.text.Layout.Alignment arg3, float arg4, float arg5) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;-><init>(Ljava/lang/CharSequence;Landroid/text/TextPaint;ILandroid/text/Layout$Alignment;FF)V");
     }
 
     public android.graphics.RectF computeDrawingBoundingBox() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->computeDrawingBoundingBox()Landroid/graphics/RectF;");
+        return null;
     }
 
     public void draw(android.graphics.Canvas arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->draw(Landroid/graphics/Canvas;)V");
+
     }
 
     public void draw(android.graphics.Canvas arg0, android.graphics.Path arg1, android.graphics.Paint arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->draw(Landroid/graphics/Canvas;Landroid/graphics/Path;Landroid/graphics/Paint;I)V");
+
     }
 
     public void draw(android.graphics.Canvas arg0, java.util.List<android.graphics.Path> arg1, java.util.List<android.graphics.Paint> arg2, android.graphics.Path arg3, android.graphics.Paint arg4, int arg5) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->draw(Landroid/graphics/Canvas;Ljava/util/List;Ljava/util/List;Landroid/graphics/Path;Landroid/graphics/Paint;I)V");
+
     }
 
     public void drawBackground(android.graphics.Canvas arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->drawBackground(Landroid/graphics/Canvas;)V");
+
     }
 
     public void drawText(android.graphics.Canvas arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->drawText(Landroid/graphics/Canvas;)V");
+
     }
 
     public void fillCharacterBounds(int arg0, int arg1, float[] arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->fillCharacterBounds(II[FI)V");
+
     }
 
     public final android.text.Layout.Alignment getAlignment() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getAlignment()Landroid/text/Layout$Alignment;");
+        return null;
     }
 
     public int getBottomPadding() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getBottomPadding()I");
+        return 0;
     }
 
     public final int getBreakStrategy() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getBreakStrategy()I");
+        return 0;
     }
 
     public void getCursorPath(int arg0, android.graphics.Path arg1, java.lang.CharSequence arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getCursorPath(ILandroid/graphics/Path;Ljava/lang/CharSequence;)V");
+
     }
 
     public static float getDesiredWidth(java.lang.CharSequence arg0, android.text.TextPaint arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getDesiredWidth(Ljava/lang/CharSequence;Landroid/text/TextPaint;)F");
+        return getDesiredWidth(arg0, 0, arg0 == null ? 0 : arg0.length(), arg1);
     }
 
     public static float getDesiredWidth(java.lang.CharSequence arg0, int arg1, int arg2, android.text.TextPaint arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getDesiredWidth(Ljava/lang/CharSequence;IILandroid/text/TextPaint;)F");
+        return (arg0 == null ? 0 : (arg2 - arg1) * 10.0f);
     }
 
     public int getEllipsisCount(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getEllipsisCount(I)I");
+        return 0;
     }
 
     public int getEllipsisStart(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getEllipsisStart(I)I");
+        return 0;
     }
 
     public final android.text.TextUtils.TruncateAt getEllipsize() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getEllipsize()Landroid/text/TextUtils$TruncateAt;");
+        return null;
     }
 
     public int getEllipsizedWidth() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getEllipsizedWidth()I");
+        return 0;
     }
 
     public int getHeight() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getHeight()I");
+        return 0;
     }
 
     public final int getHyphenationFrequency() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getHyphenationFrequency()I");
+        return 0;
     }
 
     public final int getJustificationMode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getJustificationMode()I");
+        return 0;
     }
 
     public final int[] getLeftIndents() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLeftIndents()[I");
+        return null;
     }
 
     public final int getLineAscent(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineAscent(I)I");
+        return 0;
     }
 
     public final int getLineBaseline(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineBaseline(I)I");
+        return 0;
     }
 
     public final int getLineBottom(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineBottom(I)I");
+        return 0;
     }
 
     public int getLineBottom(int arg0, boolean arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineBottom(IZ)I");
+        return 0;
     }
 
     public int getLineBounds(int arg0, android.graphics.Rect arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineBounds(ILandroid/graphics/Rect;)I");
+        return 0;
     }
 
     public android.graphics.text.LineBreakConfig getLineBreakConfig() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineBreakConfig()Landroid/graphics/text/LineBreakConfig;");
+        return null;
     }
 
     public boolean getLineContainsTab(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineContainsTab(I)Z");
+        return false;
     }
 
     public int getLineCount() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineCount()I");
+        return 1;
     }
 
     public int getLineDescent(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineDescent(I)I");
+        return 0;
     }
 
     public android.text.Layout.Directions getLineDirections(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineDirections(I)Landroid/text/Layout$Directions;");
+        return null;
     }
 
     public final int getLineEnd(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineEnd(I)I");
+        return 0;
     }
 
     public int getLineForOffset(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineForOffset(I)I");
+        return 0;
     }
 
     public int getLineForVertical(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineForVertical(I)I");
+        return 0;
     }
 
     public float getLineLeft(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineLeft(I)F");
+        return 0.0f;
     }
 
     public int getLineLetterSpacingUnitCount(int arg0, boolean arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineLetterSpacingUnitCount(IZ)I");
+        return 0;
     }
 
     public float getLineMax(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineMax(I)F");
+        return 0.0f;
     }
 
     public float getLineRight(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineRight(I)F");
+        return 0.0f;
     }
 
     public final float getLineSpacingAmount() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineSpacingAmount()F");
+        return 0.0f;
     }
 
     public final float getLineSpacingMultiplier() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineSpacingMultiplier()F");
+        return 0.0f;
     }
 
     public int getLineStart(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineStart(I)I");
+        return 0;
     }
 
     public int getLineTop(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineTop(I)I");
+        return 0;
     }
 
     public int getLineVisibleEnd(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineVisibleEnd(I)I");
+        return 0;
     }
 
     public float getLineWidth(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getLineWidth(I)F");
+        return 0.0f;
     }
 
     public final int getMaxLines() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getMaxLines()I");
+        return 0;
     }
 
     public android.graphics.Paint.FontMetrics getMinimumFontMetrics() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getMinimumFontMetrics()Landroid/graphics/Paint$FontMetrics;");
+        return null;
     }
 
     public int getOffsetForHorizontal(int arg0, float arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getOffsetForHorizontal(IF)I");
+        return 0;
     }
 
     public int getOffsetToLeftOf(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getOffsetToLeftOf(I)I");
+        return 0;
     }
 
     public int getOffsetToRightOf(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getOffsetToRightOf(I)I");
+        return 0;
     }
 
     public final android.text.TextPaint getPaint() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getPaint()Landroid/text/TextPaint;");
+        return new android.text.TextPaint();
     }
 
     public final android.text.Layout.Alignment getParagraphAlignment(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getParagraphAlignment(I)Landroid/text/Layout$Alignment;");
+        return null;
     }
 
     public int getParagraphDirection(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getParagraphDirection(I)I");
+        return 0;
     }
 
     public final int getParagraphLeft(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getParagraphLeft(I)I");
+        return 0;
     }
 
     public final int getParagraphRight(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getParagraphRight(I)I");
+        return 0;
     }
 
     public float getPrimaryHorizontal(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getPrimaryHorizontal(I)F");
+        return 0.0f;
     }
 
     public int[] getRangeForRect(android.graphics.RectF arg0, android.text.SegmentFinder arg1, android.text.Layout.TextInclusionStrategy arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getRangeForRect(Landroid/graphics/RectF;Landroid/text/SegmentFinder;Landroid/text/Layout$TextInclusionStrategy;)[I");
+        return null;
     }
 
     public final int[] getRightIndents() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getRightIndents()[I");
+        return null;
     }
 
     public float getSecondaryHorizontal(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getSecondaryHorizontal(I)F");
+        return 0.0f;
     }
 
     public void getSelectionPath(int arg0, int arg1, android.graphics.Path arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getSelectionPath(IILandroid/graphics/Path;)V");
+
     }
 
     public boolean getShiftDrawingOffsetForStartOverhang() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getShiftDrawingOffsetForStartOverhang()Z");
+        return false;
     }
 
     public final float getSpacingAdd() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getSpacingAdd()F");
+        return 0.0f;
     }
 
     public final float getSpacingMultiplier() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getSpacingMultiplier()F");
+        return 0.0f;
     }
 
     public final java.lang.CharSequence getText() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getText()Ljava/lang/CharSequence;");
+        return new android.text.SpannableString("");
     }
 
     public final android.text.TextDirectionHeuristic getTextDirectionHeuristic() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getTextDirectionHeuristic()Landroid/text/TextDirectionHeuristic;");
+        return null;
     }
 
     public int getTopPadding() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getTopPadding()I");
+        return 0;
     }
 
     public boolean getUseBoundsForWidth() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getUseBoundsForWidth()Z");
+        return false;
     }
 
     public final int getWidth() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->getWidth()I");
+        return 0;
     }
 
     public final void increaseWidthTo(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->increaseWidthTo(I)V");
+
     }
 
     public boolean isFallbackLineSpacingEnabled() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->isFallbackLineSpacingEnabled()Z");
+        return false;
     }
 
     public final boolean isFontPaddingIncluded() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->isFontPaddingIncluded()Z");
+        return false;
     }
 
     public boolean isRtlCharAt(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->isRtlCharAt(I)Z");
+        return false;
     }
 
     protected final boolean isSpanned() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/Layout;->isSpanned()Z");
+        return false;
     }
 
         /** Scratch mirror constructor (SkeletonGen). */

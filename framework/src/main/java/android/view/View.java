@@ -373,7 +373,9 @@ package android.view;
     }
 
     public void clearViewTranslationCallback() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->clearViewTranslationCallback()V");
+        // AOSP frameworks-base core/java/android/view/View.java:33969-33972
+        // clearViewTranslationCallback: mViewTranslationCallback = null.
+        // The shell stores no callback, so clearing is a no-op.
     }
 
     public static int combineMeasuredStates(int arg0, int arg1) {
@@ -978,7 +980,12 @@ package android.view;
     }
 
     public final android.view.contentcapture.ContentCaptureSession getContentCaptureSession() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getContentCaptureSession()Landroid/view/contentcapture/ContentCaptureSession;");
+        // AOSP frameworks-base core/java/android/view/View.java:10988-10990
+        // getContentCaptureSession: cached session or the context's default
+        // manager session; the disabled walk-through returns null when
+        // content capture is off for this view. The desktop raises no
+        // content-capture service (matches the interpreter's null builtin).
+        return null;
     }
 
     public java.lang.CharSequence getContentDescription() {
@@ -989,8 +996,9 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getContentSensitivity()I");
     }
 
+    /** AOSP View.getContext (View.java:17297-17299). */
     public final android.content.Context getContext() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getContext()Landroid/content/Context;");
+        return mContext;
     }
 
     protected android.view.ContextMenu.ContextMenuInfo getContextMenuInfo() {
@@ -1101,8 +1109,21 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getGlobalVisibleRect(Landroid/graphics/Rect;Landroid/graphics/Point;)Z");
     }
 
+    /**
+     * AOSP View.getHandler (View.java:21262-21268): the attach info's handler
+     * when attached, null otherwise. The shell's AttachInfo is still the
+     * {@link #mAttachInfo} marker object (no AttachInfo members yet), so the
+     * main-looper handler is kept on the view as the stand-in for
+     * {@code attachInfo.mHandler}.
+     */
     public android.os.Handler getHandler() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getHandler()Landroid/os/Handler;");
+        if (mAttachInfo == null) {
+            return null;
+        }
+        if (mHandler == null) {
+            mHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+        }
+        return mHandler;
     }
 
     public float getHandwritingBoundsOffsetBottom() {
@@ -1162,7 +1183,11 @@ package android.view;
     private int mID = NO_ID;
 
     public int getImportantForAccessibility() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getImportantForAccessibility()I");
+        // AOSP frameworks-base core/java/android/view/View.java#getImportantForAccessibility:
+        // returns mImportantForAccessibility (default AUTO = 0); no view
+        // hierarchy/accessibility services headless → 0
+        // (matches the interpreter's headless builtin).
+        return 0;
     }
 
     public int getImportantForAutofill() {
@@ -1842,7 +1867,12 @@ package android.view;
     }
 
     public boolean hasWindowFocus() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasWindowFocus()Z");
+        // AOSP frameworks-base core/java/android/view/View.java:16960-16962
+        // hasWindowFocus: mAttachInfo != null && mAttachInfo.mHasWindowFocus.
+        // The shell's AttachInfo is an opaque marker with no focus flag; a
+        // marked window is the foreground window (matches the interpreter's
+        // focused-foreground builtin).
+        return mAttachInfo != null;
     }
 
     public static android.view.View inflate(android.content.Context arg0, int arg1, android.view.ViewGroup arg2) {
@@ -1917,6 +1947,10 @@ package android.view;
      * classes flip it — guests never reference the hidden mAttachInfo. */
     Object mAttachInfo;
 
+    /** Stand-in for {@code AttachInfo.mHandler} until the holder lands (see
+     * {@link #getHandler()}). */
+    private android.os.Handler mHandler;
+
     /** AOSP View.isAttachedToWindow (View.java:14146-14148). */
     public boolean isAttachedToWindow() {
         return mAttachInfo != null;
@@ -1968,7 +2002,11 @@ package android.view;
     }
 
     public boolean isFocused() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isFocused()Z");
+        // AOSP frameworks-base core/java/android/view/View.java: isFocused
+        // returns whether this view is focused. No input or focus subsystem
+        // runs headless, so always false (matches the interpreter's
+        // isFocused builtin).
+        return false;
     }
 
     public final boolean isFocusedByDefault() {
@@ -2024,7 +2062,10 @@ package android.view;
     }
 
     public boolean isInTouchMode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isInTouchMode()Z");
+        // AOSP frameworks-base core/java/android/view/View.java#isInTouchMode:
+        // true while a touch is down; no input exists headless → false
+        // (matches the interpreter's headless builtin).
+        return false;
     }
 
     public final boolean isKeyboardNavigationCluster() {
@@ -2040,7 +2081,11 @@ package android.view;
     }
 
     public boolean isLayoutRequested() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isLayoutRequested()Z");
+        // AOSP frameworks-base core/java/android/view/View.java#isLayoutRequested:
+        // returns mLayoutRequested != 0; no layout requests occur headless
+        // (matches the interpreter's builtin, which returns 0 when the field
+        // is absent).
+        return false;
     }
 
     public boolean isLongClickable() {
@@ -2229,7 +2274,13 @@ package android.view;
     }
 
     protected void onAttachedToWindow() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onAttachedToWindow()V");
+        // AOSP frameworks-base core/java/android/view/View.java:22503+
+        // onAttachedToWindow: transparent-region request, drawable jump,
+        // AccessibilityNodeIdManager registration, outline rebuild — none
+        // have shell counterparts (no accessibility registry, the shell
+        // tracks attachment through mAttachInfo alone, set by the driver
+        // at setContentView parity). Matches the interpreter's mAttached
+        // mark builtin.
     }
 
     public void onCancelPendingInputEvents() {
@@ -2713,8 +2764,10 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAccessibilityDataSensitive(I)V");
     }
 
-    public void setAccessibilityDelegate(android.view.View.AccessibilityDelegate arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAccessibilityDelegate(Landroid/view/View$AccessibilityDelegate;)V");
+    public void setAccessibilityDelegate(android.view.View.AccessibilityDelegate delegate) {
+        // AOSP frameworks-base core/java/android/view/View.java#setAccessibilityDelegate:
+        // installs the delegate; no accessibility services headless → no-op
+        // (matches the interpreter's headless builtin).
     }
 
     public void setAccessibilityHeading(boolean arg0) {
@@ -2855,7 +2908,9 @@ package android.view;
     }
 
     public void setContentCaptureSession(android.view.contentcapture.ContentCaptureSession arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setContentCaptureSession(Landroid/view/contentcapture/ContentCaptureSession;)V");
+        // AOSP frameworks-base core/java/android/view/View.java:10976-10978
+        // setContentCaptureSession: mContentCaptureSession = contentCapture-
+        // Session. The shell stores no session (nothing reads it).
     }
 
     public void setContentDescription(java.lang.CharSequence arg0) {
@@ -2870,8 +2925,9 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setContextClickable(Z)V");
     }
 
-    public void setDefaultFocusHighlightEnabled(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setDefaultFocusHighlightEnabled(Z)V");
+    public void setDefaultFocusHighlightEnabled(boolean defaultFocusHighlightEnabled) {
+        // AOSP frameworks-base core/java/android/view/View.java#setDefaultFocusHighlightEnabled:
+        // focus highlight styling; no focus UI headless → no-op.
     }
 
     public void setDrawingCacheBackgroundColor(int arg0) {
@@ -2917,16 +2973,22 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setFitsSystemWindows(Z)V");
     }
 
-    public void setFocusable(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setFocusable(Z)V");
+    public void setFocusable(boolean focusable) {
+        // AOSP frameworks-base core/java/android/view/View.java#setFocusable:
+        // focus management; no input focus exists headless → no-op
+        // (matches the interpreter's headless builtin).
     }
 
-    public void setFocusable(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setFocusable(I)V");
+    public void setFocusable(int focusable) {
+        // AOSP frameworks-base core/java/android/view/View.java#setFocusable(int):
+        // focus flags; no input focus exists headless → no-op
+        // (matches the interpreter's headless builtin).
     }
 
-    public void setFocusableInTouchMode(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setFocusableInTouchMode(Z)V");
+    public void setFocusableInTouchMode(boolean focusableInTouchMode) {
+        // AOSP frameworks-base core/java/android/view/View.java#setFocusableInTouchMode:
+        // touch-mode focus; no input focus headless → no-op
+        // (matches the interpreter's headless builtin).
     }
 
     public void setFocusedByDefault(boolean arg0) {
@@ -2934,7 +2996,9 @@ package android.view;
     }
 
     public void setForceDarkAllowed(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setForceDarkAllowed(Z)V");
+        // AOSP frameworks-base core/java/android/view/View.java#setForceDarkAllowed:
+        // force-dark is a display feature; no headless effect → no-op
+        // (matches the interpreter's builtin).
     }
 
     public void setForeground(android.graphics.drawable.Drawable arg0) {
@@ -3011,16 +3075,23 @@ package android.view;
         mID = arg0;
     }
 
-    public void setImportantForAccessibility(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setImportantForAccessibility(I)V");
+    public void setImportantForAccessibility(int importantForAccessibility) {
+        // AOSP frameworks-base core/java/android/view/View.java#setImportantForAccessibility:
+        // flags; no accessibility services headless → no-op
+        // (matches the interpreter's headless builtin).
     }
 
     public void setImportantForAutofill(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setImportantForAutofill(I)V");
+        // AOSP frameworks-base core/java/android/view/View.java#setImportantForAutofill:
+        // autofill mode has no desktop effect without an AutofillManager;
+        // matches the interpreter's headless no-op builtin.
     }
 
     public void setImportantForContentCapture(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setImportantForContentCapture(I)V");
+        // AOSP frameworks-base core/java/android/view/View.java:10712-10718
+        // setImportantForContentCapture: reset then re-set the PFLAG4_
+        // IMPORTANT_FOR_CONTENT_CAPTURE_MASK bits. The shell keeps no
+        // capture flags (no capture pipeline reads them).
     }
 
     public void setIsCredential(boolean arg0) {
@@ -3113,7 +3184,10 @@ package android.view;
     }
 
     public void setOnApplyWindowInsetsListener(android.view.View.OnApplyWindowInsetsListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnApplyWindowInsetsListener(Landroid/view/View$OnApplyWindowInsetsListener;)V");
+        // AOSP frameworks-base core/java/android/view/View.java
+        // setOnApplyWindowInsetsListener: stores the listener for window
+        // insets dispatch. The shell has no window insets system, so the
+        // listener is recorded nowhere (no-op).
     }
 
     public void setOnCapturedPointerListener(android.view.View.OnCapturedPointerListener arg0) {
@@ -3132,8 +3206,10 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnCreateContextMenuListener(Landroid/view/View$OnCreateContextMenuListener;)V");
     }
 
-    public void setOnDragListener(android.view.View.OnDragListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnDragListener(Landroid/view/View$OnDragListener;)V");
+    public void setOnDragListener(android.view.View.OnDragListener listener) {
+        // AOSP frameworks-base core/java/android/view/View.java#setOnDragListener:
+        // drag handling; no drag input headless → no-op
+        // (matches the interpreter's headless builtin).
     }
 
     public void setOnFocusChangeListener(android.view.View.OnFocusChangeListener arg0) {
@@ -3486,7 +3562,9 @@ package android.view;
     }
 
     public void setViewTranslationCallback(android.view.translation.ViewTranslationCallback arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setViewTranslationCallback(Landroid/view/translation/ViewTranslationCallback;)V");
+        // AOSP frameworks-base core/java/android/view/View.java:33964-33966
+        // setViewTranslationCallback: mViewTranslationCallback = callback.
+        // The shell stores no callback (no translation pipeline reads it).
     }
 
     public void setVisibility(int arg0) {
@@ -3498,7 +3576,9 @@ package android.view;
     }
 
     public void setWillNotDraw(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setWillNotDraw(Z)V");
+        // AOSP frameworks-base core/java/android/view/View.java#setWillNotDraw:
+        // records whether this view skips draw passes; no draw dispatch
+        // exists headless → no-op (matches the interpreter builtin).
     }
 
     public void setWindowInsetsAnimationCallback(android.view.WindowInsetsAnimation.Callback arg0) {
@@ -3595,7 +3675,11 @@ package android.view;
         public static class AccessibilityDelegate {
 
         public AccessibilityDelegate() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View$AccessibilityDelegate;-><init>()V");
+            // AOSP frameworks-base core/java/android/view/View.java:32839:
+            // AccessibilityDelegate has no explicit constructor and no
+            // fields, so the implicit <init> body is empty. The
+            // androidx core adapter subclasses this class and the compat
+            // <clinit> allocates a plain DEFAULT_DELEGATE.
         }
 
         public void addExtraDataToAccessibilityNodeInfo(android.view.View arg0, android.view.accessibility.AccessibilityNodeInfo arg1, java.lang.String arg2, android.os.Bundle arg3) {
@@ -3733,5 +3817,48 @@ package android.view;
         public static interface OnUnhandledKeyEventListener {
 
         public abstract boolean onUnhandledKeyEvent(android.view.View arg0, android.view.KeyEvent arg1);
+        }
+
+        /**
+         * MeasureSpec packs a dimension size and its mode into a single int:
+         * mode occupies the top two bits (bits 30-31), size the lower 30 bits.
+         * Pure arithmetic — no state. Matches the interpreter's MeasureSpec
+         * builtins (Interpreter.java:5707-5713).
+         */
+        public static final class MeasureSpec {
+
+            /** MeasureSpec mode: the parent has not imposed any constraint on the child. */
+            public static final int MODE_UNSPECIFIED = 0;
+            /** MeasureSpec mode: the parent has determined an exact size for the child. */
+            public static final int MODE_EXACTLY = 0x3 << 30;
+            /** MeasureSpec mode: the child can be as large as it wants up to the specified size. */
+            public static final int MODE_AT_MOST = 0x2 << 30;
+
+            private static final int MODE_MASK = 0x3 << 30;
+
+            private MeasureSpec() {
+            }
+
+            /**
+             * AOSP frameworks-base core/java/android/view/View.java
+             * makeMeasureSpec(size, mode): (size & ~MODE_MASK) | (mode & MODE_MASK).
+             */
+            public static int makeMeasureSpec(int size, int mode) {
+                return (size & ~MODE_MASK) | (mode & MODE_MASK);
+            }
+
+            /**
+             * AOSP .../View.java getMode(spec): spec & MODE_MASK.
+             */
+            public static int getMode(int spec) {
+                return spec & MODE_MASK;
+            }
+
+            /**
+             * AOSP .../View.java getSize(spec): spec & ~MODE_MASK.
+             */
+            public static int getSize(int spec) {
+                return spec & ~MODE_MASK;
+            }
         }
     }

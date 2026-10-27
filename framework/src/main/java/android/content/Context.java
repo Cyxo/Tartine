@@ -315,7 +315,10 @@ package android.content;
     }
 
     public android.content.Context getApplicationContext() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getApplicationContext()Landroid/content/Context;");
+        // AOSP frameworks-base core/java/android/content/Context.java:
+        // getApplicationContext is the base's own context; the shell
+        // context is its own application root.
+        return this;
     }
 
     public android.content.pm.ApplicationInfo getApplicationInfo() {
@@ -482,15 +485,58 @@ package android.content;
     }
 
     public final <T> T getSystemService(java.lang.Class<T> arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getSystemService(Ljava/lang/Class;)Ljava/lang/Object;");
+        // AOSP frameworks-base core/java/android/content/Context.java
+        // getSystemService(Class): map the class to its service name, then
+        // route through the string-based lookup so subclass overrides win.
+        String serviceName = getSystemServiceName(arg0);
+        @SuppressWarnings("unchecked")
+        T service = serviceName != null
+                ? (T) getSystemService(serviceName)
+                : null;
+        return service;
     }
 
-    public java.lang.Object getSystemService(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;");
+    /**
+     * The shell answers the same service table the interpreter probe used
+     * (Interpreter#systemService): accessibility and clipboard are live
+     * objects, everything else misses to null and the consumer's next
+     * wall names the gap. A real per-process service registry is future
+     * work once the shell needs more services.
+     */
+    public java.lang.Object getSystemService(java.lang.String name) {
+        if ("accessibility".equals(name)) {
+            return new
+                    android.view.accessibility.AccessibilityManager();
+        }
+        if ("autofill".equals(name)) {
+            return new android.view.autofill.AutofillManager();
+        }
+        if ("clipboard".equals(name)) {
+            return new android.content.ClipboardManager(this);
+        }
+        return null;
     }
 
-    public java.lang.String getSystemServiceName(java.lang.Class<?> arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getSystemServiceName(Ljava/lang/Class;)Ljava/lang/String;");
+    /**
+     * AOSP frameworks-base core/java/android/content/Context.java#
+     * getSystemServiceName delegates to SystemServiceRegistry's name
+     * table; the shell carries only the subset the fixture requests, so
+     * unknown classes answer null (AOSP returns null for unregistered
+     * classes too).
+     */
+    public java.lang.String getSystemServiceName(java.lang.Class<?> serviceClass) {
+        if (serviceClass == null) {
+            return null;
+        }
+        if (serviceClass.getName().equals(
+                "android.view.autofill.AutofillManager")) {
+            return "autofill";
+        }
+        if (serviceClass.getName().equals(
+                "android.view.accessibility.AccessibilityManager")) {
+            return "accessibility";
+        }
+        return null;
     }
 
     public final java.lang.CharSequence getText(int arg0) {

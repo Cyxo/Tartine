@@ -93,4 +93,57 @@ public class Activity extends ContextThemeWrapper {
     }
 
     private android.app.FragmentManager mFragmentManager;
+
+    /**
+     * AOSP frameworks-base core/java/android/app/Activity.java:1312-1314
+     * getApplication: return mApplication (set by device attach()). The
+     * shell lazily owns one Application per activity standing in for the
+     * process singleton (matches the interpreter's per-activity cached
+     * placeholder).
+     */
+    public final android.app.Application getApplication() {
+        if (mApplication == null) {
+            mApplication = new android.app.Application();
+        }
+        return mApplication;
+    }
+
+    private android.app.Application mApplication;
+
+    /**
+     * AOSP frameworks-base core/java/android/app/Activity.java:1167-1169
+     * getIntent: return mIntent (set by launched-intent bookkeeping in
+     * device attach()/setIntent). Handless launches carry no action, data,
+     * or extras: the shell lazily owns one stable empty Intent per
+     * activity (matches the interpreter's cached-placeholder builtin).
+     */
+    public android.content.Intent getIntent() {
+        if (mIntent == null) {
+            mIntent = new android.content.Intent();
+        }
+        return mIntent;
+    }
+
+    private android.content.Intent mIntent;
+
+    /**
+     * AOSP frameworks-base core/java/android/app/Activity.java:3431-3434
+     * getLastNonConfigurationInstance: mLastNonConfigurationInstances !=
+     * null ? mLastNonConfigurationInstances.activity : null — the field is
+     * only populated when a config change retained state (attach(), device
+     * ActivityThread). A fresh activity answers null ("no config change
+     * registered"); the shell retains none, same result.
+     */
+    public Object getLastNonConfigurationInstance() {
+        return null;
+    }
+
+    /**
+     * AOSP frameworks-base core/java/android/app/Activity.java:3488-3489
+     * onRetainNonConfigurationInstance: the default activity retains
+     * nothing (return null); subclasses override.
+     */
+    public Object onRetainNonConfigurationInstance() {
+        return null;
+    }
 }

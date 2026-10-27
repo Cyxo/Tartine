@@ -192,7 +192,14 @@ package android.content;
     }
 
     public android.content.Context getApplicationContext() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getApplicationContext()Landroid/content/Context;");
+        // AOSP frameworks-base core/java/android/content/ContextWrapper.java:
+        // getApplicationContext delegates to the base context; the shell
+        // context is its own root, so a null base answers super
+        // (which returns itself here).
+        if (mBase != null) {
+            return mBase.getApplicationContext();
+        }
+        return super.getApplicationContext();
     }
 
     public android.content.pm.ApplicationInfo getApplicationInfo() {
@@ -339,16 +346,39 @@ package android.content;
     }
 
     public java.lang.Object getSystemService(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;");
+        // AOSP frameworks-base core/java/android/content/ContextWrapper.java:
+        // getSystemService delegates to the base context; the shell
+        // context is its own root, so a null base answers super
+        // (matching the getResources() shape above).
+        if (mBase != null) {
+            return mBase.getSystemService(arg0);
+        }
+        return super.getSystemService(arg0);
     }
 
     public java.lang.String getSystemServiceName(java.lang.Class<?> arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getSystemServiceName(Ljava/lang/Class;)Ljava/lang/String;");
+        // AOSP frameworks-base core/java/android/content/ContextWrapper.java:
+        // getSystemServiceName delegates to the base context; the shell
+        // context is its own root, so a null base answers super
+        // (matching the getResources() shape above).
+        if (mBase != null) {
+            return mBase.getSystemServiceName(arg0);
+        }
+        return super.getSystemServiceName(arg0);
     }
 
     public android.content.res.Resources.Theme getTheme() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getTheme()Landroid/content/res/Resources$Theme;");
+        // AOSP ContextWrapper.getTheme: delegates to mBase.getTheme();
+        // the shell has no base context theming, so it lazily owns one
+        // Theme per context (matches the interpreter's per-context cached
+        // placeholder).
+        if (mTheme == null) {
+            mTheme = new android.content.res.Resources.Theme();
+        }
+        return mTheme;
     }
+
+    private android.content.res.Resources.Theme mTheme;
 
     public android.graphics.drawable.Drawable getWallpaper() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getWallpaper()Landroid/graphics/drawable/Drawable;");
@@ -407,7 +437,11 @@ package android.content;
     }
 
     public void registerComponentCallbacks(android.content.ComponentCallbacks arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->registerComponentCallbacks(Landroid/content/ComponentCallbacks;)V");
+        // AOSP ContextWrapper.registerComponentCallbacks: delegates to
+        // mBase.registerComponentCallbacks. No component lifecycle runs
+        // headless, so callbacks never fire — the shell drops the
+        // registration (matches the interpreter's no-op builtin at
+        // Interpreter.java:5601-5603).
     }
 
     public void registerDeviceIdChangeListener(java.util.concurrent.Executor arg0, java.util.function.IntConsumer arg1) {
@@ -575,7 +609,9 @@ package android.content;
     }
 
     public void unregisterComponentCallbacks(android.content.ComponentCallbacks arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->unregisterComponentCallbacks(Landroid/content/ComponentCallbacks;)V");
+        // AOSP ContextWrapper.unregisterComponentCallbacks: delegates to
+        // mBase.unregisterComponentCallbacks. Nothing was registered, so
+        // nothing to remove (matches the interpreter's no-op builtin).
     }
 
     public void unregisterDeviceIdChangeListener(java.util.function.IntConsumer arg0) {

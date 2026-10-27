@@ -14,7 +14,10 @@ package android.graphics;
     public static final int MTRANS_Y = 5;
 
     public Matrix() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;-><init>()V");
+        // AOSP frameworks-base core/java/android/graphics/Matrix.java#Matrix():
+        // constructs the identity matrix; the shell Matrix carries no
+        // transform state (no mArray field is ported yet), so an empty
+        // body is the identity by convention.
     }
 
     public Matrix(android.graphics.Matrix arg0) {

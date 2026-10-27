@@ -402,19 +402,31 @@ package android.view;
     }
 
     public void dispatchWindowInsetsAnimationEnd(android.view.WindowInsetsAnimation arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchWindowInsetsAnimationEnd(Landroid/view/WindowInsetsAnimation;)V");
+        // AOSP ViewGroup.dispatchWindowInsetsAnimationEnd: notifies children
+        // that an insets animation ended. No insets system runs on the
+        // shell, so no-op (matches the interpreter's no-op builtin).
     }
 
     public void dispatchWindowInsetsAnimationPrepare(android.view.WindowInsetsAnimation arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchWindowInsetsAnimationPrepare(Landroid/view/WindowInsetsAnimation;)V");
+        // AOSP ViewGroup.dispatchWindowInsetsAnimationPrepare: notifies
+        // children that an insets animation is about to start. No-op on
+        // the shell.
     }
 
-    public android.view.WindowInsets dispatchWindowInsetsAnimationProgress(android.view.WindowInsets arg0, java.util.List<android.view.WindowInsetsAnimation> arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchWindowInsetsAnimationProgress(Landroid/view/WindowInsets;Ljava/util/List;)Landroid/view/WindowInsets;");
+    public android.view.WindowInsets dispatchWindowInsetsAnimationProgress(android.view.WindowInsets arg0,
+            java.util.List<android.view.WindowInsetsAnimation> arg1) {
+        // AOSP ViewGroup.dispatchWindowInsetsAnimationProgress: returns
+        // updated insets during an animation. No animation runs on the
+        // shell, so returns the input unchanged.
+        return arg0;
     }
 
-    public android.view.WindowInsetsAnimation.Bounds dispatchWindowInsetsAnimationStart(android.view.WindowInsetsAnimation arg0, android.view.WindowInsetsAnimation.Bounds arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchWindowInsetsAnimationStart(Landroid/view/WindowInsetsAnimation;Landroid/view/WindowInsetsAnimation$Bounds;)Landroid/view/WindowInsetsAnimation$Bounds;");
+    public android.view.WindowInsetsAnimation.Bounds dispatchWindowInsetsAnimationStart(
+            android.view.WindowInsetsAnimation arg0, android.view.WindowInsetsAnimation.Bounds arg1) {
+        // AOSP ViewGroup.dispatchWindowInsetsAnimationStart: returns the
+        // starting bounds for an insets animation. No animation runs on
+        // the shell, so returns the input unchanged.
+        return arg1;
     }
 
     public void dispatchWindowSystemUiVisiblityChanged(int arg0) {
@@ -588,7 +600,10 @@ package android.view;
     }
 
     public boolean hasFocus() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->hasFocus()Z");
+        // AOSP ViewGroup inherits View.hasFocus() — no override on device.
+        // The shell has no focus subsystem, so always false (matches the
+        // interpreter's hasFocus builtin returning 0).
+        return false;
     }
 
     public boolean hasTransientState() {
@@ -668,7 +683,13 @@ package android.view;
     }
 
     protected void onAttachedToWindow() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onAttachedToWindow()V");
+        // AOSP frameworks-base core/java/android/view/ViewGroup.java:5209-5212
+        // onAttachedToWindow: super.onAttachedToWindow() then
+        // clearCachedLayoutMode() (ViewGroup.java:5202-5206, resets
+        // mLayoutMode when FLAG_LAYOUT_MODE_WAS_EXPLICITLY_SET is clear).
+        // The shell carries no cached layout mode, so the reset is a no-op;
+        // the View super is the shell no-op below (attachment is already
+        // tracked through mAttachInfo).
     }
 
     protected int[] onCreateDrawableState(int arg0) {
@@ -938,7 +959,9 @@ package android.view;
     }
 
     public void setWindowInsetsAnimationCallback(android.view.WindowInsetsAnimation.Callback arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setWindowInsetsAnimationCallback(Landroid/view/WindowInsetsAnimation$Callback;)V");
+        // AOSP ViewGroup.setWindowInsetsAnimationCallback: sets the callback
+        // for insets animation events. No insets system on the shell, so
+        // no-op (matches the interpreter's no-op builtin).
     }
 
     public boolean shouldDelayChildPressedState() {

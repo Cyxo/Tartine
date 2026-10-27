@@ -5,7 +5,11 @@ package android.view.accessibility;
     public static final int HOST_VIEW_ID = -1;
 
     public AccessibilityNodeProvider() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeProvider;-><init>()V");
+        // AOSP frameworks-base core/java/android/view/accessibility/
+        // AccessibilityNodeProvider.java: the base class declares no
+        // explicit constructor and carries no fields — the implicit
+        // <init> body is empty (subclasses override
+        // createAccessibilityNodeInfo).
     }
 
     public void addExtraDataToAccessibilityNodeInfo(int arg0, android.view.accessibility.AccessibilityNodeInfo arg1, java.lang.String arg2, android.os.Bundle arg3) {

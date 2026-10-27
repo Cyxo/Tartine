@@ -114,7 +114,32 @@ package android.content.res;
     }
 
     public Configuration(android.content.res.Configuration arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;-><init>(Landroid/content/res/Configuration;)V");
+        // AOSP frameworks-base core/java/android/content/res/Configuration.java
+        // Configuration(Configuration) copy constructor: copies all fields
+        // from the source (the interpreter's copyFieldsFrom builtin does
+        // the same). Null source throws NPE.
+        if (arg0 == null) {
+            throw new java.lang.NullPointerException("config copy of null");
+        }
+        colorMode = arg0.colorMode;
+        densityDpi = arg0.densityDpi;
+        fontScale = arg0.fontScale;
+        fontWeightAdjustment = arg0.fontWeightAdjustment;
+        hardKeyboardHidden = arg0.hardKeyboardHidden;
+        keyboard = arg0.keyboard;
+        keyboardHidden = arg0.keyboardHidden;
+        locale = arg0.locale;
+        mcc = arg0.mcc;
+        mnc = arg0.mnc;
+        navigation = arg0.navigation;
+        navigationHidden = arg0.navigationHidden;
+        orientation = arg0.orientation;
+        screenHeightDp = arg0.screenHeightDp;
+        screenLayout = arg0.screenLayout;
+        screenWidthDp = arg0.screenWidthDp;
+        smallestScreenWidthDp = arg0.smallestScreenWidthDp;
+        touchscreen = arg0.touchscreen;
+        uiMode = arg0.uiMode;
     }
 
     public int compareTo(android.content.res.Configuration arg0) {
@@ -146,7 +171,10 @@ package android.content.res;
     }
 
     public int getLayoutDirection() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->getLayoutDirection()I");
+        // AOSP frameworks-base core/java/android/content/res/Configuration.java:
+        // getLayoutDirection returns mLayoutDirection; no RTL on the shell
+        // (matches the interpreter's headless 0).
+        return 0;
     }
 
     public android.os.LocaleList getLocales() {
@@ -198,7 +226,32 @@ package android.content.res;
     }
 
     public void setTo(android.content.res.Configuration arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->setTo(Landroid/content/res/Configuration;)V");
+        // AOSP frameworks-base core/java/android/content/res/Configuration.java
+        // setTo(Configuration): overwrites this config's fields from the
+        // source (the interpreter's copyFieldsFrom builtin does the same).
+        // Null source throws NPE.
+        if (arg0 == null) {
+            throw new java.lang.NullPointerException("config setTo null");
+        }
+        colorMode = arg0.colorMode;
+        densityDpi = arg0.densityDpi;
+        fontScale = arg0.fontScale;
+        fontWeightAdjustment = arg0.fontWeightAdjustment;
+        hardKeyboardHidden = arg0.hardKeyboardHidden;
+        keyboard = arg0.keyboard;
+        keyboardHidden = arg0.keyboardHidden;
+        locale = arg0.locale;
+        mcc = arg0.mcc;
+        mnc = arg0.mnc;
+        navigation = arg0.navigation;
+        navigationHidden = arg0.navigationHidden;
+        orientation = arg0.orientation;
+        screenHeightDp = arg0.screenHeightDp;
+        screenLayout = arg0.screenLayout;
+        screenWidthDp = arg0.screenWidthDp;
+        smallestScreenWidthDp = arg0.smallestScreenWidthDp;
+        touchscreen = arg0.touchscreen;
+        uiMode = arg0.uiMode;
     }
 
     public void setToDefaults() {

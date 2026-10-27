@@ -1,29 +1,92 @@
 package android.os;
 
-    public class Handler {
+/**
+ * Desktop mapping (Tartine). Ported from
+ * aosp-frameworks-base/core/java/android/os/Handler.java:
+ * <ul>
+ *   <li>Constructors, {@code createAsync} and {@code getLooper} keep the AOSP
+ *       shapes: a Handler binds the given {@link Looper} (or the current
+ *       thread's looper), records the callback and the async flag, and
+ *       reports the same {@code "Can't create handler inside thread ..."}
+ *       failure when no Looper was prepared (Handler.java:228-236,
+ *       :287-291, :305-312).</li>
+ *   <li>The probe has no Looper pump yet, so posted work runs inline at the
+ *       post site — the same delivery contract as the interpreter's Handler
+ *       builtins (Interpreter {@code Handler.post}: "runs inline"). AOSP's
+ *       {@code post} -> {@code sendMessageDelayed} -> {@code enqueueMessage}
+ *       chain (Handler.java:438-440, :646-648, :680-690) lands unchanged
+ *       once the desktop message pump exists; until then delays cannot be
+ *       observed and asynchronous ordering has no effect.</li>
+ *   <li>{@code removeCallbacks}/{@code removeMessages}/{@code hasMessages}
+ *       therefore find nothing to remove/report.</li>
+ * </ul>
+ */
+public class Handler {
 
+    final Looper mLooper;
+    final MessageQueue mQueue;
+    final Callback mCallback;
+    final boolean mAsynchronous;
+
+    /** Handler.java:218-236. */
     public Handler() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;-><init>()V");
+        this(null, false);
     }
 
+    /** Handler.java:155-158. */
     public Handler(android.os.Handler.Callback arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;-><init>(Landroid/os/Handler$Callback;)V");
+        this(arg0, false);
     }
 
+    /** Handler.java:165-167. */
     public Handler(android.os.Looper arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;-><init>(Landroid/os/Looper;)V");
+        this(arg0, null, false);
     }
 
+    /** Handler.java:176-178. */
     public Handler(android.os.Looper arg0, android.os.Handler.Callback arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;-><init>(Landroid/os/Looper;Landroid/os/Handler$Callback;)V");
+        this(arg0, arg1, false);
     }
 
+    /** Handler.java:218-236. */
+    public Handler(android.os.Handler.Callback arg0, boolean arg1) {
+        this.mLooper = Looper.myLooper();
+        if (mLooper == null) {
+            throw new RuntimeException("Can't create handler inside thread "
+                    + Thread.currentThread() + " that has not called Looper.prepare()");
+        }
+        mQueue = mLooper.getQueue();
+        mCallback = arg0;
+        mAsynchronous = arg1;
+    }
+
+    /** Handler.java:260-264 / Desktop mapping for the hidden 3-arg ctor. */
+    private Handler(android.os.Looper arg0, android.os.Handler.Callback arg1,
+            boolean arg2) {
+        mLooper = arg0;
+        mQueue = arg0.getQueue();
+        mCallback = arg1;
+        mAsynchronous = arg2;
+    }
+
+    /** Handler.java:287-291. */
     public static android.os.Handler createAsync(android.os.Looper arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->createAsync(Landroid/os/Looper;)Landroid/os/Handler;");
+        if (arg0 == null) {
+            throw new NullPointerException("looper must not be null");
+        }
+        return new Handler(arg0, null, true);
     }
 
-    public static android.os.Handler createAsync(android.os.Looper arg0, android.os.Handler.Callback arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->createAsync(Landroid/os/Looper;Landroid/os/Handler$Callback;)Landroid/os/Handler;");
+    /** Handler.java:305-312. */
+    public static android.os.Handler createAsync(android.os.Looper arg0,
+            android.os.Handler.Callback arg1) {
+        if (arg0 == null) {
+            throw new NullPointerException("looper must not be null");
+        }
+        if (arg1 == null) {
+            throw new NullPointerException("callback must not be null");
+        }
+        return new Handler(arg0, arg1, true);
     }
 
     public void dispatchMessage(android.os.Message arg0) {
@@ -34,8 +97,9 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->dump(Landroid/util/Printer;Ljava/lang/String;)V");
     }
 
+    /** Handler.java:349-351. */
     public final android.os.Looper getLooper() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->getLooper()Landroid/os/Looper;");
+        return mLooper;
     }
 
     public java.lang.String getMessageName(android.os.Message arg0) {
@@ -47,15 +111,18 @@ package android.os;
     }
 
     public final boolean hasCallbacks(java.lang.Runnable arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->hasCallbacks(Ljava/lang/Runnable;)Z");
+        // Inline delivery: nothing stays queued (see class javadoc).
+        return false;
     }
 
     public final boolean hasMessages(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->hasMessages(I)Z");
+        // Inline delivery: nothing stays queued (see class javadoc).
+        return false;
     }
 
     public final boolean hasMessages(int arg0, java.lang.Object arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->hasMessages(ILjava/lang/Object;)Z");
+        // Inline delivery: nothing stays queued (see class javadoc).
+        return false;
     }
 
     public final android.os.Message obtainMessage() {
@@ -78,48 +145,68 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->obtainMessage(ILjava/lang/Object;)Landroid/os/Message;");
     }
 
+    /** Handler.java:438-440; desktop inline mapping (see class javadoc). */
     public final boolean post(java.lang.Runnable arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z");
+        postDelayed(arg0, 0);
+        return true;
     }
 
+    /** Handler.java:467-469; desktop inline mapping (see class javadoc). */
     public final boolean postAtFrontOfQueue(java.lang.Runnable arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->postAtFrontOfQueue(Ljava/lang/Runnable;)Z");
+        postDelayed(arg0, 0);
+        return true;
     }
 
+    /** Handler.java:563-566; desktop inline mapping (see class javadoc). */
     public final boolean postAtTime(java.lang.Runnable arg0, java.lang.Object arg1, long arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->postAtTime(Ljava/lang/Runnable;Ljava/lang/Object;J)Z");
+        postDelayed(arg0, 0);
+        return true;
     }
 
+    /** Handler.java:590-592; desktop inline mapping (see class javadoc). */
     public final boolean postAtTime(java.lang.Runnable arg0, long arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->postAtTime(Ljava/lang/Runnable;J)Z");
+        postDelayed(arg0, 0);
+        return true;
     }
 
+    /** Handler.java:540-543; desktop inline mapping (see class javadoc). */
     public final boolean postDelayed(java.lang.Runnable arg0, java.lang.Object arg1, long arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;Ljava/lang/Object;J)Z");
+        postDelayed(arg0, 0);
+        return true;
     }
 
+    /** Handler.java:510-512; desktop inline mapping (see class javadoc). */
     public final boolean postDelayed(java.lang.Runnable arg0, long arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z");
+        if (arg0 == null) {
+            throw new NullPointerException("runnable must not be null");
+        }
+        arg0.run();
+        return true;
     }
 
+    /** Handler.java:624-626; inline delivery leaves nothing to remove. */
     public final void removeCallbacks(java.lang.Runnable arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->removeCallbacks(Ljava/lang/Runnable;)V");
+        // Nothing stays queued (see class javadoc).
     }
 
+    /** Handler.java:633-635; inline delivery leaves nothing to remove. */
     public final void removeCallbacks(java.lang.Runnable arg0, java.lang.Object arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->removeCallbacks(Ljava/lang/Runnable;Ljava/lang/Object;)V");
+        // Nothing stays queued (see class javadoc).
     }
 
+    /** Handler.java:647-649; inline delivery leaves nothing to remove. */
     public final void removeCallbacksAndMessages(java.lang.Object arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->removeCallbacksAndMessages(Ljava/lang/Object;)V");
+        // Nothing stays queued (see class javadoc).
     }
 
+    /** Handler.java:657-659; inline delivery leaves nothing to remove. */
     public final void removeMessages(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->removeMessages(I)V");
+        // Nothing stays queued (see class javadoc).
     }
 
+    /** Handler.java:670-672; inline delivery leaves nothing to remove. */
     public final void removeMessages(int arg0, java.lang.Object arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->removeMessages(ILjava/lang/Object;)V");
+        // Nothing stays queued (see class javadoc).
     }
 
     public final boolean sendEmptyMessage(int arg0) {
@@ -151,10 +238,13 @@ package android.os;
     }
 
     public java.lang.String toString() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Handler;->toString()Ljava/lang/String;");
+        return "Handler (" + getClass().getName() + ") {"
+                + (mCallback != null ? " callback=" + mCallback : "")
+                + " async=" + mAsynchronous + "}";
     }
-        public static interface Callback {
+
+    public static interface Callback {
 
         public abstract boolean handleMessage(android.os.Message arg0);
-        }
     }
+}

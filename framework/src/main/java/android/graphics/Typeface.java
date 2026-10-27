@@ -1,70 +1,72 @@
 package android.graphics;
 
-    public class Typeface {
-
+public class Typeface {
     public static final int BOLD = 1;
     public static final int BOLD_ITALIC = 3;
-    public static android.graphics.Typeface DEFAULT;
-    public static android.graphics.Typeface DEFAULT_BOLD;
     public static final int ITALIC = 2;
-    public static android.graphics.Typeface MONOSPACE;
     public static final int NORMAL = 0;
-    public static android.graphics.Typeface SANS_SERIF;
-    public static android.graphics.Typeface SERIF;
 
-    public static android.graphics.Typeface create(android.graphics.Typeface arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->create(Landroid/graphics/Typeface;I)Landroid/graphics/Typeface;");
+    private static final Typeface INSTANCE = new Typeface(0, NORMAL);
+
+    public static final Typeface DEFAULT = INSTANCE;
+    public static final Typeface DEFAULT_BOLD = new Typeface(0, BOLD);
+    public static final Typeface MONOSPACE = INSTANCE;
+    public static final Typeface SANS_SERIF = INSTANCE;
+    public static final Typeface SERIF = INSTANCE;
+
+    private final int style;
+    private final int weight;
+
+    private Typeface() { this.style = NORMAL; this.weight = 400; }
+
+    private Typeface(int style, int weight) { this.style = style; this.weight = weight; }
+
+    public static Typeface create(Typeface family, int style) {
+        if (family == null) family = DEFAULT;
+        return new Typeface(style, family.weight);
     }
 
-    public static android.graphics.Typeface create(android.graphics.Typeface arg0, int arg1, boolean arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->create(Landroid/graphics/Typeface;IZ)Landroid/graphics/Typeface;");
+    public static Typeface create(Typeface family, int style, boolean system) {
+        return create(family, style);
     }
 
-    public static android.graphics.Typeface create(java.lang.String arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->create(Ljava/lang/String;I)Landroid/graphics/Typeface;");
+    public static Typeface create(String familyName, int style) {
+        return new Typeface(style, 400);
     }
 
-    public static android.graphics.Typeface createFromAsset(android.content.res.AssetManager arg0, java.lang.String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->createFromAsset(Landroid/content/res/AssetManager;Ljava/lang/String;)Landroid/graphics/Typeface;");
+    public static Typeface createFromAsset(android.content.res.AssetManager mgr, String path) {
+        return DEFAULT;
     }
 
-    public static android.graphics.Typeface createFromFile(java.io.File arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->createFromFile(Ljava/io/File;)Landroid/graphics/Typeface;");
+    public static Typeface createFromFile(java.io.File file) { return DEFAULT; }
+
+    public static Typeface createFromFile(String path) { return DEFAULT; }
+
+    public static Typeface defaultFromStyle(int style) {
+        switch (style) {
+            case BOLD: return DEFAULT_BOLD;
+            default: return DEFAULT;
+        }
     }
 
-    public static android.graphics.Typeface createFromFile(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->createFromFile(Ljava/lang/String;)Landroid/graphics/Typeface;");
-    }
+    public int getStyle() { return style; }
 
-    public static android.graphics.Typeface defaultFromStyle(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->defaultFromStyle(I)Landroid/graphics/Typeface;");
-    }
+    public int getWeight() { return weight; }
 
-    public boolean equals(java.lang.Object arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->equals(Ljava/lang/Object;)Z");
-    }
+    public final boolean isBold() { return (style & BOLD) != 0; }
 
-    public int getStyle() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->getStyle()I");
-    }
+    public final boolean isItalic() { return (style & ITALIC) != 0; }
 
-    public final java.lang.String getSystemFontFamilyName() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->getSystemFontFamilyName()Ljava/lang/String;");
-    }
+    public final String getSystemFontFamilyName() { return "sans-serif"; }
 
-    public int getWeight() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->getWeight()I");
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (!(other instanceof Typeface)) return false;
+        Typeface o = (Typeface) other;
+        return style == o.style && weight == o.weight;
     }
 
     public int hashCode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->hashCode()I");
+        return 31 * style + weight;
     }
-
-    public final boolean isBold() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->isBold()Z");
-    }
-
-    public final boolean isItalic() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Typeface;->isItalic()Z");
-    }
-    }
+}

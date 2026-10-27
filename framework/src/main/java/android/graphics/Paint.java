@@ -421,7 +421,7 @@ package android.graphics;
     }
 
     public float getTextScaleX() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getTextScaleX()F");
+        return 1.0f;
     }
 
     public float getTextSize() {
@@ -617,12 +617,12 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setFontVariationSettings(Ljava/lang/String;)Z");
     }
 
-    public void setHinting(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setHinting(I)V");
-    }
+     public void setHinting(int arg0) {
+        // No-op placeholder; host Skia paint unaffected.
+     }
 
     public void setLetterSpacing(float arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setLetterSpacing(F)V");
+        // no-op
     }
 
     public void setLinearText(boolean arg0) {
@@ -638,7 +638,7 @@ package android.graphics;
     }
 
     public android.graphics.Shader setShader(android.graphics.Shader arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setShader(Landroid/graphics/Shader;)Landroid/graphics/Shader;");
+        return arg0;
     }
 
     public void setShadowLayer(float arg0, float arg1, float arg2, int arg3) {
@@ -709,8 +709,8 @@ package android.graphics;
     }
 
     public android.graphics.Typeface setTypeface(android.graphics.Typeface arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setTypeface(Landroid/graphics/Typeface;)Landroid/graphics/Typeface;");
-    }
+        return arg0 == null ? android.graphics.Typeface.DEFAULT : arg0;
+     }
 
     public void setUnderlineText(boolean arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setUnderlineText(Z)V");

@@ -73,7 +73,10 @@ package android.view;
         public static final int DISPATCH_MODE_STOP = 0;
 
         public Callback(int arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Callback;-><init>(I)V");
+            // AOSP frameworks-base core/java/android/view/WindowInsetsAnimation.java
+            // Callback(int type): stores the dispatch mode/type. Inset
+            // animations never run headless, so nothing is stored and no
+            // callbacks ever fire (matches the interpreter's no-op builtin).
         }
 
         public final int getDispatchMode() {

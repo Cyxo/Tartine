@@ -37,7 +37,7 @@ package android.util;
     public float ydpi;
 
     public DisplayMetrics() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/DisplayMetrics;-><init>()V");
+        // AOSP DisplayMetrics.java: public DisplayMetrics() {}
     }
 
     public boolean equals(android.util.DisplayMetrics arg0) {
