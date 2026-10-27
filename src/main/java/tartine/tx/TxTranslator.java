@@ -40,12 +40,16 @@ public final class TxTranslator implements Opcodes {
     public static Map<String, java.util.List<DexClass.DexField>> fieldSynths(
             java.util.List<DexClass> all) {
         Map<String, Set<String>> declared = new HashMap<>();
+        Map<String, String> superOf = new HashMap<>();
         for (DexClass cls : all) {
             Set<String> keys = new LinkedHashSet<>();
             for (DexClass.DexField field : cls.fields) {
                 keys.add(field.name + ":" + field.type);
             }
             declared.put(cls.type, keys);
+            if (cls.superclass != null && !cls.superclass.isEmpty()) {
+                superOf.put(cls.type, cls.superclass);
+            }
         }
         Map<String, LinkedHashMap<String, DexClass.DexField>> out = new HashMap<>();
         for (DexClass cls : all) {
@@ -74,6 +78,28 @@ public final class TxTranslator implements Opcodes {
                     String key = rest.substring(0, colon) + ":"
                             + rest.substring(colon + 1);
                     if (declared.get(owner).contains(key)) {
+                        continue;
+                    }
+                    // Ancestor-declared fields must not be synthesized: the
+                    // JVM would add a shadow field to the subclass
+                    // (MutableIntList;->content:[I resolves to IntList's
+                    // field; announcing it on MutableIntList too split the
+                    // value in two — super's <init> put the array into the
+                    // declared one, and ensureCapacity's subclass-owned
+                    // iget read the null shadow). Walk the guest chain to
+                    // the declaring class; the emit side retargets the
+                    // field instruction there (see TxMethodWriter).
+                    boolean ancestorDeclares = false;
+                    String anc = superOf.get(owner);
+                    while (anc != null) {
+                        Set<String> ancKeys = declared.get(anc);
+                        if (ancKeys != null && ancKeys.contains(key)) {
+                            ancestorDeclares = true;
+                            break;
+                        }
+                        anc = superOf.get(anc);
+                    }
+                    if (ancestorDeclares) {
                         continue;
                     }
                     out.computeIfAbsent(owner, k -> new LinkedHashMap<>())
@@ -240,7 +266,7 @@ public final class TxTranslator implements Opcodes {
                 FrameWriter probe = new FrameWriter(dexLookup, hostLoader);
                 probe.visit(Opcodes.V1_8, access, name, null, parent, ifaces);
                 new TxMethodWriter(probe, method, guestInterfaces,
-                        staticSeeds).emit();
+                        staticSeeds, dexLookup).emit();
                 byte[] probeBytes = probe.toByteArray();
                 // COMPUTE_FRAMES writes per-path frames and does not reject
                 // an int/reference conflict at a merge (d8 reuses registers
@@ -258,7 +284,7 @@ public final class TxTranslator implements Opcodes {
             }
             if (ok) {
                 new TxMethodWriter(cw, method, guestInterfaces,
-                        staticSeeds).emit();
+                        staticSeeds, dexLookup).emit();
             } else {
                 emitGapStub(cw, method, base, msg);
             }
@@ -443,7 +469,7 @@ public final class TxTranslator implements Opcodes {
                 continue;
             }
             new TxMethodWriter(probe, method, guestInterfaces,
-                    List.of()).emit();
+                    List.of(), dexLookup).emit();
         }
         probe.visitEnd();
         return probe.toByteArray();
@@ -458,12 +484,13 @@ public final class TxTranslator implements Opcodes {
     private static void verifyKindwise(byte[] bytes, String name, String desc,
             String sig) {
         ClassNode node = new ClassNode();
-        new ClassReader(bytes).accept(node, ClassReader.SKIP_FRAMES);
+        new ClassReader(bytes).accept(node, 0);
         for (MethodNode mn : node.methods) {
             if (mn.name.equals(name) && mn.desc.equals(desc)) {
+                Analyzer<org.objectweb.asm.tree.analysis.BasicValue>
+                        verifier = new Analyzer<>(new BasicVerifier());
                 try {
-                    new Analyzer<org.objectweb.asm.tree.analysis.BasicValue>(
-                            new BasicVerifier()).analyze(node.name, mn);
+                    verifier.analyze(node.name, mn);
                 } catch (AnalyzerException e) {
                     throw new TxGap(sig + " @frame: kind conflict: "
                             + e.getMessage() + " @ " + brief(e.node));
@@ -473,6 +500,8 @@ public final class TxTranslator implements Opcodes {
         }
     }
 
+    /** Probe-only: print locals/stack frames around a verifier conflict so
+     *  the guest dex shapes behind it can be matched quickly. */
     /** One-line description of a failing ASM instruction for the census. */
     private static String brief(org.objectweb.asm.tree.AbstractInsnNode n) {
         if (n == null) {
@@ -509,7 +538,6 @@ public final class TxTranslator implements Opcodes {
      */
     private static void emitGapStub(ClassWriter cw, DexMethod method, int base, String msg) {
         String sig = method.owner + "->" + method.signature();
-        System.err.println("tx: degraded " + sig + ": " + msg);
         MethodVisitor mv = cw.visitMethod(base, method.name, asmDesc(method), null, null);
         mv.visitCode();
         mv.visitTypeInsn(NEW, "java/lang/UnsupportedOperationException");

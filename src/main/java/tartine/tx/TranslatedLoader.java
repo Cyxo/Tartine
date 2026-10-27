@@ -39,6 +39,9 @@ public final class TranslatedLoader extends ClassLoader {
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
+        if (name.contains("StateFlowImpl")) {
+            try { return getParent().loadClass(name); } catch (ClassNotFoundException ignored) {}
+        }
         String desc = "L" + name.replace('.', '/') + ";";
         DexClass cls = dex.findClass(desc);
         if (cls == null) {
