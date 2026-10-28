@@ -46,10 +46,12 @@ package android.text;
         if (s.isEmpty()) return;
         android.text.TextPaint pnt = (paint == null) ? new android.text.TextPaint() : paint;
         float size = pnt.getTextSize() <= 0.0f ? 14.0f : pnt.getTextSize();
-        float top = pnt.getFontMetrics().top;
-        // baseline such that ascent clears the canvas top by 2px
-        float baseline = -top + 2.0f;
-        if (baseline <= 0.0f) baseline = size + 2.0f;
+        // Avoid Skija 'top' metrics: it pulls the baseline too far down
+        // and exits the Compose clipping band. Use the font ascent only,
+        // leaving the ascender about 1px inside the clip.
+        float ascent = pnt.getFontMetrics().ascent;
+        float baseline = -ascent;
+        if (baseline <= 0.0f || baseline > 24.0f) baseline = size + 2.0f;
         canvas.drawText(s, 0.0f, baseline, pnt);
     }
 
