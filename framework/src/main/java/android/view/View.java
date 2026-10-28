@@ -379,7 +379,7 @@ package android.view;
     }
 
     public static int combineMeasuredStates(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->combineMeasuredStates(II)I");
+        return arg0 | arg1;
     }
 
     protected int computeHorizontalScrollExtent() {
@@ -957,6 +957,10 @@ package android.view;
 
     protected int mPrivateFlags;
 
+    protected int mMeasuredWidth;
+    protected int mMeasuredHeight;
+    private static final int PFLAG_MEASURED_DIMENSION_SET = 0x80000000;
+
     protected int mScrollX;
     protected int mScrollY;
 
@@ -1314,23 +1318,23 @@ package android.view;
     }
 
     public final int getMeasuredHeight() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMeasuredHeight()I");
+        return mMeasuredHeight;
     }
 
     public final int getMeasuredHeightAndState() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMeasuredHeightAndState()I");
+        return mMeasuredHeight;
     }
 
     public final int getMeasuredState() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMeasuredState()I");
+        return 0;
     }
 
     public final int getMeasuredWidth() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMeasuredWidth()I");
+        return mMeasuredWidth;
     }
 
     public final int getMeasuredWidthAndState() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMeasuredWidthAndState()I");
+        return mMeasuredWidth;
     }
 
     public int getMinimumHeight() {
@@ -2026,7 +2030,7 @@ package android.view;
     }
 
     public boolean isHardwareAccelerated() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isHardwareAccelerated()Z");
+        return false;
     }
 
     public boolean isHorizontalFadingEdgeEnabled() {
@@ -3143,8 +3147,9 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setLongClickable(Z)V");
     }
 
-    protected final void setMeasuredDimension(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setMeasuredDimension(II)V");
+    protected final void setMeasuredDimension(int measuredWidth, int measuredHeight) {
+        mMeasuredWidth = measuredWidth;
+        mMeasuredHeight = measuredHeight;
     }
 
     public void setMinimumHeight(int arg0) {
@@ -3862,3 +3867,4 @@ package android.view;
             }
         }
     }
+

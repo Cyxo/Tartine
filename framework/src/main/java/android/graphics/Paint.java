@@ -490,7 +490,7 @@ package android.graphics;
     }
 
     public final boolean isFilterBitmap() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->isFilterBitmap()Z");
+        return false;
     }
 
     public final boolean isLinearText() {
@@ -601,7 +601,7 @@ package android.graphics;
     }
 
     public void setFilterBitmap(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setFilterBitmap(Z)V");
+        // no-op for the software surface
     }
 
     public void setFlags(int arg0) {
