@@ -26,6 +26,7 @@ package android.text;
     protected int width;
     protected float spacingMul = 1.0f;
     protected float spacingAdd = 0.0f;
+    protected int height;
     protected Layout(java.lang.CharSequence arg0, android.text.TextPaint arg1, int arg2, android.text.Layout.Alignment arg3, float arg4, float arg5) {
         this.text = (arg0 == null ? "" : arg0);
         if (arg1 == null) this.paint = new android.text.TextPaint();
@@ -88,7 +89,8 @@ package android.text;
     }
 
     public static float getDesiredWidth(java.lang.CharSequence arg0, int arg1, int arg2, android.text.TextPaint arg3) {
-        return (arg0 == null ? 0 : (arg2 - arg1) * 10.0f);
+        CharSequence body = (arg0 == null) ? "" : (arg1 == 0 && arg2 == 0 ? arg0 : arg0.subSequence(arg1, Math.min(arg0.length(),arg2)));
+        return arg3 == null ? (float) body.length() * 10.0f : arg3.measureText(body.toString());
     }
 
     public int getEllipsisCount(int arg0) {
@@ -108,7 +110,7 @@ package android.text;
     }
 
     public int getHeight() {
-        return 0;
+        return (height <= 0 ? Math.round((paint==null?14.0f:paint.getTextSize())*1.3f) : height);
     }
 
     public final int getHyphenationFrequency() {
