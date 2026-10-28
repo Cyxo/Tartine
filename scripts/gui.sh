@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# GUI probe: headless onCreate, then show the activity window.
-# Direct run: ensure 'mise run build' has been run first.
-# Prefer: mise run gui [apk] [timeout]
+# Translated GUI probe: headless onCreate as translated bytecode,
+# then show the activity window. Direct run: ensure 'mise run build' has been
+# run first. Prefer: mise run gui [apk] [timeout]
 set -euo pipefail
 
 ROOT="${MISE_PROJECT_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"

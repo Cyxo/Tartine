@@ -24,34 +24,19 @@ run = "bash scripts/apk.sh"
 run_windows = "pwsh -File scripts/apk.ps1"
 
 [tasks.run]
-description = "Headless probe: run launcher onCreate until the first gap"
+description = "Headless probe: run launcher onCreate as translated bytecode until the first gap"
 depends = ["build"]
 usage = 'arg "[apk]" default="apks/app-debug.apk" help="APK file to probe"'
 run = "bash scripts/run.sh"
 run_windows = "pwsh -File scripts/run.ps1"
 
-[tasks.txrun]
-description = "Translated headless probe: run launcher onCreate until the first gap"
-depends = ["build"]
-usage = 'arg "[apk]" default="apks/app-debug.apk" help="APK file to probe"'
-run = "bash scripts/txrun.sh"
-run_windows = "pwsh -File scripts/txrun.ps1"
-
 [tasks.gui]
-description = "GUI probe: headless onCreate, then show the activity window"
+description = "GUI probe: headless onCreate as translated bytecode, then show the activity window"
 depends = ["build"]
 usage = '''arg "[apk]" default="apks/app-debug.apk" help="APK file to show"
   arg "[timeout]" default="0" help="Auto-close after N seconds (0 = stay open)"'''
 run = "bash scripts/gui.sh"
 run_windows = "pwsh -File scripts/gui.ps1"
-
-[tasks.txgui]
-description = "Translated GUI probe: headless onCreate as translated bytecode, then show the activity window"
-depends = ["build"]
-usage = '''arg "[apk]" default="apks/app-debug.apk" help="APK file to show"
-  arg "[timeout]" default="0" help="Auto-close after N seconds (0 = stay open)"'''
-run = "bash scripts/txgui.sh"
-run_windows = "pwsh -File scripts/txgui.ps1"
 
 [tasks.dump]
 description = "Print the instruction dump of one dex file"

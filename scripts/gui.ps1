@@ -21,9 +21,12 @@ if (-not $timeout) { $timeout = "0" }
 # of the deprecated sun.misc.Unsafe legacy default on JDK 25+ (LWJGL
 # Configuration.MEMORY_BACKEND); let our interpreter's sun.misc.Unsafe
 # allocateInstance failover run without JEP 498 terminal-deprecation warnings.
+# GLFW owns the process's main thread on macOS, so the window must be created
+# there: -XstartOnFirstThread (Windows/Linux dispatch to main either way).
 $jvm = @(
     "--enable-native-access=ALL-UNNAMED"
     "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED"
     "--sun-misc-unsafe-memory-access=allow"
 )
+if ($IsMacOS) { $jvm += "-XstartOnFirstThread" }
 & java @jvm -cp ($classes + $sep + $jars) tartine.Main gui $target $timeout

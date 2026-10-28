@@ -60,10 +60,14 @@ mise exec -- gradle test --tests "tartine.apk.*"
 
 ```sh
 mise run apk [apks/app-debug.apk]              # manifest, code, and library summary
-mise run run [apks/app-debug.apk]              # headless probe: onCreate until the first gap
-mise run gui [apks/app-debug.apk] [timeout]    # show the activity window (first frame blits)
+mise run run [apks/app-debug.apk]              # translated headless probe: onCreate until the first gap
+mise run gui [apks/app-debug.apk] [timeout]    # translated GUI probe: show the activity window (first frame blits)
 mise run dump <file.dex>                       # instruction dump of one dex file
 ```
+
+`run` and `gui` execute the launcher as real JVM bytecode through the
+translation loader (`tartine.tx`). The interpreter path is still reachable
+directly for comparisons: `java ... tartine.Main irun|igui [apk]`.
 
 `mise tasks ls` lists everything; `mise run <task> --help` shows args.
 Launchers reuse the last `mise run build` output via direct `java`

@@ -31,13 +31,14 @@ import tartine.vm.VmThrow;
  *
  * <ul>
  * <li>{@code apk <file.apk>} — headless APK summary: manifest, code, libraries.
- * <li>{@code run <file.apk>} — headless probe: executes the launcher
- * activity's {@code onCreate} until the first gap (no GUI yet).
- * <li>{@code txrun <file.apk>} — the same probe through the translation
- * loader ({@code tartine.tx}: real JVM bytecode, framework module classes,
- * host JDK), until the first gap.
- * <li>{@code gui <file.apk> [timeoutSecs]} — headless {@code onCreate}, then
- * shows the activity window on desktop (blank until composition runs).
+ * <li>{@code run <file.apk>} — headless probe through the translation loader
+ * ({@code tartine.tx}: real JVM bytecode, framework module classes, host JDK),
+ * executing the launcher activity's {@code onCreate} until the first gap.
+ * <li>{@code gui <file.apk> [timeoutSecs]} — the same translated launch, then
+ * shows the activity window on desktop. {@code txrun}/{@code txgui} are kept
+ * as aliases.
+ * <li>{@code irun <file.apk>} / {@code igui <file.apk> [timeoutSecs]} — the
+ * interpreter path, kept for comparisons while the translation path grows.
  * <li>{@code dump <file.dex>} — prints our instruction dump of a dex file.
  * </ul>
  */
@@ -69,8 +70,14 @@ public final class Main {
                     break;
                 case "run":
                     require(args, 2);
-                    probeRun(new File(args[1]));
+                    txRun(new File(args[1]));
                     break;
+                case "gui":
+                    require(args, 2);
+                    txGuiRun(new File(args[1]),
+                            args.length > 2 ? Long.parseLong(args[2]) : 0);
+                    break;
+                // Backward-compatible aliases for the old translation task names.
                 case "txrun":
                     require(args, 2);
                     txRun(new File(args[1]));
@@ -80,9 +87,14 @@ public final class Main {
                     txGuiRun(new File(args[1]),
                             args.length > 2 ? Long.parseLong(args[2]) : 0);
                     break;
-                case "gui":
+                // Interpreter path, kept for comparisons with the translation.
+                case "irun":
                     require(args, 2);
-                    guiRun(new File(args[1]),
+                    probeRun(new File(args[1]));
+                    break;
+                case "igui":
+                    require(args, 2);
+                    interpreterGuiRun(new File(args[1]),
                             args.length > 2 ? Long.parseLong(args[2]) : 0);
                     break;
                 case "txdump":
@@ -110,7 +122,7 @@ public final class Main {
     }
 
     private static void usage() {
-        System.out.println("Usage: tartine.Main (apk|run|txrun|dump) <file>");
+        System.out.println("Usage: tartine.Main (apk|run|gui|irun|igui|dump) <file>");
     }
 
     private static void require(String[] args, int count) {
@@ -194,17 +206,11 @@ public final class Main {
         }
     }
 
+    /** Interpreter headless probe ({@code irun}), kept as a reference while
+     *  the translation path grows. */
     private static void probeRun(File apk) throws Exception {
         runOnCreate(apk);
     }
-
-    /**
-     * Translated-run probe (the {@code tartine.tx} counterpart of
-     * {@link #runOnCreate}: launcher {@code <init>} then {@code onCreate}
-     * as real JVM bytecode. The framework module supplies android.*
-     * skeletons (UOE bodies = the gap census); the dex classes come from
-     * {@link TranslatedLoader}.
-     */
 
     /** Launcher activity loaded through the translated loader, plus the
      *  still-open APK reader the loader's lazy per-class translation needs. */
@@ -212,6 +218,13 @@ public final class Main {
             Object activity) {
     }
 
+    /**
+     * Translated-run probe ({@code run}, the {@code tartine.tx} counterpart
+     * of {@link #runOnCreate}): launcher {@code <init>} then {@code onCreate}
+     * as real JVM bytecode. The framework module supplies android.* skeletons
+     * (UOE bodies = the gap census); the dex classes come from
+     * {@link TranslatedLoader}.
+     */
     private static void txRun(File apk) throws Exception {
         txLaunch(apk).reader().close();
     }
@@ -308,7 +321,7 @@ public final class Main {
     }
 
     /**
-     * Translated GUI probe: run the launcher through {@code
+     * Translated GUI probe ({@code gui}): run the launcher through {@code
      * TranslatedLoader}, then drive the compose pipeline the way the
      * interpreter GUI does (createComposition, setContent, attach owners,
      * lifecycle to RESUMED), but with plain reflection on the translated
@@ -320,7 +333,7 @@ public final class Main {
         TxApp app = txLaunch(apk);
         try {
             if (app.activity() == null) {
-                System.out.println("txgui: launch failed; no window");
+                System.out.println("gui: launch failed; no window");
                 return;
             }
             Object activity = app.activity();
@@ -331,35 +344,35 @@ public final class Main {
             Object window = txField(activity, "mWindow");
             Object decor = txField(window, "mDecor");
             Object view = txInvoke(decor, "getChildAt", 0);
-            System.out.println("txgui content view: " + describeTx(view));
+            System.out.println("gui content view: " + describeTx(view));
             Object deferred = txField(view,
                     "shouldCreateCompositionOnAttachedToWindow");
-            System.out.println("txgui defer-composition flag: " + deferred);
+            System.out.println("gui defer-composition flag: " + deferred);
             boolean defer = Boolean.TRUE.equals(deferred)
                     || Integer.valueOf(1).equals(deferred);
             if (!defer) {
                 System.out.println(
-                        "txgui: no deferred composition; nothing to drive");
+                        "gui: no deferred composition; nothing to drive");
                 return;
             }
-            System.out.println("txgui parentContext: "
+            System.out.println("gui parentContext: "
                     + describeTx(txField(view, "parentContext")));
-            System.out.println("txgui attached: "
+            System.out.println("gui attached: "
                     + txInvoke(view, "isAttachedToWindow"));
             // Attach parity with the interpreter driver: joinWindow marks the
             // content view attached at setContentView time; the host shell's
             // ViewRootImpl-style attach chain has not landed, so the driver
             // stands in and sets the AttachInfo ref the same way.
             txSetField(view, "mAttachInfo", new Object());
-            System.out.println("txgui attached after mark: "
+            System.out.println("gui attached after mark: "
                     + txInvoke(view, "isAttachedToWindow"));
             txInvoke(view, "createComposition");
-            System.out.println("txgui: createComposition returned");
+            System.out.println("gui: createComposition returned");
             Object lambda = txInvoke(txField(view, "content"), "getValue");
-            System.out.println("txgui content lambda: " + describeTx(lambda));
+            System.out.println("gui content lambda: " + describeTx(lambda));
             Object composition = txField(view, "composition");
             txInvoke(composition, "setContent", lambda);
-            System.out.println("txgui: setContent returned");
+            System.out.println("gui: setContent returned");
             Object owner = txInvoke(composition, "getOwner");
             // Attach parity: the activity is the view tree's lifecycle and
             // saved-state owner (what ComponentActivity does to the decor
@@ -372,7 +385,7 @@ public final class Main {
                     "androidx.savedstate.ViewTreeSavedStateRegistryOwner",
                     "set", view, activity);
             txInvoke(owner, "onAttachedToWindow");
-            System.out.println("txgui: onAttachedToWindow returned");
+            System.out.println("gui: onAttachedToWindow returned");
             Object lifecycle = txInvoke(activity, "getLifecycle");
             Class<?> events = app.loader()
                     .loadClass("androidx.lifecycle.Lifecycle$Event");
@@ -381,30 +394,30 @@ public final class Main {
                 txInvoke(lifecycle, "handleLifecycleEvent",
                         events.getDeclaredField(event).get(null));
             }
-            System.out.println("txgui: lifecycle resumed");
+            System.out.println("gui: lifecycle resumed");
             // Content again post-attach: the observer forwards the stored
             // content to the inner composition (interpreter driveAttach
             // parity).
             txInvoke(composition, "setContent", lambda);
-            System.out.println("txgui: post-attach setContent returned");
+            System.out.println("gui: post-attach setContent returned");
             // Frame pump parity with driveFrame: fire the posted
             // Choreographer callbacks (the driver's VSync), repeating while
             // callbacks re-post (bounded like the interpreter's 10 rounds).
             for (int round = 0; round < 10; round++) {
                 int fired = android.view.Choreographer.pumpFrameCallbacks(
                         System.nanoTime());
-                System.out.println("txgui: frame callbacks round " + round
+                System.out.println("gui: frame callbacks round " + round
                         + ": " + fired);
                 if (fired == 0) {
                     break;
                 }
             }
             txMeasureLayoutDraw(owner);
-            System.out.println("txgui: window ready (frame: "
+            System.out.println("gui: window ready (frame: "
                     + (firstDrawFrame != null ? "present" : "absent") + ")");
             DesktopWindow.show(activity.getClass().getName(), timeoutSecs,
                     firstDrawFrame, loadWindowIcons(apk));
-            System.out.println("txgui: window closed");
+            System.out.println("gui: window closed");
         } finally {
             app.reader().close();
         }
@@ -419,9 +432,9 @@ public final class Main {
     private static void txMeasureLayoutDraw(Object owner) {
         try {
             txInvoke(owner, "onMeasure", 480 | (1 << 30), 960 | (1 << 30));
-            System.out.println("txgui: onMeasure returned");
+            System.out.println("gui: onMeasure returned");
             txInvoke(owner, "onLayout", false, 0, 0, 480, 960);
-            System.out.println("txgui: onLayout returned");
+            System.out.println("gui: onLayout returned");
             io.github.humbleui.skija.Surface surface =
                     tartine.graphics.SkiaPresenter.createSurface(480, 960);
             android.graphics.Canvas hostCanvas =
@@ -431,7 +444,7 @@ public final class Main {
             // on-device frame.
             firstDrawFrame = surface;
             txInvoke(owner, "dispatchDraw", hostCanvas);
-            System.out.println("txgui: dispatchDraw returned");
+            System.out.println("gui: dispatchDraw returned");
             int[] pixels = tartine.graphics.SkiaPresenter.readPixels(surface,
                     480, 960);
             long painted = 0;
@@ -440,10 +453,10 @@ public final class Main {
                     painted++;
                 }
             }
-            System.out.println("txgui: painted pixels " + painted + "/"
+            System.out.println("gui: painted pixels " + painted + "/"
                     + pixels.length);
         } catch (RuntimeException e) {
-            System.out.println("txgui: measure/draw blocked at: "
+            System.out.println("gui: measure/draw blocked at: "
                     + sanitize(e));
         }
     }
@@ -463,7 +476,7 @@ public final class Main {
             }
             throw new NoSuchFieldException(name);
         } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("txgui field " + name + ": " + e,
+            throw new IllegalStateException("tx field " + name + ": " + e,
                     e);
         }
     }
@@ -484,7 +497,7 @@ public final class Main {
             }
             throw new NoSuchFieldException(name);
         } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("txgui field " + name + ": " + e,
+            throw new IllegalStateException("tx field " + name + ": " + e,
                     e);
         }
     }
@@ -512,7 +525,7 @@ public final class Main {
                     cause.printStackTrace(); // TEMP probe diagnostic
                 }
             }
-            throw new IllegalStateException("txgui invoke " + name + ": "
+            throw new IllegalStateException("tx invoke " + name + ": "
                     + sanitize(cause), cause);
         }
     }
@@ -537,7 +550,7 @@ public final class Main {
             if (e instanceof java.lang.reflect.InvocationTargetException x) {
                 cause = x.getCause();
             }
-            throw new IllegalStateException("txgui static " + className + "."
+            throw new IllegalStateException("tx static " + className + "."
                     + name + ": " + sanitize(cause), cause);
         }
     }
@@ -575,14 +588,14 @@ public final class Main {
         return text.toString();
     }
 
-    private static void guiRun(File apk, long timeoutSecs) throws Exception {
+    private static void interpreterGuiRun(File apk, long timeoutSecs) throws Exception {
         firstDrawFrame = null;
         String activity = runOnCreate(apk);
         if (activity == null) {
-            System.out.println("gui: onCreate did not return; no window");
+            System.out.println("igui: onCreate did not return; no window");
             return;
         }
-        System.out.println("gui: window ready (frame: "
+        System.out.println("igui: window ready (frame: "
                 + (firstDrawFrame != null ? "present" : "absent") + ")");
         DesktopWindow.show(activity, timeoutSecs, firstDrawFrame,
                 loadWindowIcons(apk));
@@ -605,7 +618,7 @@ public final class Main {
     }
 
     /**
-     * Headless probe shared by {@code run} and {@code gui}: executes the
+     * Headless probe shared by {@code irun} and {@code igui}: executes the
      * launcher activity's {@code onCreate} until the first gap. Returns the
      * activity name when onCreate returned, else null.
      */

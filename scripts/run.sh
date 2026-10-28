@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Headless probe: run launcher onCreate until the first gap.
-# Direct run: ensure 'mise run build' has been run first.
+# Translated headless probe: run launcher onCreate as translated bytecode
+# until the first gap. Direct run: ensure 'mise run build' has been run first.
 # Prefer: mise run run [apk]
 set -euo pipefail
 
