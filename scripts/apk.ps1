@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+# APK summary: manifest, code, libraries (headless).
 # Direct runs need build output + tools on PATH; prefer `mise run apk`.
 $ErrorActionPreference = "Stop"
 $root = $env:MISE_PROJECT_ROOT

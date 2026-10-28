@@ -1,7 +1,7 @@
 # Tartine - Android Runtime
 
 <p align="center">
-  <img src="./assets/logo.png" />
+  <img src="./docs/assets/logo.png" />
 </p>
 
 > **Tartine** *(noun)*: A slice of bread topped with sweet or savoury spreadable food such as butter, jam, honey, cream, or sauce.

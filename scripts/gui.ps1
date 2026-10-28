@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+# Translated GUI probe: headless onCreate as translated bytecode, then show the activity window.
 # Direct runs need build output + tools on PATH; prefer `mise run gui`.
 $ErrorActionPreference = "Stop"
 $root = $env:MISE_PROJECT_ROOT

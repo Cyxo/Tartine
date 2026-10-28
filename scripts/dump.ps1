@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+# Print the instruction dump of one dex file.
 # Direct runs need build output + tools on PATH; prefer `mise run dump`.
 $ErrorActionPreference = "Stop"
 $root = $env:MISE_PROJECT_ROOT

@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+# Translated headless probe: run launcher onCreate as translated bytecode until the first gap.
 # Direct runs need build output + tools on PATH; prefer `mise run run`.
 $ErrorActionPreference = "Stop"
 $root = $env:MISE_PROJECT_ROOT
