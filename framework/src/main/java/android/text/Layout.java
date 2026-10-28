@@ -44,8 +44,13 @@ package android.text;
         if (canvas == null || text == null) return;
         String s = text.toString();
         if (s.isEmpty()) return;
-        float baseline = Math.max(14.0f, ((paint == null) ? new android.text.TextPaint() : paint).getTextSize() * 1.2f);
-        canvas.drawText(s, 0.0f, baseline, (paint == null) ? new android.text.TextPaint() : paint);
+        android.text.TextPaint pnt = (paint == null) ? new android.text.TextPaint() : paint;
+        float size = pnt.getTextSize() <= 0.0f ? 14.0f : pnt.getTextSize();
+        float top = pnt.getFontMetrics().top;
+        // baseline such that ascent clears the canvas top by 2px
+        float baseline = -top + 2.0f;
+        if (baseline <= 0.0f) baseline = size + 2.0f;
+        canvas.drawText(s, 0.0f, baseline, pnt);
     }
 
     public void draw(android.graphics.Canvas arg0, android.graphics.Path arg1, android.graphics.Paint arg2, int arg3) {
