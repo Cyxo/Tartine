@@ -753,7 +753,6 @@ package android.graphics;
         public float top;
 
         public FontMetrics() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint$FontMetrics;-><init>()V");
         }
 
         public boolean equals(java.lang.Object arg0) {
