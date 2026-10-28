@@ -146,7 +146,14 @@ package android.graphics;
     }
 
     public android.graphics.Paint.FontMetrics getFontMetrics() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getFontMetrics()Landroid/graphics/Paint$FontMetrics;");
+        android.graphics.Paint.FontMetrics fm = new android.graphics.Paint.FontMetrics();
+        io.github.humbleui.skija.FontMetrics m = tartineSkiaFont().getMetrics();
+        fm.top = m._top;
+        fm.ascent = m._ascent;
+        fm.descent = m._descent;
+        fm.bottom = m._bottom;
+        fm.leading = m._leading;
+        return fm;
     }
 
     public float getFontMetrics(android.graphics.Paint.FontMetrics arg0) {

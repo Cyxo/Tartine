@@ -21,19 +21,34 @@ package android.text;
     public static final int JUSTIFICATION_MODE_INTER_WORD = 1;
     public static final int JUSTIFICATION_MODE_NONE = 0;
 
+    protected java.lang.CharSequence text;
+    protected android.text.TextPaint paint;
+    protected int width;
+    protected float spacingMul = 1.0f;
+    protected float spacingAdd = 0.0f;
     protected Layout(java.lang.CharSequence arg0, android.text.TextPaint arg1, int arg2, android.text.Layout.Alignment arg3, float arg4, float arg5) {
+        this.text = (arg0 == null ? "" : arg0);
+        if (arg1 == null) this.paint = new android.text.TextPaint();
+        else this.paint = arg1;
+        this.width = (arg2 <= 0) ? 480 : arg2;
+        this.spacingMul = arg4;
+        this.spacingAdd = arg5;
     }
 
     public android.graphics.RectF computeDrawingBoundingBox() {
         return null;
     }
 
-    public void draw(android.graphics.Canvas arg0) {
-
+    public void draw(android.graphics.Canvas canvas) {
+        if (canvas == null || text == null) return;
+        String s = text.toString();
+        if (s.isEmpty()) return;
+        float baseline = Math.max(14.0f, ((paint == null) ? new android.text.TextPaint() : paint).getTextSize() * 1.2f);
+        canvas.drawText(s, 0.0f, baseline, (paint == null) ? new android.text.TextPaint() : paint);
     }
 
     public void draw(android.graphics.Canvas arg0, android.graphics.Path arg1, android.graphics.Paint arg2, int arg3) {
-
+        draw(arg0);
     }
 
     public void draw(android.graphics.Canvas arg0, java.util.List<android.graphics.Path> arg1, java.util.List<android.graphics.Paint> arg2, android.graphics.Path arg3, android.graphics.Paint arg4, int arg5) {
@@ -149,7 +164,7 @@ package android.text;
     }
 
     public final int getLineEnd(int arg0) {
-        return 0;
+        return (text == null) ? 0 : text.length();
     }
 
     public int getLineForOffset(int arg0) {
@@ -221,7 +236,8 @@ package android.text;
     }
 
     public final android.text.TextPaint getPaint() {
-        return new android.text.TextPaint();
+        if (paint == null) paint = new android.text.TextPaint();
+        return paint;
     }
 
     public final android.text.Layout.Alignment getParagraphAlignment(int arg0) {
@@ -273,7 +289,7 @@ package android.text;
     }
 
     public final java.lang.CharSequence getText() {
-        return new android.text.SpannableString("");
+        return (text == null) ? new android.text.SpannableString("") : text;
     }
 
     public final android.text.TextDirectionHeuristic getTextDirectionHeuristic() {
@@ -306,6 +322,19 @@ package android.text;
 
     public boolean isRtlCharAt(int arg0) {
         return false;
+    }
+
+    public android.graphics.Paint.FontMetricsInt getLineFontMetrics(int arg0) {
+        android.graphics.Paint.FontMetricsInt fm = new android.graphics.Paint.FontMetricsInt();
+        if (paint != null) {
+            android.graphics.Paint.FontMetrics m = paint.getFontMetrics();
+            fm.ascent = (int) m.ascent;
+            fm.descent = (int) m.descent;
+            fm.top = (int) m.top;
+            fm.bottom = (int) m.bottom;
+            fm.leading = (int) m.leading;
+        }
+        return fm;
     }
 
     protected final boolean isSpanned() {
