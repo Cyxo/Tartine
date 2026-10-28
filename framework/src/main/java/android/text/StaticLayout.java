@@ -17,20 +17,29 @@ public class StaticLayout extends Layout {
     public StaticLayout() { }
 
     private StaticLayout(CharSequence source, android.text.TextPaint paint, int width,
-            Layout.Alignment align, float spacingMult, float spacingAdd) {
+            Layout.Alignment align, float spacingMult, float spacingAdd,
+            boolean includePad, boolean fallbackLineSpacing) {
         super(source == null ? "" : source, paint == null ? new android.text.TextPaint() : paint,
                 width, align == null ? Layout.Alignment.ALIGN_NORMAL : align,
-                spacingMult, spacingAdd);
+                spacingMult, spacingAdd, includePad);
         this.mText = (source == null ? "" : source);
         this.mPaint = (paint == null ? new android.text.TextPaint() : paint);
         this.mWidth = (width <= 0 ? 480 : width);
         this.mLineCount = (mText.toString().isEmpty() ? 0 : 1);
-        this.mFallbackLineSpacing = false;
+        this.mFallbackLineSpacing = fallbackLineSpacing;
         if (mLineCount <= 0) {
             mHeight = 0; mLineWidths = new float[0]; mLineStarts = new int[0];
             mLineEnds = new int[0]; mLineTops = new int[0];
             return;
         }
+        // Reflect the one-line metrics the Layout base computed (the static
+        // layout's public arrays mirror its line table; the guest reads the
+        // metrics through Layout.getLine*, not through these).
+        this.mLineStarts = new int[] {0};
+        this.mLineEnds = new int[] {mText.length()};
+        this.mLineWidths = new float[] {mPaint.measureText(mText.toString())};
+        this.mLineTops = new int[] {0, height};
+        this.mHeight = height;
     }
 
     public static class Builder {
@@ -43,6 +52,8 @@ public class StaticLayout extends Layout {
         private float spacingMul = Layout.DEFAULT_LINESPACING_MULTIPLIER;
         private float spacingAdd = Layout.DEFAULT_LINESPACING_ADDITION;
         private int maxLines = Integer.MAX_VALUE;
+        private boolean includePad = false;
+        private boolean fallbackLineSpacing = false;
 
         private Builder() { }
 
@@ -62,7 +73,7 @@ public class StaticLayout extends Layout {
         public Builder setEllipsize(TextUtils.TruncateAt where) { return this; }
         public Builder setEllipsizedWidth(int where) { return this; }
         public Builder setHyphenationFrequency(int frequency) { return this; }
-        public Builder setIncludePad(boolean includepad) { return this; }
+        public Builder setIncludePad(boolean includepad) { this.includePad = includepad; return this; }
         public Builder setIndents(int[] first, int[] rest) { return this; }
         public Builder setJustificationMode(int mode) { return this; }
         public Builder setLineBreakConfig(android.graphics.text.LineBreakConfig c) { return this; }
@@ -73,8 +84,8 @@ public class StaticLayout extends Layout {
         public Builder setText(CharSequence text) { this.source = (text == null ? "" : text); if (this.end > this.source.length()) this.end=this.source.length(); return this; }
         public Builder setTextDirection(TextDirectionHeuristic heuristic) { return this; }
         public Builder setUseBoundsForWidth(boolean v) { return this; }
-        public Builder setUseLineSpacingFromFallbacks(boolean v) { return this; }
+        public Builder setUseLineSpacingFromFallbacks(boolean v) { this.fallbackLineSpacing = v; return this; }
 
-        public StaticLayout build() { CharSequence cut = source.subSequence(start, Math.min(source.length(), end)); return new StaticLayout(cut, paint, width, alignment, spacingMul, spacingAdd); }
+        public StaticLayout build() { CharSequence cut = source.subSequence(start, Math.min(source.length(), end)); return new StaticLayout(cut, paint, width, alignment, spacingMul, spacingAdd, includePad, fallbackLineSpacing); }
     }
 }

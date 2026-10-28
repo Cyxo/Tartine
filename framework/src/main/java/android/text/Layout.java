@@ -27,32 +27,84 @@ package android.text;
     protected float spacingMul = 1.0f;
     protected float spacingAdd = 0.0f;
     protected int height;
+    protected int lineAscent;
+    protected int lineDescent;
+    protected int lineTop;
+    protected int lineBaseline;
+    protected int lineExtra;
+    /** AOSP StaticLayout.Builder.setIncludePad: when true the first line's
+     *  top and the last line's bottom use the font's {@code top}/{@code bottom}
+     *  (extra vertical padding) instead of {@code ascent}/{@code descent}. */
+    protected boolean includePad;
+
     protected Layout(java.lang.CharSequence arg0, android.text.TextPaint arg1, int arg2, android.text.Layout.Alignment arg3, float arg4, float arg5) {
+        this(arg0, arg1, arg2, arg3, arg4, arg5, false);
+    }
+
+    protected Layout(java.lang.CharSequence arg0, android.text.TextPaint arg1, int arg2, android.text.Layout.Alignment arg3, float arg4, float arg5, boolean arg6) {
         this.text = (arg0 == null ? "" : arg0);
         if (arg1 == null) this.paint = new android.text.TextPaint();
         else this.paint = arg1;
         this.width = (arg2 <= 0) ? 480 : arg2;
         this.spacingMul = arg4;
         this.spacingAdd = arg5;
+        this.includePad = arg6;
+        recomputeLineMetrics();
+    }
+
+    /**
+     * One-line line metrics, following AOSP's StaticLayout.generate
+     * (frameworks-base core/java/android/text/StaticLayout.java:1153-1256):
+     * {@code above}/{@code below} come from the font metrics (ascent/descent,
+     * or top/bottom when includePad), line spacing adds
+     * {@code (below-above)*(spacingMul-1)+spacingAdd}, and the stored descent
+     * is {@code below + extra}. Layout.getLineBaseline is then
+     * {@code getLineTop(line+1) - getLineDescent(line)} and Layout.getHeight
+     * is {@code getLineTop(getLineCount())}
+     * (core/java/android/text/Layout.java:1233-1235 and :2820-2823), which
+     * makes the baseline independent of the added spacing.
+     */
+    protected void recomputeLineMetrics() {
+        if (this.paint == null) this.paint = new android.text.TextPaint();
+        float size = this.paint.getTextSize() > 0.0f
+                ? this.paint.getTextSize() : 14.0f;
+        android.graphics.Paint.FontMetrics fm = this.paint.getFontMetrics();
+        float above = this.includePad ? fm.top : fm.ascent;
+        float below = this.includePad ? fm.bottom : fm.descent;
+        if (above >= 0.0f) above = -size;
+        if (below <= 0.0f) below = size * 0.25f;
+        int intAbove = (int) Math.floor(above);
+        int intBelow = (int) Math.ceil(below);
+        float ex = (intBelow - intAbove) * (this.spacingMul - 1.0f)
+                + this.spacingAdd;
+        int extra = ex >= 0.0f
+                ? (int) (ex + 0.5f) : -(int) (-ex + 0.5f);
+        this.lineTop = 0;
+        this.lineExtra = extra;
+        this.lineDescent = intBelow + extra;
+        this.height = (intBelow - intAbove) + extra;
+        this.lineBaseline = this.height - this.lineDescent;
+        this.lineAscent = -this.lineBaseline;
     }
 
     public android.graphics.RectF computeDrawingBoundingBox() {
         return null;
     }
 
+    /**
+     * AOSP Layout.draw(Canvas) → draw(c, null, null, 0) → drawText/line loop;
+     * plain LTR unspanned text takes the direct drawText leg with
+     * {@code baseline = lbottom - getLineDescent(l)} where
+     * {@code lbottom = getLineTop(l+1)} (core/java/android/text/Layout.java
+     * drawText(Canvas,int,int) and the builtin parity note). One line only
+     * here, so that is exactly {@link #getLineBaseline(int)}.
+     */
     public void draw(android.graphics.Canvas canvas) {
         if (canvas == null || text == null) return;
         String s = text.toString();
         if (s.isEmpty()) return;
         android.text.TextPaint pnt = (paint == null) ? new android.text.TextPaint() : paint;
-        float size = pnt.getTextSize() <= 0.0f ? 14.0f : pnt.getTextSize();
-        // Avoid Skija 'top' metrics: it pulls the baseline too far down
-        // and exits the Compose clipping band. Use the font ascent only,
-        // leaving the ascender about 1px inside the clip.
-        float ascent = pnt.getFontMetrics().ascent;
-        float baseline = -ascent;
-        if (baseline <= 0.0f || baseline > 24.0f) baseline = size + 2.0f;
-        canvas.drawText(s, 0.0f, baseline, pnt);
+        canvas.drawText(s, 0.0f, (float) getLineBaseline(0), pnt);
     }
 
     public void draw(android.graphics.Canvas arg0, android.graphics.Path arg1, android.graphics.Paint arg2, int arg3) {
@@ -117,7 +169,8 @@ package android.text;
     }
 
     public int getHeight() {
-        return (height <= 0 ? Math.round((paint==null?14.0f:paint.getTextSize())*1.3f) : height);
+        // AOSP Layout.java:1233-1235: getHeight() = getLineTop(getLineCount()).
+        return getLineTop(getLineCount());
     }
 
     public final int getHyphenationFrequency() {
@@ -133,23 +186,37 @@ package android.text;
     }
 
     public final int getLineAscent(int arg0) {
-        return 0;
+        // AOSP Layout.java:2829-2831: getLineTop(line) - getLineBaseline(line).
+        return getLineTop(arg0) - getLineBaseline(arg0);
     }
 
     public final int getLineBaseline(int arg0) {
-        return 0;
+        // AOSP Layout.java:2820-2823:
+        // getLineTop(line+1) - getLineDescent(line).
+        return getLineTop(arg0 + 1) - getLineDescent(arg0);
     }
 
     public final int getLineBottom(int arg0) {
-        return 0;
+        return getLineTop(arg0 + 1);
     }
 
     public int getLineBottom(int arg0, boolean arg1) {
-        return 0;
+        // AOSP Layout.java:2809-2815: the spacing-aware variant subtracts
+        // the line's extra spacing when includeLineSpacing is false.
+        return arg1 ? getLineTop(arg0 + 1)
+                : getLineTop(arg0 + 1) - getLineExtra(arg0);
     }
 
     public int getLineBounds(int arg0, android.graphics.Rect arg1) {
-        return 0;
+        // AOSP Layout.java: getLineBounds fills left/top/right/bottom from
+        // the line box and returns the baseline.
+        if (arg1 != null) {
+            arg1.left = (int) getLineLeft(arg0);
+            arg1.top = getLineTop(arg0);
+            arg1.right = (int) getLineRight(arg0);
+            arg1.bottom = getLineBottom(arg0);
+        }
+        return getLineBaseline(arg0);
     }
 
     public android.graphics.text.LineBreakConfig getLineBreakConfig() {
@@ -161,11 +228,18 @@ package android.text;
     }
 
     public int getLineCount() {
-        return 1;
+        return (text == null || text.length() == 0) ? 0 : 1;
     }
 
     public int getLineDescent(int arg0) {
-        return 0;
+        // AOSP StaticLayout.generate stores DESCENT = below + extra
+        // (core/java/android/text/StaticLayout.java:1229-1236).
+        return lineDescent;
+    }
+
+    /** @hide AOSP StaticLayout.getLineExtra: spacing folded into descent. */
+    public int getLineExtra(int arg0) {
+        return lineExtra;
     }
 
     public android.text.Layout.Directions getLineDirections(int arg0) {
@@ -193,7 +267,8 @@ package android.text;
     }
 
     public float getLineMax(int arg0) {
-        return 0.0f;
+        if (text == null) return 0.0f;
+        return paint == null ? 0.0f : paint.measureText(text.toString());
     }
 
     public float getLineRight(int arg0) {
@@ -201,11 +276,11 @@ package android.text;
     }
 
     public final float getLineSpacingAmount() {
-        return 0.0f;
+        return spacingAdd;
     }
 
     public final float getLineSpacingMultiplier() {
-        return 0.0f;
+        return spacingMul;
     }
 
     public int getLineStart(int arg0) {
@@ -213,15 +288,20 @@ package android.text;
     }
 
     public int getLineTop(int arg0) {
-        return 0;
+        // AOSP StaticLayout.getLineTop reads the TOP column; a one-line
+        // layout has TOP[0] = 0 and TOP[1] = height
+        // (core/java/android/text/StaticLayout.java:1436-1439 and
+        // generate()'s v += (below - above) + extra).
+        if (arg0 <= 0) return 0;
+        return height;
     }
 
     public int getLineVisibleEnd(int arg0) {
-        return 0;
+        return (text == null) ? 0 : text.length();
     }
 
     public float getLineWidth(int arg0) {
-        return 0.0f;
+        return getLineMax(arg0);
     }
 
     public final int getMaxLines() {
@@ -290,11 +370,11 @@ package android.text;
     }
 
     public final float getSpacingAdd() {
-        return 0.0f;
+        return spacingAdd;
     }
 
     public final float getSpacingMultiplier() {
-        return 0.0f;
+        return spacingMul;
     }
 
     public final java.lang.CharSequence getText() {
@@ -314,7 +394,7 @@ package android.text;
     }
 
     public final int getWidth() {
-        return 0;
+        return width;
     }
 
     public final void increaseWidthTo(int arg0) {
