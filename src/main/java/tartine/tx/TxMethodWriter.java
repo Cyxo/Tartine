@@ -1240,6 +1240,48 @@ final class TxMethodWriter implements Opcodes {
                     mv.visitVarInsn(ALOAD, slot);
                     return;
                 default:
+                    // Cross-family demand on a known DEX value kind first
+                    // takes bitReinterpret's contract (fillFloatDemo: bare
+                    // aget of a [F element re-turns float bits through an
+                    // int slot; only f2i would truncate numerically). The
+                    // mixed slot holds the box, so the reinterpret decodes
+                    // the box family the last store boxed, then flips bits.
+                    if (want == INT && k == FLOAT) {
+                        mv.visitVarInsn(ALOAD, slot);
+                        mv.visitTypeInsn(CHECKCAST, "java/lang/Float");
+                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float",
+                                "floatValue", "()F", false);
+                        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float",
+                                "floatToRawIntBits", "(F)I", false);
+                        return;
+                    }
+                    if (want == FLOAT && k == INT) {
+                        mv.visitVarInsn(ALOAD, slot);
+                        mv.visitTypeInsn(CHECKCAST, "java/lang/Integer");
+                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer",
+                                "intValue", "()I", false);
+                        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float",
+                                "intBitsToFloat", "(I)F", false);
+                        return;
+                    }
+                    if (want == LONG && k == DOUBLE) {
+                        mv.visitVarInsn(ALOAD, slot);
+                        mv.visitTypeInsn(CHECKCAST, "java/lang/Double");
+                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double",
+                                "doubleValue", "()D", false);
+                        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double",
+                                "doubleToRawLongBits", "(D)J", false);
+                        return;
+                    }
+                    if (want == DOUBLE && k == LONG) {
+                        mv.visitVarInsn(ALOAD, slot);
+                        mv.visitTypeInsn(CHECKCAST, "java/lang/Long");
+                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long",
+                                "longValue", "()J", false);
+                        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double",
+                                "longBitsToDouble", "(J)D", false);
+                        return;
+                    }
                     // Numerics unbox the last store's box family. Number is
                     // the safe decode: a {obj,int} slot that also met a
                     // float/long store still decodes through the same
@@ -1654,11 +1696,16 @@ final class TxMethodWriter implements Opcodes {
                 regArray[dst] = in.reference.startsWith("[") ? in.reference : null;
                 return;
             }
-            if (in.reference.contains("LineHeightStyleSpan")) System.err.println("DBGLHS ref=" + in.reference + " owner=" + method.owner + " name=" + method.name);
             if (in.reference.startsWith("[")) {
-                mv.visitInsn(DUP);
+                // In-place value replacement: ALOAD x; LDC desc; coerce pops
+                // (desc, x) and pushes the coerced array — no residue. A DUP
+                // here once left a phantom reference on the eval stack across
+                // every array check-cast; StateFlowImpl.updateState's joins
+                // then disagreed on stack height and COMPUTE_FRAMES died in
+                // Frame.merge with a zero-length input stack.
                 mv.visitLdcInsn(in.reference);
-                mv.visitMethodInsn(INVOKESTATIC, "tartine/tx/ArrayCoerce", "coerce", "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;", false);
+                mv.visitMethodInsn(INVOKESTATIC, "tartine/tx/ArrayCoerce", "coerce",
+                        "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;", false);
             }
             mv.visitTypeInsn(CHECKCAST, TxDescriptors.internal(in.reference));
             store(dst, OBJ);
@@ -2095,6 +2142,13 @@ final class TxMethodWriter implements Opcodes {
             itf = true;
             opcode = INVOKEINTERFACE;
         }
+        if (opcode == INVOKESPECIAL && isInterface(owner)) {
+            // DEX invoke-direct on an interface methodref (Kotlin default
+            // helper / private default method). The JVM needs an
+            // InterfaceMethodref constant; isInterface drives that tag, not
+            // invoke's opcode.
+            itf = true;
+        }
         if (opcode == INVOKESTATIC && isInterface(owner)) {
             // Static call on an interface methodref: the JVM verifier wants
             // an InterfaceMethodref constant for interface owners, even
@@ -2118,6 +2172,17 @@ final class TxMethodWriter implements Opcodes {
 
     /** Whether the methodref owner is an interface (guest set, then host). */
     private boolean isInterface(String owner) {
+        // DEX-shape interfaces (compose.mayby...) win first — the guest
+        // loader, not the host, is the source of truth. Class.forName only
+        // covers host types.
+        try {
+            tartine.dex.DexClass dex = dexLookup == null ? null
+                    : dexLookup.apply(owner);
+            if (dex != null) {
+                return (dex.accessFlags & TxTranslator.ACC_INTERFACE) != 0;
+            }
+        } catch (Throwable ignored) {
+        }
         if (guestInterfaces.contains(owner)) {
             return true;
         }

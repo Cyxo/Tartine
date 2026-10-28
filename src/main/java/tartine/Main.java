@@ -420,7 +420,7 @@ public final class Main {
         try {
             txInvoke(owner, "onMeasure", 480 | (1 << 30), 960 | (1 << 30));
             System.out.println("txgui: onMeasure returned");
-            txInvoke(owner, "onLayout", 0, 0, 0, 480, 960);
+            txInvoke(owner, "onLayout", false, 0, 0, 480, 960);
             System.out.println("txgui: onLayout returned");
             io.github.humbleui.skija.Surface surface =
                     tartine.graphics.SkiaPresenter.createSurface(480, 960);
