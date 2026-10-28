@@ -103,12 +103,12 @@ package android.content.res;
     public int uiMode;
 
     /**
-     * AOSP Configuration ctor (lines 1059-1061) runs unset() — the device
-     * setToDefaults lands uiMode at UI_MODE_TYPE_UNDEFINED (0, i.e. no
-     * night info; dark-mode detection then reads light), and every other
-     * device default is zero for now — so the skeleton's zero-initialized
-     * fields match the current consumer surface (nonzero device defaults
-     * like fontScale trail until a wall reads one).
+     * AOSP Configuration ctor runs {@code unset()} (= setToDefaults(), then
+     * {@code fontScale = 0}), so a bare {@code new Configuration()} is the
+     * "completely undefined" merge delta: every modeled field stays zero.
+     * The live device configuration is not a bare Configuration; see
+     * {@code Resources} which calls {@link #setToDefaults()} and then fills
+     * the display values (density, screen dp size, uiMode, fontScale).
      */
     public Configuration() {
     }
@@ -254,8 +254,37 @@ package android.content.res;
         uiMode = arg0.uiMode;
     }
 
+    /**
+     * Ported behavior. AOSP frameworks-base
+     * core/java/android/content/res/Configuration.java:setToDefaults sets
+     * {@code fontScale = 1} and every modeled compatibility field to its
+     * UNDEFINED/zero value (the fields we do not carry, such as
+     * mLocaleList/assetsSeq, have no consumer yet). Note that the AOSP
+     * no-arg constructor runs {@code unset()}, which calls this and then
+     * forces {@code fontScale = 0}; that internal "completely undefined"
+     * state is why a bare {@code new Configuration()} must stay zeroed here
+     * too. The device configuration served by {@code Resources} is built on
+     * top of this method.
+     */
     public void setToDefaults() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->setToDefaults()V");
+        fontScale = 1;
+        mcc = mnc = 0;
+        locale = null;
+        touchscreen = TOUCHSCREEN_UNDEFINED;
+        keyboard = KEYBOARD_UNDEFINED;
+        keyboardHidden = KEYBOARDHIDDEN_UNDEFINED;
+        hardKeyboardHidden = HARDKEYBOARDHIDDEN_UNDEFINED;
+        navigation = NAVIGATION_UNDEFINED;
+        navigationHidden = NAVIGATIONHIDDEN_UNDEFINED;
+        orientation = ORIENTATION_UNDEFINED;
+        screenLayout = SCREENLAYOUT_UNDEFINED;
+        colorMode = COLOR_MODE_UNDEFINED;
+        uiMode = UI_MODE_TYPE_UNDEFINED;
+        screenWidthDp = SCREEN_WIDTH_DP_UNDEFINED;
+        screenHeightDp = SCREEN_HEIGHT_DP_UNDEFINED;
+        smallestScreenWidthDp = SMALLEST_SCREEN_WIDTH_DP_UNDEFINED;
+        densityDpi = DENSITY_DPI_UNDEFINED;
+        fontWeightAdjustment = FONT_WEIGHT_ADJUSTMENT_UNDEFINED;
     }
 
     public java.lang.String toString() {

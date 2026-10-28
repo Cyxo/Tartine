@@ -77,10 +77,52 @@ import tartine.fw.SystemColors;
     /**
      * The device answers its AssetManager-scoped configuration (the
      * ResourcesKey's shared mMetrics.config); the shell owns one
-     * Configuration per Resources with zero-default fields.
+     * Configuration per Resources.
+     *
+     * <p>This must be the *live* device configuration, not AOSP's "completely
+     * undefined" {@code new Configuration()} (whose ctor runs unset() and
+     * leaves {@code fontScale = 0}). Compose derives its {@code Density} from
+     * exactly these two fields (androidx.compose.ui.unit.Density(context):
+     * {@code displayMetrics.density} and {@code configuration.fontScale}, see
+     * AndroidDensity.android.kt), and an {@code sp} value converts to
+     * {@code value * fontScale * density} px. With fontScale left at 0 every
+     * guest text size collapsed to 0 px, which the draw path then papered
+     * over with a hardcoded 14 px fallback.
      */
     private final android.content.res.Configuration mConfiguration =
-            new android.content.res.Configuration();
+            probeConfiguration();
+
+    /**
+     * Desktop device configuration for the 480x960 mdpi surface. Mirrors
+     * AOSP Configuration.setToDefaults() (fontScale = 1) and fills the
+     * display values a real device reports. 480x960 px at density 1.0 means
+     * a 480x960 dp screen, close to a modern phone's dp size, so app layouts
+     * keep their phone proportions.
+     */
+    private static android.content.res.Configuration probeConfiguration() {
+        android.content.res.Configuration config =
+                new android.content.res.Configuration();
+        config.setToDefaults();
+        config.densityDpi = 160;
+        config.screenWidthDp = 480;
+        config.screenHeightDp = 960;
+        config.smallestScreenWidthDp = 480;
+        config.orientation =
+                android.content.res.Configuration.ORIENTATION_PORTRAIT;
+        config.touchscreen =
+                android.content.res.Configuration.TOUCHSCREEN_FINGER;
+        config.keyboard = android.content.res.Configuration.KEYBOARD_NOKEYS;
+        config.keyboardHidden =
+                android.content.res.Configuration.KEYBOARDHIDDEN_YES;
+        config.hardKeyboardHidden =
+                android.content.res.Configuration.HARDKEYBOARDHIDDEN_YES;
+        config.navigation = android.content.res.Configuration.NAVIGATION_NONAV;
+        config.navigationHidden =
+                android.content.res.Configuration.NAVIGATIONHIDDEN_YES;
+        config.uiMode = android.content.res.Configuration.UI_MODE_TYPE_NORMAL
+                | android.content.res.Configuration.UI_MODE_NIGHT_NO;
+        return config;
+    }
 
     /**
      * AOSP Resources.getDisplayMetrics (Resources.java:2238-2240) returns the
@@ -88,15 +130,20 @@ import tartine.fw.SystemColors;
      * probe display's metrics are owned here. Values mirror the interpreter's
      * display builtins (480x960 at density 1.0, 160 dpi).
      */
-    private final android.util.DisplayMetrics mMetrics = probeDisplayMetrics();
+    private final android.util.DisplayMetrics mMetrics =
+            probeDisplayMetrics(mConfiguration.fontScale);
 
-    private static android.util.DisplayMetrics probeDisplayMetrics() {
+    /** AOSP DisplayMetrics field contract: {@code scaledDensity} is the
+     *  density multiplied by the configuration font scale (the legacy
+     *  text-size path; Compose reads density + fontScale directly). */
+    private static android.util.DisplayMetrics probeDisplayMetrics(
+            float fontScale) {
         android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
         metrics.widthPixels = 480;
         metrics.heightPixels = 960;
         metrics.density = 1.0f;
         metrics.densityDpi = 160;
-        metrics.scaledDensity = 1.0f;
+        metrics.scaledDensity = 1.0f * fontScale;
         metrics.xdpi = 160.0f;
         metrics.ydpi = 160.0f;
         return metrics;
