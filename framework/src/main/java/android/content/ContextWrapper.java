@@ -231,7 +231,10 @@ package android.content;
     }
 
     public android.content.ContentResolver getContentResolver() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getContentResolver()Landroid/content/ContentResolver;");
+        if (mBase != null) {
+            return mBase.getContentResolver();
+        }
+        return new android.content.ContentResolver(this);
     }
 
     public java.io.File getDataDir() {

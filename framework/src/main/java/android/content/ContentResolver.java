@@ -50,7 +50,7 @@ package android.content;
     public static final int SYNC_OBSERVER_TYPE_SETTINGS = 1;
 
     public ContentResolver(android.content.Context arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentResolver;-><init>(Landroid/content/Context;)V");
+        // no-op: host reads the resolver's queries against nothing
     }
 
     public final android.content.ContentProviderClient acquireContentProviderClient(android.net.Uri arg0) {
@@ -266,7 +266,7 @@ package android.content;
     }
 
     public final void registerContentObserver(android.net.Uri arg0, boolean arg1, android.database.ContentObserver arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentResolver;->registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;)V");
+        // no-op: settings observer tracking not wired to host
     }
 
     public void releasePersistableUriPermission(android.net.Uri arg0, int arg1) {
@@ -314,7 +314,7 @@ package android.content;
     }
 
     public final void unregisterContentObserver(android.database.ContentObserver arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentResolver;->unregisterContentObserver(Landroid/database/ContentObserver;)V");
+        // no-op
     }
 
     public final int update(android.net.Uri arg0, android.content.ContentValues arg1, android.os.Bundle arg2) {
