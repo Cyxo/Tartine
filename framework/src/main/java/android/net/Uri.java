@@ -1,9 +1,10 @@
 package android.net;
 
     public class Uri implements java.lang.Comparable<android.net.Uri>, android.os.Parcelable {
+    private String uriString;
 
     public int describeContents() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->describeContents()I");
+        return 0;
     }
 
     public void writeToParcel(android.os.Parcel arg0, int arg1) {
@@ -153,11 +154,13 @@ package android.net;
     }
 
     public static android.net.Uri parse(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;");
+        android.net.Uri u = new android.net.Uri();
+        u.uriString = arg0;
+        return u;
     }
 
     public java.lang.String toString() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/net/Uri;->toString()Ljava/lang/String;");
+        return (uriString == null) ? "" : uriString;
     }
 
     public static android.net.Uri withAppendedPath(android.net.Uri arg0, java.lang.String arg1) {

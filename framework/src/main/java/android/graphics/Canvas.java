@@ -417,9 +417,8 @@ package android.graphics;
     /** Shared drawText body: skija drawString at the baseline (padding
      *  none). Rootless canvases skip (no device to draw onto). */
     private void drawTextChars(String text, float x, float y, android.graphics.Paint paint) {
-        if (skija == null || paint == null || text.isEmpty()) {
-            return;
-        }
+        if (text == null || text.isEmpty()) return;
+        if (skija == null || paint == null) return;
         skija.drawString(text, x, y,
                 paint.tartineSkiaFont(), paint.tartineSkia());
     }
@@ -436,12 +435,14 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawTextRun(Landroid/graphics/text/MeasuredText;IIIIFFZLandroid/graphics/Paint;)V");
     }
 
-    public void drawTextRun(char[] arg0, int arg1, int arg2, int arg3, int arg4, float arg5, float arg6, boolean arg7, android.graphics.Paint arg8) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawTextRun([CIIIIFFZLandroid/graphics/Paint;)V");
+    public void drawTextRun(char[] text, int start, int end, int contextStart, int contextEnd, float x, float y, boolean isRtl, android.graphics.Paint paint) {
+        if (text == null || end <= start) return;
+        drawTextChars(new String(text, start, end - start), x, y, paint);
     }
 
-    public void drawTextRun(java.lang.CharSequence arg0, int arg1, int arg2, int arg3, int arg4, float arg5, float arg6, boolean arg7, android.graphics.Paint arg8) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawTextRun(Ljava/lang/CharSequence;IIIIFFZLandroid/graphics/Paint;)V");
+    public void drawTextRun(java.lang.CharSequence text, int start, int end, int contextStart, int contextEnd, float x, float y, boolean isRtl, android.graphics.Paint paint) {
+        if (text == null || end <= start) return;
+        try { drawTextChars(text.subSequence(start, end).toString(), x, y, paint); } catch (Exception e) { }
     }
 
     public void drawVertices(android.graphics.Canvas.VertexMode arg0, int arg1, float[] arg2, int arg3, float[] arg4, int arg5, int[] arg6, int arg7, short[] arg8, int arg9, int arg10, android.graphics.Paint arg11) {

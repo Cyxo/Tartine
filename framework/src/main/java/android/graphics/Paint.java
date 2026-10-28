@@ -384,12 +384,16 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getTextBounds([CIILandroid/graphics/Rect;)V");
     }
 
-    public void getTextBounds(java.lang.CharSequence arg0, int arg1, int arg2, android.graphics.Rect arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getTextBounds(Ljava/lang/CharSequence;IILandroid/graphics/Rect;)V");
+    public void getTextBounds(java.lang.CharSequence text, int start, int end, android.graphics.Rect bounds) {
+        getTextBounds(text == null ? null : text.toString(), start, end, bounds);
     }
 
-    public void getTextBounds(java.lang.String arg0, int arg1, int arg2, android.graphics.Rect arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getTextBounds(Ljava/lang/String;IILandroid/graphics/Rect;)V");
+    public void getTextBounds(java.lang.String text, int start, int end, android.graphics.Rect bounds) {
+        if (bounds == null) return;
+        bounds.set(0,0,0,0);
+        if (text == null || start >= end) return;
+        io.github.humbleui.types.Rect r = tartineSkiaFont().measureText(text.substring(start, end));
+        bounds.set(0, 0, Math.round(r.getWidth()), Math.round(r.getHeight()));
     }
 
     public java.util.Locale getTextLocale() {
@@ -509,20 +513,24 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->isUnderlineText()Z");
     }
 
-    public float measureText(char[] arg0, int arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->measureText([CII)F");
+    public float measureText(char[] text, int start, int count) {
+        if (text == null || count <= 0) return 0.0f;
+        return tartineSkiaFont().measureTextWidth(new String(text, start, count));
     }
 
-    public float measureText(java.lang.CharSequence arg0, int arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->measureText(Ljava/lang/CharSequence;II)F");
+    public float measureText(java.lang.CharSequence text, int start, int end) {
+        if (text == null || start >= end) return 0.0f;
+        return tartineSkiaFont().measureTextWidth(text.subSequence(start, end).toString());
     }
 
-    public float measureText(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->measureText(Ljava/lang/String;)F");
+    public float measureText(java.lang.String text) {
+        if (text == null) return 0.0f;
+        return tartineSkiaFont().measureTextWidth(text);
     }
 
-    public float measureText(java.lang.String arg0, int arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->measureText(Ljava/lang/String;II)F");
+    public float measureText(java.lang.String text, int start, int end) {
+        if (text == null || start >= end) return 0.0f;
+        return tartineSkiaFont().measureTextWidth(text.substring(start, end));
     }
 
     public void reset() {
