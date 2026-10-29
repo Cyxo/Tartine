@@ -443,8 +443,7 @@ package android.content;
         // AOSP ContextWrapper.registerComponentCallbacks: delegates to
         // mBase.registerComponentCallbacks. No component lifecycle runs
         // headless, so callbacks never fire — the shell drops the
-        // registration (matches the interpreter's no-op builtin at
-        // Interpreter.java:5601-5603).
+        // registration (a no-op, matching AOSP's headless behavior).
     }
 
     public void registerDeviceIdChangeListener(java.util.concurrent.Executor arg0, java.util.function.IntConsumer arg1) {

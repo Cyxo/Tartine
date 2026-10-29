@@ -254,8 +254,7 @@ package android.view;
      * AOSP ViewGroup.java:282/286/302 draw-related group flags. Staging
      * carries only the two the draw chain reads; padding model is absent so
      * CLIP_TO_PADDING_MASK semantics reduce to explicit CLIP_TO_PADDING for
-     * now (mGroupFlags defaults set at first dispatch — Unsafe-mirrors skip
-     * field initializers, see syncFields note in Interpreter).
+     * now (mGroupFlags defaults are set at first dispatch).
      */
     protected int mGroupFlags;
 
@@ -437,18 +436,14 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchWindowVisibilityChanged(I)V");
     }
 
-    /** AOSP ViewGroup.java:4567: drawChild forwards to the child's
-     *  draw(canvas, parent, drawingTime). The 3-arg draw is virtual:
-     *  guest overrides of {@code draw} run first via the VirtualCall seam
-     *  (framework-in-Java (2) reverse bridge), then the framework software
-     *  leg (View.draw(C,V,J)) runs for non-guest receivers. */
+    /**
+     * AOSP ViewGroup.java:4567: drawChild forwards to the child's
+     * draw(canvas, parent, drawingTime). The 3-arg draw is an ordinary JVM
+     * virtual call, so a translated subclass overriding it runs its own
+     * bytecode; otherwise the framework software leg (View.draw(C,V,J))
+     * runs.
+     */
     protected boolean drawChild(android.graphics.Canvas arg0, android.view.View arg1, long arg2) {
-        Object drawn = tartine.fw.VirtualCall.on(arg1, "draw",
-                "(Landroid/graphics/Canvas;Landroid/view/ViewGroup;J)Z",
-                new Object[]{arg0, this, arg2});
-        if (drawn != tartine.fw.VirtualCall.NOT_GUEST) {
-            return drawn instanceof Boolean ? (Boolean) drawn : false;
-        }
         return arg1.draw(arg0, this, arg2);
     }
 

@@ -92,14 +92,14 @@ public final class SkeletonGen {
         }
         FwIndex index;
         if (jar != null) {
-            index = FwIndex.loadJar(jar);
+            index = FwIndexLoader.loadJar(jar);
         } else {
-            Path found = Sdk.findJar(-1);
+            Path found = Sdk.findJar(Sdk.TARGET_API);
             if (found == null) {
                 throw new IllegalArgumentException(
                         "no local android.jar (set ANDROID_HOME/ANDROID_SDK_ROOT or pass the path)");
             }
-            index = FwIndex.loadJar(found);
+            index = FwIndexLoader.loadJar(found);
         }
         Map<String, FwIndex.FwClass> closure = closure(index, DEFAULT_SEEDS);
         Map<String, List<FwIndex.FwClass>> files = group(closure);

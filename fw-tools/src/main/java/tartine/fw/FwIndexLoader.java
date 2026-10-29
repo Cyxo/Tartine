@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -17,128 +16,15 @@ import java.util.zip.ZipFile;
 import tartine.dex.Descriptors;
 
 /**
- * Framework type universe parsed from a platform {@code android.jar}
- * (JVM classfiles): hierarchy, member signatures, and true constants.
- * Method bodies are stubs in that jar and are never read.
+ * Dev-time loader: parses a platform {@code android.jar} (JVM classfiles) into
+ * an {@link FwIndex}, which {@link SkeletonGen} drives skeleton emission from.
+ *
+ * <p>Lives in the {@code fw-tools} module so the runtime cannot reach SDK
+ * parsing by accident: {@code android.jar} is a build input for regeneration
+ * only, never a runtime dependency.
  */
-public final class FwIndex {
-    public static final class FwMethod {
-        public final String name;
-        public final List<String> params;
-        public final String ret;
-        /** Classfile access flags (ACC_* bits); 0 for hand-authored entries. */
-        public final int access;
-        /** Method-level generic Signature string, or null (erasure only). */
-        public final String signature;
-
-        public FwMethod(String name, List<String> params, String ret) {
-            this(name, params, ret, 0, null);
-        }
-
-        public FwMethod(String name, List<String> params, String ret, int access) {
-            this(name, params, ret, access, null);
-        }
-
-        public FwMethod(String name, List<String> params, String ret, int access,
-                String signature) {
-            this.name = name;
-            this.params = Collections.unmodifiableList(new ArrayList<>(params));
-            this.ret = ret;
-            this.access = access;
-            this.signature = signature;
-        }
-    }
-
-    public static final class FwField {
-        public final String name;
-        public final String type;
-        /** Classfile access flags (ACC_* bits); 0 for hand-authored entries. */
-        public final int access;
-
-        public FwField(String name, String type) {
-            this(name, type, 0);
-        }
-
-        public FwField(String name, String type, int access) {
-            this.name = name;
-            this.type = type;
-            this.access = access;
-        }
-    }
-
-    public static final class FwClass {
-        public final String descriptor;
-        /** Superclass descriptor, or null (only {@code Ljava/lang/Object;}). */
-        public final String superclass;
-        public final List<String> interfaces;
-        public final List<FwMethod> methods;
-        public final List<FwField> fields;
-        /** True (ConstantValue) static finals by field name. */
-        public final Map<String, Object> constants;
-        /** Classfile access flags (ACC_* bits); 0 for hand-authored entries. */
-        public final int access;
-        /** Class-level generic Signature string, or null (hand-authored). */
-        public final String signature;
-
-        public FwClass(String descriptor, String superclass, List<String> interfaces,
-                List<FwMethod> methods, List<FwField> fields, Map<String, Object> constants) {
-            this(descriptor, superclass, interfaces, methods, fields, constants, 0, null);
-        }
-
-        public FwClass(String descriptor, String superclass, List<String> interfaces,
-                List<FwMethod> methods, List<FwField> fields, Map<String, Object> constants,
-                int access) {
-            this(descriptor, superclass, interfaces, methods, fields, constants, access, null);
-        }
-
-        public FwClass(String descriptor, String superclass, List<String> interfaces,
-                List<FwMethod> methods, List<FwField> fields, Map<String, Object> constants,
-                int access, String signature) {
-            this.descriptor = descriptor;
-            this.superclass = superclass;
-            this.interfaces = Collections.unmodifiableList(new ArrayList<>(interfaces));
-            this.methods = Collections.unmodifiableList(new ArrayList<>(methods));
-            this.fields = Collections.unmodifiableList(new ArrayList<>(fields));
-            this.constants = Collections.unmodifiableMap(new HashMap<>(constants));
-            this.access = access;
-            this.signature = signature;
-        }
-
-        public boolean hasMethod(String name, List<String> params, String ret) {
-            for (FwMethod method : methods) {
-                if (method.name.equals(name) && method.params.equals(params)
-                        && method.ret.equals(ret)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public boolean hasField(String name) {
-            for (FwField field : fields) {
-                if (field.name.equals(name)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
-
-    private final Map<String, FwClass> classes = new HashMap<>();
-
-    public FwIndex() {
-    }
-
-    public void put(FwClass cls) {
-        classes.put(cls.descriptor, cls);
-    }
-
-    public FwClass find(String descriptor) {
-        return classes.get(descriptor);
-    }
-
-    public int classCount() {
-        return classes.size();
+public final class FwIndexLoader {
+    private FwIndexLoader() {
     }
 
     /** Indexes every class in the jar (skips module/package info and multi-release overlays). */
@@ -155,18 +41,14 @@ public final class FwIndex {
                     continue;
                 }
                 try (InputStream in = zip.getInputStream(entry)) {
-                    index.put(parse(readAll(in)));
+                    index.put(parse(in.readAllBytes()));
                 }
             }
         }
         return index;
     }
 
-    private static byte[] readAll(InputStream in) throws IOException {
-        return in.readAllBytes();
-    }
-
-    static FwClass parse(byte[] data) throws IOException {
+    static FwIndex.FwClass parse(byte[] data) throws IOException {
         ByteBuffer buf = ByteBuffer.wrap(data).order(ByteOrder.BIG_ENDIAN);
         if (u4(buf) != 0xCAFEBABE) {
             throw new IOException("not a class file");
@@ -241,7 +123,7 @@ public final class FwIndex {
         for (int i = 0; i < interfaceCount; i++) {
             interfaces.add(className(pool, u2(buf)));
         }
-        List<FwField> fields = new ArrayList<>();
+        List<FwIndex.FwField> fields = new ArrayList<>();
         Map<String, Object> constants = new HashMap<>();
         int fieldCount = u2(buf);
         for (int i = 0; i < fieldCount; i++) {
@@ -258,9 +140,9 @@ public final class FwIndex {
                     skip(buf, length);
                 }
             }
-            fields.add(new FwField(name, descriptor, access));
+            fields.add(new FwIndex.FwField(name, descriptor, access));
         }
-        List<FwMethod> methods = new ArrayList<>();
+        List<FwIndex.FwMethod> methods = new ArrayList<>();
         int methodCount = u2(buf);
         for (int i = 0; i < methodCount; i++) {
             int access = u2(buf);
@@ -278,7 +160,7 @@ public final class FwIndex {
                 }
             }
             int open = descriptor.indexOf('(');
-            methods.add(new FwMethod(name, Descriptors.splitTypes(
+            methods.add(new FwIndex.FwMethod(name, Descriptors.splitTypes(
                     descriptor.substring(open + 1, descriptor.indexOf(')', open))),
                     descriptor.substring(descriptor.indexOf(')') + 1), access,
                     methodSignature));
@@ -294,7 +176,7 @@ public final class FwIndex {
                 skip(buf, length);
             }
         }
-        return new FwClass(type, superclass, interfaces, methods, fields, constants,
+        return new FwIndex.FwClass(type, superclass, interfaces, methods, fields, constants,
                 classAccess, signature);
     }
 

@@ -58,8 +58,9 @@ tasks.named('test', Test) {
     useJUnitPlatform()
     // `gradle test` is the repo-wide verification entry point; framework
     // tests live in their own module so they run without the runtime's
-    // Skija platform natives.
+    // Skija platform natives, and the SDK-parsing tools live in fw-tools.
     dependsOn ':framework:test'
+    dependsOn ':fw-tools:test'
 }
 
 application {
@@ -75,16 +76,5 @@ tasks.register('writeClasspath') {
         outFile.get().asFile.text = sourceSets.main.runtimeClasspath.files
                 .findAll { it.name.endsWith('.jar') }.join('\n') + '\n'
     }
-}
-
-// Regenerate the framework module's android.* skeletons from the local
-// android.jar (additive by default; --force overwrites). Committed output.
-tasks.register('fwGen', JavaExec) {
-    group = 'framework'
-    description = 'Emit framework skeletons (UOE bodies) into framework/src/main/java'
-    mainClass = 'tartine.fw.SkeletonGen'
-    classpath = sourceSets.main.runtimeClasspath
-    args = [layout.projectDirectory.dir('framework/src/main/java').asFile.path]
-    environment 'ANDROID_HOME': (System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT') ?: '')
 }
 

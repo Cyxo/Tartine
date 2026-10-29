@@ -194,7 +194,35 @@ package android.graphics;
     }
 
     public static int parseColor(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I");
+        // AOSP Color.parseColor: "#RRGGBB", "#AARRGGBB", or a named color.
+        if (arg0 == null || arg0.isEmpty()) {
+            throw new IllegalArgumentException("Unknown color");
+        }
+        if (arg0.charAt(0) == '#') {
+            long color = Long.parseLong(arg0.substring(1), 16);
+            if (arg0.length() == 7) {
+                color |= 0x00000000FF000000L;
+            } else if (arg0.length() != 9) {
+                throw new IllegalArgumentException("Unknown color");
+            }
+            return (int) color;
+        }
+        switch (arg0.toLowerCase(java.util.Locale.ROOT)) {
+            case "black": return BLACK;
+            case "darkgray": case "darkgrey": return DKGRAY;
+            case "gray": case "grey": return GRAY;
+            case "lightgray": case "lightgrey": return LTGRAY;
+            case "white": return WHITE;
+            case "red": return RED;
+            case "green": return GREEN;
+            case "blue": return BLUE;
+            case "yellow": return YELLOW;
+            case "cyan": case "aqua": return CYAN;
+            case "magenta": case "fuchsia": return MAGENTA;
+            case "transparent": return TRANSPARENT;
+            default:
+                throw new IllegalArgumentException("Unknown color");
+        }
     }
 
     public float red() {

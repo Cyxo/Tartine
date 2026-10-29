@@ -56,6 +56,16 @@ import tartine.gfx.GfxTypeface;
     // Text size staging state (AOSP Paint.java:1942/1951: native paint
     // holds it; plain host field carries the same contract here).
     private float mTextSize = 0.0f;
+    // Text state the interpreter used to mirror from the platform jar; the
+    // translated path needs the same round-trip contract on the Java side.
+    private float mTextScaleX = 1.0f;
+    private float mTextSkewX = 0.0f;
+    private float mLetterSpacing = 0.0f;
+    private float mWordSpacing = 0.0f;
+    private int mHinting = HINTING_OFF;
+    private android.graphics.Typeface mTypeface;
+    private android.graphics.Shader mShader;
+    private java.lang.String mFontFeatureSettings;
     // AOSP Paint.java:356-357: HIDDEN_DEFAULT_PAINT_FLAGS (all set on new/reset).
     private static final int HOST_HIDDEN_DEFAULT_PAINT_FLAGS =
             DEV_KERN_TEXT_FLAG | EMBEDDED_BITMAP_TEXT_FLAG | FILTER_BITMAP_FLAG;
@@ -166,7 +176,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public java.lang.String getFontFeatureSettings() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getFontFeatureSettings()Ljava/lang/String;");
+        return mFontFeatureSettings;
     }
 
     public android.graphics.Paint.FontMetrics getFontMetrics() {
@@ -217,11 +227,11 @@ import tartine.gfx.GfxTypeface;
     }
 
     public int getHinting() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getHinting()I");
+        return mHinting;
     }
 
     public float getLetterSpacing() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getLetterSpacing()F");
+        return mLetterSpacing;
     }
 
     public android.graphics.MaskFilter getMaskFilter() {
@@ -257,7 +267,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public android.graphics.Shader getShader() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getShader()Landroid/graphics/Shader;");
+        return mShader;
     }
 
     public int getShadowLayerColor() {
@@ -479,7 +489,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public float getTextScaleX() {
-        return 1.0f;
+        return mTextScaleX;
     }
 
     public float getTextSize() {
@@ -488,7 +498,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public float getTextSkewX() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getTextSkewX()F");
+        return mTextSkewX;
     }
 
     public int getTextWidths(char[] arg0, int arg1, int arg2, float[] arg3) {
@@ -508,7 +518,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public android.graphics.Typeface getTypeface() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getTypeface()Landroid/graphics/Typeface;");
+        return mTypeface;
     }
 
     public float getUnderlinePosition() {
@@ -520,7 +530,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public float getWordSpacing() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getWordSpacing()F");
+        return mWordSpacing;
     }
 
     public android.graphics.Xfermode getXfermode() {
@@ -673,7 +683,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public void setFontFeatureSettings(java.lang.String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setFontFeatureSettings(Ljava/lang/String;)V");
+        mFontFeatureSettings = arg0;
     }
 
     public boolean setFontVariationSettings(java.lang.String arg0) {
@@ -681,11 +691,11 @@ import tartine.gfx.GfxTypeface;
     }
 
      public void setHinting(int arg0) {
-        // No-op placeholder; host Skia paint unaffected.
+        mHinting = arg0;
      }
 
     public void setLetterSpacing(float arg0) {
-        // no-op
+        mLetterSpacing = arg0;
     }
 
     public void setLinearText(boolean arg0) {
@@ -701,7 +711,9 @@ import tartine.gfx.GfxTypeface;
     }
 
     public android.graphics.Shader setShader(android.graphics.Shader arg0) {
-        return arg0;
+        android.graphics.Shader previous = mShader;
+        mShader = arg0;
+        return previous;
     }
 
     public void setShadowLayer(float arg0, float arg1, float arg2, int arg3) {
@@ -759,7 +771,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public void setTextScaleX(float arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setTextScaleX(F)V");
+        mTextScaleX = arg0;
     }
 
     public void setTextSize(float arg0) {
@@ -768,11 +780,13 @@ import tartine.gfx.GfxTypeface;
     }
 
     public void setTextSkewX(float arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setTextSkewX(F)V");
+        mTextSkewX = arg0;
     }
 
     public android.graphics.Typeface setTypeface(android.graphics.Typeface arg0) {
-        return arg0 == null ? android.graphics.Typeface.DEFAULT : arg0;
+        android.graphics.Typeface previous = mTypeface;
+        mTypeface = arg0;
+        return previous;
      }
 
     public void setUnderlineText(boolean arg0) {
@@ -780,7 +794,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public void setWordSpacing(float arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setWordSpacing(F)V");
+        mWordSpacing = arg0;
     }
 
     public android.graphics.Xfermode setXfermode(android.graphics.Xfermode arg0) {
@@ -893,6 +907,8 @@ import tartine.gfx.GfxTypeface;
             BEVEL, MITER, ROUND;
         }
         public static enum Style {
-            FILL, FILL_AND_STROKE, STROKE;
+            // AOSP Paint.java: FILL, STROKE, FILL_AND_STROKE (ordinal order
+            // is part of the contract: STROKE is 1).
+            FILL, STROKE, FILL_AND_STROKE;
         }
     }

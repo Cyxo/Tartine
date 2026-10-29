@@ -497,11 +497,10 @@ package android.content;
     }
 
     /**
-     * The shell answers the same service table the interpreter probe used
-     * (Interpreter#systemService): accessibility and clipboard are live
-     * objects, everything else misses to null and the consumer's next
-     * wall names the gap. A real per-process service registry is future
-     * work once the shell needs more services.
+     * The shell answers a small fixed service table: accessibility,
+     * autofill, and clipboard are live objects, everything else misses to
+     * null and the consumer's next wall names the gap. A real per-process
+     * service registry is future work once the shell needs more services.
      */
     public java.lang.Object getSystemService(java.lang.String name) {
         if ("accessibility".equals(name)) {

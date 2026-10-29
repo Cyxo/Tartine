@@ -615,26 +615,15 @@ package android.view;
      */
     public void draw(android.graphics.Canvas arg0) {
         drawBackground(arg0);
-        // Overridable hooks reach guest overrides via the VirtualCall seam
-        // (framework-in-Java (2)); NOT_GUEST falls back to the framework
-        // default inline, matching AOSP's empty View defaults.
-        if (tartine.fw.VirtualCall.on(this, "onDraw",
-                "(Landroid/graphics/Canvas;)V",
-                new Object[]{arg0}) == tartine.fw.VirtualCall.NOT_GUEST) {
-            onDraw(arg0);
-        }
-        if (tartine.fw.VirtualCall.on(this, "dispatchDraw",
-                "(Landroid/graphics/Canvas;)V",
-                new Object[]{arg0}) == tartine.fw.VirtualCall.NOT_GUEST) {
-            dispatchDraw(arg0);
-        }
+        // Overridable hooks dispatch through ordinary JVM virtual calls: a
+        // translated guest subclass that overrides onDraw/dispatchDraw/
+        // onDrawForeground runs its own bytecode; otherwise the framework
+        // default (AOSP's empty View default) runs.
+        onDraw(arg0);
+        dispatchDraw(arg0);
         // drawAutofilledHighlight: no autofill model yet (AOSP needs
         // PFLAG3_AUTOFILLED_HIGHLIGHTED state); no-op.
-        if (tartine.fw.VirtualCall.on(this, "onDrawForeground",
-                "(Landroid/graphics/Canvas;)V",
-                new Object[]{arg0}) == tartine.fw.VirtualCall.NOT_GUEST) {
-            onDrawForeground(arg0);
-        }
+        onDrawForeground(arg0);
         // drawDefaultFocusHighlight: no focus-highlight state yet
         // (AOSP draws only under PFLAG3_DEFAULT_FOCUS_HIGHLIGHTED); no-op.
     }
@@ -693,20 +682,11 @@ package android.view;
         }
 
         if ((mPrivateFlags & PFLAG_SKIP_DRAW) == PFLAG_SKIP_DRAW) {
-            // AOSP:24966-24969 — skip-draw views dispatch their children;
-            // the hook is virtual (guest overrides first, VirtualCall seam).
-            if (tartine.fw.VirtualCall.on(this, "dispatchDraw",
-                    "(Landroid/graphics/Canvas;)V",
-                    new Object[]{canvas}) == tartine.fw.VirtualCall.NOT_GUEST) {
-                dispatchDraw(canvas);
-            }
+            // AOSP:24966-24969 — skip-draw views dispatch their children.
+            dispatchDraw(canvas);
         } else {
             // AOSP:24971-24973 — normal views run the full draw(Canvas).
-            if (tartine.fw.VirtualCall.on(this, "draw",
-                    "(Landroid/graphics/Canvas;)V",
-                    new Object[]{canvas}) == tartine.fw.VirtualCall.NOT_GUEST) {
-                draw(canvas);
-            }
+            draw(canvas);
         }
         canvas.restoreToCount(restoreTo);
         return false; // 'more' stays false without animation progress
@@ -1648,6 +1628,9 @@ package android.view;
     /** AOSP field mSystemUiVisibility; setter/getter below. */
     private int mSystemUiVisibility;
 
+    /** AOSP View.mViewFlags visibility bits: VISIBLE/INVISIBLE/GONE. */
+    private int mVisibility = VISIBLE;
+
     /**
      * AOSP View.getSystemUiVisibility (lines 29011-29013): plain field
      * return of the flags stored by setSystemUiVisibility — the shell
@@ -1778,7 +1761,8 @@ package android.view;
     }
 
     public int getVisibility() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getVisibility()I");
+        // AOSP View.getVisibility (mViewFlags & VISIBILITY_MASK).
+        return mVisibility;
     }
 
     /**
@@ -3573,7 +3557,9 @@ package android.view;
     }
 
     public void setVisibility(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setVisibility(I)V");
+        // AOSP View.setVisibility: stores the visibility bits; the reduced
+        // shell has no display list to invalidate yet.
+        mVisibility = arg0;
     }
 
     public void setWillNotCacheDrawing(boolean arg0) {
@@ -3827,8 +3813,8 @@ package android.view;
         /**
          * MeasureSpec packs a dimension size and its mode into a single int:
          * mode occupies the top two bits (bits 30-31), size the lower 30 bits.
-         * Pure arithmetic — no state. Matches the interpreter's MeasureSpec
-         * builtins (Interpreter.java:5707-5713).
+         * Pure arithmetic — no state. Ported verbatim from AOSP's
+         * View.MeasureSpec makeMeasureSpec encoding.
          */
         public static final class MeasureSpec {
 

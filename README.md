@@ -66,8 +66,8 @@ mise run dump <file.dex>                       # instruction dump of one dex fil
 ```
 
 `run` and `gui` execute the launcher as real JVM bytecode through the
-translation loader (`tartine.tx`). The interpreter path is still reachable
-directly for comparisons: `java ... tartine.Main irun|igui [apk]`.
+translation loader (`tartine.tx`), the only VM. `txrun`/`txgui`/`txdump`
+remain as aliases for `run`/`gui`/`dump`.
 
 `mise tasks ls` lists everything; `mise run <task> --help` shows args.
 Launchers reuse the last `mise run build` output via direct `java`
@@ -139,8 +139,6 @@ Environment knobs:
   read-only default.
 - `TARTINE_FONT_FAMILIES` - same family list as `font.families` (the
   config file wins).
-- `TARTINE_MAX_STEPS` - caps the interpreter step counter for the
-  headless probes (dev tool).
 
 Guest files: apps only ever see Android paths. App-private dirs
 (`/data/data/<pkg>`, `/data/user/0/<pkg>`, `/data/local/tmp`) map under

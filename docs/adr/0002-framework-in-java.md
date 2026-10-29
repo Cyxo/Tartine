@@ -20,8 +20,13 @@ file + method. Skeletons refresh by deletion + regen.
 ## Consequences
 
 - `android.*` becomes a normal library on the classpath.
-- The interpreter becomes an adapter: guest allocations create host objects,
-  dispatch checks guest override then host invocation, then throws the named
-  gap.
 - Builtins stop growing: new behavior is written in the framework module only.
 - Framework tests live alongside (currently zero; tracked as deferred work).
+
+## Update (2026-10-29)
+
+The interpreter that this ADR described as an "adapter" was removed (ADR-0008).
+Dispatch is now plain JVM virtual dispatch: a translated guest class either
+overrides a framework method (its translated bytecode runs) or inherits the
+skeleton. The named-gap contract survives as the skeleton's
+`UnsupportedOperationException`.

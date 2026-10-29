@@ -12,8 +12,19 @@ import java.util.List;
  * Locates the platform {@code android.jar} in a local Android SDK.
  * Roots come from the environment ({@code ANDROID_HOME},
  * {@code ANDROID_SDK_ROOT}) plus OS-standard locations.
+ *
+ * <p>Dev-time only (the {@code fw-tools} module): the runtime never looks for
+ * an SDK. {@code android.jar} is a build input for regenerating the prebuilt
+ * framework index and the framework skeletons.
  */
 public final class Sdk {
+    /**
+     * Tartine's modeled Android API level. Regeneration defaults to the
+     * {@code android-36} platform so an app targeting API 36 runs on Tartine
+     * API 36.
+     */
+    public static final int TARGET_API = 36;
+
     private Sdk() {
     }
 
@@ -63,6 +74,13 @@ public final class Sdk {
         } catch (NumberFormatException e) {
             return -1;
         }
+    }
+
+    /** API level encoded in a platform jar's parent directory ({@code android-36}), or -1. */
+    static int apiLevelOf(Path jar) {
+        Path platform = jar.getParent();
+        return platform == null || platform.getFileName() == null
+                ? -1 : apiLevel(platform.getFileName().toString());
     }
 
     static List<Path> defaultRoots() {

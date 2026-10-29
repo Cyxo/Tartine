@@ -1,6 +1,6 @@
 # ADR-0001: Virtual machine strategy (interpreter-first)
 
-- **Status**: Accepted (Step 3; translation spike evaluated 2026-10-19 and adopted)
+- **Status**: Superseded by ADR-0008 (interpreter removed 2026-10-29); decision below kept for history
 - **Date**: decided Step 3, revised 2026-10-19
 
 ## Context
@@ -16,8 +16,8 @@ verifier because of type inference / frames / exceptions.
 Interpreter-first: `tartine.vm.Interpreter` executes our IR; unimplemented
 opcodes/methods throw `VmException` naming the gap. Translation was
 re-evaluated after the first Activity renders/first frame blits; the
-translation loader is now the default under `run`/`gui`, with the
-interpreter retained as the reference/debug tool (`irun`/`igui`).
+translation loader became the default under `run`/`gui`, and the interpreter
+was later removed entirely (ADR-0008) — translation is now the only VM.
 
 ## Consequences
 
@@ -27,3 +27,7 @@ interpreter retained as the reference/debug tool (`irun`/`igui`).
 - Translation remains built on the same resolution layer (pre-resolved IR); the
   translation spike delivered `tartine.tx`; verification (StackMapTable-free,
   v49 classfiles) confirmed feasibility on current HotSpot.
+- The interpreter-only parts of this record (its loop, `VmException` gaps) are
+  historical: `tartine.vm` no longer exists (ADR-0008). The same gap contract
+  now surfaces as the framework skeleton's
+  `UnsupportedOperationException("Tartine: not implemented: <signature>")`.

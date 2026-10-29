@@ -11,8 +11,7 @@ package android.os;
  *       failure when no Looper was prepared (Handler.java:228-236,
  *       :287-291, :305-312).</li>
  *   <li>The probe has no Looper pump yet, so posted work runs inline at the
- *       post site — the same delivery contract as the interpreter's Handler
- *       builtins (Interpreter {@code Handler.post}: "runs inline"). AOSP's
+ *       post site — the delivery contract is "runs inline". AOSP's
  *       {@code post} -> {@code sendMessageDelayed} -> {@code enqueueMessage}
  *       chain (Handler.java:438-440, :646-648, :680-690) lands unchanged
  *       once the desktop message pump exists; until then delays cannot be

@@ -26,81 +26,61 @@ GitLab `android_translation_layer/android_translation_layer`
   JIT/GC); both execute DEX so Dalvik-targeted apps run on ART with edge
   cases. Stock ART is not desktop-portable: it depends on Bionic, Binder
   IPC, Zygote fork model, system services.
-- VM strategy (decided Step 3): interpreter-first.
-  `tartine.vm.Interpreter` executes our IR directly; unknown opcodes and
-  unimplemented methods throw `VmException` naming the gap, so each failure
-  is the next task. The android.* framework must be reimplemented either
-  way; the interpreter grows one opcode/test at a time, while translation
-  (spiked via ASM 9.6 on the fixture: runs, but first attempt died in the
-  JVM verifier, and type inference/frames/exceptions remain untouched) adds
-  pitfalls without removing framework work. Audit 2026-10 revision
-  (user-approved): framework behavior migrates into real Java classes (see
-  "Framework in Java" below) and the translation spike runs right after the
-  first Activity renders instead of "after apps run".
+- VM strategy: **translate DEX to JVM bytecode** (`tartine.tx`), the only VM
+  since 2026-10-29 (ADR-0008; interpreter-first per ADR-0001 is superseded).
+  The translator emits classfile v49 (StackMapTable-free — the old
+  type-inferencing verifier covers it) with `COMPUTE_FRAMES` and a
+  DEX-hierarchy `getCommonSuperClass`; dex2jar/Enjarify are the oracles. It
+  reached parity with the interpreter on the fixture app, so the interpreter
+  (`tartine.vm`, `irun`/`igui`, `VmTest`) was deleted rather than maintained
+  alongside. Unknown constructs surface as the framework skeleton's named gap
+  (`UnsupportedOperationException("Tartine: not implemented: <signature>")`)
+  — the gap-driven loop survives.
 - `android.jar` bodies are all `throw new RuntimeException("Stub!")`
   (verified via `javap -c`): reuse it for hierarchy/signatures/constants
   only, never behavior. Devices have no `android.jar` — they ship
   `framework.jar` with real DEX, but it needs natives/Binder/preloaded
-  state and is not reusable on desktop; don't go there. Parse the LOCAL SDK
-  jar matching the APK (`<sdk>/platforms/android-<targetSdk>/android.jar`);
-  Maven's `com.google.android:android` artifact is API 16 and useless.
-  True constants (`View.VISIBLE = 0`) read fine; runtime fields
-  (`VERSION.SDK_INT`) have no value in the jar and must be supplied by us.
-  Even pure-Java utils (SparseArray) drag `com.android.internal` deps —
-  port their semantics as host builtins, don't compile AOSP sources. (`d8`
-  exists in local build-tools; compiling framework Java to DEX stays
-  deferred — it needs full opcodes + JNI answers anyway.)
-- Whichever VM is chosen, `android.jar` is stubs only: Activity/lifecycle,
+  state and is not reusable on desktop; don't go there.
+  **`android.jar` is a build input for skeleton regeneration only** (ADR-0008):
+  the `fw-tools` module parses the LOCAL SDK jar (matching API **36**, the
+  level Tartine models) into the `framework` module's android.* skeletons.
+  The runtime never reads the jar. Maven's `com.google.android:android`
+  artifact is API 16 and useless. True constants (`View.VISIBLE = 0`) read
+  fine; runtime fields (`VERSION.SDK_INT`) have no value in the jar and are
+  supplied by us (`android.os.Build.VERSION.SDK_INT = 36`). Even pure-Java
+  utils (SparseArray) drag `com.android.internal` deps — port their semantics
+  as framework Java, don't compile AOSP sources. (`d8` exists in local
+  build-tools; compiling framework Java to DEX stays deferred — it needs full
+  opcodes + JNI answers anyway.)
+- `android.*` is reimplemented (not stubbed): Activity/lifecycle,
   `AssetManager`/resources, Binder-based services, Bionic/libc shims, and
   `lib/<abi>` native libs (ARM `.so` needs same-arch APK or binary
-  translation) must each be reimplemented or explicitly stubbed. Host
-  builtins (`String`, atomics, …) carry value semantics. (The "framework
-  objects allocate as placeholders with no-op `<init>`" model predates the
-  2026-10 audit adoption — it is what we run today; the Framework-in-Java
-  section supersedes it as we migrate.)
-- `java.*` calls fall back to host reflection (table first for
-  normalizations like boolean→int, then reflective dispatch on host objects
-  only; model objects never cross). Scope is deny-by-default (landed
-  2026-10-19): an explicit allowlist of modules/classes may cross. The landed
-  shape: allowlist prefixes `java.lang` + `reflect`/`annotation`, `java.util`
-  + `concurrent` (+`function`/`stream`)+`regex`, `java.text`, `java.math`,
-  with the 9-class deny set (+`ProcessHandle`) overriding inside them;
-  `java.io`/`java.nio`/`java.net` stay off the list (the `File` bridge
-  builtins route through `tartine.runtime.Vfs` and fail closed); static
-  calls gate the defining class, instance calls gate the receiver's runtime
-  class (java.* receivers only — interpreter-internal models like
-  `BoxedZero` stay reachable); `Class.forName`/`loadClass` resolve the
-  dex+framework universe only, so `forName("java.lang.Runtime")` answers
-  `ClassNotFoundException` (pinned by the fixture's `forNameDenied`).
-  Allocation, methods, and statics resolve reflectively per call with no
-  method cache — hand-write only behavioral mismatches, with a fixture test
-  proving each.
-- Interpreter architecture: `Interpreter.java` grew to ~8.1k lines with
-  uncached reflection dispatch; split it (dispatch, reflection bridge,
-  builtins registry, frame plumbing) and move to a pre-resolved IR —
-  method/field/type references resolve once into cached host targets. The
-  translation spike builds on the same resolution layer.
+  translation) are ported into the `framework` module as each wall needs
+  them. Framework-in-Java (below) is now the mechanism; the old "framework
+  objects allocate as interpreter placeholders with no-op `<init>`" model
+  is gone with `tartine.vm`.
+- Translation resolves guest `android.*` against the `framework` module and
+  guest `java.*` against the host JDK by ordinary JVM linkage: there is no
+  runtime reflection seam anymore (deleted with the interpreter). The former
+  interpreter allowlist/deny-set sandbox is historical; host-JDK access from
+  guest code is currently unrestricted, and any future sandbox needs a
+  ClassLoader-level mechanism, not a dispatch table.
 
 ## Framework in Java (2026-10 audit adoption, user-approved)
 
-- The android.* framework is real Java classes, not string-keyed builtins
-  inside `tartine.vm.Interpreter`. Skeletons carry exact signatures from
-  the LOCAL SDK `android.jar` (generator, dev-time) into a `framework`
-  Gradle module; every unimplemented body throws
+- The android.* framework is real Java classes. Skeletons carry exact
+  signatures from the LOCAL SDK `android.jar` (generator, dev-time, in the
+  `fw-tools` module) into a `framework` Gradle module; every unimplemented
+  body throws
   `UnsupportedOperationException("Tartine: not implemented: <signature>")`
   — the gap-driven loop survives verbatim. Behavior is implemented in plain
   Java there; AOSP/Robolectric/layoutlib stay read-only references (never
   runtime deps).
-- The interpreter becomes the adapter: (1) guest allocations of android.*
-  classes construct host framework objects (fields move out of `VmObject`
-  HashMap placeholders as each class ports); (2) framework dispatch checks
-  guest override first (runs DEX), then reflective host invocation, else
-  throws the skeleton's named gap; (3) guest classes extending android.*
-  get generated peers whose overridden methods call back into the
-  interpreter.
-- Builtins stop growing: new framework behavior is written in the framework
-  module only. Port opportunistically; delete a registration as soon as
-  its class ports and tests prove parity.
+- Dispatch is plain JVM linkage (no adapter): a translated guest class either
+  overrides a framework method (its translated bytecode runs) or inherits the
+  skeleton, which throws the named gap. Guest classes extending android.* are
+  ordinary subclasses on the same classloader.
+- New framework behavior is written in the framework module only.
 - Never port framework behavior from memory. Read the AOSP source first and
   cite the exact file + method in the porting comment (see
   `ViewGroup.getChildAt`). Stale-memory ports are how `getChildAt`
@@ -112,19 +92,19 @@ GitLab `android_translation_layer/android_translation_layer`
   blobless `--sparse` clones, `core.autocrlf=false`. The dir sits under the
   opencode temp root, so the OS may purge it — re-clone if missing.
 - Migration order follows the probe walls (measure → layout → draw): port
-  the class a wall needs instead of adding another builtin.
+  the class a wall needs instead of stubbing more of it.
 - Batch wall ports: when a wall's family has a clear shape (listener
   add/remove pairs, getters returning constants, service-name dispatch arms,
   no-op setters), port the WHOLE family from the AOSP source in one pass.
   Stop batching when shapes stop being uniform.
-- Generator state: see AGENTS for current `SkeletonGen` behavior and
-  deletion+regen refresh rules.
-- Translation spike: ASM translator emitting classfile version 49 (no
+- Generator state: `SkeletonGen`/`Sdk`/`FwIndex` live in the dev-time
+  `fw-tools` module (never on the runtime classpath); see AGENTS for current
+  behavior and deletion+regen refresh rules.
+- Translator: ASM emitting classfile version 49 (no
   StackMapTable — the old type-inferencing verifier covers it), with
   dex2jar/Enjarify as oracles, `COMPUTE_FRAMES` and a DEX-hierarchy
-  `getCommonSuperClass`. Trigger was met (first Activity renders / first
-  frame blits, `f4f113c`); the translated path is now the default (`run`/
-  `gui`) while the interpreter stays as probing/debug tool.
+  `getCommonSuperClass`. It is the only VM since 2026-10-29 (ADR-0008): the
+  interpreter is gone.
 - Scope cap: pure-DEX apps only. ARM `.so` (Bionic) can't load on desktop
   JVMs — Flutter, most games and native-code apps excluded until binary
   translation exists.
@@ -222,22 +202,23 @@ GitLab `android_translation_layer/android_translation_layer`
 
 Carried from the 2026-10 audits; do later:
 
-- Remove runtime dependency on a local Android SDK (FwIndex derived from
-  the framework jar at build time).
+- Remove runtime dependency on a local Android SDK (done 2026-10-29: SDK
+  tooling moved to the dev-time `fw-tools` module; `android.jar` is a
+  regeneration input only — see ADR-0008 and the "APK to execution pipeline"
+  section).
 - Decouple Skija from `android.*` (done 2026-10-29: `gfx-api`/`gfx-skija`
   seam, host-installed backend, ArchUnit guard; see ADR-0007).
 - Adopt import convention (FQNs only where names clash + generator
   clash-aware import manager + one-time shorten pass).
-- Move generator (`SkeletonGen`, `Sdk`, `FwIndex`) out of the runtime
-  source set into a tools module.
-- Unify `tartine.fw` across the two modules (framework module owns it).
+- Move generator (`SkeletonGen`, `Sdk`, `FwIndex`, `FwIndexLoader`) out of the
+  runtime source set into a tools module (done 2026-10-29: `fw-tools`).
+- Split `tartine.fw` across modules: resolved — SDK index tooling lives in
+  `fw-tools`; the `framework` module owns `android.*`.
 - Add tests inside `framework/` (done 2026-10-29: 86 native-free tests in
   `framework/src/test/java/`; root `test` depends on `:framework:test`).
-- Split `Interpreter.java` and move to a pre-resolved IR are superseded by
-  the translation path (interpreter retained only for comparison/debug):
-  enum opcodes / `int[]` registers / string lookups in the interpreter loop
-  and method dispatch caching — not relevant; VmObject fields in a
-  `HashMap` — not relevant; splitting `Interpreter.java` itself — not relevant.
+- Split `Interpreter.java` and move to a pre-resolved IR: moot — the
+  interpreter was removed 2026-10-29 (ADR-0008). Its successor work lives in
+  the translation path (below).
 - Translation still has its own work: internal IR (still relevant, do soon);
   resolving references at translation time (can report gaps up front);
   lazy per-class translation (maybe, for very large multi-dex apps);

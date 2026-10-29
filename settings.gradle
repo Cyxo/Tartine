@@ -1,4 +1,5 @@
 rootProject.name = 'tartine'
+include ':fw-tools'
 include ':framework'
 include ':gfx-api'
 include ':gfx-skija'

@@ -32,24 +32,24 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests the classfile parser against javac output (including lambdas and
- * string concatenation, which exercise invokedynamic skipping) and SDK
+ * Tests the dev-time classfile parser against javac output (including lambdas
+ * and string concatenation, which exercise invokedynamic skipping) and SDK
  * resolution against a fake SDK tree.
  */
-class FwIndexTest {
+class FwIndexLoaderTest {
     @TempDir
     private Path tempDir;
 
     @Test
     void parsesHierarchy() throws Exception {
         Map<String, byte[]> classes = compile(fixtureSources());
-        FwClass child = FwIndex.parse(classes.get("fwtest.Child"));
+        FwClass child = FwIndexLoader.parse(classes.get("fwtest.Child"));
         assertEquals("Lfwtest/Child;", child.descriptor);
         assertEquals("Lfwtest/Base;", child.superclass);
         assertTrue(child.interfaces.isEmpty());
         assertTrue(child.methods.stream().anyMatch(m -> m.name.equals("extra")));
 
-        FwClass base = FwIndex.parse(classes.get("fwtest.Base"));
+        FwClass base = FwIndexLoader.parse(classes.get("fwtest.Base"));
         assertEquals("Ljava/lang/Object;", base.superclass);
         assertEquals(Integer.valueOf(7), base.constants.get("K"));
         assertEquals("base", base.constants.get("NAME"));
@@ -74,6 +74,8 @@ class FwIndexTest {
         assertNull(Sdk.findJar(36, Collections.singletonList(tempDir.resolve("empty"))));
         assertEquals(33, Sdk.apiLevel("android-33-ext4"));
         assertEquals(-1, Sdk.apiLevel("build-tools"));
+        assertEquals(36, Sdk.TARGET_API);
+        assertEquals(36, Sdk.apiLevelOf(root.resolve("platforms/android-36/android.jar")));
     }
 
     @Test
@@ -81,25 +83,11 @@ class FwIndexTest {
         Map<String, byte[]> classes = compile(fixtureSources());
         Path jar = tempDir.resolve("android.jar");
         writeJar(jar, classes);
-        FwIndex index = FwIndex.loadJar(jar);
+        FwIndex index = FwIndexLoader.loadJar(jar);
         assertNotNull(index.find("Lfwtest/Base;"));
         assertNotNull(index.find("Lfwtest/Child;"));
         assertNull(index.find("Lfwtest/Missing;"));
         assertTrue(index.classCount() >= 2);
-    }
-
-    @Test
-    void syntheticModelQueries() {
-        FwIndex index = new FwIndex();
-        Map<String, Object> constants = new HashMap<>();
-        constants.put("VISIBLE", 0);
-        index.put(new FwClass("Landroid/view/View;", "Ljava/lang/Object;",
-                Collections.<String>emptyList(), Collections.<FwIndex.FwMethod>emptyList(),
-                Collections.singletonList(new FwIndex.FwField("VISIBLE", "I")), constants));
-        FwClass view = index.find("Landroid/view/View;");
-        assertNotNull(view);
-        assertEquals(Integer.valueOf(0), view.constants.get("VISIBLE"));
-        assertTrue(view.hasField("VISIBLE"));
     }
 
     private static Map<String, String> fixtureSources() {

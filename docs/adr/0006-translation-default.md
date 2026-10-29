@@ -12,12 +12,16 @@ window shows a blitted frame. Keeping two entry points confused users.
 ## Decision
 
 `mise run run` and `mise run gui` now drive the translation loader
-(`tartine.Main run`/`gui`). The interpreter is retained under `irun`/`igui`
-for side-by-side comparison and debugging; `txrun`/`txgui` remain as aliases.
+(`tartine.Main run`/`gui`); `txrun`/`txgui` remain as aliases.
 `firstDrawFrame` still hands a single first-draw surface to the window.
+
+## Update (2026-10-29)
+
+The interpreter was removed (ADR-0008), so `irun`/`igui` no longer exist. The
+translation path is the only one left, which is what this ADR pointed toward.
 
 ## Consequences
 
-- New work targets the translation path; interpreter kept as reference.
+- New work targets the translation path (the only VM since ADR-0008).
 - Less indirection in day-to-day probing.
 - Log prefixes for the primary path use `gui:` instead of `txgui:`.

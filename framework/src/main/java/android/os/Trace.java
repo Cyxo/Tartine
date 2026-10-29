@@ -2,8 +2,7 @@ package android.os;
 
 /**
  * Systrace hooks — the desktop shell runs no trace system, so every call
- * is a no-op and tracing reports disabled. Matches the interpreter's
- * Trace builtins (Interpreter.java:7332-7337).
+ * is a no-op and tracing reports disabled.
  */
 public final class Trace {
 
