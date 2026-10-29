@@ -233,8 +233,17 @@ Carried from the 2026-10 audits; do later:
 - Unify `tartine.fw` across the two modules (framework module owns it).
 - Add tests inside `framework/` (done 2026-10-29: 86 native-free tests in
   `framework/src/test/java/`; root `test` depends on `:framework:test`).
-- Split `Interpreter.java` and move to a pre-resolved IR (also
-  prerequisite for translation performance).
+- Split `Interpreter.java` and move to a pre-resolved IR are superseded by
+  the translation path (interpreter retained only for comparison/debug):
+  enum opcodes / `int[]` registers / string lookups in the interpreter loop
+  and method dispatch caching — not relevant; VmObject fields in a
+  `HashMap` — not relevant; splitting `Interpreter.java` itself — not relevant.
+- Translation still has its own work: internal IR (still relevant, do soon);
+  resolving references at translation time (can report gaps up front);
+  lazy per-class translation (maybe, for very large multi-dex apps);
+  caching translated output (even more relevant — keyed by APK hash +
+  translator version + framework version; deferred until the installation
+  process).
 - Split `AGENTS.md` into further ADRs as needed.
 - Move root `icon.png`/`icon.svg`/`logo.png` to `docs/assets/` (done 2026-10-30; see task 9).
 - Scheme: Theme sync (host light/dark → guest `Configuration.uiMode`).
