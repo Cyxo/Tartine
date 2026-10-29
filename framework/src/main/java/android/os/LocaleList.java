@@ -1,25 +1,81 @@
 package android.os;
 
-public final class LocaleList implements android.os.Parcelable {
-    private final java.util.Locale[] mLocaleList;
+import java.util.ArrayList;
+import java.util.HashSet;
 
+/**
+ * AOSP parity for the immutable locale list. Source:
+ * aosp-mirror/platform_frameworks_base
+ * core/java/android/os/LocaleList.java (LocaleList(Locale...), get,
+ * toLanguageTags/toString, getEmptyLocaleList, forLanguageTags,
+ * getFirstMatch). The full ICU likely-script matching in
+ * matchesLanguageAndScript is not ported yet; getFirstMatch matches exact
+ * language tags and falls back to the first locale, as AOSP does when no
+ * supported locale matches.
+ */
+public final class LocaleList implements android.os.Parcelable {
+
+    private static final java.util.Locale[] EMPTY_LOCALES =
+            new java.util.Locale[0];
+    private static final LocaleList EMPTY_LOCALE_LIST =
+            new LocaleList(EMPTY_LOCALES);
+
+    private final java.util.Locale[] mLocaleList;
+    private final String mStringRepresentation;
+
+    /**
+     * AOSP LocaleList(Locale...): an empty array produces an empty list,
+     * null entries throw NPE, duplicates are dropped, and the stored
+     * locales are clones. The comma-separated tag string is computed once
+     * at construction time.
+     */
     public LocaleList(java.util.Locale... locales) {
-        mLocaleList = (locales == null || locales.length == 0)
-                ? new java.util.Locale[] { java.util.Locale.getDefault() }
-                : locales;
+        if (locales == null) {
+            throw new java.lang.NullPointerException("list is null");
+        }
+        if (locales.length == 0) {
+            mLocaleList = EMPTY_LOCALES;
+            mStringRepresentation = "";
+            return;
+        }
+        ArrayList<java.util.Locale> list = new ArrayList<>();
+        HashSet<java.util.Locale> seen = new HashSet<>();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < locales.length; i++) {
+            java.util.Locale locale = locales[i];
+            if (locale == null) {
+                throw new java.lang.NullPointerException("list[" + i + "] is null");
+            }
+            if (seen.contains(locale)) {
+                continue;
+            }
+            java.util.Locale clone = (java.util.Locale) locale.clone();
+            list.add(clone);
+            sb.append(clone.toLanguageTag());
+            if (i < locales.length - 1) {
+                sb.append(',');
+            }
+            seen.add(clone);
+        }
+        mLocaleList = list.toArray(new java.util.Locale[0]);
+        mStringRepresentation = sb.toString();
     }
 
     public static android.os.LocaleList getDefault() {
-        return new android.os.LocaleList(new java.util.Locale[] { java.util.Locale.getDefault() });
+        return new android.os.LocaleList(java.util.Locale.getDefault());
     }
 
     public static android.os.LocaleList getEmptyLocaleList() {
-        return new android.os.LocaleList(new java.util.Locale[0]);
+        return EMPTY_LOCALE_LIST;
     }
 
     public int size() { return mLocaleList.length; }
 
-    public java.util.Locale get(int index) { return mLocaleList[index]; }
+    /** AOSP LocaleList.get: out-of-range indexes answer null. */
+    public java.util.Locale get(int index) {
+        return (0 <= index && index < mLocaleList.length)
+                ? mLocaleList[index] : null;
+    }
 
     public boolean isEmpty() { return mLocaleList.length == 0; }
 
@@ -31,15 +87,22 @@ public final class LocaleList implements android.os.Parcelable {
     }
 
     public java.lang.String toLanguageTags() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < mLocaleList.length; i++) {
-            if (i > 0) sb.append(',');
-            sb.append(mLocaleList[i].toLanguageTag());
-        }
-        return sb.toString();
+        return mStringRepresentation;
     }
 
-    public java.lang.String toString() { return toLanguageTags(); }
+    /** AOSP LocaleList.toString: "[en-US,fr-FR]" (not the raw tag list). */
+    public java.lang.String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        for (int i = 0; i < mLocaleList.length; i++) {
+            sb.append(mLocaleList[i]);
+            if (i < mLocaleList.length - 1) {
+                sb.append(',');
+            }
+        }
+        sb.append(']');
+        return sb.toString();
+    }
 
     public int hashCode() {
         int result = 1;
@@ -66,7 +129,7 @@ public final class LocaleList implements android.os.Parcelable {
 
     public static android.os.LocaleList forLanguageTags(java.lang.String list) {
         if (list == null || list.isEmpty()) return getEmptyLocaleList();
-        String[] tags = list.split(",", -1);
+        String[] tags = list.split(",");
         java.util.Locale[] locales = new java.util.Locale[tags.length];
         for (int i = 0; i < tags.length; i++) locales[i] = java.util.Locale.forLanguageTag(tags[i]);
         return new android.os.LocaleList(locales);
@@ -82,13 +145,19 @@ public final class LocaleList implements android.os.Parcelable {
                 }
             };
 
+    /**
+     * AOSP getFirstMatch: an empty list answers null; otherwise the first
+     * exact tag match wins, with the first locale as the no-match fallback.
+     */
     public java.util.Locale getFirstMatch(java.lang.String[] supportedLocales) {
-        if (supportedLocales == null || supportedLocales.length == 0 || isEmpty()) return null;
-        for (java.util.Locale loc : mLocaleList) {
-            for (String tag : supportedLocales) {
-                if (tag != null && loc.toLanguageTag().equals(tag)) return loc;
+        if (isEmpty()) return null;
+        if (supportedLocales != null) {
+            for (java.util.Locale loc : mLocaleList) {
+                for (String tag : supportedLocales) {
+                    if (tag != null && loc.toLanguageTag().equals(tag)) return loc;
+                }
             }
         }
-        return null;
+        return mLocaleList[0];
     }
 }

@@ -756,15 +756,32 @@ package android.graphics;
         }
 
         public boolean equals(java.lang.Object arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint$FontMetrics;->equals(Ljava/lang/Object;)Z");
+            // AOSP Paint.java:2320-2372 FontMetrics.equals: identity, then
+            // every metric field.
+            if (this == arg0) return true;
+            if (!(arg0 instanceof android.graphics.Paint.FontMetrics)) return false;
+            android.graphics.Paint.FontMetrics that =
+                    (android.graphics.Paint.FontMetrics) arg0;
+            return that.top == top && that.ascent == ascent
+                    && that.descent == descent && that.bottom == bottom
+                    && that.leading == leading;
         }
 
         public int hashCode() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint$FontMetrics;->hashCode()I");
+            // AOSP Paint.java FontMetrics.hashCode: Objects.hash over the
+            // five metric fields.
+            return java.util.Objects.hash(top, ascent, descent, bottom, leading);
         }
 
         public java.lang.String toString() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint$FontMetrics;->toString()Ljava/lang/String;");
+            // AOSP Paint.java FontMetrics.toString.
+            return "FontMetrics{"
+                    + "top=" + top
+                    + ", ascent=" + ascent
+                    + ", descent=" + descent
+                    + ", bottom=" + bottom
+                    + ", leading=" + leading
+                    + '}';
         }
         }
         public static class FontMetricsInt {
@@ -776,27 +793,52 @@ package android.graphics;
         public int top;
 
         public FontMetricsInt() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint$FontMetricsInt;-><init>()V");
+            // AOSP Paint.java:2540-2585 FontMetricsInt: implicit public
+            // no-arg constructor; fields default to 0.
         }
 
         public boolean equals(java.lang.Object arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint$FontMetricsInt;->equals(Ljava/lang/Object;)Z");
+            // AOSP Paint.java FontMetricsInt.equals.
+            if (this == arg0) return true;
+            if (!(arg0 instanceof android.graphics.Paint.FontMetricsInt)) {
+                return false;
+            }
+            android.graphics.Paint.FontMetricsInt that =
+                    (android.graphics.Paint.FontMetricsInt) arg0;
+            return top == that.top && ascent == that.ascent
+                    && descent == that.descent && bottom == that.bottom
+                    && leading == that.leading;
         }
 
         public int hashCode() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint$FontMetricsInt;->hashCode()I");
+            // AOSP Paint.java FontMetricsInt.hashCode.
+            return java.util.Objects.hash(top, ascent, descent, bottom, leading);
         }
 
         public void set(android.graphics.Paint.FontMetrics arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint$FontMetricsInt;->set(Landroid/graphics/Paint$FontMetrics;)V");
+            // AOSP Paint.java FontMetricsInt.set(FontMetrics): floor/round/
+            // ceil conversion matching GraphicsJNI::set_metrics_int.
+            top = (int) Math.floor(arg0.top);
+            ascent = Math.round(arg0.ascent);
+            descent = Math.round(arg0.descent);
+            bottom = (int) Math.ceil(arg0.bottom);
+            leading = Math.round(arg0.leading);
         }
 
         public void set(android.graphics.Paint.FontMetricsInt arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint$FontMetricsInt;->set(Landroid/graphics/Paint$FontMetricsInt;)V");
+            // AOSP Paint.java FontMetricsInt.set(FontMetricsInt): field copy.
+            top = arg0.top;
+            ascent = arg0.ascent;
+            descent = arg0.descent;
+            bottom = arg0.bottom;
+            leading = arg0.leading;
         }
 
         public java.lang.String toString() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint$FontMetricsInt;->toString()Ljava/lang/String;");
+            // AOSP Paint.java FontMetricsInt.toString.
+            return "FontMetricsInt: top=" + top + " ascent=" + ascent
+                    + " descent=" + descent + " bottom=" + bottom
+                    + " leading=" + leading;
         }
         }
         public static enum Join {
