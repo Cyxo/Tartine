@@ -1,0 +1,11 @@
+// Renderer seam: pure-Java interfaces the android.* framework draws through.
+// No dependencies and no renderer types (Skija, Skia, ...): the framework
+// module compiles against this API, and gfx-skija is the only module that
+// knows how to talk to Skia. See docs/adr/0007-gfx-backend-seam.md.
+plugins {
+    id 'java-library'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+}

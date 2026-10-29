@@ -21,6 +21,9 @@ dependencies {
     // Framework tests stay native-free: only skija-shared is on this
     // module's classpath (no skija-<platform> runtime jars), so a test that
     // reaches a Skija native fails here instead of on a user machine.
+    // The seam tests use gfx-api's RecordingBackend, so they need no renderer
+    // at all.
+    testImplementation project(':gfx-api')
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
 }
