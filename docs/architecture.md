@@ -174,14 +174,20 @@ GitLab `android_translation_layer/android_translation_layer`
 - Desktop mapping: minimal WindowManager + SurfaceFlinger-lite; one Android
   Window/Surface maps to one desktop window; bridge BufferQueue/gralloc to
   desktop buffers; pace frames off desktop VSync (Choreographer equivalent).
-- Backend: Skia via Skija (`io.github.humbleui:skija-*` 0.143.18), first
-  bridge being a software raster blitted through LWJGL's GL context; no
-  pure-GL drawing of UI content; LWJGL stays windowing + GL + future GLES
-  path. Threading: a dedicated host UI thread behind a `HostDisplay`
-  interface (main thread on macOS via `-XstartOnFirstThread`); guest code
-  posts frame updates through `HostDisplay`.
+- Backend: Skia via Skija (`io.github.humbleui:skija-*` 0.143.18) behind the
+  `gfx-api`/`gfx-skija` seam (ADR-0007). `android.graphics.*` depends only on
+  `gfx-api`; `gfx-skija` is the sole module importing `io.github.humbleui`
+  and carries the platform natives. The host installs `SkijaBackend` once at
+  boot and creates surfaces through `GfxBackend`, then blits the raster
+  through LWJGL's GL context; no pure-GL drawing of UI content; LWJGL stays
+  windowing + GL + the future GLES path. Threading: a dedicated host UI thread
+  behind a `HostDisplay` interface (main thread on macOS via
+  `-XstartOnFirstThread`); guest code posts frame updates through
+  `HostDisplay`.
 - First bridge landed (`f4f113c`): `DesktopWindow` uploads the first-draw
-  Skia raster as a GL texture, letterboxes per VSync-paced swap.
+  raster (`GfxSurface.readPixels`) as a GL texture, letterboxes per
+  VSync-paced swap. `RasterPresenter` mints the surface and binds it to a
+  framework `Canvas`.
 - Window icon landed: `tartine.apk.AppIcon` resolves
   `android:icon`/`roundIcon` through `ResourceTable` and renders 16/32/48
   RGBA buffers; `<adaptive-icon>`/`<vector>` convert to SVG via jsvg;
@@ -218,8 +224,8 @@ Carried from the 2026-10 audits; do later:
 
 - Remove runtime dependency on a local Android SDK (FwIndex derived from
   the framework jar at build time).
-- Decouple Skija from `android.*` (hidden public factory first, then
-  delegates).
+- Decouple Skija from `android.*` (done 2026-10-29: `gfx-api`/`gfx-skija`
+  seam, host-installed backend, ArchUnit guard; see ADR-0007).
 - Adopt import convention (FQNs only where names clash + generator
   clash-aware import manager + one-time shorten pass).
 - Move generator (`SkeletonGen`, `Sdk`, `FwIndex`) out of the runtime

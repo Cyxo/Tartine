@@ -14,8 +14,8 @@ repositories {
 
 dependencies {
     // Renderer seam only: the framework never imports Skija. gfx-skija
-    // supplies the implementation at runtime; tests use gfx-api's recording
-    // backend and stay native-free.
+    // supplies the implementation at runtime; tests use a recording backend
+    // over gfx-api and stay native-free.
     api project(':gfx-api')
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'

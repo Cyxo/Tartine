@@ -24,5 +24,5 @@ interface (main thread on macOS).
 - No pure-GL UI drawing; UI content stays rasterized through Skia.
 - Skija is Java's route to Skia; verify license row in THIRD-PARTY.
 - Working only when a desktop window can be created: pluggable per OS.
-- Backend stays swappable later, at the cost of decoupling `android.*` from
-  Skija (tracked as deferred work).
+- Backend is swappable: the renderer sits behind the `gfx-api`/`gfx-skija`
+  seam (ADR-0007), so `android.*` never imports Skija.
