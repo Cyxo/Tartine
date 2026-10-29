@@ -44,6 +44,9 @@ dependencies {
     implementation 'com.github.weisj:jsvg:2.2.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
+    // Architecture guard: the android.* framework must not reach around
+    // gfx-api into a renderer implementation (see GfxArchitectureTest).
+    testImplementation 'com.tngtech.archunit:archunit-junit5:1.5.1'
 }
 
 // Java 21 language/API level on every compile; never use source/target instead.

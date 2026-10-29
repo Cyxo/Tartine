@@ -35,6 +35,7 @@ update 2021).
 | Artifact | Version | Role | License |
 |---|---|---|---|
 | `org.junit.jupiter:junit-jupiter` | 5.14.4 | JUnit 5 suite (`src/test/java`) | EPL-2.0 |
+| `com.tngtech.archunit:archunit-junit5` | 1.5.1 | Architecture guard: `android.*` must not depend on a renderer implementation | Apache-2.0 |
 
 ## Dev-time oracles (`tools/`)
 
