@@ -57,6 +57,10 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.named('test', Test) {
     useJUnitPlatform()
+    // `gradle test` is the repo-wide verification entry point; framework
+    // tests live in their own module so they run without the runtime's
+    // Skija platform natives.
+    dependsOn ':framework:test'
 }
 
 application {

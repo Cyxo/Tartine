@@ -17,8 +17,18 @@ dependencies {
     // The main module declares the platform jars as runtimeOnly so both join
     // the same classpath at launch.
     implementation 'io.github.humbleui:skija-shared:0.143.18'
+
+    // Framework tests stay native-free: only skija-shared is on this
+    // module's classpath (no skija-<platform> runtime jars), so a test that
+    // reaches a Skija native fails here instead of on a user machine.
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.release = 21
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
 }
