@@ -19,7 +19,9 @@ import tartine.dex.DexMethod;
 import tartine.dex.DexSet;
 import tartine.fw.FwIndex;
 import tartine.fw.Sdk;
+import tartine.gfx.GfxSurface;
 import tartine.graphics.DesktopWindow;
+import tartine.graphics.RasterPresenter;
 import tartine.graphics.WindowIcon;
 import tartine.vm.Interpreter;
 import tartine.vm.VmException;
@@ -51,7 +53,7 @@ public final class Main {
      * gui mode ({@code runOnCreate -> ... -> driveDraw} writes it). Staging
      * until Choreographer-driven redraws replace the one-shot handoff.
      */
-    private static io.github.humbleui.skija.Surface firstDrawFrame;
+    private static GfxSurface firstDrawFrame;
 
     public static void main(String[] args) {
         if (args.length == 0) {
@@ -420,8 +422,12 @@ public final class Main {
             txMeasureLayoutDraw(owner);
             System.out.println("gui: window ready (frame: "
                     + (firstDrawFrame != null ? "present" : "absent") + ")");
-            DesktopWindow.show(activity.getClass().getName(), timeoutSecs,
-                    firstDrawFrame, loadWindowIcons(apk));
+            try {
+                DesktopWindow.show(activity.getClass().getName(), timeoutSecs,
+                        firstDrawFrame, loadWindowIcons(apk));
+            } finally {
+                closeFirstDrawFrame();
+            }
             System.out.println("gui: window closed");
         } finally {
             app.reader().close();
@@ -440,18 +446,16 @@ public final class Main {
             System.out.println("gui: onMeasure returned");
             txInvoke(owner, "onLayout", false, 0, 0, 480, 960);
             System.out.println("gui: onLayout returned");
-            io.github.humbleui.skija.Surface surface =
-                    tartine.graphics.SkiaPresenter.createSurface(480, 960);
+            GfxSurface surface = RasterPresenter.createSurface(480, 960);
             android.graphics.Canvas hostCanvas =
-                    tartine.graphics.SkiaPresenter.createSurfaceCanvas(surface);
+                    RasterPresenter.createSurfaceCanvas(surface);
             // Frame handed to the desktop window; a blocked draw still
             // shows the partially composed surface, like the first
             // on-device frame.
             firstDrawFrame = surface;
             txInvoke(owner, "dispatchDraw", hostCanvas);
             System.out.println("gui: dispatchDraw returned");
-            int[] pixels = tartine.graphics.SkiaPresenter.readPixels(surface,
-                    480, 960);
+            int[] pixels = surface.readPixels();
             long painted = 0;
             for (int pixel : pixels) {
                 if ((pixel >>> 24) != 0) {
@@ -602,9 +606,21 @@ public final class Main {
         }
         System.out.println("igui: window ready (frame: "
                 + (firstDrawFrame != null ? "present" : "absent") + ")");
-        DesktopWindow.show(activity, timeoutSecs, firstDrawFrame,
-                loadWindowIcons(apk));
+        try {
+            DesktopWindow.show(activity, timeoutSecs, firstDrawFrame,
+                    loadWindowIcons(apk));
+        } finally {
+            closeFirstDrawFrame();
+        }
         System.out.println("window closed");
+    }
+
+    /** Releases the first frame once the desktop window has consumed it. */
+    private static void closeFirstDrawFrame() {
+        if (firstDrawFrame != null) {
+            firstDrawFrame.close();
+            firstDrawFrame = null;
+        }
     }
 
     /**
@@ -1116,10 +1132,9 @@ public final class Main {
      */
     private static void driveDraw(DexSet dexes, Interpreter interpreter,
             VmObject owner) {
-        io.github.humbleui.skija.Surface surface =
-                tartine.graphics.SkiaPresenter.createSurface(480, 960);
+        GfxSurface surface = RasterPresenter.createSurface(480, 960);
         android.graphics.Canvas hostCanvas =
-                tartine.graphics.SkiaPresenter.createSurfaceCanvas(surface);
+                RasterPresenter.createSurfaceCanvas(surface);
         VmObject canvasObject =
                 interpreter.hostObjectFor("Landroid/graphics/Canvas;", hostCanvas);
         // Frame handed to the desktop window (gui mode); a blocked draw still
@@ -1137,7 +1152,7 @@ public final class Main {
             printTrace(interpreter);
         }
         try {
-            int[] pixels = tartine.graphics.SkiaPresenter.readPixels(surface, 480, 960);
+            int[] pixels = surface.readPixels();
             long painted = 0;
             int modeColor = 0;
             int modeCount = 0;

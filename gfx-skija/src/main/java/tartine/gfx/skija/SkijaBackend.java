@@ -6,7 +6,6 @@ import io.github.humbleui.skija.Image;
 import io.github.humbleui.skija.Surface;
 import io.github.humbleui.skija.Typeface;
 import tartine.gfx.GfxBackend;
-import tartine.gfx.GfxCanvas;
 import tartine.gfx.GfxFont;
 import tartine.gfx.GfxImage;
 import tartine.gfx.GfxPictureRecorder;
@@ -65,15 +64,5 @@ public final class SkijaBackend implements GfxBackend {
         }
         Image image = Image.makeFromEncoded(encoded);
         return image == null ? null : new SkijaImage(image);
-    }
-
-    /**
-     * Host bridge for a surface the caller already owns: wraps its canvas in
-     * the seam without taking ownership of the surface. Removed once the host
-     * creates surfaces through {@link #createSurface(int, int)}.
-     */
-    public static GfxCanvas canvasFor(Surface surface) {
-        return new SkijaCanvas(surface.getCanvas(),
-                surface.getWidth(), surface.getHeight());
     }
 }

@@ -31,11 +31,9 @@ dependencies {
     }
     // Renderer backend: gfx-skija adapts the gfx-api seam to Skija and
     // carries the platform natives. The framework itself depends only on
-    // gfx-api.
+    // gfx-api, and the host never imports a renderer type (surfaces and
+    // images cross the seam as GfxSurface/GfxImage).
     implementation project(':gfx-skija')
-    // Host-side Skija use (surface readback/icon decode) until the host
-    // moves to GfxSurface/GfxImage.
-    implementation 'io.github.humbleui:skija-shared:0.143.18'
     // Translation spike: DEX -> JVM bytecode emitter (BSD-3-Clause).
     implementation 'org.ow2.asm:asm:9.6'
     implementation 'org.ow2.asm:asm-tree:9.6'

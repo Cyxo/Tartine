@@ -3,9 +3,6 @@ package tartine.apk;
 import com.github.weisj.jsvg.SVGDocument;
 import com.github.weisj.jsvg.parser.LoaderContext;
 import com.github.weisj.jsvg.parser.SVGLoader;
-import io.github.humbleui.skija.Bitmap;
-import io.github.humbleui.skija.Image;
-import io.github.humbleui.skija.Pixmap;
 
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -19,6 +16,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import tartine.gfx.GfxBackend;
+import tartine.gfx.GfxImage;
 import tartine.graphics.WindowIcon;
 
 /**
@@ -27,7 +26,8 @@ import tartine.graphics.WindowIcon;
  * followed through {@code resources.arsc} into {@code res/...}, rendered
  * into straight-alpha RGBA buffers at the sizes desktop shells ask for.
  *
- * <p>Bitmap sources (png/jpeg/webp) decode through Skija. XML sources are
+ * <p>Bitmap sources (png/jpeg/webp) decode through the installed renderer
+ * backend ({@link GfxBackend#decodeImage}). XML sources are
  * converted the way aapt2 emits them for icons: {@code <adaptive-icon>}
  * composes its layers, {@code <vector>} converts to SVG text, and jsvg
  * (MIT, Maven Central — the user-directed pick over hand-rolling SVG
@@ -243,41 +243,15 @@ public final class AppIcon {
         } catch (IOException error) {
             return new GapSource("entry missing: " + path);
         }
-        Image image = Image.makeFromEncoded(bytes);
+        GfxImage image = GfxBackend.get().decodeImage(bytes);
         if (image == null) {
             return new GapSource("cannot decode " + path);
         }
-        int width = image.getWidth();
-        int height = image.getHeight();
-        Bitmap bitmap = new Bitmap();
         try {
-            bitmap.allocN32Pixels(width, height, false);
-            if (!image.readPixels(bitmap, 0, 0)) {
-                return new GapSource("readPixels failed: " + path);
-            }
-            Pixmap pixmap = bitmap.peekPixels();
-            if (pixmap == null) {
-                return new GapSource("peekPixels failed: " + path);
-            }
-            var buffer = pixmap.getBuffer();
-            int[] argb = new int[width * height];
-            for (int pixel = 0; pixel < argb.length; pixel++) {
-                int base = pixel * 4;
-                int b = buffer.get(base) & 0xFF;
-                int g = buffer.get(base + 1) & 0xFF;
-                int r = buffer.get(base + 2) & 0xFF;
-                int a = buffer.get(base + 3) & 0xFF;
-                // N32 stores premultiplied; window icons want straight.
-                if (a != 0 && a != 255) {
-                    r = Math.min(255, Math.round(r * 255f / a));
-                    g = Math.min(255, Math.round(g * 255f / a));
-                    b = Math.min(255, Math.round(b * 255f / a));
-                }
-                argb[pixel] = (a << 24) | (r << 16) | (g << 8) | b;
-            }
-            return new RasterSource(width, height, argb);
+            return new RasterSource(image.getWidth(), image.getHeight(),
+                    image.readPixels());
         } finally {
-            bitmap.close();
+            image.close();
         }
     }
 

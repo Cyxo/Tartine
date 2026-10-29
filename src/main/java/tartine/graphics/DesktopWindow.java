@@ -1,13 +1,13 @@
 package tartine.graphics;
 
-import io.github.humbleui.skija.Bitmap;
-import io.github.humbleui.skija.Pixmap;
-import io.github.humbleui.skija.Surface;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
+
+import tartine.gfx.GfxSurface;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -72,8 +72,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * One Android Window on one desktop window (SurfaceFlinger-lite).
  *
  * <p>First bridge complete: the headless probe draws the
- * window's content view into a Skia raster surface
- * ({@link SkiaPresenter#createSurfaceCanvas}) and this class composites it —
+ * window's content view into a renderer surface
+ * ({@link RasterPresenter#createSurfaceCanvas}) and this class composites it —
  * the surface is uploaded once as a GL texture and stretched into the
  * framebuffer in a letterboxed quad, VSync-paced by GLFW. Following the
  * AGENTS graphics decision, GL holds no responsibility for the content
@@ -82,10 +82,10 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * bridge) lands here later. Everything runs on the calling thread, so the
  * macOS {@code -XstartOnFirstThread} script flag covers it.
  *
- * <p>The frame is expected fully opaque: N32 premul then presents as-is,
- * since premultiplication only differs from straight colors where the
- * canvas has partial alpha. Transparent-frame windows will need the
- * un-premultiply step when they exist.
+ * <p>The frame is expected fully opaque: the seam readback is premultiplied
+ * ARGB, which presents as-is, since premultiplication only differs from
+ * straight colors where the canvas has partial alpha. Transparent-frame
+ * windows will need the un-premultiply step when they exist.
  */
 public final class DesktopWindow {
     private static final int WIDTH = 480;
@@ -99,16 +99,16 @@ public final class DesktopWindow {
      * positive (automated runs). {@code frame} may be null (draw never
      * reached the surface): the window then shows the dark clear color.
      */
-    public static void show(String title, long timeoutSecs, Surface frame) {
+    public static void show(String title, long timeoutSecs, GfxSurface frame) {
         show(title, timeoutSecs, frame, List.of());
     }
 
     /**
-     * Same as {@link #show(String, long, Surface)} with window icons (the
+     * Same as {@link #show(String, long, GfxSurface)} with window icons (the
      * app's launcher artwork, resolving through the APK). Empty means the
      * platform default icon stands.
      */
-    public static void show(String title, long timeoutSecs, Surface frame,
+    public static void show(String title, long timeoutSecs, GfxSurface frame,
             List<WindowIcon> icons) {
         GLFWErrorCallback.createPrint(System.err).set();
         if (!glfwInit()) {
@@ -179,36 +179,32 @@ public final class DesktopWindow {
     }
 
     /**
-     * Uploads the frame's pixels as one texture. The readback staging and
-     * byte order match {@link SkiaPresenter#readPixels}: N32 on
-     * little-endian stores BB GG RR AA per pixel, which {@code GL_BGRA} +
-     * {@code GL_UNSIGNED_BYTE} consume exactly, so the upload is one copy
-     * with no per-pixel shuffle.
+     * Uploads the frame's pixels as one texture. The seam readback is packed
+     * premultiplied ARGB ints; the GL upload packs them as B, G, R, A bytes,
+     * which {@code GL_BGRA} + {@code GL_UNSIGNED_BYTE} consume exactly, so
+     * no per-pixel channel swap is needed.
      */
-    private static int uploadFrameTexture(Surface frame) {
-        Bitmap bitmap = new Bitmap();
-        try {
-            bitmap.allocN32Pixels(frame.getWidth(), frame.getHeight(), false);
-            if (!frame.readPixels(bitmap, 0, 0)) {
-                throw new IllegalStateException("frame readPixels failed");
-            }
-            Pixmap pixmap = bitmap.peekPixels();
-            if (pixmap == null) {
-                throw new IllegalStateException("frame peekPixels failed");
-            }
-            ByteBuffer pixels = pixmap.getBuffer();
-            int texture = glGenTextures();
-            glBindTexture(GL_TEXTURE_2D, texture);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, frame.getWidth(),
-                    frame.getHeight(), 0, GL_BGRA, GL_UNSIGNED_BYTE, pixels);
-            return texture;
-        } finally {
-            bitmap.close();
+    private static int uploadFrameTexture(GfxSurface frame) {
+        int width = frame.getWidth();
+        int height = frame.getHeight();
+        int[] argb = frame.readPixels();
+        ByteBuffer pixels = BufferUtils.createByteBuffer(width * height * 4);
+        for (int pixel : argb) {
+            pixels.put((byte) (pixel & 0xFF));          // blue
+            pixels.put((byte) ((pixel >>> 8) & 0xFF));  // green
+            pixels.put((byte) ((pixel >>> 16) & 0xFF)); // red
+            pixels.put((byte) ((pixel >>> 24) & 0xFF)); // alpha
         }
+        pixels.flip();
+        int texture = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0,
+                GL_BGRA, GL_UNSIGNED_BYTE, pixels);
+        return texture;
     }
 
     /** Clears and composites the letterboxed frame quad, if one exists. */
@@ -238,7 +234,7 @@ public final class DesktopWindow {
             glBindTexture(GL_TEXTURE_2D, texture);
             glMatrixMode(GL_PROJECTION);
             glLoadIdentity();
-            glOrtho(0, bufferWidth, bufferHeight, 0, -1, 1); // Skia top-left
+            glOrtho(0, bufferWidth, bufferHeight, 0, -1, 1); // top-left origin
             glMatrixMode(GL_MODELVIEW);
             glLoadIdentity();
             glBegin(GL_QUADS);

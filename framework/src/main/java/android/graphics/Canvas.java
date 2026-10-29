@@ -61,10 +61,10 @@ import tartine.gfx.GfxRect;
         gfx = null;
     }
 
-    // Dev binding: surface-backed canvas for the host renderer
-    // (tartine.graphics.SkiaPresenter calls this reflectively; guests never
-    // see it and dex surface carries SDK signatures only).
-    static Canvas tartineCreate(GfxCanvas backing) {
+    // Host binding: surface-backed canvas for the renderer
+    // (tartine.graphics.RasterPresenter calls this; guests never see it and
+    // the dex surface carries SDK signatures only).
+    public static Canvas tartineCreate(GfxCanvas backing) {
         Canvas canvas = new Canvas();
         canvas.gfx = backing;
         return canvas;

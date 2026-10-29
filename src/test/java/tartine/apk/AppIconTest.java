@@ -11,10 +11,14 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import tartine.gfx.GfxBackend;
+import tartine.gfx.skija.SkijaBackend;
 import tartine.graphics.WindowIcon;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,9 +27,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests the icon pipeline end to end against a synthetic APK: manifest
  * reference → arsc → drawable conversion (adaptive icon, vectors with a
- * group transform, gradients) or Skija raster decode. The binary fixture
- * writers are independent of the readers (see {@link Fixtures}); real-APK
- * rendering gets eyeballed through {@code mise run gui}.
+ * group transform, gradients) or renderer-backend raster decode. The binary
+ * fixture writers are independent of the readers (see {@link Fixtures});
+ * real-APK rendering gets eyeballed through {@code mise run gui}.
  */
 class AppIconTest {
 
@@ -45,6 +49,16 @@ class AppIconTest {
     private Path apk;
 
     private static final int ICON_REF = 0x7F010000; // drawable/adaptive
+
+    @BeforeAll
+    static void installRenderer() {
+        GfxBackend.install(new SkijaBackend());
+    }
+
+    @AfterAll
+    static void uninstallRenderer() {
+        GfxBackend.uninstall();
+    }
 
     @BeforeEach
     void buildFixture() {
