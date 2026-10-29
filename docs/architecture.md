@@ -225,7 +225,8 @@ Carried from the 2026-10 audits; do later:
 - Move generator (`SkeletonGen`, `Sdk`, `FwIndex`) out of the runtime
   source set into a tools module.
 - Unify `tartine.fw` across the two modules (framework module owns it).
-- Add tests inside `framework/`.
+- Add tests inside `framework/` (done 2026-10-29: 86 native-free tests in
+  `framework/src/test/java/`; root `test` depends on `:framework:test`).
 - Split `Interpreter.java` and move to a pre-resolved IR (also
   prerequisite for translation performance).
 - Split `AGENTS.md` into further ADRs as needed.
