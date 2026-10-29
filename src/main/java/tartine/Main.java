@@ -59,6 +59,11 @@ public final class Main {
             return;
         }
         tartine.config.HostConfig.load();
+        // Renderer backend: installed once at boot, before any framework
+        // graphics call (text measurement included). The framework resolves
+        // it through GfxBackend.get() and never imports Skija.
+        tartine.gfx.GfxBackend.install(
+                new tartine.gfx.skija.SkijaBackend());
         // Seed the default virtual sdcard (no-op when TARTINE_SDCARD or
         // sdcard.mount already configured an explicit mount).
         tartine.runtime.Vfs.ensureDefaultCard();

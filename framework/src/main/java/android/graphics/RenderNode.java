@@ -1,5 +1,7 @@
 package android.graphics;
 
+import tartine.gfx.GfxPicture;
+
     public class RenderNode {
 
     // Pivot state ported from aosp-mirror/platform_frameworks_base
@@ -63,17 +65,18 @@ package android.graphics;
 
     /*
      * Recording state (AOSP RenderNode.java:485-526): the RecordingCanvas in
-     * progress plus the finished SkPicture that drawRenderNode replays.
+     * progress plus the finished recorded picture that drawRenderNode
+     * replays.
      */
     android.graphics.RecordingCanvas mCurrentRecordingCanvas;
-    io.github.humbleui.skija.Picture tartinePicture;
+    GfxPicture tartinePicture;
 
     /** The sealed recorded picture, replayed by Canvas#drawRenderNode. */
-    io.github.humbleui.skija.Picture tartinePicture() {
+    GfxPicture tartinePicture() {
         return tartinePicture;
     }
 
-    void tartineSetPicture(io.github.humbleui.skija.Picture picture) {
+    void tartineSetPicture(GfxPicture picture) {
         this.tartinePicture = picture;
     }
 

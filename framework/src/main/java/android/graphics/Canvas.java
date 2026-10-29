@@ -1,20 +1,30 @@
 package android.graphics;
 
+import tartine.gfx.GfxCanvas;
+import tartine.gfx.GfxClipMode;
+import tartine.gfx.GfxFont;
+import tartine.gfx.GfxPaint;
+import tartine.gfx.GfxPaintStyle;
+import tartine.gfx.GfxPicture;
+import tartine.gfx.GfxPictureRecorder;
+import tartine.gfx.GfxRect;
+
     public class Canvas {
 
     /*
-     * Skia-backed raster canvas. AOSP backs Canvas with Skia natively
-     * (graphics/java/android/graphics/Canvas.java; the same Skia the Skija
-     * bindings expose), so each ported operation maps directly to the
-     * corresponding SkCanvas call via Skija. Ops whose port is not yet needed
-     * by a probe wall keep their generated stub bodies.
+     * Renderer-seam-backed raster canvas. AOSP backs Canvas with Skia
+     * natively (graphics/java/android/graphics/Canvas.java); here every
+     * ported operation maps to a GfxCanvas call, and the installed backend
+     * (gfx-skija at runtime) talks to Skia. The framework never imports a
+     * renderer library. Ops whose port is not yet needed by a probe wall keep
+     * their generated stub bodies.
      *
      * Deviations (each noted at its site):
-     * - mNativeCanvasWrapper/n* natives become the Skija backing field(s).
+     * - mNativeCanvasWrapper/n* natives become the GfxCanvas backing field(s).
      * - the save-count is tracked locally so rootless canvases behave like
      *   AOSP's empty raster canvas (state changes apply even with no pixels).
-     * - NativeAllocationRegistry finalizer bookkeeping is dropped: Skija
-     *   objects are garbage collected on the JVM side.
+     * - NativeAllocationRegistry finalizer bookkeeping is dropped: the seam
+     *   types own and close their native objects explicitly.
      */
 
     // AOSP Canvas.java:70 (mBitmap), :73 (mDrawFilter).
@@ -23,19 +33,19 @@ package android.graphics;
     // optional field set by the caller
     private DrawFilter mDrawFilter;
 
-    // Skia backing. null = rootless canvas (AOSP Canvas() = "empty raster
+    // Renderer backing. null = rootless canvas (AOSP Canvas() = "empty raster
     // canvas" per :90-104, draw state still applies, pixels are nowhere).
-    io.github.humbleui.skija.Canvas skija;
+    GfxCanvas gfx;
 
     // Recorder/recorded picture for the recording variant obtained through
     // RenderNode#beginRecording (AOSP RenderNode.java:485-526 stores the
     // RecordingCanvas and its recorder on the node side; here the recording
     // state rides on the canvas).
-    io.github.humbleui.skija.PictureRecorder recorder;
+    GfxPictureRecorder recorder;
 
-    // Local save-count. Tracks the same save() increments the native wrapper
-    // would; keeps semantics identical whether or not a Skija target is
-    // attached yet (deviation note at the ctor).
+    // Local save-count. Tracks the same save() increments the backend would;
+    // keeps semantics identical whether or not a target is attached yet
+    // (deviation note at the ctor).
     int saveStack;
 
     /**
@@ -46,17 +56,17 @@ package android.graphics;
      */
     public Canvas() {
         // AOSP Canvas.java:95-104: empty raster canvas via nInitRaster(0).
-        // Here the Skija backing stays null until a target is bound; the
+        // Here the renderer backing stays null until a target is bound; the
         // save-stack still tracks state (see field doc).
-        skija = null;
+        gfx = null;
     }
 
     // Dev binding: surface-backed canvas for the host renderer
     // (tartine.graphics.SkiaPresenter calls this reflectively; guests never
     // see it and dex surface carries SDK signatures only).
-    static Canvas tartineCreate(io.github.humbleui.skija.Surface surface) {
+    static Canvas tartineCreate(GfxCanvas backing) {
         Canvas canvas = new Canvas();
-        canvas.skija = surface.getCanvas();
+        canvas.gfx = backing;
         return canvas;
     }
 
@@ -120,24 +130,17 @@ package android.graphics;
     public boolean clipRect(float arg0, float arg1, float arg2, float arg3) {
         // AOSP Canvas.java: clipRect(FFFF) intersects with the current clip;
         // returns whether the canvas is non-empty after clipping (AOSP's
-        // nClipRect answer). Skija clipRect itself returns void/fluent, so the
-        // non-empty check reads the device clip bounds afterwards.
-        return clipRectLtrb(arg0, arg1, arg2, arg3,
-                io.github.humbleui.skija.ClipMode.INTERSECT);
+        // nClipRect answer). The backend's clipRect reports the non-empty
+        // answer directly.
+        return clipRectLtrb(arg0, arg1, arg2, arg3, GfxClipMode.INTERSECT);
     }
 
     /** Shared clip body for the clipRect ports (AOSP nClipRect semantics:
-     *  clip with the op, then report whether the device clip is non-empty —
-     *  Skija clipRect is void/fluent, so the check reads device clip bounds). */
+     *  clip with the op, then report whether the device clip is non-empty). */
     private boolean clipRectLtrb(float arg0, float arg1, float arg2, float arg3,
-            io.github.humbleui.skija.ClipMode mode) {
-        if (skija != null) {
-            skija.clipRect(
-                    io.github.humbleui.types.Rect.makeLTRB(arg0, arg1, arg2, arg3),
-                    mode);
-            io.github.humbleui.types.IRect bounds = skija.getDeviceClipBounds();
-            return bounds != null && bounds.getLeft() < bounds.getRight()
-                    && bounds.getTop() < bounds.getBottom();
+            GfxClipMode mode) {
+        if (gfx != null) {
+            return gfx.clipRect(arg0, arg1, arg2, arg3, mode);
         }
         // Rootless: AOSP's empty raster still applies the clip state for
         // later draws; the non-empty answer is conservatively true.
@@ -154,9 +157,9 @@ package android.graphics;
             throw new IllegalArgumentException(
                     "Invalid Region.Op - only INTERSECT and DIFFERENCE are allowed");
         }
-        io.github.humbleui.skija.ClipMode mode = arg4 == android.graphics.Region.Op.DIFFERENCE
-                ? io.github.humbleui.skija.ClipMode.DIFFERENCE
-                : io.github.humbleui.skija.ClipMode.INTERSECT;
+        GfxClipMode mode = arg4 == android.graphics.Region.Op.DIFFERENCE
+                ? GfxClipMode.DIFFERENCE
+                : GfxClipMode.INTERSECT;
         return clipRectLtrb(arg0, arg1, arg2, arg3, mode);
     }
 
@@ -228,8 +231,8 @@ package android.graphics;
 
     public void drawColor(int arg0) {
         // AOSP Canvas.java drawColor(int): SRC_OVER fill of the canvas.
-        if (skija != null) {
-            skija.drawColor(arg0);
+        if (gfx != null) {
+            gfx.drawColor(arg0);
         }
     }
 
@@ -349,11 +352,9 @@ package android.graphics;
 
     public void drawRect(float arg0, float arg1, float arg2, float arg3, android.graphics.Paint arg4) {
         // AOSP Canvas.drawRect(FFFF, Paint) per Canvas.java drawing section;
-        // direct SkCanvas::drawRect equivalent.
-        if (skija != null) {
-            skija.drawRect(
-                    io.github.humbleui.types.Rect.makeLTRB(arg0, arg1, arg2, arg3),
-                    paintOf(arg4));
+        // direct backend drawRect equivalent.
+        if (gfx != null) {
+            gfx.drawRect(arg0, arg1, arg2, arg3, paintOf(arg4));
         }
     }
 
@@ -366,10 +367,10 @@ package android.graphics;
         // draws the recorded display list of the node onto this canvas.
         // Rootless recording-production variant also lands here once nodes
         // supply a picture (deviation note).
-        if (skija != null && arg0 != null) {
-            io.github.humbleui.skija.Picture picture = arg0.tartinePicture();
+        if (gfx != null && arg0 != null) {
+            GfxPicture picture = arg0.tartinePicture();
             if (picture != null) {
-                skija.drawPicture(picture);
+                gfx.drawPicture(picture);
             }
         }
     }
@@ -380,19 +381,17 @@ package android.graphics;
     }
 
     public void drawRoundRect(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, android.graphics.Paint arg6) {
-        // AOSP Canvas.drawRoundRect(FFFFrr, Paint); direct Skia RRect fill.
-        if (skija != null) {
-            io.github.humbleui.types.RRect rrect = io.github.humbleui.types.RRect
-                    .makeLTRB(arg0, arg1, arg2, arg3, arg4, arg5);
-            skija.drawRRect(rrect, paintOf(arg6));
+        // AOSP Canvas.drawRoundRect(FFFFrr, Paint); direct backend RRect fill.
+        if (gfx != null) {
+            gfx.drawRoundRect(arg0, arg1, arg2, arg3, arg4, arg5, paintOf(arg6));
         }
     }
 
     public void drawText(char[] arg0, int arg1, int arg2, float arg3, float arg4, android.graphics.Paint arg5) {
         // AOSP Canvas.java:2176-2180 drawText(char[], int, int, float, float,
         // Paint): base nDrawText contract — glyph baseline runs at (x.y).
-        // Staging renders the substring via Skija drawString (staging font =
-        // paint's text size on the default typeface, see Paint.tartineSkia).
+        // The backend draws the substring with the paint's text size on the
+        // default typeface (see Paint.tartineGfxFont).
         drawTextChars(String.valueOf(arg0, arg1, arg2), arg3, arg4, arg5);
     }
 
@@ -414,13 +413,15 @@ package android.graphics;
         drawTextChars(arg0.substring(arg1, arg2), arg3, arg4, arg5);
     }
 
-    /** Shared drawText body: skija drawString at the baseline (padding
-     *  none). Rootless canvases skip (no device to draw onto). */
+    /** Shared drawText body: backend drawString at the baseline (padding
+     *  none). Rootless canvases skip (no device to draw onto). The font is
+     *  transient here, so close it after the draw. */
     private void drawTextChars(String text, float x, float y, android.graphics.Paint paint) {
         if (text == null || text.isEmpty()) return;
-        if (skija == null || paint == null) return;
-        skija.drawString(text, x, y,
-                paint.tartineSkiaFont(), paint.tartineSkia());
+        if (gfx == null || paint == null) return;
+        try (GfxFont font = paint.tartineGfxFont()) {
+            gfx.drawText(text, x, y, font, paint.tartineGfx());
+        }
     }
 
     public void drawTextOnPath(char[] arg0, int arg1, int arg2, android.graphics.Path arg3, float arg4, float arg5, android.graphics.Paint arg6) {
@@ -457,16 +458,15 @@ package android.graphics;
     public final android.graphics.Rect getClipBounds() {
         // AOSP Canvas.getClipBounds() allocates and fills the bound rect.
         Rect bounds = new Rect();
-        if (skija != null) {
-            io.github.humbleui.types.IRect clip = skija.getDeviceClipBounds();
-            if (clip == null || clip.getLeft() >= clip.getRight()
-                    || clip.getTop() >= clip.getBottom()) {
+        if (gfx != null) {
+            GfxRect clip = gfx.getDeviceClipBounds();
+            if (clip == null || clip.isEmpty()) {
                 return bounds;
             }
-            bounds.left = clip.getLeft();
-            bounds.top = clip.getTop();
-            bounds.right = clip.getRight();
-            bounds.bottom = clip.getBottom();
+            bounds.left = (int) clip.left;
+            bounds.top = (int) clip.top;
+            bounds.right = (int) clip.right;
+            bounds.bottom = (int) clip.bottom;
         }
         return bounds;
     }
@@ -504,8 +504,8 @@ package android.graphics;
 
     public int getHeight() {
         // AOSP Canvas.getHeight returns the raster's height; rootless is 0.
-        if (skija != null) {
-            return (int) skija.getSurface().getWidth();
+        if (gfx != null) {
+            return gfx.getHeight();
         }
         return 0;
     }
@@ -533,8 +533,8 @@ package android.graphics;
 
     public int getWidth() {
         // AOSP Canvas.getWidth returns the raster width; rootless is 0.
-        if (skija != null) {
-            return (int) skija.getSurface().getWidth();
+        if (gfx != null) {
+            return gfx.getWidth();
         }
         return 0;
     }
@@ -567,11 +567,10 @@ package android.graphics;
     }
 
     public boolean quickReject(float arg0, float arg1, float arg2, float arg3) {
-        // AOSP Canvas.quickReject(FFFF): SkCanvas quickReject semantics —
+        // AOSP Canvas.quickReject(FFFF): backend quickReject semantics —
         // true when the rect cannot intersect the canvas' clip.
-        if (skija != null) {
-            return skija.quickReject(
-                    io.github.humbleui.types.Rect.makeLTRB(arg0, arg1, arg2, arg3));
+        if (gfx != null) {
+            return gfx.quickReject(arg0, arg1, arg2, arg3);
         }
         return false;
     }
@@ -582,8 +581,8 @@ package android.graphics;
 
     public void restore() {
         // AOSP Canvas.restore(): pop one save level off the stack.
-        if (saveStack > 0 && skija != null) {
-            skija.restore();
+        if (saveStack > 0 && gfx != null) {
+            gfx.restore();
         }
         saveStack = java.lang.Math.max(0, saveStack - 1);
     }
@@ -602,8 +601,8 @@ package android.graphics;
 
     public void rotate(float arg0) {
         // AOSP Canvas.rotate(degrees): post-multiplied rotation.
-        if (skija != null) {
-            skija.rotate(arg0);
+        if (gfx != null) {
+            gfx.rotate(arg0);
         }
     }
 
@@ -617,8 +616,8 @@ package android.graphics;
 
     public int save() {
         // AOSP Canvas.save(): push a save level, return the new count.
-        if (skija != null) {
-            skija.save();
+        if (gfx != null) {
+            gfx.save();
         }
         return ++saveStack;
     }
@@ -657,8 +656,8 @@ package android.graphics;
 
     public void scale(float arg0, float arg1) {
         // AOSP Canvas.scale(sx, sy): post-multiplied scale.
-        if (skija != null) {
-            skija.scale(arg0, arg1);
+        if (gfx != null) {
+            gfx.scale(arg0, arg1);
         }
     }
 
@@ -689,50 +688,39 @@ package android.graphics;
 
     public void skew(float arg0, float arg1) {
         // AOSP Canvas.skew(sx, sy): post-multiplied skew.
-        if (skija != null) {
-            skija.skew(arg0, arg1);
+        if (gfx != null) {
+            gfx.skew(arg0, arg1);
         }
     }
 
     public void translate(float arg0, float arg1) {
         // AOSP Canvas.translate(dx, dy): post-multiplied translate.
-        if (skija != null) {
-            skija.translate(arg0, arg1);
+        if (gfx != null) {
+            gfx.translate(arg0, arg1);
         }
     }
 
     /**
-     * Converts a guest-press Paint to the backing Skija paint. Paint is
+     * Converts a guest-press Paint to an immutable seam snapshot. Paint is
      * bridged to the module mirror before this method runs, so arg0 is a
-     * real Paint here. Null paints drop to a default Skija paint (AOSP ops
+     * real Paint here. Null paints drop to a default fill paint (AOSP ops
      * deref; null is never passed in practice).
      */
-    io.github.humbleui.skija.Paint paintOf(Paint paint) {
+    GfxPaint paintOf(Paint paint) {
         if (paint == null) {
-            return new io.github.humbleui.skija.Paint();
+            return new GfxPaint(0xFF000000, false, GfxPaintStyle.FILL, 0.0f);
         }
-        return paint.tartineSkia();
+        return paint.tartineGfx();
     }
 
-    void tartineAttach(io.github.humbleui.skija.Canvas backing) {
+    void tartineAttach(GfxCanvas backing) {
         // Host renderer binding seam (see tartineCreate).
-        this.skija = backing;
+        this.gfx = backing;
     }
 
-    void tartineRecord(io.github.humbleui.skija.Canvas backing,
-            io.github.humbleui.skija.PictureRecorder recorder) {
-        this.skija = backing;
+    void tartineRecord(GfxCanvas backing, GfxPictureRecorder recorder) {
+        this.gfx = backing;
         this.recorder = recorder;
-    }
-
-    // Dev-time readback hook (probe verification of recorded pixels).
-    io.github.humbleui.skija.Picture tartineEndPicture() {
-        if (recorder == null) {
-            return null;
-        }
-        io.github.humbleui.skija.Picture out = recorder.finishRecordingAsPicture();
-        recorder = null;
-        return out;
     }
 
     public static enum EdgeType {

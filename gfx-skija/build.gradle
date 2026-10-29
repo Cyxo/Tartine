@@ -1,0 +1,30 @@
+// Skia renderer backend: the only module that imports io.github.humbleui.
+// The framework sees only gfx-api; this module adapts the seam to Skija.
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // The seam types are part of this module's public API (SkijaBackend
+    // implements GfxBackend, SkijaSurface implements GfxSurface).
+    api project(':gfx-api')
+    implementation 'io.github.humbleui:skija-shared:0.143.18'
+
+    // Platform natives for every desktop host; LWJGL-style selection happens
+    // in Skija at runtime. They join the app's runtime classpath through the
+    // root module's dependency on this one.
+    runtimeOnly 'io.github.humbleui:skija-windows-x64:0.143.18'
+    runtimeOnly 'io.github.humbleui:skija-windows-arm64:0.143.18'
+    runtimeOnly 'io.github.humbleui:skija-linux-x64:0.143.18'
+    runtimeOnly 'io.github.humbleui:skija-linux-arm64:0.143.18'
+    runtimeOnly 'io.github.humbleui:skija-macos-x64:0.143.18'
+    runtimeOnly 'io.github.humbleui:skija-macos-arm64:0.143.18'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+}

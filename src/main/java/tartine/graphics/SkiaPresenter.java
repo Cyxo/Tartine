@@ -6,6 +6,8 @@ import java.lang.reflect.Method;
 import io.github.humbleui.skija.Bitmap;
 import io.github.humbleui.skija.Pixmap;
 import io.github.humbleui.skija.Surface;
+import tartine.gfx.GfxCanvas;
+import tartine.gfx.skija.SkijaBackend;
 
 /**
  * First-cut SurfaceFlinger-side raster host: owns the Skia software surface
@@ -25,7 +27,7 @@ public final class SkiaPresenter {
             // Reflection seam: tartineCreate is package-private in the
             // framework module on purpose (guest dex never references it).
             tartineCreate = android.graphics.Canvas.class.getDeclaredMethod(
-                    "tartineCreate", io.github.humbleui.skija.Surface.class);
+                    "tartineCreate", GfxCanvas.class);
             tartineCreate.setAccessible(true);
         } catch (ReflectiveOperationException | LinkageError e) {
             throw new IllegalStateException("Canvas binding seam missing", e);
@@ -43,7 +45,8 @@ public final class SkiaPresenter {
      */
     public static android.graphics.Canvas createSurfaceCanvas(Surface surface) {
         try {
-            return (android.graphics.Canvas) tartineCreate.invoke(null, surface);
+            return (android.graphics.Canvas) tartineCreate.invoke(null,
+                    SkijaBackend.canvasFor(surface));
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             throw new IllegalStateException("Canvas binding failed", cause);

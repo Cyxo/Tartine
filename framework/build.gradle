@@ -13,17 +13,11 @@ repositories {
 }
 
 dependencies {
-    // Skia renderer backend for android.graphics (Canvas/RenderNode etc.).
-    // The main module declares the platform jars as runtimeOnly so both join
-    // the same classpath at launch.
-    implementation 'io.github.humbleui:skija-shared:0.143.18'
+    // Renderer seam only: the framework never imports Skija. gfx-skija
+    // supplies the implementation at runtime; tests use gfx-api's recording
+    // backend and stay native-free.
+    api project(':gfx-api')
 
-    // Framework tests stay native-free: only skija-shared is on this
-    // module's classpath (no skija-<platform> runtime jars), so a test that
-    // reaches a Skija native fails here instead of on a user machine.
-    // The seam tests use gfx-api's RecordingBackend, so they need no renderer
-    // at all.
-    testImplementation project(':gfx-api')
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
 }

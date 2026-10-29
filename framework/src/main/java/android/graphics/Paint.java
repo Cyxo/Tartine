@@ -1,5 +1,13 @@
 package android.graphics;
 
+import tartine.gfx.GfxBackend;
+import tartine.gfx.GfxFont;
+import tartine.gfx.GfxFontMetrics;
+import tartine.gfx.GfxPaint;
+import tartine.gfx.GfxPaintStyle;
+import tartine.gfx.GfxRect;
+import tartine.gfx.GfxTypeface;
+
     public class Paint {
 
     public static final int ANTI_ALIAS_FLAG = 1;
@@ -77,9 +85,10 @@ package android.graphics;
 
     public float ascent() {
         // AOSP Paint.java:2296 (nAscent native there; negative y-up value).
-        // Staging reads the skija metrics of the staging font directly.
-        io.github.humbleui.skija.Font font = tartineSkiaFont();
-        return font.getMetrics().getAscent();
+        // Read the seam metrics of the paint's font.
+        try (GfxFont font = tartineGfxFont()) {
+            return font.getMetrics().ascent;
+        }
     }
 
     public int breakText(char[] arg0, int arg1, int arg2, float arg3, float[] arg4) {
@@ -147,12 +156,15 @@ package android.graphics;
 
     public android.graphics.Paint.FontMetrics getFontMetrics() {
         android.graphics.Paint.FontMetrics fm = new android.graphics.Paint.FontMetrics();
-        io.github.humbleui.skija.FontMetrics m = tartineSkiaFont().getMetrics();
-        fm.top = m._top;
-        fm.ascent = m._ascent;
-        fm.descent = m._descent;
-        fm.bottom = m._bottom;
-        fm.leading = m._leading;
+        GfxFontMetrics m;
+        try (GfxFont font = tartineGfxFont()) {
+            m = font.getMetrics();
+        }
+        fm.top = m.top;
+        fm.ascent = m.ascent;
+        fm.descent = m.descent;
+        fm.bottom = m.bottom;
+        fm.leading = m.leading;
         return fm;
     }
 
@@ -290,36 +302,34 @@ package android.graphics;
         return mStyle == null ? Paint.Style.FILL : mStyle;
     }
 
-    /** Host-only Skia view of this paint (see Canvas.tartineCreate docs). */
-    io.github.humbleui.skija.Paint tartineSkia() {
-        io.github.humbleui.skija.Paint out = new io.github.humbleui.skija.Paint();
-        out.setColor(mColor);
-        out.setAntiAlias((mFlags & ANTI_ALIAS_FLAG) != 0);
+    /** Host-only renderer snapshot of this paint (see Canvas.tartineCreate docs). */
+    GfxPaint tartineGfx() {
+        GfxPaintStyle style;
         switch (mStyle == null ? Paint.Style.FILL : mStyle) {
-            case STROKE: out.setMode(io.github.humbleui.skija.PaintMode.STROKE); break;
-            case FILL_AND_STROKE: out.setMode(
-                    io.github.humbleui.skija.PaintMode.STROKE_AND_FILL); break;
-            default: out.setMode(io.github.humbleui.skija.PaintMode.FILL);
+            case STROKE:
+                style = GfxPaintStyle.STROKE;
+                break;
+            case FILL_AND_STROKE:
+                style = GfxPaintStyle.FILL_AND_STROKE;
+                break;
+            default:
+                style = GfxPaintStyle.FILL;
+                break;
         }
-        if (mStrokeWidth > 0.0f) {
-            out.setStrokeWidth(mStrokeWidth);
-        }
-        return out;
+        return new GfxPaint(mColor, (mFlags & ANTI_ALIAS_FLAG) != 0,
+                style, mStrokeWidth);
     }
 
     /**
-     * Host-only Skia font for text draws (staging): the default host
-     * typeface at the paint's text size with subpixel antialiasing. The
-     * Typeface state model (paint.mTypeface) is still a placeholder until
-     * a Typeface module port lands; until then every text draw uses a
-     * desktop system face (Roboto first, mirroring the Android default).
+     * Host-only renderer font for text draws (staging): the default host
+     * typeface at the paint's text size. The Typeface state model
+     * (paint.mTypeface) is still a placeholder until a Typeface module port
+     * lands; until then every text draw uses a desktop system face (Roboto
+     * first, mirroring the Android default).
      *
-     * <p>Skija 0.143.18 note (standalone probe, 2026-10-19): {@code new
-     * Font()} binds a typeface with no glyph coverage and
-     * {@code FontMgr.getDefault().matchFamilyStyle(null, ...)} answers
-     * {@code null}, so the Skia-default-family conventions render
-     * zero-extent output. The host FontMgr is real ({@code
-     * getFamiliesCount() > 0}); match against it explicitly instead.
+     * <p>The backend resolves the face against the host font manager
+     * explicitly: Skia's default-family conventions can answer a face with no
+     * glyph coverage, which renders zero-extent output.
      */
     private static final String[] TARTINE_DEFAULT_FAMILIES = {
             "Roboto", "Segoe UI", "Noto Sans", "DejaVu Sans", "Liberation Sans",
@@ -347,18 +357,12 @@ package android.graphics;
                 ? tartinePreferredFamilies : TARTINE_DEFAULT_FAMILIES;
     }
 
-    private static io.github.humbleui.skija.Typeface tartineDefaultTypeface;
+    private static GfxTypeface tartineDefaultTypeface;
 
-    private static io.github.humbleui.skija.Typeface tartineDefaultTypeface() {
-        io.github.humbleui.skija.Typeface found = tartineDefaultTypeface;
+    private static GfxTypeface tartineDefaultTypeface() {
+        GfxTypeface found = tartineDefaultTypeface;
         if (found == null) {
-            io.github.humbleui.skija.FontMgr mgr = io.github.humbleui.skija.FontMgr.getDefault();
-            for (String family : tartinePreferredFamilies()) {
-                found = mgr.matchFamilyStyle(family, io.github.humbleui.skija.FontStyle.NORMAL);
-                if (found != null) {
-                    break;
-                }
-            }
+            found = GfxBackend.get().defaultTypeface(tartinePreferredFamilies());
             if (found == null) {
                 // A text draw needs some real face; no-desktop-font hosts
                 // surface as the named gap instead of silent zero-extent
@@ -374,13 +378,9 @@ package android.graphics;
         return found;
     }
 
-    io.github.humbleui.skija.Font tartineSkiaFont() {
+    GfxFont tartineGfxFont() {
         float size = mTextSize > 0.0f ? mTextSize : 14.0f;
-        io.github.humbleui.skija.Font font = new io.github.humbleui.skija.Font(
-                tartineDefaultTypeface(), size);
-        font.setSubpixel(true);
-        font.setEdging(io.github.humbleui.skija.FontEdging.SUBPIXEL_ANTI_ALIAS);
-        return font;
+        return GfxBackend.get().newFont(tartineDefaultTypeface(), size);
     }
 
     public android.graphics.Paint.Align getTextAlign() {
@@ -399,8 +399,10 @@ package android.graphics;
         if (bounds == null) return;
         bounds.set(0,0,0,0);
         if (text == null || start >= end) return;
-        io.github.humbleui.types.Rect r = tartineSkiaFont().measureText(text.substring(start, end));
-        bounds.set(0, 0, Math.round(r.getWidth()), Math.round(r.getHeight()));
+        try (GfxFont font = tartineGfxFont()) {
+            GfxRect r = font.measureText(text.substring(start, end));
+            bounds.set(0, 0, Math.round(r.width()), Math.round(r.height()));
+        }
     }
 
     public java.util.Locale getTextLocale() {
@@ -522,22 +524,30 @@ package android.graphics;
 
     public float measureText(char[] text, int start, int count) {
         if (text == null || count <= 0) return 0.0f;
-        return tartineSkiaFont().measureTextWidth(new String(text, start, count));
+        try (GfxFont font = tartineGfxFont()) {
+            return font.measureTextWidth(new String(text, start, count));
+        }
     }
 
     public float measureText(java.lang.CharSequence text, int start, int end) {
         if (text == null || start >= end) return 0.0f;
-        return tartineSkiaFont().measureTextWidth(text.subSequence(start, end).toString());
+        try (GfxFont font = tartineGfxFont()) {
+            return font.measureTextWidth(text.subSequence(start, end).toString());
+        }
     }
 
     public float measureText(java.lang.String text) {
         if (text == null) return 0.0f;
-        return tartineSkiaFont().measureTextWidth(text);
+        try (GfxFont font = tartineGfxFont()) {
+            return font.measureTextWidth(text);
+        }
     }
 
     public float measureText(java.lang.String text, int start, int end) {
         if (text == null || start >= end) return 0.0f;
-        return tartineSkiaFont().measureTextWidth(text.substring(start, end));
+        try (GfxFont font = tartineGfxFont()) {
+            return font.measureTextWidth(text.substring(start, end));
+        }
     }
 
     public void reset() {

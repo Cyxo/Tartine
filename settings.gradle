@@ -1,3 +1,4 @@
 rootProject.name = 'tartine'
 include ':framework'
 include ':gfx-api'
+include ':gfx-skija'

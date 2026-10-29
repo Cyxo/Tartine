@@ -1,21 +1,26 @@
 package android.graphics;
 
+import tartine.gfx.GfxBackend;
+import tartine.gfx.GfxCanvas;
+import tartine.gfx.GfxPicture;
+import tartine.gfx.GfxPictureRecorder;
+
     public class RecordingCanvas extends android.graphics.Canvas {
 
     /*
      * Recording variant obtained through RenderNode#beginRecording (AOSP
      * graphics/java/android/graphics/RecordingCanvas.java:26-35: "A Canvas
      * implementation that records view system drawing operations for deferred
-     * rendering... valid until the matching endRecording"). Skija's
-     * PictureRecorder is the direct analog: beginRecording hands out a
-     * io.skija.Canvas that records; endRecordingAsPicture yields the emitted
+     * rendering... valid until the matching endRecording"). The seam's
+     * GfxPictureRecorder is the direct analog: beginRecording hands out a
+     * GfxCanvas that records; finishRecordingAsPicture yields the emitted
      * picture for drawRenderNode replay.
      *
      * The LOCAL SDK jar redeclares most draw ops as final stub bodies (the
      * BaseRecordingCanvas surface is hidden); per AGENTS the skeletons carry
      * exact SDK signatures, so those overrides stay, but their bodies
      * delegate to the base Canvas port (AOSP's BaseRecordingCanvas native
-     * records collapse to our Skija recording backing).
+     * records collapse to our seam recording backing).
      */
 
     int mWidth;
@@ -24,17 +29,18 @@ package android.graphics;
     RecordingCanvas(int width, int height) {
         // Not an SDK ctor (AOSP ctor is private, RecordingCanvas.java:92-95);
         // guests reach this class only through RenderNode#beginRecording.
-        io.github.humbleui.skija.PictureRecorder pair = new io.github.humbleui.skija.PictureRecorder();
-        io.github.humbleui.skija.Canvas skija =
-                pair.beginRecording(io.github.humbleui.types.Rect.makeXYWH(0, 0, width, height));
-        super.tartineRecord(skija, pair);
+        GfxPictureRecorder pair = GfxBackend.get().newPictureRecorder();
+        GfxCanvas gfx = pair.beginRecording(width, height);
+        super.tartineRecord(gfx, pair);
         mWidth = width;
         mHeight = height;
     }
 
     /** AOSP RecordingCanvas.java:84-86 (finishRecording): seal the picture. */
     void finishRecording(RenderNode node) {
-        io.github.humbleui.skija.Picture picture = this.recorder.finishRecordingAsPicture();
+        GfxPicture picture = this.recorder.finishRecordingAsPicture();
+        this.recorder.close();
+        this.recorder = null;
         node.tartineSetPicture(picture);
     }
 

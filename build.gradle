@@ -29,20 +29,18 @@ dependencies {
             runtimeOnly "org.lwjgl:$name:$lwjglVersion:$platform"
         }
     }
-    // Skia via Skija (Java bindings; Apache-2.0) backs android.graphics.Canvas
-    // drawing (AGENTS.md decision 2026-10-18: Skia for UI draws, not pure GL).
+    // Renderer backend: gfx-skija adapts the gfx-api seam to Skija and
+    // carries the platform natives. The framework itself depends only on
+    // gfx-api.
+    implementation project(':gfx-skija')
+    // Host-side Skija use (surface readback/icon decode) until the host
+    // moves to GfxSurface/GfxImage.
     implementation 'io.github.humbleui:skija-shared:0.143.18'
     // Translation spike: DEX -> JVM bytecode emitter (BSD-3-Clause).
     implementation 'org.ow2.asm:asm:9.6'
     implementation 'org.ow2.asm:asm-tree:9.6'
     implementation 'org.ow2.asm:asm-analysis:9.6'
     implementation 'org.ow2.asm:asm-util:9.6'
-    runtimeOnly 'io.github.humbleui:skija-windows-x64:0.143.18'
-    runtimeOnly 'io.github.humbleui:skija-windows-arm64:0.143.18'
-    runtimeOnly 'io.github.humbleui:skija-linux-x64:0.143.18'
-    runtimeOnly 'io.github.humbleui:skija-linux-arm64:0.143.18'
-    runtimeOnly 'io.github.humbleui:skija-macos-x64:0.143.18'
-    runtimeOnly 'io.github.humbleui:skija-macos-arm64:0.143.18'
     // SVG rendering for converted Android vector drawables (window icons;
     // MIT). Used by IntelliJ/NetBeans/Eclipse SWT upstream.
     implementation 'com.github.weisj:jsvg:2.2.0'
