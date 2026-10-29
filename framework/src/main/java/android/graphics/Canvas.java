@@ -2,7 +2,6 @@ package android.graphics;
 
 import tartine.gfx.GfxCanvas;
 import tartine.gfx.GfxClipMode;
-import tartine.gfx.GfxFont;
 import tartine.gfx.GfxPaint;
 import tartine.gfx.GfxPaintStyle;
 import tartine.gfx.GfxPicture;
@@ -415,13 +414,11 @@ import tartine.gfx.GfxRect;
 
     /** Shared drawText body: backend drawString at the baseline (padding
      *  none). Rootless canvases skip (no device to draw onto). The font is
-     *  transient here, so close it after the draw. */
+     *  owned and cached by the Paint, so it is not closed here. */
     private void drawTextChars(String text, float x, float y, android.graphics.Paint paint) {
         if (text == null || text.isEmpty()) return;
         if (gfx == null || paint == null) return;
-        try (GfxFont font = paint.tartineGfxFont()) {
-            gfx.drawText(text, x, y, font, paint.tartineGfx());
-        }
+        gfx.drawText(text, x, y, paint.tartineGfxFont(), paint.tartineGfx());
     }
 
     public void drawTextOnPath(char[] arg0, int arg1, int arg2, android.graphics.Path arg3, float arg4, float arg5, android.graphics.Paint arg6) {

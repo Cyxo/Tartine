@@ -25,6 +25,9 @@ class CanvasGfxTest {
         GfxBackend.uninstall();
         backend = new RecordingBackend();
         GfxBackend.install(backend);
+        // Clear the static default-typeface cache so each test resolves
+        // through its own backend instance.
+        Paint.tartineSetPreferredFamilies(null);
     }
 
     @AfterEach
@@ -100,7 +103,7 @@ class CanvasGfxTest {
     }
 
     @Test
-    void drawTextUsesFixedMetricsAndClosesTheTransientFont() {
+    void drawTextUsesFixedMetricsAndKeepsTheCachedFont() {
         Canvas canvas = canvas(100, 100);
         Paint paint = new Paint(0);
         paint.setTextSize(14.0f);
@@ -111,7 +114,8 @@ class CanvasGfxTest {
                 "drawText(abc,1.0,2.0,FakeFont[size=14.0],"
                         + "GfxPaint[color=0xff000000, antiAlias=false,"
                         + " style=FILL, strokeWidth=0.0])"));
-        assertTrue(backend.calls.contains("font.close"));
+        assertEquals(1, backend.fonts.size());
+        assertFalse(backend.fonts.get(0).isClosed());
 
         assertEquals(18.0f, paint.measureText("abc"));
         assertEquals(-15.0f, paint.ascent());
@@ -122,6 +126,44 @@ class CanvasGfxTest {
         paint.getTextBounds("abc", 0, 3, bounds);
         assertEquals(18, bounds.width());
         assertEquals(19, bounds.height());
+
+        // Measurement reused the draw's font instead of allocating another.
+        assertEquals(1, backend.fonts.size());
+    }
+
+    @Test
+    void paintReusesOneFontUntilTheTextSizeChanges() {
+        Paint paint = new Paint(0);
+        paint.setTextSize(14.0f);
+
+        paint.measureText("abc");
+        paint.measureText("de");
+        paint.ascent();
+
+        assertEquals(1, backend.fonts.size());
+        assertFalse(backend.fonts.get(0).isClosed());
+
+        paint.setTextSize(20.0f);
+        paint.measureText("abc");
+
+        assertEquals(2, backend.fonts.size());
+        assertTrue(backend.fonts.get(0).isClosed());
+        assertFalse(backend.fonts.get(1).isClosed());
+    }
+
+    @Test
+    void paintRebuildsTheFontWhenTheResolvedTypefaceChanges() {
+        Paint paint = new Paint(0);
+        paint.setTextSize(14.0f);
+        paint.measureText("abc");
+        assertEquals(1, backend.fonts.size());
+
+        Paint.tartineSetPreferredFamilies(new String[] {"Segoe UI"});
+        paint.measureText("abc");
+
+        assertEquals(2, backend.fonts.size());
+        assertTrue(backend.fonts.get(0).isClosed());
+        assertFalse(backend.fonts.get(1).isClosed());
     }
 
     @Test

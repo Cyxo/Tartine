@@ -253,8 +253,9 @@ class GfxSeamTest {
 
     @Test
     void defaultTypefaceForwardsTheFamilyList() {
-        assertSame(backend.typeface,
-                backend.defaultTypeface(new String[]{"Roboto", "Segoe UI"}));
+        GfxTypeface resolved =
+                backend.defaultTypeface(new String[]{"Roboto", "Segoe UI"});
+        assertSame(backend.typeface, resolved);
         assertTrue(backend.calls.contains(
                 "defaultTypeface(Roboto,Segoe UI)"));
     }

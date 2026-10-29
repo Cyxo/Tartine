@@ -36,13 +36,17 @@ public final class RecordingBackend implements GfxBackend {
     /** Every backend call, in order. */
     public final List<String> calls = new ArrayList<>();
 
-    /** The typeface this backend hands out. */
-    public final FakeTypeface typeface = new FakeTypeface();
+    /** The typeface this backend hands out (a fresh instance per lookup). */
+    public FakeTypeface typeface = new FakeTypeface();
+
+    /** Every font this backend created, in order. */
+    public final List<FakeFont> fonts = new ArrayList<>();
 
     /** Most recently created objects, for assertions. */
     public FakeSurface lastSurface;
     public FakePictureRecorder lastRecorder;
     public FakeImage lastImage;
+    public FakeFont lastFont;
 
     @Override
     public GfxSurface createSurface(int width, int height) {
@@ -64,13 +68,17 @@ public final class RecordingBackend implements GfxBackend {
                 + (preferredFamilies == null ? "null"
                         : String.join(",", preferredFamilies))
                 + ")");
+        typeface = new FakeTypeface();
         return typeface;
     }
 
     @Override
     public GfxFont newFont(GfxTypeface typeface, float size) {
         calls.add("newFont(" + size + ")");
-        return new FakeFont(size, calls);
+        FakeFont font = new FakeFont(size, calls);
+        fonts.add(font);
+        lastFont = font;
+        return font;
     }
 
     @Override

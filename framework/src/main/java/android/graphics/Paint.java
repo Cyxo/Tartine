@@ -1,5 +1,7 @@
 package android.graphics;
 
+import java.lang.ref.Cleaner;
+
 import tartine.gfx.GfxBackend;
 import tartine.gfx.GfxFont;
 import tartine.gfx.GfxFontMetrics;
@@ -58,6 +60,21 @@ import tartine.gfx.GfxTypeface;
     private static final int HOST_HIDDEN_DEFAULT_PAINT_FLAGS =
             DEV_KERN_TEXT_FLAG | EMBEDDED_BITMAP_TEXT_FLAG | FILTER_BITMAP_FLAG;
 
+    /*
+     * Renderer font cache. AOSP keeps a native Font (SkFont) per paint; here
+     * the seam font is built lazily for the current typeface + text size and
+     * kept until either changes, so a draw/measure loop allocates one native
+     * font instead of one per call. The cleaner releases the last font when
+     * this Paint becomes unreachable (the native-resource bookkeeping AOSP
+     * gets from NativeAllocationRegistry).
+     */
+    private static final Cleaner TARTINE_CLEANER = Cleaner.create();
+
+    private GfxFont tartineFont;
+    private Cleaner.Cleanable tartineFontCleanable;
+    private float tartineFontSize;
+    private GfxTypeface tartineFontTypeface;
+
     public Paint() {
         // AOSP Paint.java:680-682: Paint() == Paint(ANTI_ALIAS_FLAG)
         // ("On devices running Build.VERSION_CODES#S and above, ANTI_ALIAS_FLAG
@@ -85,10 +102,8 @@ import tartine.gfx.GfxTypeface;
 
     public float ascent() {
         // AOSP Paint.java:2296 (nAscent native there; negative y-up value).
-        // Read the seam metrics of the paint's font.
-        try (GfxFont font = tartineGfxFont()) {
-            return font.getMetrics().ascent;
-        }
+        // Read the seam metrics of the paint's cached font.
+        return tartineGfxFont().getMetrics().ascent;
     }
 
     public int breakText(char[] arg0, int arg1, int arg2, float arg3, float[] arg4) {
@@ -156,10 +171,7 @@ import tartine.gfx.GfxTypeface;
 
     public android.graphics.Paint.FontMetrics getFontMetrics() {
         android.graphics.Paint.FontMetrics fm = new android.graphics.Paint.FontMetrics();
-        GfxFontMetrics m;
-        try (GfxFont font = tartineGfxFont()) {
-            m = font.getMetrics();
-        }
+        GfxFontMetrics m = tartineGfxFont().getMetrics();
         fm.top = m.top;
         fm.ascent = m.ascent;
         fm.descent = m.descent;
@@ -378,9 +390,44 @@ import tartine.gfx.GfxTypeface;
         return found;
     }
 
+    /**
+     * Host-only renderer font for text draws (staging): the default host
+     * typeface at the paint's text size. The Typeface state model
+     * (paint.mTypeface) is still a placeholder until a Typeface module port
+     * lands; until then every text draw uses a desktop system face (Roboto
+     * first, mirroring the Android default).
+     *
+     * <p>The backend resolves the face against the host font manager
+     * explicitly: Skia's default-family conventions can answer a face with no
+     * glyph coverage, which renders zero-extent output.
+     *
+     * <p>The returned font is owned by this Paint and must not be closed by
+     * callers: it is cached and reused until the text size or the resolved
+     * typeface changes, then the previous font is closed. The cache is
+     * released when the Paint is garbage collected.
+     */
     GfxFont tartineGfxFont() {
         float size = mTextSize > 0.0f ? mTextSize : 14.0f;
-        return GfxBackend.get().newFont(tartineDefaultTypeface(), size);
+        GfxTypeface typeface = tartineDefaultTypeface();
+        if (tartineFont == null || tartineFontSize != size
+                || tartineFontTypeface != typeface) {
+            tartineReleaseFont();
+            GfxFont font = GfxBackend.get().newFont(typeface, size);
+            tartineFont = font;
+            tartineFontSize = size;
+            tartineFontTypeface = typeface;
+            tartineFontCleanable = TARTINE_CLEANER.register(this, font::close);
+        }
+        return tartineFont;
+    }
+
+    /** Closes and forgets the cached renderer font, if one exists. */
+    private void tartineReleaseFont() {
+        if (tartineFontCleanable != null) {
+            tartineFontCleanable.clean();
+            tartineFontCleanable = null;
+        }
+        tartineFont = null;
     }
 
     public android.graphics.Paint.Align getTextAlign() {
@@ -399,10 +446,8 @@ import tartine.gfx.GfxTypeface;
         if (bounds == null) return;
         bounds.set(0,0,0,0);
         if (text == null || start >= end) return;
-        try (GfxFont font = tartineGfxFont()) {
-            GfxRect r = font.measureText(text.substring(start, end));
-            bounds.set(0, 0, Math.round(r.width()), Math.round(r.height()));
-        }
+        GfxRect r = tartineGfxFont().measureText(text.substring(start, end));
+        bounds.set(0, 0, Math.round(r.width()), Math.round(r.height()));
     }
 
     public java.util.Locale getTextLocale() {
@@ -524,30 +569,23 @@ import tartine.gfx.GfxTypeface;
 
     public float measureText(char[] text, int start, int count) {
         if (text == null || count <= 0) return 0.0f;
-        try (GfxFont font = tartineGfxFont()) {
-            return font.measureTextWidth(new String(text, start, count));
-        }
+        return tartineGfxFont().measureTextWidth(new String(text, start, count));
     }
 
     public float measureText(java.lang.CharSequence text, int start, int end) {
         if (text == null || start >= end) return 0.0f;
-        try (GfxFont font = tartineGfxFont()) {
-            return font.measureTextWidth(text.subSequence(start, end).toString());
-        }
+        return tartineGfxFont()
+                .measureTextWidth(text.subSequence(start, end).toString());
     }
 
     public float measureText(java.lang.String text) {
         if (text == null) return 0.0f;
-        try (GfxFont font = tartineGfxFont()) {
-            return font.measureTextWidth(text);
-        }
+        return tartineGfxFont().measureTextWidth(text);
     }
 
     public float measureText(java.lang.String text, int start, int end) {
         if (text == null || start >= end) return 0.0f;
-        try (GfxFont font = tartineGfxFont()) {
-            return font.measureTextWidth(text.substring(start, end));
-        }
+        return tartineGfxFont().measureTextWidth(text.substring(start, end));
     }
 
     public void reset() {
