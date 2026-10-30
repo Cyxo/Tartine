@@ -1,9 +1,12 @@
 package android.hardware;
 
-    public class HardwareBuffer implements java.lang.AutoCloseable, android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+    public class HardwareBuffer implements AutoCloseable, Parcelable {
 
     public static final int BLOB = 33;
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
     public static final int DS_24UI8 = 50;
     public static final int DS_FP32UI8 = 52;
     public static final int D_16 = 48;
@@ -42,7 +45,7 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/HardwareBuffer;->close()V");
     }
 
-    public static android.hardware.HardwareBuffer create(int arg0, int arg1, int arg2, int arg3, long arg4) {
+    public static HardwareBuffer create(int arg0, int arg1, int arg2, int arg3, long arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/HardwareBuffer;->create(IIIIJ)Landroid/hardware/HardwareBuffer;");
     }
 
@@ -86,7 +89,7 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/HardwareBuffer;->isSupported(IIIIJ)Z");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/HardwareBuffer;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

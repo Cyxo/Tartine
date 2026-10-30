@@ -1,20 +1,17 @@
 package tartine.tx;
 
+import android.graphics.Paint;
+import android.text.TextDirectionHeuristics;
+import android.text.TextPaint;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
-import android.graphics.Paint;
-import android.text.TextDirectionHeuristics;
-import android.text.TextPaint;
-
 import tartine.dex.Dex;
 import tartine.dex.DexSet;
 import tartine.dex.FixtureDex;

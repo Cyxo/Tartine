@@ -5,13 +5,14 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
 import javax.tools.FileObject;
 import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
@@ -20,10 +21,8 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
 import tartine.sdk.FwIndex.FwClass;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -144,7 +143,7 @@ class FwIndexLoaderTest {
                 };
             }
         };
-        java.util.List<JavaFileObject> units = new java.util.ArrayList<>();
+        List<JavaFileObject> units = new ArrayList<>();
         for (Map.Entry<String, String> source : sources.entrySet()) {
             String simple = source.getKey().substring(source.getKey().lastIndexOf('.') + 1);
             units.add(new SimpleJavaFileObject(

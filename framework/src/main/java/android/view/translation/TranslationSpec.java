@@ -1,11 +1,15 @@
 package android.view.translation;
 
-    public class TranslationSpec implements android.os.Parcelable {
+import android.icu.util.ULocale;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class TranslationSpec implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final int DATA_FORMAT_TEXT = 1;
 
-    public TranslationSpec(android.icu.util.ULocale arg0, int arg1) {
+    public TranslationSpec(ULocale arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationSpec;-><init>(Landroid/icu/util/ULocale;I)V");
     }
 
@@ -13,7 +17,7 @@ package android.view.translation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationSpec;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationSpec;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -21,7 +25,7 @@ package android.view.translation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationSpec;->getDataFormat()I");
     }
 
-    public android.icu.util.ULocale getLocale() {
+    public ULocale getLocale() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationSpec;->getLocale()Landroid/icu/util/ULocale;");
     }
 
@@ -29,11 +33,11 @@ package android.view.translation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationSpec;->hashCode()I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationSpec;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationSpec;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

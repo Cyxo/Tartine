@@ -1,4 +1,4 @@
 package android.view.inputmethod;
 
-    public class PreviewableHandwritingGesture extends android.view.inputmethod.HandwritingGesture {
+    public class PreviewableHandwritingGesture extends HandwritingGesture {
     }

@@ -1,8 +1,11 @@
 package android.util;
 
-    public class SizeF implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class SizeF implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
 
     public SizeF(float arg0, float arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SizeF;-><init>(FF)V");
@@ -12,7 +15,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SizeF;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SizeF;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -28,15 +31,15 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SizeF;->hashCode()I");
     }
 
-    public static android.util.SizeF parseSizeF(java.lang.String arg0) {
+    public static SizeF parseSizeF(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SizeF;->parseSizeF(Ljava/lang/String;)Landroid/util/SizeF;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SizeF;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SizeF;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

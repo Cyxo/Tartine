@@ -1,8 +1,11 @@
 package android.os;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+
     public class MemoryFile {
 
-    public MemoryFile(java.lang.String arg0, int arg1) {
+    public MemoryFile(String arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/MemoryFile;-><init>(Ljava/lang/String;I)V");
     }
 
@@ -14,11 +17,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/MemoryFile;->close()V");
     }
 
-    public java.io.InputStream getInputStream() {
+    public InputStream getInputStream() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/MemoryFile;->getInputStream()Ljava/io/InputStream;");
     }
 
-    public java.io.OutputStream getOutputStream() {
+    public OutputStream getOutputStream() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/MemoryFile;->getOutputStream()Ljava/io/OutputStream;");
     }
 

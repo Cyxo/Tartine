@@ -1,11 +1,14 @@
 package android.view;
 
-    public class KeyEvent extends android.view.InputEvent implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+    public class KeyEvent extends InputEvent implements Parcelable {
 
     public static final int ACTION_DOWN = 0;
     public static final int ACTION_MULTIPLE = 2;
     public static final int ACTION_UP = 1;
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
     public static final int FLAG_CANCELED = 32;
     public static final int FLAG_CANCELED_LONG_PRESS = 256;
     public static final int FLAG_EDITOR_ACTION = 16;
@@ -378,11 +381,11 @@ package android.view;
     public static final int META_SHIFT_RIGHT_ON = 128;
     public static final int META_SYM_ON = 4;
 
-    public KeyEvent(android.view.KeyEvent arg0) {
+    public KeyEvent(KeyEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(Landroid/view/KeyEvent;)V");
     }
 
-    public KeyEvent(android.view.KeyEvent arg0, long arg1, int arg2) {
+    public KeyEvent(KeyEvent arg0, long arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(Landroid/view/KeyEvent;JI)V");
     }
 
@@ -390,7 +393,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(II)V");
     }
 
-    public KeyEvent(long arg0, java.lang.String arg1, int arg2, int arg3) {
+    public KeyEvent(long arg0, String arg1, int arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(JLjava/lang/String;II)V");
     }
 
@@ -414,27 +417,27 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(JJIIIIIIII)V");
     }
 
-    public static android.view.KeyEvent changeAction(android.view.KeyEvent arg0, int arg1) {
+    public static KeyEvent changeAction(KeyEvent arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->changeAction(Landroid/view/KeyEvent;I)Landroid/view/KeyEvent;");
     }
 
-    public static android.view.KeyEvent changeFlags(android.view.KeyEvent arg0, int arg1) {
+    public static KeyEvent changeFlags(KeyEvent arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->changeFlags(Landroid/view/KeyEvent;I)Landroid/view/KeyEvent;");
     }
 
-    public static android.view.KeyEvent changeTimeRepeat(android.view.KeyEvent arg0, long arg1, int arg2) {
+    public static KeyEvent changeTimeRepeat(KeyEvent arg0, long arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->changeTimeRepeat(Landroid/view/KeyEvent;JI)Landroid/view/KeyEvent;");
     }
 
-    public static android.view.KeyEvent changeTimeRepeat(android.view.KeyEvent arg0, long arg1, int arg2, int arg3) {
+    public static KeyEvent changeTimeRepeat(KeyEvent arg0, long arg1, int arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->changeTimeRepeat(Landroid/view/KeyEvent;JII)Landroid/view/KeyEvent;");
     }
 
-    public final boolean dispatch(android.view.KeyEvent.Callback arg0) {
+    public final boolean dispatch(KeyEvent.Callback arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->dispatch(Landroid/view/KeyEvent$Callback;)Z");
     }
 
-    public final boolean dispatch(android.view.KeyEvent.Callback arg0, android.view.KeyEvent.DispatcherState arg1, java.lang.Object arg2) {
+    public final boolean dispatch(KeyEvent.Callback arg0, KeyEvent.DispatcherState arg1, Object arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->dispatch(Landroid/view/KeyEvent$Callback;Landroid/view/KeyEvent$DispatcherState;Ljava/lang/Object;)Z");
     }
 
@@ -442,7 +445,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getAction()I");
     }
 
-    public final java.lang.String getCharacters() {
+    public final String getCharacters() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getCharacters()Ljava/lang/String;");
     }
 
@@ -470,7 +473,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getFlags()I");
     }
 
-    public final android.view.KeyCharacterMap getKeyCharacterMap() {
+    public final KeyCharacterMap getKeyCharacterMap() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getKeyCharacterMap()Landroid/view/KeyCharacterMap;");
     }
 
@@ -478,7 +481,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getKeyCode()I");
     }
 
-    public boolean getKeyData(android.view.KeyCharacterMap.KeyData arg0) {
+    public boolean getKeyData(KeyCharacterMap.KeyData arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getKeyData(Landroid/view/KeyCharacterMap$KeyData;)Z");
     }
 
@@ -606,11 +609,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isTracking()Z");
     }
 
-    public static int keyCodeFromString(java.lang.String arg0) {
+    public static int keyCodeFromString(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->keyCodeFromString(Ljava/lang/String;)I");
     }
 
-    public static java.lang.String keyCodeToString(int arg0) {
+    public static String keyCodeToString(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->keyCodeToString(I)Ljava/lang/String;");
     }
 
@@ -634,11 +637,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->startTracking()V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 
@@ -647,13 +650,13 @@ package android.view;
         }
         public static interface Callback {
 
-        public abstract boolean onKeyDown(int arg0, android.view.KeyEvent arg1);
+        public abstract boolean onKeyDown(int arg0, KeyEvent arg1);
 
-        public abstract boolean onKeyLongPress(int arg0, android.view.KeyEvent arg1);
+        public abstract boolean onKeyLongPress(int arg0, KeyEvent arg1);
 
-        public abstract boolean onKeyMultiple(int arg0, int arg1, android.view.KeyEvent arg2);
+        public abstract boolean onKeyMultiple(int arg0, int arg1, KeyEvent arg2);
 
-        public abstract boolean onKeyUp(int arg0, android.view.KeyEvent arg1);
+        public abstract boolean onKeyUp(int arg0, KeyEvent arg1);
         }
         public static class DispatcherState {
 
@@ -661,15 +664,15 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;-><init>()V");
         }
 
-        public void handleUpEvent(android.view.KeyEvent arg0) {
+        public void handleUpEvent(KeyEvent arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;->handleUpEvent(Landroid/view/KeyEvent;)V");
         }
 
-        public boolean isTracking(android.view.KeyEvent arg0) {
+        public boolean isTracking(KeyEvent arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;->isTracking(Landroid/view/KeyEvent;)Z");
         }
 
-        public void performedLongPress(android.view.KeyEvent arg0) {
+        public void performedLongPress(KeyEvent arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;->performedLongPress(Landroid/view/KeyEvent;)V");
         }
 
@@ -677,11 +680,11 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;->reset()V");
         }
 
-        public void reset(java.lang.Object arg0) {
+        public void reset(Object arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;->reset(Ljava/lang/Object;)V");
         }
 
-        public void startTracking(android.view.KeyEvent arg0, java.lang.Object arg1) {
+        public void startTracking(KeyEvent arg0, Object arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;->startTracking(Landroid/view/KeyEvent;Ljava/lang/Object;)V");
         }
         }

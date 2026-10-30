@@ -1,8 +1,12 @@
 package android.content.pm;
 
-    public class ServiceInfo extends android.content.pm.ComponentInfo implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.Printer;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class ServiceInfo extends ComponentInfo implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final int FLAG_ALLOW_SHARED_ISOLATED_PROCESS = 16;
     public static final int FLAG_EXTERNAL_SERVICE = 4;
     public static final int FLAG_ISOLATED_PROCESS = 2;
@@ -26,13 +30,13 @@ package android.content.pm;
     public static final int FOREGROUND_SERVICE_TYPE_SPECIAL_USE = 1073741824;
     public static final int FOREGROUND_SERVICE_TYPE_SYSTEM_EXEMPTED = 1024;
     public int flags;
-    public java.lang.String permission;
+    public String permission;
 
     public ServiceInfo() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ServiceInfo;-><init>()V");
     }
 
-    public ServiceInfo(android.content.pm.ServiceInfo arg0) {
+    public ServiceInfo(ServiceInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ServiceInfo;-><init>(Landroid/content/pm/ServiceInfo;)V");
     }
 
@@ -40,7 +44,7 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ServiceInfo;->describeContents()I");
     }
 
-    public void dump(android.util.Printer arg0, java.lang.String arg1) {
+    public void dump(Printer arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ServiceInfo;->dump(Landroid/util/Printer;Ljava/lang/String;)V");
     }
 
@@ -48,11 +52,11 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ServiceInfo;->getForegroundServiceType()I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ServiceInfo;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ServiceInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

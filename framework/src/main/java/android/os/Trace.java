@@ -10,7 +10,7 @@ public final class Trace {
      * AOSP frameworks-base core/java/android/os/Trace.java beginSection:
      * begins a trace section; the shell is untraced, so this is inert.
      */
-    public static void beginSection(java.lang.String arg0) {
+    public static void beginSection(String arg0) {
     }
 
     /**

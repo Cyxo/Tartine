@@ -1,25 +1,40 @@
 package tartine;
 
+import android.graphics.Canvas;
+import android.os.Bundle;
+import android.os.Looper;
+import android.view.Choreographer;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.util.TraceClassVisitor;
 import tartine.apk.Abi;
 import tartine.apk.ApkReader;
 import tartine.apk.AppIcon;
 import tartine.apk.BinaryXml;
+import tartine.config.HostConfig;
 import tartine.dex.Dex;
 import tartine.dex.DexClass;
 import tartine.dex.DexDump;
 import tartine.dex.DexSet;
+import tartine.gfx.GfxBackend;
 import tartine.gfx.GfxSurface;
+import tartine.gfx.skija.SkijaBackend;
 import tartine.graphics.DesktopWindow;
 import tartine.graphics.RasterPresenter;
 import tartine.graphics.WindowIcon;
+import tartine.runtime.Vfs;
+import tartine.tx.TranslatedLoader;
+import tartine.tx.TxTranslator;
 
 /**
  * Entry point.
@@ -53,15 +68,15 @@ public final class Main {
             usage();
             return;
         }
-        tartine.config.HostConfig.load();
+        HostConfig.load();
         // Renderer backend: installed once at boot, before any framework
         // graphics call (text measurement included). The framework resolves
         // it through GfxBackend.get() and never imports Skija.
-        tartine.gfx.GfxBackend.install(
-                new tartine.gfx.skija.SkijaBackend());
+        GfxBackend.install(
+                new SkijaBackend());
         // Seed the default virtual sdcard (no-op when TARTINE_SDCARD or
         // sdcard.mount already configured an explicit mount).
-        tartine.runtime.Vfs.ensureDefaultCard();
+        Vfs.ensureDefaultCard();
         try {
             switch (args[0]) {
                 case "apk":
@@ -174,31 +189,31 @@ public final class Main {
             String methodFilter) throws Exception {
         try (ApkReader reader = ApkReader.open(apk.toPath())) {
             DexSet dexes = reader.dexSet();
-            tartine.tx.TranslatedLoader loader = new tartine.tx.TranslatedLoader(
+            TranslatedLoader loader = new TranslatedLoader(
                     Main.class.getClassLoader(), dexes);
             String desc = dottedOrSlash.contains("/")
                     ? dottedOrSlash
                     : dottedOrSlash.replace('.', '/');
             byte[] bytes;
             if (methodFilter != null) {
-                tartine.dex.DexClass cls =
+                DexClass cls =
                         loader.dexLookup().apply("L" + desc + ";");
-                bytes = tartine.tx.TxTranslator.emitProbeSingle(cls,
+                bytes = TxTranslator.emitProbeSingle(cls,
                         loader.fieldSynths(), loader.guestInterfaces(),
                         loader.dexLookup(), loader.getParent(), methodFilter);
             } else {
                 bytes = loader.translateClass(desc);
             }
-            org.objectweb.asm.util.TraceClassVisitor printer =
-                    new org.objectweb.asm.util.TraceClassVisitor(new PrintWriter(
+            TraceClassVisitor printer =
+                    new TraceClassVisitor(new PrintWriter(
                             System.err));
-            new org.objectweb.asm.ClassReader(bytes).accept(printer, 0);
+            new ClassReader(bytes).accept(printer, 0);
         }
     }
 
     /** Launcher activity loaded through the translated loader, plus the
      *  still-open APK reader the loader's lazy per-class translation needs. */
-    private record TxApp(ApkReader reader, tartine.tx.TranslatedLoader loader,
+    private record TxApp(ApkReader reader, TranslatedLoader loader,
             Object activity) {
     }
 
@@ -232,7 +247,7 @@ public final class Main {
         System.out.println("launcher: " + activity);
         DexSet dexes = reader.dexSet();
         System.out.println("dex classes: " + dexes.classCount());
-        tartine.tx.TranslatedLoader loader = new tartine.tx.TranslatedLoader(
+        TranslatedLoader loader = new TranslatedLoader(
                 Main.class.getClassLoader(), dexes);
         Thread.currentThread().setContextClassLoader(loader);
         Class<?> task;
@@ -246,7 +261,7 @@ public final class Main {
         System.out.println("loaded: " + task.getName());
         // Device parity with ActivityThread.main(): the guest's main
         // thread carries the main Looper before any Activity code runs.
-        android.os.Looper.prepareMainLooper();
+        Looper.prepareMainLooper();
         Object receiver;
         try {
             receiver = task.getDeclaredConstructor().newInstance();
@@ -255,7 +270,7 @@ public final class Main {
             printRootFrames(e);
             return new TxApp(reader, loader, null);
         }
-        java.lang.reflect.Method onCreate;
+        Method onCreate;
         try {
             // Android Activity.onCreate(Bundle) is protected — getMethod
             // (public only) misses it; walk the chain with accessibility.
@@ -264,7 +279,7 @@ public final class Main {
                     c = c.getSuperclass()) {
                 try {
                     onCreate = c.getDeclaredMethod("onCreate",
-                            android.os.Bundle.class);
+                            Bundle.class);
                 } catch (NoSuchMethodException ignored) {
                     // continue up the chain
                 }
@@ -281,7 +296,7 @@ public final class Main {
             onCreate.invoke(receiver, new Object[] { null });
             System.out.println("onCreate returned");
             return new TxApp(reader, loader, receiver);
-        } catch (java.lang.reflect.InvocationTargetException x) {
+        } catch (InvocationTargetException x) {
             System.out.println("onCreate threw: " + sanitize(x));
             printRootFrames(x);
             return new TxApp(reader, loader, null);
@@ -386,7 +401,7 @@ public final class Main {
             // driver's VSync), repeating while callbacks re-post (bounded to
             // 10 rounds).
             for (int round = 0; round < 10; round++) {
-                int fired = android.view.Choreographer.pumpFrameCallbacks(
+                int fired = Choreographer.pumpFrameCallbacks(
                         System.nanoTime());
                 System.out.println("gui: frame callbacks round " + round
                         + ": " + fired);
@@ -421,7 +436,7 @@ public final class Main {
             txInvoke(owner, "onLayout", false, 0, 0, 480, 960);
             System.out.println("gui: onLayout returned");
             GfxSurface surface = RasterPresenter.createSurface(480, 960);
-            android.graphics.Canvas hostCanvas =
+            Canvas hostCanvas =
                     RasterPresenter.createSurfaceCanvas(surface);
             // Frame handed to the desktop window; a blocked draw still
             // shows the partially composed surface, like the first
@@ -450,7 +465,7 @@ public final class Main {
             for (Class<?> c = owner.getClass(); c != null;
                     c = c.getSuperclass()) {
                 try {
-                    java.lang.reflect.Field f = c.getDeclaredField(name);
+                    Field f = c.getDeclaredField(name);
                     f.setAccessible(true);
                     return f.get(owner);
                 } catch (NoSuchFieldException ignored) {
@@ -470,7 +485,7 @@ public final class Main {
             for (Class<?> c = owner.getClass(); c != null;
                     c = c.getSuperclass()) {
                 try {
-                    java.lang.reflect.Field f = c.getDeclaredField(name);
+                    Field f = c.getDeclaredField(name);
                     f.setAccessible(true);
                     f.set(owner, value);
                     return;
@@ -490,7 +505,7 @@ public final class Main {
         try {
             for (Class<?> c = owner.getClass(); c != null;
                     c = c.getSuperclass()) {
-                for (java.lang.reflect.Method m : c.getDeclaredMethods()) {
+                for (Method m : c.getDeclaredMethods()) {
                     if (!m.getName().equals(name)
                             || m.getParameterCount() != args.length) {
                         continue;
@@ -502,7 +517,7 @@ public final class Main {
             throw new NoSuchMethodException(name);
         } catch (ReflectiveOperationException | IllegalArgumentException e) {
             Throwable cause = e;
-            if (e instanceof java.lang.reflect.InvocationTargetException x) {
+            if (e instanceof InvocationTargetException x) {
                 cause = x.getCause();
                 if (cause != null) {
                     cause.printStackTrace(); // TEMP probe diagnostic
@@ -514,12 +529,12 @@ public final class Main {
     }
 
     /** Reflective invoke of a static translated method by binary name. */
-    private static Object txInvokeStatic(tartine.tx.TranslatedLoader loader,
+    private static Object txInvokeStatic(TranslatedLoader loader,
             String className, String name, Object... args) {
         try {
             Class<?> cls = loader.loadClass(className);
-            for (java.lang.reflect.Method m : cls.getDeclaredMethods()) {
-                boolean stat = java.lang.reflect.Modifier.isStatic(
+            for (Method m : cls.getDeclaredMethods()) {
+                boolean stat = Modifier.isStatic(
                         m.getModifiers());
                 if (m.getName().equals(name)
                         && m.getParameterCount() == args.length && stat) {
@@ -530,7 +545,7 @@ public final class Main {
             throw new NoSuchMethodException(className + "." + name);
         } catch (ReflectiveOperationException | IllegalArgumentException e) {
             Throwable cause = e;
-            if (e instanceof java.lang.reflect.InvocationTargetException x) {
+            if (e instanceof InvocationTargetException x) {
                 cause = x.getCause();
             }
             throw new IllegalStateException("tx static " + className + "."

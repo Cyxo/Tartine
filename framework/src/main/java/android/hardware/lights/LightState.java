@@ -1,8 +1,11 @@
 package android.hardware.lights;
 
-    public class LightState implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class LightState implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
 
     public int describeContents() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/lights/LightState;->describeContents()I");
@@ -16,11 +19,11 @@ package android.hardware.lights;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/lights/LightState;->getPlayerId()I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/lights/LightState;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/lights/LightState;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

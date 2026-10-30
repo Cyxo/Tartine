@@ -1,6 +1,11 @@
 package android.content.res;
 
-    public class Configuration implements java.lang.Comparable<android.content.res.Configuration>, android.os.Parcelable {
+import android.os.LocaleList;
+import android.os.Parcel;
+import android.os.Parcelable;
+import java.util.Locale;
+
+    public class Configuration implements Comparable<Configuration>, Parcelable {
 
     public static final int COLOR_MODE_HDR_MASK = 12;
     public static final int COLOR_MODE_HDR_NO = 4;
@@ -12,7 +17,7 @@ package android.content.res;
     public static final int COLOR_MODE_WIDE_COLOR_GAMUT_NO = 1;
     public static final int COLOR_MODE_WIDE_COLOR_GAMUT_UNDEFINED = 0;
     public static final int COLOR_MODE_WIDE_COLOR_GAMUT_YES = 2;
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
     public static final int DENSITY_DPI_UNDEFINED = 0;
     public static final int FONT_WEIGHT_ADJUSTMENT_UNDEFINED = 2147483647;
     public static final int GRAMMATICAL_GENDER_FEMININE = 2;
@@ -89,7 +94,7 @@ package android.content.res;
     public int hardKeyboardHidden;
     public int keyboard;
     public int keyboardHidden;
-    public java.util.Locale locale;
+    public Locale locale;
     public int mcc;
     public int mnc;
     public int navigation;
@@ -113,13 +118,13 @@ package android.content.res;
     public Configuration() {
     }
 
-    public Configuration(android.content.res.Configuration arg0) {
+    public Configuration(Configuration arg0) {
         // AOSP frameworks-base core/java/android/content/res/Configuration.java
         // Configuration(Configuration) copy constructor: copies all fields
         // from the source (the interpreter's copyFieldsFrom builtin does
         // the same). Null source throws NPE.
         if (arg0 == null) {
-            throw new java.lang.NullPointerException("config copy of null");
+            throw new NullPointerException("config copy of null");
         }
         colorMode = arg0.colorMode;
         densityDpi = arg0.densityDpi;
@@ -142,7 +147,7 @@ package android.content.res;
         uiMode = arg0.uiMode;
     }
 
-    public int compareTo(android.content.res.Configuration arg0) {
+    public int compareTo(Configuration arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->compareTo(Landroid/content/res/Configuration;)I");
     }
 
@@ -150,19 +155,19 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->describeContents()I");
     }
 
-    public int diff(android.content.res.Configuration arg0) {
+    public int diff(Configuration arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->diff(Landroid/content/res/Configuration;)I");
     }
 
-    public boolean equals(android.content.res.Configuration arg0) {
+    public boolean equals(Configuration arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->equals(Landroid/content/res/Configuration;)Z");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->equals(Ljava/lang/Object;)Z");
     }
 
-    public static android.content.res.Configuration generateDelta(android.content.res.Configuration arg0, android.content.res.Configuration arg1) {
+    public static Configuration generateDelta(Configuration arg0, Configuration arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->generateDelta(Landroid/content/res/Configuration;Landroid/content/res/Configuration;)Landroid/content/res/Configuration;");
     }
 
@@ -177,7 +182,7 @@ package android.content.res;
         return 0;
     }
 
-    public android.os.LocaleList getLocales() {
+    public LocaleList getLocales() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->getLocales()Landroid/os/LocaleList;");
     }
 
@@ -209,29 +214,29 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->needNewResources(II)Z");
     }
 
-    public void readFromParcel(android.os.Parcel arg0) {
+    public void readFromParcel(Parcel arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->readFromParcel(Landroid/os/Parcel;)V");
     }
 
-    public void setLayoutDirection(java.util.Locale arg0) {
+    public void setLayoutDirection(Locale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->setLayoutDirection(Ljava/util/Locale;)V");
     }
 
-    public void setLocale(java.util.Locale arg0) {
+    public void setLocale(Locale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->setLocale(Ljava/util/Locale;)V");
     }
 
-    public void setLocales(android.os.LocaleList arg0) {
+    public void setLocales(LocaleList arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->setLocales(Landroid/os/LocaleList;)V");
     }
 
-    public void setTo(android.content.res.Configuration arg0) {
+    public void setTo(Configuration arg0) {
         // AOSP frameworks-base core/java/android/content/res/Configuration.java
         // setTo(Configuration): overwrites this config's fields from the
         // source (the interpreter's copyFieldsFrom builtin does the same).
         // Null source throws NPE.
         if (arg0 == null) {
-            throw new java.lang.NullPointerException("config setTo null");
+            throw new NullPointerException("config setTo null");
         }
         colorMode = arg0.colorMode;
         densityDpi = arg0.densityDpi;
@@ -287,15 +292,15 @@ package android.content.res;
         fontWeightAdjustment = FONT_WEIGHT_ADJUSTMENT_UNDEFINED;
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->toString()Ljava/lang/String;");
     }
 
-    public int updateFrom(android.content.res.Configuration arg0) {
+    public int updateFrom(Configuration arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->updateFrom(Landroid/content/res/Configuration;)I");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

@@ -1,5 +1,8 @@
 package android.graphics;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
     /**
      * Geometry core ported from aosp-mirror/platform_frameworks_base
      * graphics/java/android/graphics/Rect.java: this is a pure-Java value
@@ -8,9 +11,9 @@ package android.graphics;
      * (readFromParcel/writeToParcel/CREATOR) and the regex-backed
      * {@code unflattenFromString} remain gap stubs pending those surfaces.
      */
-    public class Rect implements android.os.Parcelable {
+    public class Rect implements Parcelable {
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
     public int bottom;
     public int left;
     public int right;
@@ -32,7 +35,7 @@ package android.graphics;
         this.bottom = arg3;
     }
 
-    public Rect(android.graphics.Rect arg0) {
+    public Rect(Rect arg0) {
         if (arg0 == null) {
             left = top = right = bottom = 0;
         } else {
@@ -44,7 +47,7 @@ package android.graphics;
     }
 
     @Override
-    public java.lang.String toString() {
+    public String toString() {
         StringBuilder sb = new StringBuilder(24);
         // Ported from AOSP Rect#toString(Rect/Integer format leg).
         sb.append("Rect("); sb.append(left); sb.append(", ");
@@ -56,7 +59,7 @@ package android.graphics;
     /**
      * Return a string representation of the rectangle in a compact form.
      */
-    public java.lang.String toShortString() {
+    public String toShortString() {
         StringBuilder sb = new StringBuilder(32);
         sb.append('['); sb.append(left); sb.append(',');
         sb.append(top); sb.append("]["); sb.append(right);
@@ -65,7 +68,7 @@ package android.graphics;
     }
 
     /** Return a string of the form "left top right bottom". */
-    public java.lang.String flattenToString() {
+    public String flattenToString() {
         StringBuilder sb = new StringBuilder(32);
         sb.append(left);
         sb.append(' ');
@@ -126,7 +129,7 @@ package android.graphics;
     }
 
     /** Ported from AOSP Rect#set(Rect). */
-    public void set(android.graphics.Rect arg0) {
+    public void set(Rect arg0) {
         this.left = arg0.left;
         this.top = arg0.top;
         this.right = arg0.right;
@@ -157,7 +160,7 @@ package android.graphics;
         bottom -= arg1;
     }
 
-    public void inset(android.graphics.Insets arg0) {
+    public void inset(Insets arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Rect;->inset(Landroid/graphics/Insets;)V");
     }
 
@@ -183,7 +186,7 @@ package android.graphics;
     }
 
     /** Ported from AOSP Rect#contains(Rect). */
-    public boolean contains(android.graphics.Rect arg0) {
+    public boolean contains(Rect arg0) {
         return this.left < this.right && this.top < this.bottom
                && left <= arg0.left && top <= arg0.top
                && right >= arg0.right && bottom >= arg0.bottom;
@@ -202,12 +205,12 @@ package android.graphics;
     }
 
     /** Ported from AOSP Rect#intersect(Rect). */
-    public boolean intersect(android.graphics.Rect arg0) {
+    public boolean intersect(Rect arg0) {
         return intersect(arg0.left, arg0.top, arg0.right, arg0.bottom);
     }
 
     /** Ported from AOSP Rect#setIntersect(Rect,Rect). */
-    public boolean setIntersect(android.graphics.Rect arg0, android.graphics.Rect arg1) {
+    public boolean setIntersect(Rect arg0, Rect arg1) {
         if (arg0.left < arg1.right && arg1.left < arg0.right && arg0.top < arg1.bottom && arg1.top < arg0.bottom) {
             left = Math.max(arg0.left, arg1.left);
             top = Math.max(arg0.top, arg1.top);
@@ -224,7 +227,7 @@ package android.graphics;
     }
 
     /** Ported from AOSP Rect#intersects(Rect,Rect). */
-    public static boolean intersects(android.graphics.Rect arg0, android.graphics.Rect arg1) {
+    public static boolean intersects(Rect arg0, Rect arg1) {
         return arg0.left < arg1.right && arg1.left < arg0.right && arg0.top < arg1.bottom && arg1.top < arg0.bottom;
     }
 
@@ -246,7 +249,7 @@ package android.graphics;
     }
 
     /** Ported from AOSP Rect#union(Rect). */
-    public void union(android.graphics.Rect arg0) {
+    public void union(Rect arg0) {
         union(arg0.left, arg0.top, arg0.right, arg0.bottom);
     }
 
@@ -280,11 +283,11 @@ package android.graphics;
 
     /** Ported from AOSP Rect#equals. */
     @Override
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         if (this == arg0) return true;
         if (arg0 == null || getClass() != arg0.getClass()) return false;
 
-        android.graphics.Rect r = (android.graphics.Rect) arg0;
+        Rect r = (Rect) arg0;
         return left == r.left && top == r.top && right == r.right && bottom == r.bottom;
     }
 
@@ -304,15 +307,15 @@ package android.graphics;
         return 0;
     }
 
-    public void readFromParcel(android.os.Parcel arg0) {
+    public void readFromParcel(Parcel arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Rect;->readFromParcel(Landroid/os/Parcel;)V");
     }
 
-    public static android.graphics.Rect unflattenFromString(java.lang.String arg0) {
+    public static Rect unflattenFromString(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Rect;->unflattenFromString(Ljava/lang/String;)Landroid/graphics/Rect;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Rect;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

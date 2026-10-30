@@ -1,10 +1,13 @@
 package android.view.inputmethod;
 
-    public class CorrectionInfo implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class CorrectionInfo implements Parcelable {
 
-    public CorrectionInfo(int arg0, java.lang.CharSequence arg1, java.lang.CharSequence arg2) {
+    public static Parcelable.Creator CREATOR;
+
+    public CorrectionInfo(int arg0, CharSequence arg1, CharSequence arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CorrectionInfo;-><init>(ILjava/lang/CharSequence;Ljava/lang/CharSequence;)V");
     }
 
@@ -12,7 +15,7 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CorrectionInfo;->describeContents()I");
     }
 
-    public java.lang.CharSequence getNewText() {
+    public CharSequence getNewText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CorrectionInfo;->getNewText()Ljava/lang/CharSequence;");
     }
 
@@ -20,15 +23,15 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CorrectionInfo;->getOffset()I");
     }
 
-    public java.lang.CharSequence getOldText() {
+    public CharSequence getOldText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CorrectionInfo;->getOldText()Ljava/lang/CharSequence;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CorrectionInfo;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CorrectionInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

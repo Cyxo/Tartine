@@ -1,20 +1,22 @@
 package android.content;
 
+import android.net.Uri;
+
     public class UriRelativeFilter {
 
     public static final int FRAGMENT = 2;
     public static final int PATH = 0;
     public static final int QUERY = 1;
 
-    public UriRelativeFilter(int arg0, int arg1, java.lang.String arg2) {
+    public UriRelativeFilter(int arg0, int arg1, String arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/UriRelativeFilter;-><init>(IILjava/lang/String;)V");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/UriRelativeFilter;->equals(Ljava/lang/Object;)Z");
     }
 
-    public java.lang.String getFilter() {
+    public String getFilter() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/UriRelativeFilter;->getFilter()Ljava/lang/String;");
     }
 
@@ -30,11 +32,11 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/UriRelativeFilter;->hashCode()I");
     }
 
-    public boolean matchData(android.net.Uri arg0) {
+    public boolean matchData(Uri arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/UriRelativeFilter;->matchData(Landroid/net/Uri;)Z");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/UriRelativeFilter;->toString()Ljava/lang/String;");
     }
 

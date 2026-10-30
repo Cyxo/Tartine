@@ -2,7 +2,6 @@ package tartine.gfx.testing;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import tartine.gfx.GfxBackend;
 import tartine.gfx.GfxCanvas;
 import tartine.gfx.GfxClipMode;

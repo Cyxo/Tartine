@@ -1,6 +1,8 @@
 package android.view.accessibility;
 
 import android.view.accessibility.AccessibilityEvent;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * System service handle for screen-reader state (android.jar stub re-
@@ -74,9 +76,9 @@ public final class AccessibilityManager {
      * dividend of the same shape (getEnabledAccessibilityServiceList's
      * early return branch).
      */
-    public java.util.List<AccessibilityServiceInfo> getEnabledAccessibilityServiceList(
+    public List<AccessibilityServiceInfo> getEnabledAccessibilityServiceList(
             int feedbackTypeFlags) {
-        return java.util.Collections.emptyList();
+        return Collections.emptyList();
     }
 
     /** Listener contract from android.jar signatures. */

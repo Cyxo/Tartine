@@ -1,6 +1,8 @@
 package android.database.sqlite;
 
-    public class SQLiteRawStatement implements java.io.Closeable {
+import java.io.Closeable;
+
+    public class SQLiteRawStatement implements Closeable {
 
     public static final int SQLITE_DATA_TYPE_BLOB = 4;
     public static final int SQLITE_DATA_TYPE_FLOAT = 2;
@@ -32,7 +34,7 @@ package android.database.sqlite;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteRawStatement;->bindNull(I)V");
     }
 
-    public void bindText(int arg0, java.lang.String arg1) {
+    public void bindText(int arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteRawStatement;->bindText(ILjava/lang/String;)V");
     }
 
@@ -64,11 +66,11 @@ package android.database.sqlite;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteRawStatement;->getColumnLong(I)J");
     }
 
-    public java.lang.String getColumnName(int arg0) {
+    public String getColumnName(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteRawStatement;->getColumnName(I)Ljava/lang/String;");
     }
 
-    public java.lang.String getColumnText(int arg0) {
+    public String getColumnText(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteRawStatement;->getColumnText(I)Ljava/lang/String;");
     }
 
@@ -80,11 +82,11 @@ package android.database.sqlite;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteRawStatement;->getParameterCount()I");
     }
 
-    public int getParameterIndex(java.lang.String arg0) {
+    public int getParameterIndex(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteRawStatement;->getParameterIndex(Ljava/lang/String;)I");
     }
 
-    public java.lang.String getParameterName(int arg0) {
+    public String getParameterName(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteRawStatement;->getParameterName(I)Ljava/lang/String;");
     }
 
@@ -108,7 +110,7 @@ package android.database.sqlite;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteRawStatement;->step()Z");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteRawStatement;->toString()Ljava/lang/String;");
     }
     }

@@ -1,9 +1,5 @@
 package tartine.dex;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction;
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction;
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction;
@@ -17,6 +13,10 @@ import com.android.tools.smali.dexlib2.iface.instruction.ThreeRegisterInstructio
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction;
 import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction;
 import com.android.tools.smali.dexlib2.iface.instruction.formats.ArrayPayload;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * One Dalvik instruction in our own model, decoupled from dexlib2 types.
@@ -152,7 +152,7 @@ public final class Insn {
         }
 
         String opcode = instruction.getOpcode().name()
-                .toLowerCase(java.util.Locale.ROOT).replace('_', '-');
+                .toLowerCase(Locale.ROOT).replace('_', '-');
         return new Insn(offset, opcode, registers, hasLiteral, literal,
                 reference, referenceType, branchOffset, elementWidth, payloadData,
                 payloadKeys, payloadTargets);

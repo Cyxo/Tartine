@@ -1,18 +1,32 @@
 package android.os;
 
+import android.util.ArrayMap;
+import android.util.Size;
+import android.util.SizeF;
+import android.util.SparseArray;
+import android.util.SparseBooleanArray;
+import java.io.FileDescriptor;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+
     public class Parcel {
 
-    public static android.os.Parcelable.Creator STRING_CREATOR;
+    public static Parcelable.Creator STRING_CREATOR;
 
-    public void appendFrom(android.os.Parcel arg0, int arg1, int arg2) {
+    public void appendFrom(Parcel arg0, int arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->appendFrom(Landroid/os/Parcel;II)V");
     }
 
-    public android.os.IBinder[] createBinderArray() {
+    public IBinder[] createBinderArray() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createBinderArray()[Landroid/os/IBinder;");
     }
 
-    public java.util.ArrayList<android.os.IBinder> createBinderArrayList() {
+    public ArrayList<IBinder> createBinderArrayList() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createBinderArrayList()Ljava/util/ArrayList;");
     }
 
@@ -32,15 +46,15 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createDoubleArray()[D");
     }
 
-    public <T, S> T createFixedArray(java.lang.Class<T> arg0, android.os.Parcelable.Creator<S> arg1, int[] arg2) {
+    public <T, S> T createFixedArray(Class<T> arg0, Parcelable.Creator<S> arg1, int[] arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createFixedArray(Ljava/lang/Class;Landroid/os/Parcelable$Creator;[I)Ljava/lang/Object;");
     }
 
-    public <T> T createFixedArray(java.lang.Class<T> arg0, int[] arg1) {
+    public <T> T createFixedArray(Class<T> arg0, int[] arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createFixedArray(Ljava/lang/Class;[I)Ljava/lang/Object;");
     }
 
-    public <T, S> T createFixedArray(java.lang.Class<T> arg0, java.util.function.Function<android.os.IBinder, S> arg1, int[] arg2) {
+    public <T, S> T createFixedArray(Class<T> arg0, Function<IBinder, S> arg1, int[] arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createFixedArray(Ljava/lang/Class;Ljava/util/function/Function;[I)Ljava/lang/Object;");
     }
 
@@ -52,11 +66,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createIntArray()[I");
     }
 
-    public <T> T[] createInterfaceArray(java.util.function.IntFunction<T[]> arg0, java.util.function.Function<android.os.IBinder, T> arg1) {
+    public <T> T[] createInterfaceArray(IntFunction<T[]> arg0, Function<IBinder, T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createInterfaceArray(Ljava/util/function/IntFunction;Ljava/util/function/Function;)[Landroid/os/IInterface;");
     }
 
-    public <T> java.util.ArrayList<T> createInterfaceArrayList(java.util.function.Function<android.os.IBinder, T> arg0) {
+    public <T> ArrayList<T> createInterfaceArrayList(Function<IBinder, T> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createInterfaceArrayList(Ljava/util/function/Function;)Ljava/util/ArrayList;");
     }
 
@@ -64,27 +78,27 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createLongArray()[J");
     }
 
-    public java.lang.String[] createStringArray() {
+    public String[] createStringArray() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createStringArray()[Ljava/lang/String;");
     }
 
-    public java.util.ArrayList<java.lang.String> createStringArrayList() {
+    public ArrayList<String> createStringArrayList() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createStringArrayList()Ljava/util/ArrayList;");
     }
 
-    public <T> T[] createTypedArray(android.os.Parcelable.Creator<T> arg0) {
+    public <T> T[] createTypedArray(Parcelable.Creator<T> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createTypedArray(Landroid/os/Parcelable$Creator;)[Ljava/lang/Object;");
     }
 
-    public <T> java.util.ArrayList<T> createTypedArrayList(android.os.Parcelable.Creator<T> arg0) {
+    public <T> ArrayList<T> createTypedArrayList(Parcelable.Creator<T> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createTypedArrayList(Landroid/os/Parcelable$Creator;)Ljava/util/ArrayList;");
     }
 
-    public <T> android.util.ArrayMap<java.lang.String, T> createTypedArrayMap(android.os.Parcelable.Creator<T> arg0) {
+    public <T> ArrayMap<String, T> createTypedArrayMap(Parcelable.Creator<T> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createTypedArrayMap(Landroid/os/Parcelable$Creator;)Landroid/util/ArrayMap;");
     }
 
-    public <T> android.util.SparseArray<T> createTypedSparseArray(android.os.Parcelable.Creator<T> arg0) {
+    public <T> SparseArray<T> createTypedSparseArray(Parcelable.Creator<T> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->createTypedSparseArray(Landroid/os/Parcelable$Creator;)Landroid/util/SparseArray;");
     }
 
@@ -104,7 +118,7 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->dataSize()I");
     }
 
-    public void enforceInterface(java.lang.String arg0) {
+    public void enforceInterface(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->enforceInterface(Ljava/lang/String;)V");
     }
 
@@ -128,35 +142,35 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->marshall()[B");
     }
 
-    public static android.os.Parcel obtain() {
+    public static Parcel obtain() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->obtain()Landroid/os/Parcel;");
     }
 
-    public static android.os.Parcel obtain(android.os.IBinder arg0) {
+    public static Parcel obtain(IBinder arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->obtain(Landroid/os/IBinder;)Landroid/os/Parcel;");
     }
 
-    public java.lang.Object[] readArray(java.lang.ClassLoader arg0) {
+    public Object[] readArray(ClassLoader arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readArray(Ljava/lang/ClassLoader;)[Ljava/lang/Object;");
     }
 
-    public <T> T[] readArray(java.lang.ClassLoader arg0, java.lang.Class<T> arg1) {
+    public <T> T[] readArray(ClassLoader arg0, Class<T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readArray(Ljava/lang/ClassLoader;Ljava/lang/Class;)[Ljava/lang/Object;");
     }
 
-    public java.util.ArrayList readArrayList(java.lang.ClassLoader arg0) {
+    public ArrayList readArrayList(ClassLoader arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readArrayList(Ljava/lang/ClassLoader;)Ljava/util/ArrayList;");
     }
 
-    public <T> java.util.ArrayList<T> readArrayList(java.lang.ClassLoader arg0, java.lang.Class<? extends T> arg1) {
+    public <T> ArrayList<T> readArrayList(ClassLoader arg0, Class<? extends T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readArrayList(Ljava/lang/ClassLoader;Ljava/lang/Class;)Ljava/util/ArrayList;");
     }
 
-    public void readBinderArray(android.os.IBinder[] arg0) {
+    public void readBinderArray(IBinder[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readBinderArray([Landroid/os/IBinder;)V");
     }
 
-    public void readBinderList(java.util.List<android.os.IBinder> arg0) {
+    public void readBinderList(List<IBinder> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readBinderList(Ljava/util/List;)V");
     }
 
@@ -172,11 +186,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readBooleanArray([Z)V");
     }
 
-    public android.os.Bundle readBundle() {
+    public Bundle readBundle() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readBundle()Landroid/os/Bundle;");
     }
 
-    public android.os.Bundle readBundle(java.lang.ClassLoader arg0) {
+    public Bundle readBundle(ClassLoader arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readBundle(Ljava/lang/ClassLoader;)Landroid/os/Bundle;");
     }
 
@@ -204,11 +218,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readException()V");
     }
 
-    public void readException(int arg0, java.lang.String arg1) {
+    public void readException(int arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readException(ILjava/lang/String;)V");
     }
 
-    public android.os.ParcelFileDescriptor readFileDescriptor() {
+    public ParcelFileDescriptor readFileDescriptor() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readFileDescriptor()Landroid/os/ParcelFileDescriptor;");
     }
 
@@ -216,11 +230,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readFixedArray(Ljava/lang/Object;)V");
     }
 
-    public <T, S> void readFixedArray(T arg0, android.os.Parcelable.Creator<S> arg1) {
+    public <T, S> void readFixedArray(T arg0, Parcelable.Creator<S> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readFixedArray(Ljava/lang/Object;Landroid/os/Parcelable$Creator;)V");
     }
 
-    public <T, S> void readFixedArray(T arg0, java.util.function.Function<android.os.IBinder, S> arg1) {
+    public <T, S> void readFixedArray(T arg0, Function<IBinder, S> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readFixedArray(Ljava/lang/Object;Ljava/util/function/Function;)V");
     }
 
@@ -232,11 +246,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readFloatArray([F)V");
     }
 
-    public java.util.HashMap readHashMap(java.lang.ClassLoader arg0) {
+    public HashMap readHashMap(ClassLoader arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readHashMap(Ljava/lang/ClassLoader;)Ljava/util/HashMap;");
     }
 
-    public <K, V> java.util.HashMap<K, V> readHashMap(java.lang.ClassLoader arg0, java.lang.Class<? extends K> arg1, java.lang.Class<? extends V> arg2) {
+    public <K, V> HashMap<K, V> readHashMap(ClassLoader arg0, Class<? extends K> arg1, Class<? extends V> arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readHashMap(Ljava/lang/ClassLoader;Ljava/lang/Class;Ljava/lang/Class;)Ljava/util/HashMap;");
     }
 
@@ -248,19 +262,19 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readIntArray([I)V");
     }
 
-    public <T> void readInterfaceArray(T[] arg0, java.util.function.Function<android.os.IBinder, T> arg1) {
+    public <T> void readInterfaceArray(T[] arg0, Function<IBinder, T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readInterfaceArray([Landroid/os/IInterface;Ljava/util/function/Function;)V");
     }
 
-    public <T> void readInterfaceList(java.util.List<T> arg0, java.util.function.Function<android.os.IBinder, T> arg1) {
+    public <T> void readInterfaceList(List<T> arg0, Function<IBinder, T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readInterfaceList(Ljava/util/List;Ljava/util/function/Function;)V");
     }
 
-    public void readList(java.util.List arg0, java.lang.ClassLoader arg1) {
+    public void readList(List arg0, ClassLoader arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readList(Ljava/util/List;Ljava/lang/ClassLoader;)V");
     }
 
-    public <T> void readList(java.util.List<? super T> arg0, java.lang.ClassLoader arg1, java.lang.Class<T> arg2) {
+    public <T> void readList(List<? super T> arg0, ClassLoader arg1, Class<T> arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readList(Ljava/util/List;Ljava/lang/ClassLoader;Ljava/lang/Class;)V");
     }
 
@@ -272,111 +286,111 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readLongArray([J)V");
     }
 
-    public void readMap(java.util.Map arg0, java.lang.ClassLoader arg1) {
+    public void readMap(Map arg0, ClassLoader arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readMap(Ljava/util/Map;Ljava/lang/ClassLoader;)V");
     }
 
-    public <K, V> void readMap(java.util.Map<? super K, ? super V> arg0, java.lang.ClassLoader arg1, java.lang.Class<K> arg2, java.lang.Class<V> arg3) {
+    public <K, V> void readMap(Map<? super K, ? super V> arg0, ClassLoader arg1, Class<K> arg2, Class<V> arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readMap(Ljava/util/Map;Ljava/lang/ClassLoader;Ljava/lang/Class;Ljava/lang/Class;)V");
     }
 
-    public <T> T readParcelable(java.lang.ClassLoader arg0) {
+    public <T> T readParcelable(ClassLoader arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readParcelable(Ljava/lang/ClassLoader;)Landroid/os/Parcelable;");
     }
 
-    public <T> T readParcelable(java.lang.ClassLoader arg0, java.lang.Class<T> arg1) {
+    public <T> T readParcelable(ClassLoader arg0, Class<T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readParcelable(Ljava/lang/ClassLoader;Ljava/lang/Class;)Ljava/lang/Object;");
     }
 
-    public android.os.Parcelable[] readParcelableArray(java.lang.ClassLoader arg0) {
+    public Parcelable[] readParcelableArray(ClassLoader arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readParcelableArray(Ljava/lang/ClassLoader;)[Landroid/os/Parcelable;");
     }
 
-    public <T> T[] readParcelableArray(java.lang.ClassLoader arg0, java.lang.Class<T> arg1) {
+    public <T> T[] readParcelableArray(ClassLoader arg0, Class<T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readParcelableArray(Ljava/lang/ClassLoader;Ljava/lang/Class;)[Ljava/lang/Object;");
     }
 
-    public android.os.Parcelable.Creator<?> readParcelableCreator(java.lang.ClassLoader arg0) {
+    public Parcelable.Creator<?> readParcelableCreator(ClassLoader arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readParcelableCreator(Ljava/lang/ClassLoader;)Landroid/os/Parcelable$Creator;");
     }
 
-    public <T> android.os.Parcelable.Creator<T> readParcelableCreator(java.lang.ClassLoader arg0, java.lang.Class<T> arg1) {
+    public <T> Parcelable.Creator<T> readParcelableCreator(ClassLoader arg0, Class<T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readParcelableCreator(Ljava/lang/ClassLoader;Ljava/lang/Class;)Landroid/os/Parcelable$Creator;");
     }
 
-    public <T> java.util.List<T> readParcelableList(java.util.List<T> arg0, java.lang.ClassLoader arg1) {
+    public <T> List<T> readParcelableList(List<T> arg0, ClassLoader arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readParcelableList(Ljava/util/List;Ljava/lang/ClassLoader;)Ljava/util/List;");
     }
 
-    public <T> java.util.List<T> readParcelableList(java.util.List<T> arg0, java.lang.ClassLoader arg1, java.lang.Class<? extends T> arg2) {
+    public <T> List<T> readParcelableList(List<T> arg0, ClassLoader arg1, Class<? extends T> arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readParcelableList(Ljava/util/List;Ljava/lang/ClassLoader;Ljava/lang/Class;)Ljava/util/List;");
     }
 
-    public android.os.PersistableBundle readPersistableBundle() {
+    public PersistableBundle readPersistableBundle() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readPersistableBundle()Landroid/os/PersistableBundle;");
     }
 
-    public android.os.PersistableBundle readPersistableBundle(java.lang.ClassLoader arg0) {
+    public PersistableBundle readPersistableBundle(ClassLoader arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readPersistableBundle(Ljava/lang/ClassLoader;)Landroid/os/PersistableBundle;");
     }
 
-    public java.io.Serializable readSerializable() {
+    public Serializable readSerializable() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readSerializable()Ljava/io/Serializable;");
     }
 
-    public <T> T readSerializable(java.lang.ClassLoader arg0, java.lang.Class<T> arg1) {
+    public <T> T readSerializable(ClassLoader arg0, Class<T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readSerializable(Ljava/lang/ClassLoader;Ljava/lang/Class;)Ljava/lang/Object;");
     }
 
-    public android.util.Size readSize() {
+    public Size readSize() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readSize()Landroid/util/Size;");
     }
 
-    public android.util.SizeF readSizeF() {
+    public SizeF readSizeF() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readSizeF()Landroid/util/SizeF;");
     }
 
-    public <T> android.util.SparseArray<T> readSparseArray(java.lang.ClassLoader arg0) {
+    public <T> SparseArray<T> readSparseArray(ClassLoader arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readSparseArray(Ljava/lang/ClassLoader;)Landroid/util/SparseArray;");
     }
 
-    public <T> android.util.SparseArray<T> readSparseArray(java.lang.ClassLoader arg0, java.lang.Class<? extends T> arg1) {
+    public <T> SparseArray<T> readSparseArray(ClassLoader arg0, Class<? extends T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readSparseArray(Ljava/lang/ClassLoader;Ljava/lang/Class;)Landroid/util/SparseArray;");
     }
 
-    public android.util.SparseBooleanArray readSparseBooleanArray() {
+    public SparseBooleanArray readSparseBooleanArray() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readSparseBooleanArray()Landroid/util/SparseBooleanArray;");
     }
 
-    public java.lang.String readString() {
+    public String readString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readString()Ljava/lang/String;");
     }
 
-    public void readStringArray(java.lang.String[] arg0) {
+    public void readStringArray(String[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readStringArray([Ljava/lang/String;)V");
     }
 
-    public void readStringList(java.util.List<java.lang.String> arg0) {
+    public void readStringList(List<String> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readStringList(Ljava/util/List;)V");
     }
 
-    public android.os.IBinder readStrongBinder() {
+    public IBinder readStrongBinder() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readStrongBinder()Landroid/os/IBinder;");
     }
 
-    public <T> void readTypedArray(T[] arg0, android.os.Parcelable.Creator<T> arg1) {
+    public <T> void readTypedArray(T[] arg0, Parcelable.Creator<T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readTypedArray([Ljava/lang/Object;Landroid/os/Parcelable$Creator;)V");
     }
 
-    public <T> void readTypedList(java.util.List<T> arg0, android.os.Parcelable.Creator<T> arg1) {
+    public <T> void readTypedList(List<T> arg0, Parcelable.Creator<T> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readTypedList(Ljava/util/List;Landroid/os/Parcelable$Creator;)V");
     }
 
-    public <T> T readTypedObject(android.os.Parcelable.Creator<T> arg0) {
+    public <T> T readTypedObject(Parcelable.Creator<T> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readTypedObject(Landroid/os/Parcelable$Creator;)Ljava/lang/Object;");
     }
 
-    public java.lang.Object readValue(java.lang.ClassLoader arg0) {
+    public Object readValue(ClassLoader arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->readValue(Ljava/lang/ClassLoader;)Ljava/lang/Object;");
     }
 
@@ -404,15 +418,15 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->unmarshall([BII)V");
     }
 
-    public void writeArray(java.lang.Object[] arg0) {
+    public void writeArray(Object[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeArray([Ljava/lang/Object;)V");
     }
 
-    public void writeBinderArray(android.os.IBinder[] arg0) {
+    public void writeBinderArray(IBinder[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeBinderArray([Landroid/os/IBinder;)V");
     }
 
-    public void writeBinderList(java.util.List<android.os.IBinder> arg0) {
+    public void writeBinderList(List<IBinder> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeBinderList(Ljava/util/List;)V");
     }
 
@@ -432,7 +446,7 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeBooleanArray([Z)V");
     }
 
-    public void writeBundle(android.os.Bundle arg0) {
+    public void writeBundle(Bundle arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeBundle(Landroid/os/Bundle;)V");
     }
 
@@ -460,11 +474,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeDoubleArray([D)V");
     }
 
-    public void writeException(java.lang.Exception arg0) {
+    public void writeException(Exception arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeException(Ljava/lang/Exception;)V");
     }
 
-    public void writeFileDescriptor(java.io.FileDescriptor arg0) {
+    public void writeFileDescriptor(FileDescriptor arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeFileDescriptor(Ljava/io/FileDescriptor;)V");
     }
 
@@ -492,15 +506,15 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeInterfaceArray([Landroid/os/IInterface;)V");
     }
 
-    public <T> void writeInterfaceList(java.util.List<T> arg0) {
+    public <T> void writeInterfaceList(List<T> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeInterfaceList(Ljava/util/List;)V");
     }
 
-    public void writeInterfaceToken(java.lang.String arg0) {
+    public void writeInterfaceToken(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeInterfaceToken(Ljava/lang/String;)V");
     }
 
-    public void writeList(java.util.List arg0) {
+    public void writeList(List arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeList(Ljava/util/List;)V");
     }
 
@@ -512,7 +526,7 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeLongArray([J)V");
     }
 
-    public void writeMap(java.util.Map arg0) {
+    public void writeMap(Map arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeMap(Ljava/util/Map;)V");
     }
 
@@ -520,7 +534,7 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeNoException()V");
     }
 
-    public void writeParcelable(android.os.Parcelable arg0, int arg1) {
+    public void writeParcelable(Parcelable arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeParcelable(Landroid/os/Parcelable;I)V");
     }
 
@@ -528,55 +542,55 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeParcelableArray([Landroid/os/Parcelable;I)V");
     }
 
-    public void writeParcelableCreator(android.os.Parcelable arg0) {
+    public void writeParcelableCreator(Parcelable arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeParcelableCreator(Landroid/os/Parcelable;)V");
     }
 
-    public <T> void writeParcelableList(java.util.List<T> arg0, int arg1) {
+    public <T> void writeParcelableList(List<T> arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeParcelableList(Ljava/util/List;I)V");
     }
 
-    public void writePersistableBundle(android.os.PersistableBundle arg0) {
+    public void writePersistableBundle(PersistableBundle arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writePersistableBundle(Landroid/os/PersistableBundle;)V");
     }
 
-    public void writeSerializable(java.io.Serializable arg0) {
+    public void writeSerializable(Serializable arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeSerializable(Ljava/io/Serializable;)V");
     }
 
-    public void writeSize(android.util.Size arg0) {
+    public void writeSize(Size arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeSize(Landroid/util/Size;)V");
     }
 
-    public void writeSizeF(android.util.SizeF arg0) {
+    public void writeSizeF(SizeF arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeSizeF(Landroid/util/SizeF;)V");
     }
 
-    public <T> void writeSparseArray(android.util.SparseArray<T> arg0) {
+    public <T> void writeSparseArray(SparseArray<T> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeSparseArray(Landroid/util/SparseArray;)V");
     }
 
-    public void writeSparseBooleanArray(android.util.SparseBooleanArray arg0) {
+    public void writeSparseBooleanArray(SparseBooleanArray arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeSparseBooleanArray(Landroid/util/SparseBooleanArray;)V");
     }
 
-    public void writeString(java.lang.String arg0) {
+    public void writeString(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeString(Ljava/lang/String;)V");
     }
 
-    public void writeStringArray(java.lang.String[] arg0) {
+    public void writeStringArray(String[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeStringArray([Ljava/lang/String;)V");
     }
 
-    public void writeStringList(java.util.List<java.lang.String> arg0) {
+    public void writeStringList(List<String> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeStringList(Ljava/util/List;)V");
     }
 
-    public void writeStrongBinder(android.os.IBinder arg0) {
+    public void writeStrongBinder(IBinder arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeStrongBinder(Landroid/os/IBinder;)V");
     }
 
-    public void writeStrongInterface(android.os.IInterface arg0) {
+    public void writeStrongInterface(IInterface arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeStrongInterface(Landroid/os/IInterface;)V");
     }
 
@@ -584,15 +598,15 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeTypedArray([Landroid/os/Parcelable;I)V");
     }
 
-    public <T> void writeTypedArrayMap(android.util.ArrayMap<java.lang.String, T> arg0, int arg1) {
+    public <T> void writeTypedArrayMap(ArrayMap<String, T> arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeTypedArrayMap(Landroid/util/ArrayMap;I)V");
     }
 
-    public <T> void writeTypedList(java.util.List<T> arg0) {
+    public <T> void writeTypedList(List<T> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeTypedList(Ljava/util/List;)V");
     }
 
-    public <T> void writeTypedList(java.util.List<T> arg0, int arg1) {
+    public <T> void writeTypedList(List<T> arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeTypedList(Ljava/util/List;I)V");
     }
 
@@ -600,11 +614,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeTypedObject(Landroid/os/Parcelable;I)V");
     }
 
-    public <T> void writeTypedSparseArray(android.util.SparseArray<T> arg0, int arg1) {
+    public <T> void writeTypedSparseArray(SparseArray<T> arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeTypedSparseArray(Landroid/util/SparseArray;I)V");
     }
 
-    public void writeValue(java.lang.Object arg0) {
+    public void writeValue(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Parcel;->writeValue(Ljava/lang/Object;)V");
     }
     }

@@ -10,7 +10,7 @@ import java.util.Arrays;
  * container: Compose's key-input bookkeeping puts/reads mappings through
  * the same call order a device runs.
  */
-public class SparseBooleanArray implements java.lang.Cloneable {
+public class SparseBooleanArray implements Cloneable {
 
     private int[] mKeys;
     private boolean[] mValues;

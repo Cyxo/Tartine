@@ -1,8 +1,11 @@
 package android.content;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
+
     public class Loader<D> {
 
-    public Loader(android.content.Context arg0) {
+    public Loader(Context arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;-><init>(Landroid/content/Context;)V");
     }
 
@@ -18,7 +21,7 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->commitContentChanged()V");
     }
 
-    public java.lang.String dataToString(D arg0) {
+    public String dataToString(D arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->dataToString(Ljava/lang/Object;)Ljava/lang/String;");
     }
 
@@ -30,7 +33,7 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->deliverResult(Ljava/lang/Object;)V");
     }
 
-    public void dump(java.lang.String arg0, java.io.FileDescriptor arg1, java.io.PrintWriter arg2, java.lang.String[] arg3) {
+    public void dump(String arg0, FileDescriptor arg1, PrintWriter arg2, String[] arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->dump(Ljava/lang/String;Ljava/io/FileDescriptor;Ljava/io/PrintWriter;[Ljava/lang/String;)V");
     }
 
@@ -38,7 +41,7 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->forceLoad()V");
     }
 
-    public android.content.Context getContext() {
+    public Context getContext() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->getContext()Landroid/content/Context;");
     }
 
@@ -86,11 +89,11 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->onStopLoading()V");
     }
 
-    public void registerListener(int arg0, android.content.Loader.OnLoadCompleteListener<D> arg1) {
+    public void registerListener(int arg0, Loader.OnLoadCompleteListener<D> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->registerListener(ILandroid/content/Loader$OnLoadCompleteListener;)V");
     }
 
-    public void registerOnLoadCanceledListener(android.content.Loader.OnLoadCanceledListener<D> arg0) {
+    public void registerOnLoadCanceledListener(Loader.OnLoadCanceledListener<D> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->registerOnLoadCanceledListener(Landroid/content/Loader$OnLoadCanceledListener;)V");
     }
 
@@ -114,15 +117,15 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->takeContentChanged()Z");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->toString()Ljava/lang/String;");
     }
 
-    public void unregisterListener(android.content.Loader.OnLoadCompleteListener<D> arg0) {
+    public void unregisterListener(Loader.OnLoadCompleteListener<D> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->unregisterListener(Landroid/content/Loader$OnLoadCompleteListener;)V");
     }
 
-    public void unregisterOnLoadCanceledListener(android.content.Loader.OnLoadCanceledListener<D> arg0) {
+    public void unregisterOnLoadCanceledListener(Loader.OnLoadCanceledListener<D> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Loader;->unregisterOnLoadCanceledListener(Landroid/content/Loader$OnLoadCanceledListener;)V");
     }
 
@@ -131,10 +134,10 @@ package android.content;
         }
         public static interface OnLoadCanceledListener<D> {
 
-        public abstract void onLoadCanceled(android.content.Loader<D> arg0);
+        public abstract void onLoadCanceled(Loader<D> arg0);
         }
         public static interface OnLoadCompleteListener<D> {
 
-        public abstract void onLoadComplete(android.content.Loader<D> arg0, D arg1);
+        public abstract void onLoadComplete(Loader<D> arg0, D arg1);
         }
     }

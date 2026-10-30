@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Locates the platform {@code android.jar} in a local Android SDK.
@@ -93,7 +94,7 @@ public final class Sdk {
         if (sdkRoot != null && !sdkRoot.isEmpty()) {
             roots.add(Paths.get(sdkRoot));
         }
-        String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
+        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
         String userHome = System.getProperty("user.home", "");
         if (os.contains("win")) {
             String localAppData = System.getenv("LOCALAPPDATA");

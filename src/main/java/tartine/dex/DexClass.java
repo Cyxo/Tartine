@@ -1,13 +1,22 @@
 package tartine.dex;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import com.android.tools.smali.dexlib2.AccessFlags;
 import com.android.tools.smali.dexlib2.iface.ClassDef;
 import com.android.tools.smali.dexlib2.iface.Field;
 import com.android.tools.smali.dexlib2.iface.Method;
+import com.android.tools.smali.dexlib2.iface.value.BooleanEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.ByteEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.CharEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.DoubleEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.EncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.FloatEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.IntEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.LongEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.ShortEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.StringEncodedValue;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /** One class in our own model. */
 public final class DexClass {
@@ -97,35 +106,35 @@ public final class DexClass {
      * those, exactly as today's no-value path behaves).
      */
     private static Object javaInitialValue(
-            com.android.tools.smali.dexlib2.iface.value.EncodedValue ev) {
-        if (ev instanceof com.android.tools.smali.dexlib2.iface.value.IntEncodedValue v) {
+            EncodedValue ev) {
+        if (ev instanceof IntEncodedValue v) {
             return v.getValue();
         }
-        if (ev instanceof com.android.tools.smali.dexlib2.iface.value.LongEncodedValue v) {
+        if (ev instanceof LongEncodedValue v) {
             return v.getValue();
         }
-        if (ev instanceof com.android.tools.smali.dexlib2.iface.value.ShortEncodedValue v) {
+        if (ev instanceof ShortEncodedValue v) {
             return v.getValue();
         }
-        if (ev instanceof com.android.tools.smali.dexlib2.iface.value.ByteEncodedValue v) {
+        if (ev instanceof ByteEncodedValue v) {
             return v.getValue();
         }
-        if (ev instanceof com.android.tools.smali.dexlib2.iface.value.CharEncodedValue v) {
+        if (ev instanceof CharEncodedValue v) {
             return v.getValue();
         }
-        if (ev instanceof com.android.tools.smali.dexlib2.iface.value.FloatEncodedValue v) {
-            return v.getValue();
-        }
-        if (ev instanceof
-                com.android.tools.smali.dexlib2.iface.value.DoubleEncodedValue v) {
+        if (ev instanceof FloatEncodedValue v) {
             return v.getValue();
         }
         if (ev instanceof
-                com.android.tools.smali.dexlib2.iface.value.BooleanEncodedValue v) {
+                DoubleEncodedValue v) {
             return v.getValue();
         }
         if (ev instanceof
-                com.android.tools.smali.dexlib2.iface.value.StringEncodedValue v) {
+                BooleanEncodedValue v) {
+            return v.getValue();
+        }
+        if (ev instanceof
+                StringEncodedValue v) {
             return v.getValue();
         }
         return null;

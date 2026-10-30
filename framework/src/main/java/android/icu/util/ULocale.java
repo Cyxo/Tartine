@@ -1,373 +1,379 @@
 package android.icu.util;
 
-    public class ULocale implements java.lang.Comparable<android.icu.util.ULocale>, java.io.Serializable {
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Set;
 
-    public static android.icu.util.ULocale CANADA;
-    public static android.icu.util.ULocale CANADA_FRENCH;
-    public static android.icu.util.ULocale CHINA;
-    public static android.icu.util.ULocale CHINESE;
-    public static android.icu.util.ULocale ENGLISH;
-    public static android.icu.util.ULocale FRANCE;
-    public static android.icu.util.ULocale FRENCH;
-    public static android.icu.util.ULocale GERMAN;
-    public static android.icu.util.ULocale GERMANY;
-    public static android.icu.util.ULocale ITALIAN;
-    public static android.icu.util.ULocale ITALY;
-    public static android.icu.util.ULocale JAPAN;
-    public static android.icu.util.ULocale JAPANESE;
-    public static android.icu.util.ULocale KOREA;
-    public static android.icu.util.ULocale KOREAN;
-    public static android.icu.util.ULocale PRC;
+    public class ULocale implements Comparable<ULocale>, Serializable {
+
+    public static ULocale CANADA;
+    public static ULocale CANADA_FRENCH;
+    public static ULocale CHINA;
+    public static ULocale CHINESE;
+    public static ULocale ENGLISH;
+    public static ULocale FRANCE;
+    public static ULocale FRENCH;
+    public static ULocale GERMAN;
+    public static ULocale GERMANY;
+    public static ULocale ITALIAN;
+    public static ULocale ITALY;
+    public static ULocale JAPAN;
+    public static ULocale JAPANESE;
+    public static ULocale KOREA;
+    public static ULocale KOREAN;
+    public static ULocale PRC;
     public static final char PRIVATE_USE_EXTENSION = 120;
-    public static android.icu.util.ULocale ROOT;
-    public static android.icu.util.ULocale SIMPLIFIED_CHINESE;
-    public static android.icu.util.ULocale TAIWAN;
-    public static android.icu.util.ULocale TRADITIONAL_CHINESE;
-    public static android.icu.util.ULocale UK;
+    public static ULocale ROOT;
+    public static ULocale SIMPLIFIED_CHINESE;
+    public static ULocale TAIWAN;
+    public static ULocale TRADITIONAL_CHINESE;
+    public static ULocale UK;
     public static final char UNICODE_LOCALE_EXTENSION = 117;
-    public static android.icu.util.ULocale US;
+    public static ULocale US;
 
-    public ULocale(java.lang.String arg0) {
+    public ULocale(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;-><init>(Ljava/lang/String;)V");
     }
 
-    public ULocale(java.lang.String arg0, java.lang.String arg1) {
+    public ULocale(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;-><init>(Ljava/lang/String;Ljava/lang/String;)V");
     }
 
-    public ULocale(java.lang.String arg0, java.lang.String arg1, java.lang.String arg2) {
+    public ULocale(String arg0, String arg1, String arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
     }
 
-    public static android.icu.util.ULocale acceptLanguage(android.icu.util.ULocale[] arg0, android.icu.util.ULocale[] arg1, boolean[] arg2) {
+    public static ULocale acceptLanguage(ULocale[] arg0, ULocale[] arg1, boolean[] arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->acceptLanguage([Landroid/icu/util/ULocale;[Landroid/icu/util/ULocale;[Z)Landroid/icu/util/ULocale;");
     }
 
-    public static android.icu.util.ULocale acceptLanguage(android.icu.util.ULocale[] arg0, boolean[] arg1) {
+    public static ULocale acceptLanguage(ULocale[] arg0, boolean[] arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->acceptLanguage([Landroid/icu/util/ULocale;[Z)Landroid/icu/util/ULocale;");
     }
 
-    public static android.icu.util.ULocale acceptLanguage(java.lang.String arg0, android.icu.util.ULocale[] arg1, boolean[] arg2) {
+    public static ULocale acceptLanguage(String arg0, ULocale[] arg1, boolean[] arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->acceptLanguage(Ljava/lang/String;[Landroid/icu/util/ULocale;[Z)Landroid/icu/util/ULocale;");
     }
 
-    public static android.icu.util.ULocale acceptLanguage(java.lang.String arg0, boolean[] arg1) {
+    public static ULocale acceptLanguage(String arg0, boolean[] arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->acceptLanguage(Ljava/lang/String;[Z)Landroid/icu/util/ULocale;");
     }
 
-    public static android.icu.util.ULocale addLikelySubtags(android.icu.util.ULocale arg0) {
+    public static ULocale addLikelySubtags(ULocale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->addLikelySubtags(Landroid/icu/util/ULocale;)Landroid/icu/util/ULocale;");
     }
 
-    public static java.lang.String canonicalize(java.lang.String arg0) {
+    public static String canonicalize(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->canonicalize(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.Object clone() {
+    public Object clone() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->clone()Ljava/lang/Object;");
     }
 
-    public int compareTo(android.icu.util.ULocale arg0) {
+    public int compareTo(ULocale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->compareTo(Landroid/icu/util/ULocale;)I");
     }
 
-    public static android.icu.util.ULocale createCanonical(android.icu.util.ULocale arg0) {
+    public static ULocale createCanonical(ULocale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->createCanonical(Landroid/icu/util/ULocale;)Landroid/icu/util/ULocale;");
     }
 
-    public static android.icu.util.ULocale createCanonical(java.lang.String arg0) {
+    public static ULocale createCanonical(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->createCanonical(Ljava/lang/String;)Landroid/icu/util/ULocale;");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->equals(Ljava/lang/Object;)Z");
     }
 
-    public static android.icu.util.ULocale forLanguageTag(java.lang.String arg0) {
+    public static ULocale forLanguageTag(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->forLanguageTag(Ljava/lang/String;)Landroid/icu/util/ULocale;");
     }
 
-    public static android.icu.util.ULocale forLocale(java.util.Locale arg0) {
+    public static ULocale forLocale(Locale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->forLocale(Ljava/util/Locale;)Landroid/icu/util/ULocale;");
     }
 
-    public static android.icu.util.ULocale[] getAvailableLocales() {
+    public static ULocale[] getAvailableLocales() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getAvailableLocales()[Landroid/icu/util/ULocale;");
     }
 
-    public static java.util.Collection<android.icu.util.ULocale> getAvailableLocalesByType(android.icu.util.ULocale.AvailableType arg0) {
+    public static Collection<ULocale> getAvailableLocalesByType(ULocale.AvailableType arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getAvailableLocalesByType(Landroid/icu/util/ULocale$AvailableType;)Ljava/util/Collection;");
     }
 
-    public java.lang.String getBaseName() {
+    public String getBaseName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getBaseName()Ljava/lang/String;");
     }
 
-    public static java.lang.String getBaseName(java.lang.String arg0) {
+    public static String getBaseName(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getBaseName(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getCharacterOrientation() {
+    public String getCharacterOrientation() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getCharacterOrientation()Ljava/lang/String;");
     }
 
-    public java.lang.String getCountry() {
+    public String getCountry() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getCountry()Ljava/lang/String;");
     }
 
-    public static java.lang.String getCountry(java.lang.String arg0) {
+    public static String getCountry(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getCountry(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public static android.icu.util.ULocale getDefault() {
+    public static ULocale getDefault() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDefault()Landroid/icu/util/ULocale;");
     }
 
-    public static android.icu.util.ULocale getDefault(android.icu.util.ULocale.Category arg0) {
+    public static ULocale getDefault(ULocale.Category arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDefault(Landroid/icu/util/ULocale$Category;)Landroid/icu/util/ULocale;");
     }
 
-    public java.lang.String getDisplayCountry() {
+    public String getDisplayCountry() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayCountry()Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayCountry(android.icu.util.ULocale arg0) {
+    public String getDisplayCountry(ULocale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayCountry(Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayCountry(java.lang.String arg0, android.icu.util.ULocale arg1) {
+    public static String getDisplayCountry(String arg0, ULocale arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayCountry(Ljava/lang/String;Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayCountry(java.lang.String arg0, java.lang.String arg1) {
+    public static String getDisplayCountry(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayCountry(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayKeyword(java.lang.String arg0) {
+    public static String getDisplayKeyword(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayKeyword(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayKeyword(java.lang.String arg0, android.icu.util.ULocale arg1) {
+    public static String getDisplayKeyword(String arg0, ULocale arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayKeyword(Ljava/lang/String;Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayKeyword(java.lang.String arg0, java.lang.String arg1) {
+    public static String getDisplayKeyword(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayKeyword(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayKeywordValue(java.lang.String arg0) {
+    public String getDisplayKeywordValue(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayKeywordValue(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayKeywordValue(java.lang.String arg0, android.icu.util.ULocale arg1) {
+    public String getDisplayKeywordValue(String arg0, ULocale arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayKeywordValue(Ljava/lang/String;Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayKeywordValue(java.lang.String arg0, java.lang.String arg1, android.icu.util.ULocale arg2) {
+    public static String getDisplayKeywordValue(String arg0, String arg1, ULocale arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayKeywordValue(Ljava/lang/String;Ljava/lang/String;Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayKeywordValue(java.lang.String arg0, java.lang.String arg1, java.lang.String arg2) {
+    public static String getDisplayKeywordValue(String arg0, String arg1, String arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayKeywordValue(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayLanguage() {
+    public String getDisplayLanguage() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayLanguage()Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayLanguage(android.icu.util.ULocale arg0) {
+    public String getDisplayLanguage(ULocale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayLanguage(Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayLanguage(java.lang.String arg0, android.icu.util.ULocale arg1) {
+    public static String getDisplayLanguage(String arg0, ULocale arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayLanguage(Ljava/lang/String;Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayLanguage(java.lang.String arg0, java.lang.String arg1) {
+    public static String getDisplayLanguage(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayLanguage(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayLanguageWithDialect() {
+    public String getDisplayLanguageWithDialect() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayLanguageWithDialect()Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayLanguageWithDialect(android.icu.util.ULocale arg0) {
+    public String getDisplayLanguageWithDialect(ULocale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayLanguageWithDialect(Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayLanguageWithDialect(java.lang.String arg0, android.icu.util.ULocale arg1) {
+    public static String getDisplayLanguageWithDialect(String arg0, ULocale arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayLanguageWithDialect(Ljava/lang/String;Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayLanguageWithDialect(java.lang.String arg0, java.lang.String arg1) {
+    public static String getDisplayLanguageWithDialect(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayLanguageWithDialect(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayName() {
+    public String getDisplayName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayName()Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayName(android.icu.util.ULocale arg0) {
+    public String getDisplayName(ULocale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayName(Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayName(java.lang.String arg0, android.icu.util.ULocale arg1) {
+    public static String getDisplayName(String arg0, ULocale arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayName(Ljava/lang/String;Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayName(java.lang.String arg0, java.lang.String arg1) {
+    public static String getDisplayName(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayName(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayNameWithDialect() {
+    public String getDisplayNameWithDialect() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayNameWithDialect()Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayNameWithDialect(android.icu.util.ULocale arg0) {
+    public String getDisplayNameWithDialect(ULocale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayNameWithDialect(Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayNameWithDialect(java.lang.String arg0, android.icu.util.ULocale arg1) {
+    public static String getDisplayNameWithDialect(String arg0, ULocale arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayNameWithDialect(Ljava/lang/String;Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayNameWithDialect(java.lang.String arg0, java.lang.String arg1) {
+    public static String getDisplayNameWithDialect(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayNameWithDialect(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayScript() {
+    public String getDisplayScript() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayScript()Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayScript(android.icu.util.ULocale arg0) {
+    public String getDisplayScript(ULocale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayScript(Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayScript(java.lang.String arg0, android.icu.util.ULocale arg1) {
+    public static String getDisplayScript(String arg0, ULocale arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayScript(Ljava/lang/String;Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayScript(java.lang.String arg0, java.lang.String arg1) {
+    public static String getDisplayScript(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayScript(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayVariant() {
+    public String getDisplayVariant() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayVariant()Ljava/lang/String;");
     }
 
-    public java.lang.String getDisplayVariant(android.icu.util.ULocale arg0) {
+    public String getDisplayVariant(ULocale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayVariant(Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayVariant(java.lang.String arg0, android.icu.util.ULocale arg1) {
+    public static String getDisplayVariant(String arg0, ULocale arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayVariant(Ljava/lang/String;Landroid/icu/util/ULocale;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getDisplayVariant(java.lang.String arg0, java.lang.String arg1) {
+    public static String getDisplayVariant(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getDisplayVariant(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getExtension(char arg0) {
+    public String getExtension(char arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getExtension(C)Ljava/lang/String;");
     }
 
-    public java.util.Set<java.lang.Character> getExtensionKeys() {
+    public Set<Character> getExtensionKeys() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getExtensionKeys()Ljava/util/Set;");
     }
 
-    public android.icu.util.ULocale getFallback() {
+    public ULocale getFallback() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getFallback()Landroid/icu/util/ULocale;");
     }
 
-    public static java.lang.String getFallback(java.lang.String arg0) {
+    public static String getFallback(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getFallback(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getISO3Country() {
+    public String getISO3Country() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getISO3Country()Ljava/lang/String;");
     }
 
-    public static java.lang.String getISO3Country(java.lang.String arg0) {
+    public static String getISO3Country(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getISO3Country(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getISO3Language() {
+    public String getISO3Language() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getISO3Language()Ljava/lang/String;");
     }
 
-    public static java.lang.String getISO3Language(java.lang.String arg0) {
+    public static String getISO3Language(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getISO3Language(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public static java.lang.String[] getISOCountries() {
+    public static String[] getISOCountries() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getISOCountries()[Ljava/lang/String;");
     }
 
-    public static java.lang.String[] getISOLanguages() {
+    public static String[] getISOLanguages() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getISOLanguages()[Ljava/lang/String;");
     }
 
-    public java.lang.String getKeywordValue(java.lang.String arg0) {
+    public String getKeywordValue(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getKeywordValue(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public static java.lang.String getKeywordValue(java.lang.String arg0, java.lang.String arg1) {
+    public static String getKeywordValue(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getKeywordValue(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.util.Iterator<java.lang.String> getKeywords() {
+    public Iterator<String> getKeywords() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getKeywords()Ljava/util/Iterator;");
     }
 
-    public static java.util.Iterator<java.lang.String> getKeywords(java.lang.String arg0) {
+    public static Iterator<String> getKeywords(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getKeywords(Ljava/lang/String;)Ljava/util/Iterator;");
     }
 
-    public java.lang.String getLanguage() {
+    public String getLanguage() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getLanguage()Ljava/lang/String;");
     }
 
-    public static java.lang.String getLanguage(java.lang.String arg0) {
+    public static String getLanguage(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getLanguage(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getLineOrientation() {
+    public String getLineOrientation() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getLineOrientation()Ljava/lang/String;");
     }
 
-    public java.lang.String getName() {
+    public String getName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getName()Ljava/lang/String;");
     }
 
-    public static java.lang.String getName(java.lang.String arg0) {
+    public static String getName(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getName(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getScript() {
+    public String getScript() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getScript()Ljava/lang/String;");
     }
 
-    public static java.lang.String getScript(java.lang.String arg0) {
+    public static String getScript(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getScript(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.util.Set<java.lang.String> getUnicodeLocaleAttributes() {
+    public Set<String> getUnicodeLocaleAttributes() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getUnicodeLocaleAttributes()Ljava/util/Set;");
     }
 
-    public java.util.Set<java.lang.String> getUnicodeLocaleKeys() {
+    public Set<String> getUnicodeLocaleKeys() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getUnicodeLocaleKeys()Ljava/util/Set;");
     }
 
-    public java.lang.String getUnicodeLocaleType(java.lang.String arg0) {
+    public String getUnicodeLocaleType(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getUnicodeLocaleType(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String getVariant() {
+    public String getVariant() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getVariant()Ljava/lang/String;");
     }
 
-    public static java.lang.String getVariant(java.lang.String arg0) {
+    public static String getVariant(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->getVariant(Ljava/lang/String;)Ljava/lang/String;");
     }
 
@@ -379,43 +385,43 @@ package android.icu.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->isRightToLeft()Z");
     }
 
-    public static android.icu.util.ULocale minimizeSubtags(android.icu.util.ULocale arg0) {
+    public static ULocale minimizeSubtags(ULocale arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->minimizeSubtags(Landroid/icu/util/ULocale;)Landroid/icu/util/ULocale;");
     }
 
-    public android.icu.util.ULocale setKeywordValue(java.lang.String arg0, java.lang.String arg1) {
+    public ULocale setKeywordValue(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->setKeywordValue(Ljava/lang/String;Ljava/lang/String;)Landroid/icu/util/ULocale;");
     }
 
-    public static java.lang.String setKeywordValue(java.lang.String arg0, java.lang.String arg1, java.lang.String arg2) {
+    public static String setKeywordValue(String arg0, String arg1, String arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->setKeywordValue(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.lang.String toLanguageTag() {
+    public String toLanguageTag() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->toLanguageTag()Ljava/lang/String;");
     }
 
-    public static java.lang.String toLegacyKey(java.lang.String arg0) {
+    public static String toLegacyKey(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->toLegacyKey(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public static java.lang.String toLegacyType(java.lang.String arg0, java.lang.String arg1) {
+    public static String toLegacyType(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->toLegacyType(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public java.util.Locale toLocale() {
+    public Locale toLocale() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->toLocale()Ljava/util/Locale;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->toString()Ljava/lang/String;");
     }
 
-    public static java.lang.String toUnicodeLocaleKey(java.lang.String arg0) {
+    public static String toUnicodeLocaleKey(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->toUnicodeLocaleKey(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public static java.lang.String toUnicodeLocaleType(java.lang.String arg0, java.lang.String arg1) {
+    public static String toUnicodeLocaleType(String arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/icu/util/ULocale;->toUnicodeLocaleType(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     }
 

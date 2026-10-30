@@ -1,5 +1,6 @@
 package tartine.config;
 
+import android.graphics.Paint;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -8,7 +9,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
 import tartine.fw.SystemColors;
 import tartine.fw.SystemResourceNames;
 import tartine.runtime.Vfs;
@@ -74,7 +74,7 @@ public final class HostConfig {
             String env = System.getenv("TARTINE_FONT_FAMILIES");
             List<String> families = parseFamilies(env);
             if (!families.isEmpty()) {
-                android.graphics.Paint.tartineSetPreferredFamilies(
+                Paint.tartineSetPreferredFamilies(
                         families.toArray(new String[0]));
             }
         }
@@ -94,7 +94,7 @@ public final class HostConfig {
                             + " (need a comma-separated family list)");
                     continue;
                 }
-                android.graphics.Paint.tartineSetPreferredFamilies(
+                Paint.tartineSetPreferredFamilies(
                         families.toArray(new String[0]));
             } else if (name.equals("sdcard.mount") || name.equals("sdcard.mount.readonly")) {
                 // Handled once below (order-independent read: readonly may

@@ -1,5 +1,7 @@
 package android.view.autofill;
 
+import android.view.View;
+
 /**
  * Autofill system-service handle (android.jar stub re-embodied as shell
  * Java). The desktop raises no autofill service, so every state query
@@ -30,7 +32,7 @@ public final class AutofillManager {
      * shaped methods early-return with no bound feature; the desktop has
      * none, so registration requests drop silently.
      */
-    public void requestShowFillDialog(android.view.View view, int virtualId,
+    public void requestShowFillDialog(View view, int virtualId,
             boolean force) {
     }
 
@@ -67,7 +69,7 @@ public final class AutofillManager {
          * AOSP .../AutofillManager.java:4754 onAutofillEvent(View, int):
          * the event hook; never invoked with no autofill service bound.
          */
-        public void onAutofillEvent(android.view.View view, int event) {
+        public void onAutofillEvent(View view, int event) {
         }
     }
 }

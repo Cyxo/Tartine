@@ -32,7 +32,7 @@ import tartine.gfx.GfxPicture;
     protected int mBottom;
 
     /** Substitutes nSetClipRect state (no read-back API used yet). */
-    protected android.graphics.Rect mClipRectState;
+    protected Rect mClipRectState;
 
     /**
      * Transform state ported from the same file: native-backed on device
@@ -68,7 +68,7 @@ import tartine.gfx.GfxPicture;
      * progress plus the finished recorded picture that drawRenderNode
      * replays.
      */
-    android.graphics.RecordingCanvas mCurrentRecordingCanvas;
+    RecordingCanvas mCurrentRecordingCanvas;
     GfxPicture tartinePicture;
 
     /** The sealed recorded picture, replayed by Canvas#drawRenderNode. */
@@ -81,15 +81,15 @@ import tartine.gfx.GfxPicture;
     }
 
     /** AOSP ctor keeps the name on the native side only; body is empty. */
-    public RenderNode(java.lang.String arg0) {
+    public RenderNode(String arg0) {
     }
 
-    public android.graphics.RecordingCanvas beginRecording() {
+    public RecordingCanvas beginRecording() {
         // AOSP RenderNode.java:505-507: records at the node's own size.
         return beginRecording(getWidth(), getHeight());
     }
 
-    public android.graphics.RecordingCanvas beginRecording(int arg0, int arg1) {
+    public RecordingCanvas beginRecording(int arg0, int arg1) {
         // AOSP RenderNode.java:485-492: one recording at a time.
         if (mCurrentRecordingCanvas != null) {
             throw new IllegalStateException(
@@ -171,7 +171,7 @@ import tartine.gfx.GfxPicture;
         return mBottom - mTop;
     }
 
-    public void getInverseMatrix(android.graphics.Matrix arg0) {
+    public void getInverseMatrix(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->getInverseMatrix(Landroid/graphics/Matrix;)V");
     }
 
@@ -180,7 +180,7 @@ import tartine.gfx.GfxPicture;
         return mLeft;
     }
 
-    public void getMatrix(android.graphics.Matrix arg0) {
+    public void getMatrix(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->getMatrix(Landroid/graphics/Matrix;)V");
     }
 
@@ -327,7 +327,7 @@ import tartine.gfx.GfxPicture;
      * native-backed there (nSetClipRect); substitutes a stored Rect and
      * returns whether the bounds changed.
      */
-    public boolean setClipRect(android.graphics.Rect arg0) {
+    public boolean setClipRect(Rect arg0) {
         boolean changed;
         if (mClipRectState == null ? arg0 != null
                 : !mClipRectState.equals(arg0)) {
@@ -337,7 +337,7 @@ import tartine.gfx.GfxPicture;
         }
         if (arg0 != null) {
             if (mClipRectState == null) {
-                mClipRectState = new android.graphics.Rect(arg0);
+                mClipRectState = new Rect(arg0);
             } else {
                 mClipRectState.set(arg0);
             }
@@ -373,7 +373,7 @@ import tartine.gfx.GfxPicture;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->setHasOverlappingRendering(Z)Z");
     }
 
-    public boolean setOutline(android.graphics.Outline arg0) {
+    public boolean setOutline(Outline arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->setOutline(Landroid/graphics/Outline;)Z");
     }
 
@@ -404,7 +404,7 @@ import tartine.gfx.GfxPicture;
      * native setLeftTopRightBottom on device; here one plain-core setter
      * backs them and returns whether the bounds changed.
      */
-    public boolean setPosition(android.graphics.Rect arg0) {
+    public boolean setPosition(Rect arg0) {
         return setLeftTopRightBottomCore(arg0.left, arg0.top, arg0.right, arg0.bottom);
     }
 
@@ -434,7 +434,7 @@ import tartine.gfx.GfxPicture;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->setProjectionReceiver(Z)Z");
     }
 
-    public boolean setRenderEffect(android.graphics.RenderEffect arg0) {
+    public boolean setRenderEffect(RenderEffect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->setRenderEffect(Landroid/graphics/RenderEffect;)Z");
     }
 
@@ -491,7 +491,7 @@ import tartine.gfx.GfxPicture;
         return changed;
     }
 
-    public boolean setUseCompositingLayer(boolean arg0, android.graphics.Paint arg1) {
+    public boolean setUseCompositingLayer(boolean arg0, Paint arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->setUseCompositingLayer(ZLandroid/graphics/Paint;)Z");
     }
 

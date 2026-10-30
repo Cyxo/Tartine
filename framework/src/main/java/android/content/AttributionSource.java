@@ -1,8 +1,11 @@
 package android.content;
 
-    public class AttributionSource implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class AttributionSource implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
 
     public boolean checkCallingUid() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/AttributionSource;->checkCallingUid()Z");
@@ -16,11 +19,11 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/AttributionSource;->enforceCallingUid()V");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/AttributionSource;->equals(Ljava/lang/Object;)Z");
     }
 
-    public java.lang.String getAttributionTag() {
+    public String getAttributionTag() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/AttributionSource;->getAttributionTag()Ljava/lang/String;");
     }
 
@@ -28,11 +31,11 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/AttributionSource;->getDeviceId()I");
     }
 
-    public android.content.AttributionSource getNext() {
+    public AttributionSource getNext() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/AttributionSource;->getNext()Landroid/content/AttributionSource;");
     }
 
-    public java.lang.String getPackageName() {
+    public String getPackageName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/AttributionSource;->getPackageName()Ljava/lang/String;");
     }
 
@@ -48,19 +51,19 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/AttributionSource;->hashCode()I");
     }
 
-    public boolean isTrusted(android.content.Context arg0) {
+    public boolean isTrusted(Context arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/AttributionSource;->isTrusted(Landroid/content/Context;)Z");
     }
 
-    public static android.content.AttributionSource myAttributionSource() {
+    public static AttributionSource myAttributionSource() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/AttributionSource;->myAttributionSource()Landroid/content/AttributionSource;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/AttributionSource;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/AttributionSource;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

@@ -2,5 +2,5 @@ package android.view;
 
     public interface OnReceiveContentListener {
 
-    public abstract android.view.ContentInfo onReceiveContent(android.view.View arg0, android.view.ContentInfo arg1);
+    public abstract ContentInfo onReceiveContent(View arg0, ContentInfo arg1);
     }

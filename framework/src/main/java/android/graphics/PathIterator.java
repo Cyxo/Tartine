@@ -1,6 +1,8 @@
 package android.graphics;
 
-    public class PathIterator implements java.util.Iterator<android.graphics.PathIterator.Segment> {
+import java.util.Iterator;
+
+    public class PathIterator implements Iterator<PathIterator.Segment> {
 
     public static final int VERB_CLOSE = 5;
     public static final int VERB_CONIC = 3;
@@ -14,7 +16,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PathIterator;->hasNext()Z");
     }
 
-    public android.graphics.PathIterator.Segment next() {
+    public PathIterator.Segment next() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PathIterator;->next()Landroid/graphics/PathIterator$Segment;");
     }
 

@@ -1,12 +1,12 @@
 package android.graphics;
 
-    public class BitmapShader extends android.graphics.Shader {
+    public class BitmapShader extends Shader {
 
     public static final int FILTER_MODE_DEFAULT = 0;
     public static final int FILTER_MODE_LINEAR = 2;
     public static final int FILTER_MODE_NEAREST = 1;
 
-    public BitmapShader(android.graphics.Bitmap arg0, android.graphics.Shader.TileMode arg1, android.graphics.Shader.TileMode arg2) {
+    public BitmapShader(Bitmap arg0, Shader.TileMode arg1, Shader.TileMode arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/BitmapShader;-><init>(Landroid/graphics/Bitmap;Landroid/graphics/Shader$TileMode;Landroid/graphics/Shader$TileMode;)V");
     }
 
@@ -26,7 +26,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/BitmapShader;->setMaxAnisotropy(I)V");
     }
 
-    public void setOverrideGainmap(android.graphics.Gainmap arg0) {
+    public void setOverrideGainmap(Gainmap arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/BitmapShader;->setOverrideGainmap(Landroid/graphics/Gainmap;)V");
     }
 

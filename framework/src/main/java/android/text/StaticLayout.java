@@ -1,10 +1,11 @@
 package android.text;
 
 import android.graphics.Paint;
+import android.graphics.text.LineBreakConfig;
 
 public class StaticLayout extends Layout {
     public CharSequence mText;
-    public android.text.TextPaint mPaint;
+    public TextPaint mPaint;
     public int mWidth;
     public int mHeight;
     public int mLineCount;
@@ -16,14 +17,14 @@ public class StaticLayout extends Layout {
 
     public StaticLayout() { }
 
-    private StaticLayout(CharSequence source, android.text.TextPaint paint, int width,
+    private StaticLayout(CharSequence source, TextPaint paint, int width,
             Layout.Alignment align, float spacingMult, float spacingAdd,
             boolean includePad, boolean fallbackLineSpacing) {
-        super(source == null ? "" : source, paint == null ? new android.text.TextPaint() : paint,
+        super(source == null ? "" : source, paint == null ? new TextPaint() : paint,
                 width, align == null ? Layout.Alignment.ALIGN_NORMAL : align,
                 spacingMult, spacingAdd, includePad);
         this.mText = (source == null ? "" : source);
-        this.mPaint = (paint == null ? new android.text.TextPaint() : paint);
+        this.mPaint = (paint == null ? new TextPaint() : paint);
         this.mWidth = (width <= 0 ? 480 : width);
         this.mLineCount = (mText.toString().isEmpty() ? 0 : 1);
         this.mFallbackLineSpacing = fallbackLineSpacing;
@@ -46,7 +47,7 @@ public class StaticLayout extends Layout {
         private CharSequence source = "";
         private int start = 0;
         private int end = 0;
-        private android.text.TextPaint paint = new android.text.TextPaint();
+        private TextPaint paint = new TextPaint();
         private int width = 0;
         private Layout.Alignment alignment = Layout.Alignment.ALIGN_NORMAL;
         private float spacingMul = Layout.DEFAULT_LINESPACING_MULTIPLIER;
@@ -63,7 +64,7 @@ public class StaticLayout extends Layout {
             b.start = Math.max(0, start);
             b.end = (end <= b.start ? b.source.length() : Math.min(b.source.length(), end));
             if (b.source.length() == 0) b.end = 0;
-            b.paint = (paint == null ? new android.text.TextPaint() : paint);
+            b.paint = (paint == null ? new TextPaint() : paint);
             b.width = width;
             return b;
         }
@@ -76,10 +77,10 @@ public class StaticLayout extends Layout {
         public Builder setIncludePad(boolean includepad) { this.includePad = includepad; return this; }
         public Builder setIndents(int[] first, int[] rest) { return this; }
         public Builder setJustificationMode(int mode) { return this; }
-        public Builder setLineBreakConfig(android.graphics.text.LineBreakConfig c) { return this; }
+        public Builder setLineBreakConfig(LineBreakConfig c) { return this; }
         public Builder setLineSpacing(float spacingAdd, float spacingMult) { this.spacingAdd = spacingAdd; this.spacingMul = spacingMult; return this; }
         public Builder setMaxLines(int maxLines) { this.maxLines = maxLines; return this; }
-        public Builder setMinimumFontMetrics(android.graphics.Paint.FontMetrics m) { return this; }
+        public Builder setMinimumFontMetrics(Paint.FontMetrics m) { return this; }
         public Builder setShiftDrawingOffsetForStartOverhang(boolean v) { return this; }
         public Builder setText(CharSequence text) { this.source = (text == null ? "" : text); if (this.end > this.source.length()) this.end=this.source.length(); return this; }
         public Builder setTextDirection(TextDirectionHeuristic heuristic) { return this; }

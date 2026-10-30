@@ -1,5 +1,7 @@
 package android.graphics;
 
+import android.graphics.fonts.Font;
+import android.graphics.text.MeasuredText;
 import tartine.gfx.GfxCanvas;
 import tartine.gfx.GfxClipMode;
 import tartine.gfx.GfxPaint;
@@ -69,19 +71,19 @@ import tartine.gfx.GfxRect;
         return canvas;
     }
 
-    public Canvas(android.graphics.Bitmap arg0) {
+    public Canvas(Bitmap arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;-><init>(Landroid/graphics/Bitmap;)V");
     }
 
-    public boolean clipOutPath(android.graphics.Path arg0) {
+    public boolean clipOutPath(Path arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->clipOutPath(Landroid/graphics/Path;)Z");
     }
 
-    public boolean clipOutRect(android.graphics.Rect arg0) {
+    public boolean clipOutRect(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->clipOutRect(Landroid/graphics/Rect;)Z");
     }
 
-    public boolean clipOutRect(android.graphics.RectF arg0) {
+    public boolean clipOutRect(RectF arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->clipOutRect(Landroid/graphics/RectF;)Z");
     }
 
@@ -93,19 +95,19 @@ import tartine.gfx.GfxRect;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->clipOutRect(IIII)Z");
     }
 
-    public void clipOutShader(android.graphics.Shader arg0) {
+    public void clipOutShader(Shader arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->clipOutShader(Landroid/graphics/Shader;)V");
     }
 
-    public boolean clipPath(android.graphics.Path arg0) {
+    public boolean clipPath(Path arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->clipPath(Landroid/graphics/Path;)Z");
     }
 
-    public boolean clipPath(android.graphics.Path arg0, android.graphics.Region.Op arg1) {
+    public boolean clipPath(Path arg0, Region.Op arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->clipPath(Landroid/graphics/Path;Landroid/graphics/Region$Op;)Z");
     }
 
-    public boolean clipRect(android.graphics.Rect arg0) {
+    public boolean clipRect(Rect arg0) {
         // AOSP Canvas.java clipRect(Rect) intersects the current clip with the
         // bounds; SkCanvas clips intersect by default (ClipOp.INTERSECT).
         boolean clipped = clipRect((float) arg0.left, (float) arg0.top,
@@ -113,16 +115,16 @@ import tartine.gfx.GfxRect;
         return clipped;
     }
 
-    public boolean clipRect(android.graphics.Rect arg0, android.graphics.Region.Op arg1) {
+    public boolean clipRect(Rect arg0, Region.Op arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->clipRect(Landroid/graphics/Rect;Landroid/graphics/Region$Op;)Z");
     }
 
-    public boolean clipRect(android.graphics.RectF arg0) {
+    public boolean clipRect(RectF arg0) {
         // AOSP Canvas.java: clipRect(RectF) = intersect with the current clip.
         return clipRect(arg0.left, arg0.top, arg0.right, arg0.bottom);
     }
 
-    public boolean clipRect(android.graphics.RectF arg0, android.graphics.Region.Op arg1) {
+    public boolean clipRect(RectF arg0, Region.Op arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->clipRect(Landroid/graphics/RectF;Landroid/graphics/Region$Op;)Z");
     }
 
@@ -146,17 +148,17 @@ import tartine.gfx.GfxRect;
         return true;
     }
 
-    public boolean clipRect(float arg0, float arg1, float arg2, float arg3, android.graphics.Region.Op arg4) {
+    public boolean clipRect(float arg0, float arg1, float arg2, float arg3, Region.Op arg4) {
         // AOSP Canvas.java:891-901 (clipRect(RectF,Op) body):
         // checkValidClipOp, then nClipRect with the op. As of P only
         // INTERSECT and DIFFERENCE reach the native leg — checkValidClipOp
         // (Canvas.java:847-854) throws for the rest, mirrored here.
-        if (arg4 != android.graphics.Region.Op.INTERSECT
-                && arg4 != android.graphics.Region.Op.DIFFERENCE) {
+        if (arg4 != Region.Op.INTERSECT
+                && arg4 != Region.Op.DIFFERENCE) {
             throw new IllegalArgumentException(
                     "Invalid Region.Op - only INTERSECT and DIFFERENCE are allowed");
         }
-        GfxClipMode mode = arg4 == android.graphics.Region.Op.DIFFERENCE
+        GfxClipMode mode = arg4 == Region.Op.DIFFERENCE
                 ? GfxClipMode.DIFFERENCE
                 : GfxClipMode.INTERSECT;
         return clipRectLtrb(arg0, arg1, arg2, arg3, mode);
@@ -167,15 +169,15 @@ import tartine.gfx.GfxRect;
         return clipRect((float) arg0, (float) arg1, (float) arg2, (float) arg3);
     }
 
-    public void clipShader(android.graphics.Shader arg0) {
+    public void clipShader(Shader arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->clipShader(Landroid/graphics/Shader;)V");
     }
 
-    public void concat(android.graphics.Matrix arg0) {
+    public void concat(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->concat(Landroid/graphics/Matrix;)V");
     }
 
-    public void concat(android.graphics.Matrix44 arg0) {
+    public void concat(Matrix44 arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->concat(Landroid/graphics/Matrix44;)V");
     }
 
@@ -188,43 +190,43 @@ import tartine.gfx.GfxRect;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawARGB(IIII)V");
     }
 
-    public void drawArc(android.graphics.RectF arg0, float arg1, float arg2, boolean arg3, android.graphics.Paint arg4) {
+    public void drawArc(RectF arg0, float arg1, float arg2, boolean arg3, Paint arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawArc(Landroid/graphics/RectF;FFZLandroid/graphics/Paint;)V");
     }
 
-    public void drawArc(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, boolean arg6, android.graphics.Paint arg7) {
+    public void drawArc(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, boolean arg6, Paint arg7) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawArc(FFFFFFZLandroid/graphics/Paint;)V");
     }
 
-    public void drawBitmap(android.graphics.Bitmap arg0, android.graphics.Matrix arg1, android.graphics.Paint arg2) {
+    public void drawBitmap(Bitmap arg0, Matrix arg1, Paint arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawBitmap(Landroid/graphics/Bitmap;Landroid/graphics/Matrix;Landroid/graphics/Paint;)V");
     }
 
-    public void drawBitmap(android.graphics.Bitmap arg0, android.graphics.Rect arg1, android.graphics.Rect arg2, android.graphics.Paint arg3) {
+    public void drawBitmap(Bitmap arg0, Rect arg1, Rect arg2, Paint arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawBitmap(Landroid/graphics/Bitmap;Landroid/graphics/Rect;Landroid/graphics/Rect;Landroid/graphics/Paint;)V");
     }
 
-    public void drawBitmap(android.graphics.Bitmap arg0, android.graphics.Rect arg1, android.graphics.RectF arg2, android.graphics.Paint arg3) {
+    public void drawBitmap(Bitmap arg0, Rect arg1, RectF arg2, Paint arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawBitmap(Landroid/graphics/Bitmap;Landroid/graphics/Rect;Landroid/graphics/RectF;Landroid/graphics/Paint;)V");
     }
 
-    public void drawBitmap(android.graphics.Bitmap arg0, float arg1, float arg2, android.graphics.Paint arg3) {
+    public void drawBitmap(Bitmap arg0, float arg1, float arg2, Paint arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawBitmap(Landroid/graphics/Bitmap;FFLandroid/graphics/Paint;)V");
     }
 
-    public void drawBitmap(int[] arg0, int arg1, int arg2, float arg3, float arg4, int arg5, int arg6, boolean arg7, android.graphics.Paint arg8) {
+    public void drawBitmap(int[] arg0, int arg1, int arg2, float arg3, float arg4, int arg5, int arg6, boolean arg7, Paint arg8) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawBitmap([IIIFFIIZLandroid/graphics/Paint;)V");
     }
 
-    public void drawBitmap(int[] arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, boolean arg7, android.graphics.Paint arg8) {
+    public void drawBitmap(int[] arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, boolean arg7, Paint arg8) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawBitmap([IIIIIIIZLandroid/graphics/Paint;)V");
     }
 
-    public void drawBitmapMesh(android.graphics.Bitmap arg0, int arg1, int arg2, float[] arg3, int arg4, int[] arg5, int arg6, android.graphics.Paint arg7) {
+    public void drawBitmapMesh(Bitmap arg0, int arg1, int arg2, float[] arg3, int arg4, int[] arg5, int arg6, Paint arg7) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawBitmapMesh(Landroid/graphics/Bitmap;II[FI[IILandroid/graphics/Paint;)V");
     }
 
-    public void drawCircle(float arg0, float arg1, float arg2, android.graphics.Paint arg3) {
+    public void drawCircle(float arg0, float arg1, float arg2, Paint arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawCircle(FFFLandroid/graphics/Paint;)V");
     }
 
@@ -235,11 +237,11 @@ import tartine.gfx.GfxRect;
         }
     }
 
-    public void drawColor(int arg0, android.graphics.BlendMode arg1) {
+    public void drawColor(int arg0, BlendMode arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawColor(ILandroid/graphics/BlendMode;)V");
     }
 
-    public void drawColor(int arg0, android.graphics.PorterDuff.Mode arg1) {
+    public void drawColor(int arg0, PorterDuff.Mode arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawColor(ILandroid/graphics/PorterDuff$Mode;)V");
     }
 
@@ -247,91 +249,91 @@ import tartine.gfx.GfxRect;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawColor(J)V");
     }
 
-    public void drawColor(long arg0, android.graphics.BlendMode arg1) {
+    public void drawColor(long arg0, BlendMode arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawColor(JLandroid/graphics/BlendMode;)V");
     }
 
-    public void drawDoubleRoundRect(android.graphics.RectF arg0, float arg1, float arg2, android.graphics.RectF arg3, float arg4, float arg5, android.graphics.Paint arg6) {
+    public void drawDoubleRoundRect(RectF arg0, float arg1, float arg2, RectF arg3, float arg4, float arg5, Paint arg6) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawDoubleRoundRect(Landroid/graphics/RectF;FFLandroid/graphics/RectF;FFLandroid/graphics/Paint;)V");
     }
 
-    public void drawDoubleRoundRect(android.graphics.RectF arg0, float[] arg1, android.graphics.RectF arg2, float[] arg3, android.graphics.Paint arg4) {
+    public void drawDoubleRoundRect(RectF arg0, float[] arg1, RectF arg2, float[] arg3, Paint arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawDoubleRoundRect(Landroid/graphics/RectF;[FLandroid/graphics/RectF;[FLandroid/graphics/Paint;)V");
     }
 
-    public void drawGlyphs(int[] arg0, int arg1, float[] arg2, int arg3, int arg4, android.graphics.fonts.Font arg5, android.graphics.Paint arg6) {
+    public void drawGlyphs(int[] arg0, int arg1, float[] arg2, int arg3, int arg4, Font arg5, Paint arg6) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawGlyphs([II[FIILandroid/graphics/fonts/Font;Landroid/graphics/Paint;)V");
     }
 
-    public void drawLine(float arg0, float arg1, float arg2, float arg3, android.graphics.Paint arg4) {
+    public void drawLine(float arg0, float arg1, float arg2, float arg3, Paint arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawLine(FFFFLandroid/graphics/Paint;)V");
     }
 
-    public void drawLines(float[] arg0, android.graphics.Paint arg1) {
+    public void drawLines(float[] arg0, Paint arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawLines([FLandroid/graphics/Paint;)V");
     }
 
-    public void drawLines(float[] arg0, int arg1, int arg2, android.graphics.Paint arg3) {
+    public void drawLines(float[] arg0, int arg1, int arg2, Paint arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawLines([FIILandroid/graphics/Paint;)V");
     }
 
-    public void drawMesh(android.graphics.Mesh arg0, android.graphics.BlendMode arg1, android.graphics.Paint arg2) {
+    public void drawMesh(Mesh arg0, BlendMode arg1, Paint arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawMesh(Landroid/graphics/Mesh;Landroid/graphics/BlendMode;Landroid/graphics/Paint;)V");
     }
 
-    public void drawOval(android.graphics.RectF arg0, android.graphics.Paint arg1) {
+    public void drawOval(RectF arg0, Paint arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawOval(Landroid/graphics/RectF;Landroid/graphics/Paint;)V");
     }
 
-    public void drawOval(float arg0, float arg1, float arg2, float arg3, android.graphics.Paint arg4) {
+    public void drawOval(float arg0, float arg1, float arg2, float arg3, Paint arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawOval(FFFFLandroid/graphics/Paint;)V");
     }
 
-    public void drawPaint(android.graphics.Paint arg0) {
+    public void drawPaint(Paint arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPaint(Landroid/graphics/Paint;)V");
     }
 
-    public void drawPatch(android.graphics.NinePatch arg0, android.graphics.Rect arg1, android.graphics.Paint arg2) {
+    public void drawPatch(NinePatch arg0, Rect arg1, Paint arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPatch(Landroid/graphics/NinePatch;Landroid/graphics/Rect;Landroid/graphics/Paint;)V");
     }
 
-    public void drawPatch(android.graphics.NinePatch arg0, android.graphics.RectF arg1, android.graphics.Paint arg2) {
+    public void drawPatch(NinePatch arg0, RectF arg1, Paint arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPatch(Landroid/graphics/NinePatch;Landroid/graphics/RectF;Landroid/graphics/Paint;)V");
     }
 
-    public void drawPath(android.graphics.Path arg0, android.graphics.Paint arg1) {
+    public void drawPath(Path arg0, Paint arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPath(Landroid/graphics/Path;Landroid/graphics/Paint;)V");
     }
 
-    public void drawPicture(android.graphics.Picture arg0) {
+    public void drawPicture(Picture arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPicture(Landroid/graphics/Picture;)V");
     }
 
-    public void drawPicture(android.graphics.Picture arg0, android.graphics.Rect arg1) {
+    public void drawPicture(Picture arg0, Rect arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPicture(Landroid/graphics/Picture;Landroid/graphics/Rect;)V");
     }
 
-    public void drawPicture(android.graphics.Picture arg0, android.graphics.RectF arg1) {
+    public void drawPicture(Picture arg0, RectF arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPicture(Landroid/graphics/Picture;Landroid/graphics/RectF;)V");
     }
 
-    public void drawPoint(float arg0, float arg1, android.graphics.Paint arg2) {
+    public void drawPoint(float arg0, float arg1, Paint arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPoint(FFLandroid/graphics/Paint;)V");
     }
 
-    public void drawPoints(float[] arg0, android.graphics.Paint arg1) {
+    public void drawPoints(float[] arg0, Paint arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPoints([FLandroid/graphics/Paint;)V");
     }
 
-    public void drawPoints(float[] arg0, int arg1, int arg2, android.graphics.Paint arg3) {
+    public void drawPoints(float[] arg0, int arg1, int arg2, Paint arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPoints([FIILandroid/graphics/Paint;)V");
     }
 
-    public void drawPosText(char[] arg0, int arg1, int arg2, float[] arg3, android.graphics.Paint arg4) {
+    public void drawPosText(char[] arg0, int arg1, int arg2, float[] arg3, Paint arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPosText([CII[FLandroid/graphics/Paint;)V");
     }
 
-    public void drawPosText(java.lang.String arg0, float[] arg1, android.graphics.Paint arg2) {
+    public void drawPosText(String arg0, float[] arg1, Paint arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPosText(Ljava/lang/String;[FLandroid/graphics/Paint;)V");
     }
 
@@ -339,17 +341,17 @@ import tartine.gfx.GfxRect;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawRGB(III)V");
     }
 
-    public void drawRect(android.graphics.Rect arg0, android.graphics.Paint arg1) {
+    public void drawRect(Rect arg0, Paint arg1) {
         // AOSP Canvas.drawRect(Rect, Paint): left/top/right/bottom to floats.
         drawRect((float) arg0.left, (float) arg0.top,
                 (float) arg0.right, (float) arg0.bottom, arg1);
     }
 
-    public void drawRect(android.graphics.RectF arg0, android.graphics.Paint arg1) {
+    public void drawRect(RectF arg0, Paint arg1) {
         drawRect(arg0.left, arg0.top, arg0.right, arg0.bottom, arg1);
     }
 
-    public void drawRect(float arg0, float arg1, float arg2, float arg3, android.graphics.Paint arg4) {
+    public void drawRect(float arg0, float arg1, float arg2, float arg3, Paint arg4) {
         // AOSP Canvas.drawRect(FFFF, Paint) per Canvas.java drawing section;
         // direct backend drawRect equivalent.
         if (gfx != null) {
@@ -357,11 +359,11 @@ import tartine.gfx.GfxRect;
         }
     }
 
-    public void drawRegion(android.graphics.Region arg0, android.graphics.Paint arg1) {
+    public void drawRegion(Region arg0, Paint arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawRegion(Landroid/graphics/Region;Landroid/graphics/Paint;)V");
     }
 
-    public void drawRenderNode(android.graphics.RenderNode arg0) {
+    public void drawRenderNode(RenderNode arg0) {
         // AOSP RecordingCanvas.java:172-180 (drawRenderNode -> nDrawRenderNode):
         // draws the recorded display list of the node onto this canvas.
         // Rootless recording-production variant also lands here once nodes
@@ -374,19 +376,19 @@ import tartine.gfx.GfxRect;
         }
     }
 
-    public void drawRoundRect(android.graphics.RectF arg0, float arg1, float arg2, android.graphics.Paint arg3) {
+    public void drawRoundRect(RectF arg0, float arg1, float arg2, Paint arg3) {
         // AOSP Canvas.drawRoundRect(RectF, rx, ry, Paint).
         drawRoundRect(arg0.left, arg0.top, arg0.right, arg0.bottom, arg1, arg2, arg3);
     }
 
-    public void drawRoundRect(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, android.graphics.Paint arg6) {
+    public void drawRoundRect(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, Paint arg6) {
         // AOSP Canvas.drawRoundRect(FFFFrr, Paint); direct backend RRect fill.
         if (gfx != null) {
             gfx.drawRoundRect(arg0, arg1, arg2, arg3, arg4, arg5, paintOf(arg6));
         }
     }
 
-    public void drawText(char[] arg0, int arg1, int arg2, float arg3, float arg4, android.graphics.Paint arg5) {
+    public void drawText(char[] arg0, int arg1, int arg2, float arg3, float arg4, Paint arg5) {
         // AOSP Canvas.java:2176-2180 drawText(char[], int, int, float, float,
         // Paint): base nDrawText contract — glyph baseline runs at (x.y).
         // The backend draws the substring with the paint's text size on the
@@ -394,19 +396,19 @@ import tartine.gfx.GfxRect;
         drawTextChars(String.valueOf(arg0, arg1, arg2), arg3, arg4, arg5);
     }
 
-    public void drawText(java.lang.CharSequence arg0, int arg1, int arg2, float arg3, float arg4, android.graphics.Paint arg5) {
+    public void drawText(CharSequence arg0, int arg1, int arg2, float arg3, float arg4, Paint arg5) {
         // AOSP Canvas.java:2221 drawText(CharSequence, int, int, float, float,
         // Paint) — same base contract; [start, end) slice.
         drawTextChars(arg0.subSequence(arg1, arg2).toString(), arg3, arg4, arg5);
     }
 
-    public void drawText(java.lang.String arg0, float arg1, float arg2, android.graphics.Paint arg3) {
+    public void drawText(String arg0, float arg1, float arg2, Paint arg3) {
         // AOSP Canvas.java:2190-2194 drawText(String, float, float, Paint) —
         // full-string base contract.
         drawTextChars(arg0, arg1, arg2, arg3);
     }
 
-    public void drawText(java.lang.String arg0, int arg1, int arg2, float arg3, float arg4, android.graphics.Paint arg5) {
+    public void drawText(String arg0, int arg1, int arg2, float arg3, float arg4, Paint arg5) {
         // AOSP Canvas.java:2205 drawText(String, int, int, float, float,
         // Paint) — [start, end) slice of the full-string contract.
         drawTextChars(arg0.substring(arg1, arg2), arg3, arg4, arg5);
@@ -415,35 +417,35 @@ import tartine.gfx.GfxRect;
     /** Shared drawText body: backend drawString at the baseline (padding
      *  none). Rootless canvases skip (no device to draw onto). The font is
      *  owned and cached by the Paint, so it is not closed here. */
-    private void drawTextChars(String text, float x, float y, android.graphics.Paint paint) {
+    private void drawTextChars(String text, float x, float y, Paint paint) {
         if (text == null || text.isEmpty()) return;
         if (gfx == null || paint == null) return;
         gfx.drawText(text, x, y, paint.tartineGfxFont(), paint.tartineGfx());
     }
 
-    public void drawTextOnPath(char[] arg0, int arg1, int arg2, android.graphics.Path arg3, float arg4, float arg5, android.graphics.Paint arg6) {
+    public void drawTextOnPath(char[] arg0, int arg1, int arg2, Path arg3, float arg4, float arg5, Paint arg6) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawTextOnPath([CIILandroid/graphics/Path;FFLandroid/graphics/Paint;)V");
     }
 
-    public void drawTextOnPath(java.lang.String arg0, android.graphics.Path arg1, float arg2, float arg3, android.graphics.Paint arg4) {
+    public void drawTextOnPath(String arg0, Path arg1, float arg2, float arg3, Paint arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawTextOnPath(Ljava/lang/String;Landroid/graphics/Path;FFLandroid/graphics/Paint;)V");
     }
 
-    public void drawTextRun(android.graphics.text.MeasuredText arg0, int arg1, int arg2, int arg3, int arg4, float arg5, float arg6, boolean arg7, android.graphics.Paint arg8) {
+    public void drawTextRun(MeasuredText arg0, int arg1, int arg2, int arg3, int arg4, float arg5, float arg6, boolean arg7, Paint arg8) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawTextRun(Landroid/graphics/text/MeasuredText;IIIIFFZLandroid/graphics/Paint;)V");
     }
 
-    public void drawTextRun(char[] text, int start, int end, int contextStart, int contextEnd, float x, float y, boolean isRtl, android.graphics.Paint paint) {
+    public void drawTextRun(char[] text, int start, int end, int contextStart, int contextEnd, float x, float y, boolean isRtl, Paint paint) {
         if (text == null || end <= start) return;
         drawTextChars(new String(text, start, end - start), x, y, paint);
     }
 
-    public void drawTextRun(java.lang.CharSequence text, int start, int end, int contextStart, int contextEnd, float x, float y, boolean isRtl, android.graphics.Paint paint) {
+    public void drawTextRun(CharSequence text, int start, int end, int contextStart, int contextEnd, float x, float y, boolean isRtl, Paint paint) {
         if (text == null || end <= start) return;
         try { drawTextChars(text.subSequence(start, end).toString(), x, y, paint); } catch (Exception e) { }
     }
 
-    public void drawVertices(android.graphics.Canvas.VertexMode arg0, int arg1, float[] arg2, int arg3, float[] arg4, int arg5, int[] arg6, int arg7, short[] arg8, int arg9, int arg10, android.graphics.Paint arg11) {
+    public void drawVertices(Canvas.VertexMode arg0, int arg1, float[] arg2, int arg3, float[] arg4, int arg5, int[] arg6, int arg7, short[] arg8, int arg9, int arg10, Paint arg11) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawVertices(Landroid/graphics/Canvas$VertexMode;I[FI[FI[II[SIILandroid/graphics/Paint;)V");
     }
 
@@ -452,7 +454,7 @@ import tartine.gfx.GfxRect;
         // support lands; see disableZ().
     }
 
-    public final android.graphics.Rect getClipBounds() {
+    public final Rect getClipBounds() {
         // AOSP Canvas.getClipBounds() allocates and fills the bound rect.
         Rect bounds = new Rect();
         if (gfx != null) {
@@ -468,7 +470,7 @@ import tartine.gfx.GfxRect;
         return bounds;
     }
 
-    public boolean getClipBounds(android.graphics.Rect arg0) {
+    public boolean getClipBounds(Rect arg0) {
         // AOSP Canvas.getClipBounds(Rect): sets the receiving rect or clears it.
         if (arg0 == null) {
             throw new NullPointerException("bounds must not be null");
@@ -494,7 +496,7 @@ import tartine.gfx.GfxRect;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->getDensity()I");
     }
 
-    public android.graphics.DrawFilter getDrawFilter() {
+    public DrawFilter getDrawFilter() {
         // AOSP Canvas.java:73: optional DrawFilter, unset by default.
         return mDrawFilter;
     }
@@ -507,11 +509,11 @@ import tartine.gfx.GfxRect;
         return 0;
     }
 
-    public final android.graphics.Matrix getMatrix() {
+    public final Matrix getMatrix() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->getMatrix()Landroid/graphics/Matrix;");
     }
 
-    public void getMatrix(android.graphics.Matrix arg0) {
+    public void getMatrix(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->getMatrix(Landroid/graphics/Matrix;)V");
     }
 
@@ -546,20 +548,20 @@ import tartine.gfx.GfxRect;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->isOpaque()Z");
     }
 
-    public boolean quickReject(android.graphics.Path arg0) {
+    public boolean quickReject(Path arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->quickReject(Landroid/graphics/Path;)Z");
     }
 
-    public boolean quickReject(android.graphics.Path arg0, android.graphics.Canvas.EdgeType arg1) {
+    public boolean quickReject(Path arg0, Canvas.EdgeType arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->quickReject(Landroid/graphics/Path;Landroid/graphics/Canvas$EdgeType;)Z");
     }
 
-    public boolean quickReject(android.graphics.RectF arg0) {
+    public boolean quickReject(RectF arg0) {
         // AOSP Canvas.quickReject(RectF) per Canvas.java.
         return quickReject(arg0.left, arg0.top, arg0.right, arg0.bottom);
     }
 
-    public boolean quickReject(android.graphics.RectF arg0, android.graphics.Canvas.EdgeType arg1) {
+    public boolean quickReject(RectF arg0, Canvas.EdgeType arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->quickReject(Landroid/graphics/RectF;Landroid/graphics/Canvas$EdgeType;)Z");
     }
 
@@ -572,7 +574,7 @@ import tartine.gfx.GfxRect;
         return false;
     }
 
-    public boolean quickReject(float arg0, float arg1, float arg2, float arg3, android.graphics.Canvas.EdgeType arg4) {
+    public boolean quickReject(float arg0, float arg1, float arg2, float arg3, Canvas.EdgeType arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->quickReject(FFFFLandroid/graphics/Canvas$EdgeType;)Z");
     }
 
@@ -581,7 +583,7 @@ import tartine.gfx.GfxRect;
         if (saveStack > 0 && gfx != null) {
             gfx.restore();
         }
-        saveStack = java.lang.Math.max(0, saveStack - 1);
+        saveStack = Math.max(0, saveStack - 1);
     }
 
     public void restoreToCount(int arg0) {
@@ -619,27 +621,27 @@ import tartine.gfx.GfxRect;
         return ++saveStack;
     }
 
-    public int saveLayer(android.graphics.RectF arg0, android.graphics.Paint arg1) {
+    public int saveLayer(RectF arg0, Paint arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->saveLayer(Landroid/graphics/RectF;Landroid/graphics/Paint;)I");
     }
 
-    public int saveLayer(android.graphics.RectF arg0, android.graphics.Paint arg1, int arg2) {
+    public int saveLayer(RectF arg0, Paint arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->saveLayer(Landroid/graphics/RectF;Landroid/graphics/Paint;I)I");
     }
 
-    public int saveLayer(float arg0, float arg1, float arg2, float arg3, android.graphics.Paint arg4) {
+    public int saveLayer(float arg0, float arg1, float arg2, float arg3, Paint arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->saveLayer(FFFFLandroid/graphics/Paint;)I");
     }
 
-    public int saveLayer(float arg0, float arg1, float arg2, float arg3, android.graphics.Paint arg4, int arg5) {
+    public int saveLayer(float arg0, float arg1, float arg2, float arg3, Paint arg4, int arg5) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->saveLayer(FFFFLandroid/graphics/Paint;I)I");
     }
 
-    public int saveLayerAlpha(android.graphics.RectF arg0, int arg1) {
+    public int saveLayerAlpha(RectF arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->saveLayerAlpha(Landroid/graphics/RectF;I)I");
     }
 
-    public int saveLayerAlpha(android.graphics.RectF arg0, int arg1, int arg2) {
+    public int saveLayerAlpha(RectF arg0, int arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->saveLayerAlpha(Landroid/graphics/RectF;II)I");
     }
 
@@ -665,7 +667,7 @@ import tartine.gfx.GfxRect;
         translate(-arg2, -arg3);
     }
 
-    public void setBitmap(android.graphics.Bitmap arg0) {
+    public void setBitmap(Bitmap arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->setBitmap(Landroid/graphics/Bitmap;)V");
     }
 
@@ -673,13 +675,13 @@ import tartine.gfx.GfxRect;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->setDensity(I)V");
     }
 
-    public void setDrawFilter(android.graphics.DrawFilter arg0) {
+    public void setDrawFilter(DrawFilter arg0) {
         // AOSP Canvas.java:73-74: stores the DrawFilter (filters apply during
         // draw; none applied yet — honest gap when a filter arrives).
         mDrawFilter = arg0;
     }
 
-    public void setMatrix(android.graphics.Matrix arg0) {
+    public void setMatrix(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->setMatrix(Landroid/graphics/Matrix;)V");
     }
 

@@ -1,51 +1,62 @@
 package android.view;
 
-    public interface WindowManager extends android.view.ViewManager {
+import android.graphics.PixelFormat;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.window.InputTransferToken;
+import android.window.TrustedPresentationThresholds;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+
+    public interface WindowManager extends ViewManager {
 
     public static final int COMPAT_SMALL_COVER_SCREEN_OPT_IN = 1;
-    public static final java.lang.String PROPERTY_ACTIVITY_EMBEDDING_ALLOW_SYSTEM_OVERRIDE = "android.window.PROPERTY_ACTIVITY_EMBEDDING_ALLOW_SYSTEM_OVERRIDE";
-    public static final java.lang.String PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED = "android.window.PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED";
-    public static final java.lang.String PROPERTY_CAMERA_COMPAT_ALLOW_FORCE_ROTATION = "android.window.PROPERTY_CAMERA_COMPAT_ALLOW_FORCE_ROTATION";
-    public static final java.lang.String PROPERTY_CAMERA_COMPAT_ALLOW_REFRESH = "android.window.PROPERTY_CAMERA_COMPAT_ALLOW_REFRESH";
-    public static final java.lang.String PROPERTY_CAMERA_COMPAT_ENABLE_REFRESH_VIA_PAUSE = "android.window.PROPERTY_CAMERA_COMPAT_ENABLE_REFRESH_VIA_PAUSE";
-    public static final java.lang.String PROPERTY_COMPAT_ALLOW_DISPLAY_ORIENTATION_OVERRIDE = "android.window.PROPERTY_COMPAT_ALLOW_DISPLAY_ORIENTATION_OVERRIDE";
-    public static final java.lang.String PROPERTY_COMPAT_ALLOW_IGNORING_ORIENTATION_REQUEST_WHEN_LOOP_DETECTED = "android.window.PROPERTY_COMPAT_ALLOW_IGNORING_ORIENTATION_REQUEST_WHEN_LOOP_DETECTED";
-    public static final java.lang.String PROPERTY_COMPAT_ALLOW_MIN_ASPECT_RATIO_OVERRIDE = "android.window.PROPERTY_COMPAT_ALLOW_MIN_ASPECT_RATIO_OVERRIDE";
-    public static final java.lang.String PROPERTY_COMPAT_ALLOW_ORIENTATION_OVERRIDE = "android.window.PROPERTY_COMPAT_ALLOW_ORIENTATION_OVERRIDE";
-    public static final java.lang.String PROPERTY_COMPAT_ALLOW_RESIZEABLE_ACTIVITY_OVERRIDES = "android.window.PROPERTY_COMPAT_ALLOW_RESIZEABLE_ACTIVITY_OVERRIDES";
-    public static final java.lang.String PROPERTY_COMPAT_ALLOW_SANDBOXING_VIEW_BOUNDS_APIS = "android.window.PROPERTY_COMPAT_ALLOW_SANDBOXING_VIEW_BOUNDS_APIS";
-    public static final java.lang.String PROPERTY_COMPAT_ALLOW_SMALL_COVER_SCREEN = "android.window.PROPERTY_COMPAT_ALLOW_SMALL_COVER_SCREEN";
-    public static final java.lang.String PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_FULLSCREEN_OVERRIDE = "android.window.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_FULLSCREEN_OVERRIDE";
-    public static final java.lang.String PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_OVERRIDE = "android.window.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_OVERRIDE";
-    public static final java.lang.String PROPERTY_COMPAT_ENABLE_FAKE_FOCUS = "android.window.PROPERTY_COMPAT_ENABLE_FAKE_FOCUS";
-    public static final java.lang.String PROPERTY_COMPAT_IGNORE_REQUESTED_ORIENTATION = "android.window.PROPERTY_COMPAT_IGNORE_REQUESTED_ORIENTATION";
-    public static final java.lang.String PROPERTY_SUPPORTS_MULTI_INSTANCE_SYSTEM_UI = "android.window.PROPERTY_SUPPORTS_MULTI_INSTANCE_SYSTEM_UI";
+    public static final String PROPERTY_ACTIVITY_EMBEDDING_ALLOW_SYSTEM_OVERRIDE = "android.window.PROPERTY_ACTIVITY_EMBEDDING_ALLOW_SYSTEM_OVERRIDE";
+    public static final String PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED = "android.window.PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED";
+    public static final String PROPERTY_CAMERA_COMPAT_ALLOW_FORCE_ROTATION = "android.window.PROPERTY_CAMERA_COMPAT_ALLOW_FORCE_ROTATION";
+    public static final String PROPERTY_CAMERA_COMPAT_ALLOW_REFRESH = "android.window.PROPERTY_CAMERA_COMPAT_ALLOW_REFRESH";
+    public static final String PROPERTY_CAMERA_COMPAT_ENABLE_REFRESH_VIA_PAUSE = "android.window.PROPERTY_CAMERA_COMPAT_ENABLE_REFRESH_VIA_PAUSE";
+    public static final String PROPERTY_COMPAT_ALLOW_DISPLAY_ORIENTATION_OVERRIDE = "android.window.PROPERTY_COMPAT_ALLOW_DISPLAY_ORIENTATION_OVERRIDE";
+    public static final String PROPERTY_COMPAT_ALLOW_IGNORING_ORIENTATION_REQUEST_WHEN_LOOP_DETECTED = "android.window.PROPERTY_COMPAT_ALLOW_IGNORING_ORIENTATION_REQUEST_WHEN_LOOP_DETECTED";
+    public static final String PROPERTY_COMPAT_ALLOW_MIN_ASPECT_RATIO_OVERRIDE = "android.window.PROPERTY_COMPAT_ALLOW_MIN_ASPECT_RATIO_OVERRIDE";
+    public static final String PROPERTY_COMPAT_ALLOW_ORIENTATION_OVERRIDE = "android.window.PROPERTY_COMPAT_ALLOW_ORIENTATION_OVERRIDE";
+    public static final String PROPERTY_COMPAT_ALLOW_RESIZEABLE_ACTIVITY_OVERRIDES = "android.window.PROPERTY_COMPAT_ALLOW_RESIZEABLE_ACTIVITY_OVERRIDES";
+    public static final String PROPERTY_COMPAT_ALLOW_SANDBOXING_VIEW_BOUNDS_APIS = "android.window.PROPERTY_COMPAT_ALLOW_SANDBOXING_VIEW_BOUNDS_APIS";
+    public static final String PROPERTY_COMPAT_ALLOW_SMALL_COVER_SCREEN = "android.window.PROPERTY_COMPAT_ALLOW_SMALL_COVER_SCREEN";
+    public static final String PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_FULLSCREEN_OVERRIDE = "android.window.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_FULLSCREEN_OVERRIDE";
+    public static final String PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_OVERRIDE = "android.window.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_OVERRIDE";
+    public static final String PROPERTY_COMPAT_ENABLE_FAKE_FOCUS = "android.window.PROPERTY_COMPAT_ENABLE_FAKE_FOCUS";
+    public static final String PROPERTY_COMPAT_IGNORE_REQUESTED_ORIENTATION = "android.window.PROPERTY_COMPAT_IGNORE_REQUESTED_ORIENTATION";
+    public static final String PROPERTY_SUPPORTS_MULTI_INSTANCE_SYSTEM_UI = "android.window.PROPERTY_SUPPORTS_MULTI_INSTANCE_SYSTEM_UI";
     public static final int SCREEN_RECORDING_STATE_NOT_VISIBLE = 0;
     public static final int SCREEN_RECORDING_STATE_VISIBLE = 1;
 
-    public default void addCrossWindowBlurEnabledListener(java.util.concurrent.Executor arg0, java.util.function.Consumer<java.lang.Boolean> arg1) {
+    public default void addCrossWindowBlurEnabledListener(Executor arg0, Consumer<Boolean> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->addCrossWindowBlurEnabledListener(Ljava/util/concurrent/Executor;Ljava/util/function/Consumer;)V");
     }
 
-    public default void addCrossWindowBlurEnabledListener(java.util.function.Consumer<java.lang.Boolean> arg0) {
+    public default void addCrossWindowBlurEnabledListener(Consumer<Boolean> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->addCrossWindowBlurEnabledListener(Ljava/util/function/Consumer;)V");
     }
 
-    public default void addProposedRotationListener(java.util.concurrent.Executor arg0, java.util.function.IntConsumer arg1) {
+    public default void addProposedRotationListener(Executor arg0, IntConsumer arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->addProposedRotationListener(Ljava/util/concurrent/Executor;Ljava/util/function/IntConsumer;)V");
     }
 
-    public default int addScreenRecordingCallback(java.util.concurrent.Executor arg0, java.util.function.Consumer<java.lang.Integer> arg1) {
+    public default int addScreenRecordingCallback(Executor arg0, Consumer<Integer> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->addScreenRecordingCallback(Ljava/util/concurrent/Executor;Ljava/util/function/Consumer;)I");
     }
 
-    public default android.view.WindowMetrics getCurrentWindowMetrics() {
+    public default WindowMetrics getCurrentWindowMetrics() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->getCurrentWindowMetrics()Landroid/view/WindowMetrics;");
     }
 
-    public abstract android.view.Display getDefaultDisplay();
+    public abstract Display getDefaultDisplay();
 
-    public default android.view.WindowMetrics getMaximumWindowMetrics() {
+    public default WindowMetrics getMaximumWindowMetrics() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->getMaximumWindowMetrics()Landroid/view/WindowMetrics;");
     }
 
@@ -53,51 +64,51 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->isCrossWindowBlurEnabled()Z");
     }
 
-    public default android.window.InputTransferToken registerBatchedSurfaceControlInputReceiver(android.window.InputTransferToken arg0, android.view.SurfaceControl arg1, android.view.Choreographer arg2, android.view.SurfaceControlInputReceiver arg3) {
+    public default InputTransferToken registerBatchedSurfaceControlInputReceiver(InputTransferToken arg0, SurfaceControl arg1, Choreographer arg2, SurfaceControlInputReceiver arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->registerBatchedSurfaceControlInputReceiver(Landroid/window/InputTransferToken;Landroid/view/SurfaceControl;Landroid/view/Choreographer;Landroid/view/SurfaceControlInputReceiver;)Landroid/window/InputTransferToken;");
     }
 
-    public default void registerTrustedPresentationListener(android.os.IBinder arg0, android.window.TrustedPresentationThresholds arg1, java.util.concurrent.Executor arg2, java.util.function.Consumer<java.lang.Boolean> arg3) {
+    public default void registerTrustedPresentationListener(IBinder arg0, TrustedPresentationThresholds arg1, Executor arg2, Consumer<Boolean> arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->registerTrustedPresentationListener(Landroid/os/IBinder;Landroid/window/TrustedPresentationThresholds;Ljava/util/concurrent/Executor;Ljava/util/function/Consumer;)V");
     }
 
-    public default android.window.InputTransferToken registerUnbatchedSurfaceControlInputReceiver(android.window.InputTransferToken arg0, android.view.SurfaceControl arg1, android.os.Looper arg2, android.view.SurfaceControlInputReceiver arg3) {
+    public default InputTransferToken registerUnbatchedSurfaceControlInputReceiver(InputTransferToken arg0, SurfaceControl arg1, Looper arg2, SurfaceControlInputReceiver arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->registerUnbatchedSurfaceControlInputReceiver(Landroid/window/InputTransferToken;Landroid/view/SurfaceControl;Landroid/os/Looper;Landroid/view/SurfaceControlInputReceiver;)Landroid/window/InputTransferToken;");
     }
 
-    public default void removeCrossWindowBlurEnabledListener(java.util.function.Consumer<java.lang.Boolean> arg0) {
+    public default void removeCrossWindowBlurEnabledListener(Consumer<Boolean> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->removeCrossWindowBlurEnabledListener(Ljava/util/function/Consumer;)V");
     }
 
-    public default void removeProposedRotationListener(java.util.function.IntConsumer arg0) {
+    public default void removeProposedRotationListener(IntConsumer arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->removeProposedRotationListener(Ljava/util/function/IntConsumer;)V");
     }
 
-    public default void removeScreenRecordingCallback(java.util.function.Consumer<java.lang.Integer> arg0) {
+    public default void removeScreenRecordingCallback(Consumer<Integer> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->removeScreenRecordingCallback(Ljava/util/function/Consumer;)V");
     }
 
-    public abstract void removeViewImmediate(android.view.View arg0);
+    public abstract void removeViewImmediate(View arg0);
 
-    public default boolean transferTouchGesture(android.window.InputTransferToken arg0, android.window.InputTransferToken arg1) {
+    public default boolean transferTouchGesture(InputTransferToken arg0, InputTransferToken arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->transferTouchGesture(Landroid/window/InputTransferToken;Landroid/window/InputTransferToken;)Z");
     }
 
-    public default void unregisterSurfaceControlInputReceiver(android.view.SurfaceControl arg0) {
+    public default void unregisterSurfaceControlInputReceiver(SurfaceControl arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->unregisterSurfaceControlInputReceiver(Landroid/view/SurfaceControl;)V");
     }
 
-    public default void unregisterTrustedPresentationListener(java.util.function.Consumer<java.lang.Boolean> arg0) {
+    public default void unregisterTrustedPresentationListener(Consumer<Boolean> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager;->unregisterTrustedPresentationListener(Ljava/util/function/Consumer;)V");
     }
-        public static class LayoutParams extends android.view.ViewGroup.LayoutParams implements android.os.Parcelable {
+        public static class LayoutParams extends ViewGroup.LayoutParams implements Parcelable {
 
         public static final int ALPHA_CHANGED = 128;
         public static final int ANIMATION_CHANGED = 16;
         public static final float BRIGHTNESS_OVERRIDE_FULL = 1.0f;
         public static final float BRIGHTNESS_OVERRIDE_NONE = -1.0f;
         public static final float BRIGHTNESS_OVERRIDE_OFF = 0.0f;
-        public static android.os.Parcelable.Creator CREATOR;
+        public static Parcelable.Creator CREATOR;
         public static final int DIM_AMOUNT_CHANGED = 32;
         public static final int DISPLAY_FLAG_DISABLE_HDR_CONVERSION = 1;
         public static final int FIRST_APPLICATION_WINDOW = 1;
@@ -206,7 +217,7 @@ package android.view;
         public float horizontalWeight;
         public int layoutInDisplayCutoutMode;
         public int memoryType;
-        public java.lang.String packageName;
+        public String packageName;
         public boolean preferMinimalPostProcessing;
         public int preferredDisplayModeId;
         public float preferredRefreshRate;
@@ -215,7 +226,7 @@ package android.view;
         public int screenOrientation;
         public int softInputMode;
         public int systemUiVisibility;
-        public android.os.IBinder token;
+        public IBinder token;
         public int type;
         public float verticalMargin;
         public float verticalWeight;
@@ -229,10 +240,10 @@ package android.view;
         public LayoutParams() {
             super(MATCH_PARENT, MATCH_PARENT);
             type = TYPE_APPLICATION;
-            format = android.graphics.PixelFormat.OPAQUE;
+            format = PixelFormat.OPAQUE;
         }
 
-        public LayoutParams(android.os.Parcel arg0) {
+        public LayoutParams(Parcel arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager$LayoutParams;-><init>(Landroid/os/Parcel;)V");
         }
 
@@ -264,11 +275,11 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager$LayoutParams;->canPlayMoveAnimation()Z");
         }
 
-        public final int copyFrom(android.view.WindowManager.LayoutParams arg0) {
+        public final int copyFrom(WindowManager.LayoutParams arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager$LayoutParams;->copyFrom(Landroid/view/WindowManager$LayoutParams;)I");
         }
 
-        public java.lang.String debug(java.lang.String arg0) {
+        public String debug(String arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager$LayoutParams;->debug(Ljava/lang/String;)Ljava/lang/String;");
         }
 
@@ -300,7 +311,7 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager$LayoutParams;->getFrameRateBoostOnTouchEnabled()Z");
         }
 
-        public final java.lang.CharSequence getTitle() {
+        public final CharSequence getTitle() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager$LayoutParams;->getTitle()Ljava/lang/CharSequence;");
         }
 
@@ -360,7 +371,7 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager$LayoutParams;->setHdrConversionEnabled(Z)V");
         }
 
-        public final void setTitle(java.lang.CharSequence arg0) {
+        public final void setTitle(CharSequence arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager$LayoutParams;->setTitle(Ljava/lang/CharSequence;)V");
         }
 
@@ -368,11 +379,11 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager$LayoutParams;->setWallpaperTouchEventsEnabled(Z)V");
         }
 
-        public java.lang.String toString() {
+        public String toString() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager$LayoutParams;->toString()Ljava/lang/String;");
         }
 
-        public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        public void writeToParcel(Parcel arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowManager$LayoutParams;->writeToParcel(Landroid/os/Parcel;I)V");
         }
         }

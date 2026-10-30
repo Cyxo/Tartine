@@ -1,6 +1,9 @@
 package android.widget;
 
-    public interface SpinnerAdapter extends android.widget.Adapter {
+import android.view.View;
+import android.view.ViewGroup;
 
-    public abstract android.view.View getDropDownView(int arg0, android.view.View arg1, android.view.ViewGroup arg2);
+    public interface SpinnerAdapter extends Adapter {
+
+    public abstract View getDropDownView(int arg0, View arg1, ViewGroup arg2);
     }

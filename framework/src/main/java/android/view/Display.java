@@ -1,5 +1,16 @@
 package android.view;
 
+import android.graphics.ColorSpace;
+import android.graphics.Point;
+import android.graphics.Rect;
+import android.hardware.OverlayProperties;
+import android.hardware.display.DeviceProductInfo;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.DisplayMetrics;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+
     public class Display {
 
     public static final int DEFAULT_DISPLAY = 0;
@@ -23,15 +34,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getAppVsyncOffsetNanos()J");
     }
 
-    public void getCurrentSizeRange(android.graphics.Point arg0, android.graphics.Point arg1) {
+    public void getCurrentSizeRange(Point arg0, Point arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getCurrentSizeRange(Landroid/graphics/Point;Landroid/graphics/Point;)V");
     }
 
-    public android.view.DisplayCutout getCutout() {
+    public DisplayCutout getCutout() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getCutout()Landroid/view/DisplayCutout;");
     }
 
-    public android.hardware.display.DeviceProductInfo getDeviceProductInfo() {
+    public DeviceProductInfo getDeviceProductInfo() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getDeviceProductInfo()Landroid/hardware/display/DeviceProductInfo;");
     }
 
@@ -43,7 +54,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getFlags()I");
     }
 
-    public android.view.Display.HdrCapabilities getHdrCapabilities() {
+    public Display.HdrCapabilities getHdrCapabilities() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getHdrCapabilities()Landroid/view/Display$HdrCapabilities;");
     }
 
@@ -59,15 +70,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getHighestHdrSdrRatio()F");
     }
 
-    public void getMetrics(android.util.DisplayMetrics arg0) {
+    public void getMetrics(DisplayMetrics arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getMetrics(Landroid/util/DisplayMetrics;)V");
     }
 
-    public android.view.Display.Mode getMode() {
+    public Display.Mode getMode() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getMode()Landroid/view/Display$Mode;");
     }
 
-    public java.lang.String getName() {
+    public String getName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getName()Ljava/lang/String;");
     }
 
@@ -75,7 +86,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getOrientation()I");
     }
 
-    public android.hardware.OverlayProperties getOverlaySupport() {
+    public OverlayProperties getOverlaySupport() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getOverlaySupport()Landroid/hardware/OverlayProperties;");
     }
 
@@ -83,7 +94,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getPixelFormat()I");
     }
 
-    public android.graphics.ColorSpace getPreferredWideGamutColorSpace() {
+    public ColorSpace getPreferredWideGamutColorSpace() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getPreferredWideGamutColorSpace()Landroid/graphics/ColorSpace;");
     }
 
@@ -91,15 +102,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getPresentationDeadlineNanos()J");
     }
 
-    public void getRealMetrics(android.util.DisplayMetrics arg0) {
+    public void getRealMetrics(DisplayMetrics arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getRealMetrics(Landroid/util/DisplayMetrics;)V");
     }
 
-    public void getRealSize(android.graphics.Point arg0) {
+    public void getRealSize(Point arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getRealSize(Landroid/graphics/Point;)V");
     }
 
-    public void getRectSize(android.graphics.Rect arg0) {
+    public void getRectSize(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getRectSize(Landroid/graphics/Rect;)V");
     }
 
@@ -111,15 +122,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getRotation()I");
     }
 
-    public android.view.RoundedCorner getRoundedCorner(int arg0) {
+    public RoundedCorner getRoundedCorner(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getRoundedCorner(I)Landroid/view/RoundedCorner;");
     }
 
-    public android.view.DisplayShape getShape() {
+    public DisplayShape getShape() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getShape()Landroid/view/DisplayShape;");
     }
 
-    public void getSize(android.graphics.Point arg0) {
+    public void getSize(Point arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getSize(Landroid/graphics/Point;)V");
     }
 
@@ -131,7 +142,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getSuggestedFrameRate(I)F");
     }
 
-    public android.view.Display.Mode[] getSupportedModes() {
+    public Display.Mode[] getSupportedModes() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->getSupportedModes()[Landroid/view/Display$Mode;");
     }
 
@@ -167,20 +178,20 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->isWideColorGamut()Z");
     }
 
-    public void registerHdrSdrRatioChangedListener(java.util.concurrent.Executor arg0, java.util.function.Consumer<android.view.Display> arg1) {
+    public void registerHdrSdrRatioChangedListener(Executor arg0, Consumer<Display> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->registerHdrSdrRatioChangedListener(Ljava/util/concurrent/Executor;Ljava/util/function/Consumer;)V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->toString()Ljava/lang/String;");
     }
 
-    public void unregisterHdrSdrRatioChangedListener(java.util.function.Consumer<android.view.Display> arg0) {
+    public void unregisterHdrSdrRatioChangedListener(Consumer<Display> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display;->unregisterHdrSdrRatioChangedListener(Ljava/util/function/Consumer;)V");
     }
-        public static class HdrCapabilities implements android.os.Parcelable {
+        public static class HdrCapabilities implements Parcelable {
 
-        public static android.os.Parcelable.Creator CREATOR;
+        public static Parcelable.Creator CREATOR;
         public static final int HDR_TYPE_DOLBY_VISION = 1;
         public static final int HDR_TYPE_HDR10 = 2;
         public static final int HDR_TYPE_HDR10_PLUS = 4;
@@ -192,7 +203,7 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display$HdrCapabilities;->describeContents()I");
         }
 
-        public boolean equals(java.lang.Object arg0) {
+        public boolean equals(Object arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display$HdrCapabilities;->equals(Ljava/lang/Object;)Z");
         }
 
@@ -216,23 +227,23 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display$HdrCapabilities;->hashCode()I");
         }
 
-        public java.lang.String toString() {
+        public String toString() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display$HdrCapabilities;->toString()Ljava/lang/String;");
         }
 
-        public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        public void writeToParcel(Parcel arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display$HdrCapabilities;->writeToParcel(Landroid/os/Parcel;I)V");
         }
         }
-        public static class Mode implements android.os.Parcelable {
+        public static class Mode implements Parcelable {
 
-        public static android.os.Parcelable.Creator CREATOR;
+        public static Parcelable.Creator CREATOR;
 
         public int describeContents() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display$Mode;->describeContents()I");
         }
 
-        public boolean equals(java.lang.Object arg0) {
+        public boolean equals(Object arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display$Mode;->equals(Ljava/lang/Object;)Z");
         }
 
@@ -264,11 +275,11 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display$Mode;->hashCode()I");
         }
 
-        public java.lang.String toString() {
+        public String toString() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display$Mode;->toString()Ljava/lang/String;");
         }
 
-        public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        public void writeToParcel(Parcel arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Display$Mode;->writeToParcel(Landroid/os/Parcel;I)V");
         }
         }

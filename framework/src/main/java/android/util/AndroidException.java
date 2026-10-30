@@ -6,23 +6,23 @@ package android.util;
  * aosp-frameworks-base/core/java/android/util/AndroidException.java:
  * "Base class for all checked exceptions thrown by the Android frameworks".
  */
-public class AndroidException extends java.lang.Exception {
+public class AndroidException extends Exception {
     public AndroidException() {
     }
 
-    public AndroidException(java.lang.String name) {
+    public AndroidException(String name) {
         super(name);
     }
 
-    public AndroidException(java.lang.String name, java.lang.Throwable cause) {
+    public AndroidException(String name, Throwable cause) {
         super(name, cause);
     }
 
-    public AndroidException(java.lang.Exception cause) {
+    public AndroidException(Exception cause) {
         super(cause);
     }
 
-    protected AndroidException(java.lang.String message, java.lang.Throwable cause,
+    protected AndroidException(String message, Throwable cause,
             boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }

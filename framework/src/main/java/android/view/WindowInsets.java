@@ -1,66 +1,71 @@
 package android.view;
 
+import android.graphics.Insets;
+import android.graphics.Rect;
+import android.util.Size;
+import java.util.List;
+
     public class WindowInsets {
 
-    public static android.view.WindowInsets CONSUMED;
+    public static WindowInsets CONSUMED;
 
-    public WindowInsets(android.view.WindowInsets arg0) {
+    public WindowInsets(WindowInsets arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;-><init>(Landroid/view/WindowInsets;)V");
     }
 
-    public android.view.WindowInsets consumeDisplayCutout() {
+    public WindowInsets consumeDisplayCutout() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->consumeDisplayCutout()Landroid/view/WindowInsets;");
     }
 
-    public android.view.WindowInsets consumeStableInsets() {
+    public WindowInsets consumeStableInsets() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->consumeStableInsets()Landroid/view/WindowInsets;");
     }
 
-    public android.view.WindowInsets consumeSystemWindowInsets() {
+    public WindowInsets consumeSystemWindowInsets() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->consumeSystemWindowInsets()Landroid/view/WindowInsets;");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->equals(Ljava/lang/Object;)Z");
     }
 
-    public java.util.List<android.graphics.Rect> getBoundingRects(int arg0) {
+    public List<Rect> getBoundingRects(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getBoundingRects(I)Ljava/util/List;");
     }
 
-    public java.util.List<android.graphics.Rect> getBoundingRectsIgnoringVisibility(int arg0) {
+    public List<Rect> getBoundingRectsIgnoringVisibility(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getBoundingRectsIgnoringVisibility(I)Ljava/util/List;");
     }
 
-    public android.view.DisplayCutout getDisplayCutout() {
+    public DisplayCutout getDisplayCutout() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getDisplayCutout()Landroid/view/DisplayCutout;");
     }
 
-    public android.view.DisplayShape getDisplayShape() {
+    public DisplayShape getDisplayShape() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getDisplayShape()Landroid/view/DisplayShape;");
     }
 
-    public android.util.Size getFrame() {
+    public Size getFrame() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getFrame()Landroid/util/Size;");
     }
 
-    public android.graphics.Insets getInsets(int arg0) {
+    public Insets getInsets(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getInsets(I)Landroid/graphics/Insets;");
     }
 
-    public android.graphics.Insets getInsetsIgnoringVisibility(int arg0) {
+    public Insets getInsetsIgnoringVisibility(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getInsetsIgnoringVisibility(I)Landroid/graphics/Insets;");
     }
 
-    public android.graphics.Insets getMandatorySystemGestureInsets() {
+    public Insets getMandatorySystemGestureInsets() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getMandatorySystemGestureInsets()Landroid/graphics/Insets;");
     }
 
-    public android.graphics.Rect getPrivacyIndicatorBounds() {
+    public Rect getPrivacyIndicatorBounds() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getPrivacyIndicatorBounds()Landroid/graphics/Rect;");
     }
 
-    public android.view.RoundedCorner getRoundedCorner(int arg0) {
+    public RoundedCorner getRoundedCorner(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getRoundedCorner(I)Landroid/view/RoundedCorner;");
     }
 
@@ -80,11 +85,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getStableInsetTop()I");
     }
 
-    public android.graphics.Insets getStableInsets() {
+    public Insets getStableInsets() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getStableInsets()Landroid/graphics/Insets;");
     }
 
-    public android.graphics.Insets getSystemGestureInsets() {
+    public Insets getSystemGestureInsets() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getSystemGestureInsets()Landroid/graphics/Insets;");
     }
 
@@ -104,11 +109,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getSystemWindowInsetTop()I");
     }
 
-    public android.graphics.Insets getSystemWindowInsets() {
+    public Insets getSystemWindowInsets() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getSystemWindowInsets()Landroid/graphics/Insets;");
     }
 
-    public android.graphics.Insets getTappableElementInsets() {
+    public Insets getTappableElementInsets() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->getTappableElementInsets()Landroid/graphics/Insets;");
     }
 
@@ -128,11 +133,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->hashCode()I");
     }
 
-    public android.view.WindowInsets inset(android.graphics.Insets arg0) {
+    public WindowInsets inset(Insets arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->inset(Landroid/graphics/Insets;)Landroid/view/WindowInsets;");
     }
 
-    public android.view.WindowInsets inset(int arg0, int arg1, int arg2, int arg3) {
+    public WindowInsets inset(int arg0, int arg1, int arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->inset(IIII)Landroid/view/WindowInsets;");
     }
 
@@ -148,15 +153,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->isVisible(I)Z");
     }
 
-    public android.view.WindowInsets replaceSystemWindowInsets(android.graphics.Rect arg0) {
+    public WindowInsets replaceSystemWindowInsets(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->replaceSystemWindowInsets(Landroid/graphics/Rect;)Landroid/view/WindowInsets;");
     }
 
-    public android.view.WindowInsets replaceSystemWindowInsets(int arg0, int arg1, int arg2, int arg3) {
+    public WindowInsets replaceSystemWindowInsets(int arg0, int arg1, int arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->replaceSystemWindowInsets(IIII)Landroid/view/WindowInsets;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsets;->toString()Ljava/lang/String;");
     }
 

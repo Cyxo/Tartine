@@ -1,6 +1,12 @@
 package android.database;
 
-    public interface Cursor extends java.io.Closeable {
+import android.content.ContentResolver;
+import android.net.Uri;
+import android.os.Bundle;
+import java.io.Closeable;
+import java.util.List;
+
+    public interface Cursor extends Closeable {
 
     public static final int FIELD_TYPE_BLOB = 4;
     public static final int FIELD_TYPE_FLOAT = 2;
@@ -10,7 +16,7 @@ package android.database;
 
     public abstract void close();
 
-    public abstract void copyStringToBuffer(int arg0, android.database.CharArrayBuffer arg1);
+    public abstract void copyStringToBuffer(int arg0, CharArrayBuffer arg1);
 
     public abstract void deactivate();
 
@@ -18,19 +24,19 @@ package android.database;
 
     public abstract int getColumnCount();
 
-    public abstract int getColumnIndex(java.lang.String arg0);
+    public abstract int getColumnIndex(String arg0);
 
-    public abstract int getColumnIndexOrThrow(java.lang.String arg0);
+    public abstract int getColumnIndexOrThrow(String arg0);
 
-    public abstract java.lang.String getColumnName(int arg0);
+    public abstract String getColumnName(int arg0);
 
-    public abstract java.lang.String[] getColumnNames();
+    public abstract String[] getColumnNames();
 
     public abstract int getCount();
 
     public abstract double getDouble(int arg0);
 
-    public abstract android.os.Bundle getExtras();
+    public abstract Bundle getExtras();
 
     public abstract float getFloat(int arg0);
 
@@ -38,9 +44,9 @@ package android.database;
 
     public abstract long getLong(int arg0);
 
-    public abstract android.net.Uri getNotificationUri();
+    public abstract Uri getNotificationUri();
 
-    public default java.util.List<android.net.Uri> getNotificationUris() {
+    public default List<Uri> getNotificationUris() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/Cursor;->getNotificationUris()Ljava/util/List;");
     }
 
@@ -48,7 +54,7 @@ package android.database;
 
     public abstract short getShort(int arg0);
 
-    public abstract java.lang.String getString(int arg0);
+    public abstract String getString(int arg0);
 
     public abstract int getType(int arg0);
 
@@ -78,23 +84,23 @@ package android.database;
 
     public abstract boolean moveToPrevious();
 
-    public abstract void registerContentObserver(android.database.ContentObserver arg0);
+    public abstract void registerContentObserver(ContentObserver arg0);
 
-    public abstract void registerDataSetObserver(android.database.DataSetObserver arg0);
+    public abstract void registerDataSetObserver(DataSetObserver arg0);
 
     public abstract boolean requery();
 
-    public abstract android.os.Bundle respond(android.os.Bundle arg0);
+    public abstract Bundle respond(Bundle arg0);
 
-    public abstract void setExtras(android.os.Bundle arg0);
+    public abstract void setExtras(Bundle arg0);
 
-    public abstract void setNotificationUri(android.content.ContentResolver arg0, android.net.Uri arg1);
+    public abstract void setNotificationUri(ContentResolver arg0, Uri arg1);
 
-    public default void setNotificationUris(android.content.ContentResolver arg0, java.util.List<android.net.Uri> arg1) {
+    public default void setNotificationUris(ContentResolver arg0, List<Uri> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/Cursor;->setNotificationUris(Landroid/content/ContentResolver;Ljava/util/List;)V");
     }
 
-    public abstract void unregisterContentObserver(android.database.ContentObserver arg0);
+    public abstract void unregisterContentObserver(ContentObserver arg0);
 
-    public abstract void unregisterDataSetObserver(android.database.DataSetObserver arg0);
+    public abstract void unregisterDataSetObserver(DataSetObserver arg0);
     }

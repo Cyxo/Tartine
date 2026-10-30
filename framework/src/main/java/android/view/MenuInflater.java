@@ -1,12 +1,14 @@
 package android.view;
 
+import android.content.Context;
+
     public class MenuInflater {
 
-    public MenuInflater(android.content.Context arg0) {
+    public MenuInflater(Context arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuInflater;-><init>(Landroid/content/Context;)V");
     }
 
-    public void inflate(int arg0, android.view.Menu arg1) {
+    public void inflate(int arg0, Menu arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuInflater;->inflate(ILandroid/view/Menu;)V");
     }
 

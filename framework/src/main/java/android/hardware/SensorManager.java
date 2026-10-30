@@ -1,5 +1,9 @@
 package android.hardware;
 
+import android.os.Handler;
+import android.os.MemoryFile;
+import java.util.List;
+
     public class SensorManager {
 
     public static final int AXIS_MINUS_X = 129;
@@ -61,19 +65,19 @@ package android.hardware;
     public static final int SENSOR_TRICORDER = 64;
     public static final float STANDARD_GRAVITY = 9.80665f;
 
-    public boolean cancelTriggerSensor(android.hardware.TriggerEventListener arg0, android.hardware.Sensor arg1) {
+    public boolean cancelTriggerSensor(TriggerEventListener arg0, Sensor arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->cancelTriggerSensor(Landroid/hardware/TriggerEventListener;Landroid/hardware/Sensor;)Z");
     }
 
-    public android.hardware.SensorDirectChannel createDirectChannel(android.hardware.HardwareBuffer arg0) {
+    public SensorDirectChannel createDirectChannel(HardwareBuffer arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->createDirectChannel(Landroid/hardware/HardwareBuffer;)Landroid/hardware/SensorDirectChannel;");
     }
 
-    public android.hardware.SensorDirectChannel createDirectChannel(android.os.MemoryFile arg0) {
+    public SensorDirectChannel createDirectChannel(MemoryFile arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->createDirectChannel(Landroid/os/MemoryFile;)Landroid/hardware/SensorDirectChannel;");
     }
 
-    public boolean flush(android.hardware.SensorEventListener arg0) {
+    public boolean flush(SensorEventListener arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->flush(Landroid/hardware/SensorEventListener;)Z");
     }
 
@@ -85,15 +89,15 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->getAngleChange([F[F[F)V");
     }
 
-    public android.hardware.Sensor getDefaultSensor(int arg0) {
+    public Sensor getDefaultSensor(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;");
     }
 
-    public android.hardware.Sensor getDefaultSensor(int arg0, boolean arg1) {
+    public Sensor getDefaultSensor(int arg0, boolean arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->getDefaultSensor(IZ)Landroid/hardware/Sensor;");
     }
 
-    public java.util.List<android.hardware.Sensor> getDynamicSensorList(int arg0) {
+    public List<Sensor> getDynamicSensorList(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->getDynamicSensorList(I)Ljava/util/List;");
     }
 
@@ -117,7 +121,7 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->getRotationMatrixFromVector([F[F)V");
     }
 
-    public java.util.List<android.hardware.Sensor> getSensorList(int arg0) {
+    public List<Sensor> getSensorList(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->getSensorList(I)Ljava/util/List;");
     }
 
@@ -129,35 +133,35 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->isDynamicSensorDiscoverySupported()Z");
     }
 
-    public void registerDynamicSensorCallback(android.hardware.SensorManager.DynamicSensorCallback arg0) {
+    public void registerDynamicSensorCallback(SensorManager.DynamicSensorCallback arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->registerDynamicSensorCallback(Landroid/hardware/SensorManager$DynamicSensorCallback;)V");
     }
 
-    public void registerDynamicSensorCallback(android.hardware.SensorManager.DynamicSensorCallback arg0, android.os.Handler arg1) {
+    public void registerDynamicSensorCallback(SensorManager.DynamicSensorCallback arg0, Handler arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->registerDynamicSensorCallback(Landroid/hardware/SensorManager$DynamicSensorCallback;Landroid/os/Handler;)V");
     }
 
-    public boolean registerListener(android.hardware.SensorEventListener arg0, android.hardware.Sensor arg1, int arg2) {
+    public boolean registerListener(SensorEventListener arg0, Sensor arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z");
     }
 
-    public boolean registerListener(android.hardware.SensorEventListener arg0, android.hardware.Sensor arg1, int arg2, android.os.Handler arg3) {
+    public boolean registerListener(SensorEventListener arg0, Sensor arg1, int arg2, Handler arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;ILandroid/os/Handler;)Z");
     }
 
-    public boolean registerListener(android.hardware.SensorEventListener arg0, android.hardware.Sensor arg1, int arg2, int arg3) {
+    public boolean registerListener(SensorEventListener arg0, Sensor arg1, int arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;II)Z");
     }
 
-    public boolean registerListener(android.hardware.SensorEventListener arg0, android.hardware.Sensor arg1, int arg2, int arg3, android.os.Handler arg4) {
+    public boolean registerListener(SensorEventListener arg0, Sensor arg1, int arg2, int arg3, Handler arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;IILandroid/os/Handler;)Z");
     }
 
-    public boolean registerListener(android.hardware.SensorListener arg0, int arg1) {
+    public boolean registerListener(SensorListener arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorListener;I)Z");
     }
 
-    public boolean registerListener(android.hardware.SensorListener arg0, int arg1, int arg2) {
+    public boolean registerListener(SensorListener arg0, int arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorListener;II)Z");
     }
 
@@ -165,27 +169,27 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->remapCoordinateSystem([FII[F)Z");
     }
 
-    public boolean requestTriggerSensor(android.hardware.TriggerEventListener arg0, android.hardware.Sensor arg1) {
+    public boolean requestTriggerSensor(TriggerEventListener arg0, Sensor arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->requestTriggerSensor(Landroid/hardware/TriggerEventListener;Landroid/hardware/Sensor;)Z");
     }
 
-    public void unregisterDynamicSensorCallback(android.hardware.SensorManager.DynamicSensorCallback arg0) {
+    public void unregisterDynamicSensorCallback(SensorManager.DynamicSensorCallback arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->unregisterDynamicSensorCallback(Landroid/hardware/SensorManager$DynamicSensorCallback;)V");
     }
 
-    public void unregisterListener(android.hardware.SensorEventListener arg0) {
+    public void unregisterListener(SensorEventListener arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->unregisterListener(Landroid/hardware/SensorEventListener;)V");
     }
 
-    public void unregisterListener(android.hardware.SensorEventListener arg0, android.hardware.Sensor arg1) {
+    public void unregisterListener(SensorEventListener arg0, Sensor arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->unregisterListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;)V");
     }
 
-    public void unregisterListener(android.hardware.SensorListener arg0) {
+    public void unregisterListener(SensorListener arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->unregisterListener(Landroid/hardware/SensorListener;)V");
     }
 
-    public void unregisterListener(android.hardware.SensorListener arg0, int arg1) {
+    public void unregisterListener(SensorListener arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager;->unregisterListener(Landroid/hardware/SensorListener;I)V");
     }
         public static class DynamicSensorCallback {
@@ -194,11 +198,11 @@ package android.hardware;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager$DynamicSensorCallback;-><init>()V");
         }
 
-        public void onDynamicSensorConnected(android.hardware.Sensor arg0) {
+        public void onDynamicSensorConnected(Sensor arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager$DynamicSensorCallback;->onDynamicSensorConnected(Landroid/hardware/Sensor;)V");
         }
 
-        public void onDynamicSensorDisconnected(android.hardware.Sensor arg0) {
+        public void onDynamicSensorDisconnected(Sensor arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorManager$DynamicSensorCallback;->onDynamicSensorDisconnected(Landroid/hardware/Sensor;)V");
         }
         }

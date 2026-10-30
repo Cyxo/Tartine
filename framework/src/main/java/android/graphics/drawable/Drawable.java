@@ -1,12 +1,28 @@
 package android.graphics.drawable;
 
+import android.content.res.ColorStateList;
+import android.content.res.Resources;
+import android.graphics.BitmapFactory;
+import android.graphics.BlendMode;
+import android.graphics.Canvas;
+import android.graphics.ColorFilter;
+import android.graphics.Insets;
+import android.graphics.Outline;
+import android.graphics.PorterDuff;
+import android.graphics.Rect;
+import android.graphics.Region;
+import android.util.AttributeSet;
+import android.util.TypedValue;
+import java.io.InputStream;
+import org.xmlpull.v1.XmlPullParser;
+
     public class Drawable {
 
     public Drawable() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;-><init>()V");
     }
 
-    public void applyTheme(android.content.res.Resources.Theme arg0) {
+    public void applyTheme(Resources.Theme arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->applyTheme(Landroid/content/res/Resources$Theme;)V");
     }
 
@@ -18,47 +34,47 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->clearColorFilter()V");
     }
 
-    public final android.graphics.Rect copyBounds() {
+    public final Rect copyBounds() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->copyBounds()Landroid/graphics/Rect;");
     }
 
-    public final void copyBounds(android.graphics.Rect arg0) {
+    public final void copyBounds(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->copyBounds(Landroid/graphics/Rect;)V");
     }
 
-    public static android.graphics.drawable.Drawable createFromPath(java.lang.String arg0) {
+    public static Drawable createFromPath(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->createFromPath(Ljava/lang/String;)Landroid/graphics/drawable/Drawable;");
     }
 
-    public static android.graphics.drawable.Drawable createFromResourceStream(android.content.res.Resources arg0, android.util.TypedValue arg1, java.io.InputStream arg2, java.lang.String arg3) {
+    public static Drawable createFromResourceStream(Resources arg0, TypedValue arg1, InputStream arg2, String arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->createFromResourceStream(Landroid/content/res/Resources;Landroid/util/TypedValue;Ljava/io/InputStream;Ljava/lang/String;)Landroid/graphics/drawable/Drawable;");
     }
 
-    public static android.graphics.drawable.Drawable createFromResourceStream(android.content.res.Resources arg0, android.util.TypedValue arg1, java.io.InputStream arg2, java.lang.String arg3, android.graphics.BitmapFactory.Options arg4) {
+    public static Drawable createFromResourceStream(Resources arg0, TypedValue arg1, InputStream arg2, String arg3, BitmapFactory.Options arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->createFromResourceStream(Landroid/content/res/Resources;Landroid/util/TypedValue;Ljava/io/InputStream;Ljava/lang/String;Landroid/graphics/BitmapFactory$Options;)Landroid/graphics/drawable/Drawable;");
     }
 
-    public static android.graphics.drawable.Drawable createFromStream(java.io.InputStream arg0, java.lang.String arg1) {
+    public static Drawable createFromStream(InputStream arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->createFromStream(Ljava/io/InputStream;Ljava/lang/String;)Landroid/graphics/drawable/Drawable;");
     }
 
-    public static android.graphics.drawable.Drawable createFromXml(android.content.res.Resources arg0, org.xmlpull.v1.XmlPullParser arg1) {
+    public static Drawable createFromXml(Resources arg0, XmlPullParser arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->createFromXml(Landroid/content/res/Resources;Lorg/xmlpull/v1/XmlPullParser;)Landroid/graphics/drawable/Drawable;");
     }
 
-    public static android.graphics.drawable.Drawable createFromXml(android.content.res.Resources arg0, org.xmlpull.v1.XmlPullParser arg1, android.content.res.Resources.Theme arg2) {
+    public static Drawable createFromXml(Resources arg0, XmlPullParser arg1, Resources.Theme arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->createFromXml(Landroid/content/res/Resources;Lorg/xmlpull/v1/XmlPullParser;Landroid/content/res/Resources$Theme;)Landroid/graphics/drawable/Drawable;");
     }
 
-    public static android.graphics.drawable.Drawable createFromXmlInner(android.content.res.Resources arg0, org.xmlpull.v1.XmlPullParser arg1, android.util.AttributeSet arg2) {
+    public static Drawable createFromXmlInner(Resources arg0, XmlPullParser arg1, AttributeSet arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->createFromXmlInner(Landroid/content/res/Resources;Lorg/xmlpull/v1/XmlPullParser;Landroid/util/AttributeSet;)Landroid/graphics/drawable/Drawable;");
     }
 
-    public static android.graphics.drawable.Drawable createFromXmlInner(android.content.res.Resources arg0, org.xmlpull.v1.XmlPullParser arg1, android.util.AttributeSet arg2, android.content.res.Resources.Theme arg3) {
+    public static Drawable createFromXmlInner(Resources arg0, XmlPullParser arg1, AttributeSet arg2, Resources.Theme arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->createFromXmlInner(Landroid/content/res/Resources;Lorg/xmlpull/v1/XmlPullParser;Landroid/util/AttributeSet;Landroid/content/res/Resources$Theme;)Landroid/graphics/drawable/Drawable;");
     }
 
-    public void draw(android.graphics.Canvas arg0) {
+    public void draw(Canvas arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->draw(Landroid/graphics/Canvas;)V");
     }
 
@@ -66,11 +82,11 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getAlpha()I");
     }
 
-    public final android.graphics.Rect getBounds() {
+    public final Rect getBounds() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getBounds()Landroid/graphics/Rect;");
     }
 
-    public android.graphics.drawable.Drawable.Callback getCallback() {
+    public Drawable.Callback getCallback() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getCallback()Landroid/graphics/drawable/Drawable$Callback;");
     }
 
@@ -78,23 +94,23 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getChangingConfigurations()I");
     }
 
-    public android.graphics.ColorFilter getColorFilter() {
+    public ColorFilter getColorFilter() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getColorFilter()Landroid/graphics/ColorFilter;");
     }
 
-    public android.graphics.drawable.Drawable.ConstantState getConstantState() {
+    public Drawable.ConstantState getConstantState() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getConstantState()Landroid/graphics/drawable/Drawable$ConstantState;");
     }
 
-    public android.graphics.drawable.Drawable getCurrent() {
+    public Drawable getCurrent() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getCurrent()Landroid/graphics/drawable/Drawable;");
     }
 
-    public android.graphics.Rect getDirtyBounds() {
+    public Rect getDirtyBounds() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getDirtyBounds()Landroid/graphics/Rect;");
     }
 
-    public void getHotspotBounds(android.graphics.Rect arg0) {
+    public void getHotspotBounds(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getHotspotBounds(Landroid/graphics/Rect;)V");
     }
 
@@ -126,15 +142,15 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getOpacity()I");
     }
 
-    public android.graphics.Insets getOpticalInsets() {
+    public Insets getOpticalInsets() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getOpticalInsets()Landroid/graphics/Insets;");
     }
 
-    public void getOutline(android.graphics.Outline arg0) {
+    public void getOutline(Outline arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getOutline(Landroid/graphics/Outline;)V");
     }
 
-    public boolean getPadding(android.graphics.Rect arg0) {
+    public boolean getPadding(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getPadding(Landroid/graphics/Rect;)Z");
     }
 
@@ -142,7 +158,7 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getState()[I");
     }
 
-    public android.graphics.Region getTransparentRegion() {
+    public Region getTransparentRegion() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->getTransparentRegion()Landroid/graphics/Region;");
     }
 
@@ -150,11 +166,11 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->hasFocusStateSpecified()Z");
     }
 
-    public void inflate(android.content.res.Resources arg0, org.xmlpull.v1.XmlPullParser arg1, android.util.AttributeSet arg2) {
+    public void inflate(Resources arg0, XmlPullParser arg1, AttributeSet arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->inflate(Landroid/content/res/Resources;Lorg/xmlpull/v1/XmlPullParser;Landroid/util/AttributeSet;)V");
     }
 
-    public void inflate(android.content.res.Resources arg0, org.xmlpull.v1.XmlPullParser arg1, android.util.AttributeSet arg2, android.content.res.Resources.Theme arg3) {
+    public void inflate(Resources arg0, XmlPullParser arg1, AttributeSet arg2, Resources.Theme arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->inflate(Landroid/content/res/Resources;Lorg/xmlpull/v1/XmlPullParser;Landroid/util/AttributeSet;Landroid/content/res/Resources$Theme;)V");
     }
 
@@ -186,11 +202,11 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->jumpToCurrentState()V");
     }
 
-    public android.graphics.drawable.Drawable mutate() {
+    public Drawable mutate() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->mutate()Landroid/graphics/drawable/Drawable;");
     }
 
-    protected void onBoundsChange(android.graphics.Rect arg0) {
+    protected void onBoundsChange(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->onBoundsChange(Landroid/graphics/Rect;)V");
     }
 
@@ -210,7 +226,7 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->resolveOpacity(II)I");
     }
 
-    public void scheduleSelf(java.lang.Runnable arg0, long arg1) {
+    public void scheduleSelf(Runnable arg0, long arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->scheduleSelf(Ljava/lang/Runnable;J)V");
     }
 
@@ -222,7 +238,7 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->setAutoMirrored(Z)V");
     }
 
-    public void setBounds(android.graphics.Rect arg0) {
+    public void setBounds(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->setBounds(Landroid/graphics/Rect;)V");
     }
 
@@ -230,7 +246,7 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->setBounds(IIII)V");
     }
 
-    public final void setCallback(android.graphics.drawable.Drawable.Callback arg0) {
+    public final void setCallback(Drawable.Callback arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->setCallback(Landroid/graphics/drawable/Drawable$Callback;)V");
     }
 
@@ -238,11 +254,11 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->setChangingConfigurations(I)V");
     }
 
-    public void setColorFilter(android.graphics.ColorFilter arg0) {
+    public void setColorFilter(ColorFilter arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->setColorFilter(Landroid/graphics/ColorFilter;)V");
     }
 
-    public void setColorFilter(int arg0, android.graphics.PorterDuff.Mode arg1) {
+    public void setColorFilter(int arg0, PorterDuff.Mode arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->setColorFilter(ILandroid/graphics/PorterDuff$Mode;)V");
     }
 
@@ -278,15 +294,15 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->setTint(I)V");
     }
 
-    public void setTintBlendMode(android.graphics.BlendMode arg0) {
+    public void setTintBlendMode(BlendMode arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->setTintBlendMode(Landroid/graphics/BlendMode;)V");
     }
 
-    public void setTintList(android.content.res.ColorStateList arg0) {
+    public void setTintList(ColorStateList arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->setTintList(Landroid/content/res/ColorStateList;)V");
     }
 
-    public void setTintMode(android.graphics.PorterDuff.Mode arg0) {
+    public void setTintMode(PorterDuff.Mode arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->setTintMode(Landroid/graphics/PorterDuff$Mode;)V");
     }
 
@@ -294,16 +310,16 @@ package android.graphics.drawable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->setVisible(ZZ)Z");
     }
 
-    public void unscheduleSelf(java.lang.Runnable arg0) {
+    public void unscheduleSelf(Runnable arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable;->unscheduleSelf(Ljava/lang/Runnable;)V");
     }
         public static interface Callback {
 
-        public abstract void invalidateDrawable(android.graphics.drawable.Drawable arg0);
+        public abstract void invalidateDrawable(Drawable arg0);
 
-        public abstract void scheduleDrawable(android.graphics.drawable.Drawable arg0, java.lang.Runnable arg1, long arg2);
+        public abstract void scheduleDrawable(Drawable arg0, Runnable arg1, long arg2);
 
-        public abstract void unscheduleDrawable(android.graphics.drawable.Drawable arg0, java.lang.Runnable arg1);
+        public abstract void unscheduleDrawable(Drawable arg0, Runnable arg1);
         }
         public static class ConstantState {
 
@@ -319,15 +335,15 @@ package android.graphics.drawable;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable$ConstantState;->getChangingConfigurations()I");
         }
 
-        public android.graphics.drawable.Drawable newDrawable() {
+        public Drawable newDrawable() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable$ConstantState;->newDrawable()Landroid/graphics/drawable/Drawable;");
         }
 
-        public android.graphics.drawable.Drawable newDrawable(android.content.res.Resources arg0) {
+        public Drawable newDrawable(Resources arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable$ConstantState;->newDrawable(Landroid/content/res/Resources;)Landroid/graphics/drawable/Drawable;");
         }
 
-        public android.graphics.drawable.Drawable newDrawable(android.content.res.Resources arg0, android.content.res.Resources.Theme arg1) {
+        public Drawable newDrawable(Resources arg0, Resources.Theme arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/drawable/Drawable$ConstantState;->newDrawable(Landroid/content/res/Resources;Landroid/content/res/Resources$Theme;)Landroid/graphics/drawable/Drawable;");
         }
         }

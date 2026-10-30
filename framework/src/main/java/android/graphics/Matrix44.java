@@ -6,15 +6,15 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix44;-><init>()V");
     }
 
-    public Matrix44(android.graphics.Matrix arg0) {
+    public Matrix44(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix44;-><init>(Landroid/graphics/Matrix;)V");
     }
 
-    public android.graphics.Matrix44 concat(android.graphics.Matrix44 arg0) {
+    public Matrix44 concat(Matrix44 arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix44;->concat(Landroid/graphics/Matrix44;)Landroid/graphics/Matrix44;");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix44;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -50,11 +50,11 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix44;->reset()V");
     }
 
-    public android.graphics.Matrix44 rotate(float arg0, float arg1, float arg2, float arg3) {
+    public Matrix44 rotate(float arg0, float arg1, float arg2, float arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix44;->rotate(FFFF)Landroid/graphics/Matrix44;");
     }
 
-    public android.graphics.Matrix44 scale(float arg0, float arg1, float arg2) {
+    public Matrix44 scale(float arg0, float arg1, float arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix44;->scale(FFF)Landroid/graphics/Matrix44;");
     }
 
@@ -66,11 +66,11 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix44;->setValues([F)V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix44;->toString()Ljava/lang/String;");
     }
 
-    public android.graphics.Matrix44 translate(float arg0, float arg1, float arg2) {
+    public Matrix44 translate(float arg0, float arg1, float arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix44;->translate(FFF)Landroid/graphics/Matrix44;");
     }
     }

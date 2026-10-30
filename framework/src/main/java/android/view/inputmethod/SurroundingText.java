@@ -1,10 +1,13 @@
 package android.view.inputmethod;
 
-    public class SurroundingText implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class SurroundingText implements Parcelable {
 
-    public SurroundingText(java.lang.CharSequence arg0, int arg1, int arg2, int arg3) {
+    public static Parcelable.Creator CREATOR;
+
+    public SurroundingText(CharSequence arg0, int arg1, int arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/SurroundingText;-><init>(Ljava/lang/CharSequence;III)V");
     }
 
@@ -24,11 +27,11 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/SurroundingText;->getSelectionStart()I");
     }
 
-    public java.lang.CharSequence getText() {
+    public CharSequence getText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/SurroundingText;->getText()Ljava/lang/CharSequence;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/SurroundingText;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

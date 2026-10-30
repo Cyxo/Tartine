@@ -25,7 +25,7 @@ package android.graphics.fonts;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/fonts/FontStyle;-><init>(II)V");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/fonts/FontStyle;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -41,7 +41,7 @@ package android.graphics.fonts;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/fonts/FontStyle;->hashCode()I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/fonts/FontStyle;->toString()Ljava/lang/String;");
     }
     }

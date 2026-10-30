@@ -1,6 +1,6 @@
 package android.util;
 
-    public class LongSparseArray<E> implements java.lang.Cloneable {
+    public class LongSparseArray<E> implements Cloneable {
 
     public LongSparseArray() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/LongSparseArray;-><init>()V");
@@ -18,7 +18,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/LongSparseArray;->clear()V");
     }
 
-    public android.util.LongSparseArray<E> clone() {
+    public LongSparseArray<E> clone() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/LongSparseArray;->clone()Landroid/util/LongSparseArray;");
     }
 
@@ -66,7 +66,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/LongSparseArray;->size()I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/LongSparseArray;->toString()Ljava/lang/String;");
     }
 

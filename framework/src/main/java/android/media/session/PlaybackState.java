@@ -1,6 +1,11 @@
 package android.media.session;
 
-    public class PlaybackState implements android.os.Parcelable {
+import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
+import java.util.List;
+
+    public class PlaybackState implements Parcelable {
 
     public static final long ACTION_FAST_FORWARD = 64L;
     public static final long ACTION_PAUSE = 2L;
@@ -21,7 +26,7 @@ package android.media.session;
     public static final long ACTION_SKIP_TO_PREVIOUS = 16L;
     public static final long ACTION_SKIP_TO_QUEUE_ITEM = 4096L;
     public static final long ACTION_STOP = 1L;
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
     public static final long PLAYBACK_POSITION_UNKNOWN = -1L;
     public static final int STATE_BUFFERING = 6;
     public static final int STATE_CONNECTING = 8;
@@ -52,15 +57,15 @@ package android.media.session;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState;->getBufferedPosition()J");
     }
 
-    public java.util.List<android.media.session.PlaybackState.CustomAction> getCustomActions() {
+    public List<PlaybackState.CustomAction> getCustomActions() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState;->getCustomActions()Ljava/util/List;");
     }
 
-    public java.lang.CharSequence getErrorMessage() {
+    public CharSequence getErrorMessage() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState;->getErrorMessage()Ljava/lang/CharSequence;");
     }
 
-    public android.os.Bundle getExtras() {
+    public Bundle getExtras() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState;->getExtras()Landroid/os/Bundle;");
     }
 
@@ -84,26 +89,26 @@ package android.media.session;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState;->isActive()Z");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState;->writeToParcel(Landroid/os/Parcel;I)V");
     }
-        public static class CustomAction implements android.os.Parcelable {
+        public static class CustomAction implements Parcelable {
 
-        public static android.os.Parcelable.Creator CREATOR;
+        public static Parcelable.Creator CREATOR;
 
         public int describeContents() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState$CustomAction;->describeContents()I");
         }
 
-        public java.lang.String getAction() {
+        public String getAction() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState$CustomAction;->getAction()Ljava/lang/String;");
         }
 
-        public android.os.Bundle getExtras() {
+        public Bundle getExtras() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState$CustomAction;->getExtras()Landroid/os/Bundle;");
         }
 
@@ -111,15 +116,15 @@ package android.media.session;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState$CustomAction;->getIcon()I");
         }
 
-        public java.lang.CharSequence getName() {
+        public CharSequence getName() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState$CustomAction;->getName()Ljava/lang/CharSequence;");
         }
 
-        public java.lang.String toString() {
+        public String toString() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState$CustomAction;->toString()Ljava/lang/String;");
         }
 
-        public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        public void writeToParcel(Parcel arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/session/PlaybackState$CustomAction;->writeToParcel(Landroid/os/Parcel;I)V");
         }
         }

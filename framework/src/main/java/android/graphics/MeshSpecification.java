@@ -12,24 +12,24 @@ package android.graphics;
     public static final int TYPE_FLOAT4 = 3;
     public static final int TYPE_UBYTE4 = 4;
 
-    public static android.graphics.MeshSpecification make(android.graphics.MeshSpecification.Attribute[] arg0, int arg1, android.graphics.MeshSpecification.Varying[] arg2, java.lang.String arg3, java.lang.String arg4) {
+    public static MeshSpecification make(MeshSpecification.Attribute[] arg0, int arg1, MeshSpecification.Varying[] arg2, String arg3, String arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/MeshSpecification;->make([Landroid/graphics/MeshSpecification$Attribute;I[Landroid/graphics/MeshSpecification$Varying;Ljava/lang/String;Ljava/lang/String;)Landroid/graphics/MeshSpecification;");
     }
 
-    public static android.graphics.MeshSpecification make(android.graphics.MeshSpecification.Attribute[] arg0, int arg1, android.graphics.MeshSpecification.Varying[] arg2, java.lang.String arg3, java.lang.String arg4, android.graphics.ColorSpace arg5) {
+    public static MeshSpecification make(MeshSpecification.Attribute[] arg0, int arg1, MeshSpecification.Varying[] arg2, String arg3, String arg4, ColorSpace arg5) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/MeshSpecification;->make([Landroid/graphics/MeshSpecification$Attribute;I[Landroid/graphics/MeshSpecification$Varying;Ljava/lang/String;Ljava/lang/String;Landroid/graphics/ColorSpace;)Landroid/graphics/MeshSpecification;");
     }
 
-    public static android.graphics.MeshSpecification make(android.graphics.MeshSpecification.Attribute[] arg0, int arg1, android.graphics.MeshSpecification.Varying[] arg2, java.lang.String arg3, java.lang.String arg4, android.graphics.ColorSpace arg5, int arg6) {
+    public static MeshSpecification make(MeshSpecification.Attribute[] arg0, int arg1, MeshSpecification.Varying[] arg2, String arg3, String arg4, ColorSpace arg5, int arg6) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/MeshSpecification;->make([Landroid/graphics/MeshSpecification$Attribute;I[Landroid/graphics/MeshSpecification$Varying;Ljava/lang/String;Ljava/lang/String;Landroid/graphics/ColorSpace;I)Landroid/graphics/MeshSpecification;");
     }
         public static class Attribute {
 
-        public Attribute(int arg0, int arg1, java.lang.String arg2) {
+        public Attribute(int arg0, int arg1, String arg2) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/MeshSpecification$Attribute;-><init>(IILjava/lang/String;)V");
         }
 
-        public java.lang.String getName() {
+        public String getName() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/MeshSpecification$Attribute;->getName()Ljava/lang/String;");
         }
 
@@ -41,7 +41,7 @@ package android.graphics;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/MeshSpecification$Attribute;->getType()I");
         }
 
-        public java.lang.String toString() {
+        public String toString() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/MeshSpecification$Attribute;->toString()Ljava/lang/String;");
         }
 
@@ -51,11 +51,11 @@ package android.graphics;
         }
         public static class Varying {
 
-        public Varying(int arg0, java.lang.String arg1) {
+        public Varying(int arg0, String arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/MeshSpecification$Varying;-><init>(ILjava/lang/String;)V");
         }
 
-        public java.lang.String getName() {
+        public String getName() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/MeshSpecification$Varying;->getName()Ljava/lang/String;");
         }
 
@@ -63,7 +63,7 @@ package android.graphics;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/MeshSpecification$Varying;->getType()I");
         }
 
-        public java.lang.String toString() {
+        public String toString() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/MeshSpecification$Varying;->toString()Ljava/lang/String;");
         }
 

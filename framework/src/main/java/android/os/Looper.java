@@ -1,5 +1,7 @@
 package android.os;
 
+import android.util.Printer;
+
 /**
  * Desktop mapping (Tartine). Ported per-method from
  * aosp-frameworks-base/core/java/android/os/Looper.java (AOSP):
@@ -115,15 +117,15 @@ public class Looper {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Looper;->quitSafely()V");
     }
 
-    public void setMessageLogging(android.util.Printer arg0) {
+    public void setMessageLogging(Printer arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Looper;->setMessageLogging(Landroid/util/Printer;)V");
     }
 
-    public void dump(android.util.Printer arg0, java.lang.String arg1) {
+    public void dump(Printer arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Looper;->dump(Landroid/util/Printer;Ljava/lang/String;)V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         return "Looper (" + mThread.getName()
                 + ", desktop main-thread looper)";
     }

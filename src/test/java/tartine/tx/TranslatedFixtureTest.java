@@ -1,12 +1,13 @@
 package tartine.tx;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
 import tartine.dex.Dex;
 import tartine.dex.DexSet;
 import tartine.dex.FixtureDex;
@@ -33,7 +34,7 @@ final class TranslatedFixtureTest {
         if (loader != null) {
             return loader;
         }
-        Path dexFile = java.nio.file.Files.createTempFile("tx-smoke", ".dex");
+        Path dexFile = Files.createTempFile("tx-smoke", ".dex");
         FixtureDex.writeHello(dexFile);
         DexSet dex = DexSet.of(Dex.load(dexFile.toFile()));
         TranslatedLoader l = new TranslatedLoader(TranslatedFixtureTest.class.getClassLoader(),
@@ -44,10 +45,10 @@ final class TranslatedFixtureTest {
 
     private static Object call(String method) throws Exception {
         Class<?> hello = loader().loadClass("test.Hello");
-        java.lang.reflect.Method m = hello.getDeclaredMethod(method);
+        Method m = hello.getDeclaredMethod(method);
         try {
             return m.invoke(null);
-        } catch (java.lang.reflect.InvocationTargetException x) {
+        } catch (InvocationTargetException x) {
             // The guest's own exception surfaces; reflection wraps it.
             Throwable c = x.getCause();
             if (c instanceof Exception) {
@@ -76,7 +77,7 @@ final class TranslatedFixtureTest {
         for (int i = 0; i < input.length; i++) {
             sig[i] = prim(input[i].getClass());
         }
-        java.lang.reflect.Method m = hello.getDeclaredMethod(method, sig);
+        Method m = hello.getDeclaredMethod(method, sig);
         return m.invoke(null, input);
     }
 

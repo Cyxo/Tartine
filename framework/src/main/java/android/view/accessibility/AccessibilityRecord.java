@@ -1,12 +1,16 @@
 package android.view.accessibility;
 
+import android.os.Parcelable;
+import android.view.View;
+import java.util.List;
+
     public class AccessibilityRecord {
 
     public AccessibilityRecord() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;-><init>()V");
     }
 
-    public AccessibilityRecord(android.view.accessibility.AccessibilityRecord arg0) {
+    public AccessibilityRecord(AccessibilityRecord arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;-><init>(Landroid/view/accessibility/AccessibilityRecord;)V");
     }
 
@@ -14,15 +18,15 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->getAddedCount()I");
     }
 
-    public java.lang.CharSequence getBeforeText() {
+    public CharSequence getBeforeText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->getBeforeText()Ljava/lang/CharSequence;");
     }
 
-    public java.lang.CharSequence getClassName() {
+    public CharSequence getClassName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->getClassName()Ljava/lang/CharSequence;");
     }
 
-    public java.lang.CharSequence getContentDescription() {
+    public CharSequence getContentDescription() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->getContentDescription()Ljava/lang/CharSequence;");
     }
 
@@ -50,7 +54,7 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->getMaxScrollY()I");
     }
 
-    public android.os.Parcelable getParcelableData() {
+    public Parcelable getParcelableData() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->getParcelableData()Landroid/os/Parcelable;");
     }
 
@@ -74,15 +78,15 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->getScrollY()I");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo getSource() {
+    public AccessibilityNodeInfo getSource() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->getSource()Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo getSource(int arg0) {
+    public AccessibilityNodeInfo getSource(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->getSource(I)Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public java.util.List<java.lang.CharSequence> getText() {
+    public List<CharSequence> getText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->getText()Ljava/util/List;");
     }
 
@@ -114,11 +118,11 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->isScrollable()Z");
     }
 
-    public static android.view.accessibility.AccessibilityRecord obtain() {
+    public static AccessibilityRecord obtain() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->obtain()Landroid/view/accessibility/AccessibilityRecord;");
     }
 
-    public static android.view.accessibility.AccessibilityRecord obtain(android.view.accessibility.AccessibilityRecord arg0) {
+    public static AccessibilityRecord obtain(AccessibilityRecord arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->obtain(Landroid/view/accessibility/AccessibilityRecord;)Landroid/view/accessibility/AccessibilityRecord;");
     }
 
@@ -130,7 +134,7 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->setAddedCount(I)V");
     }
 
-    public void setBeforeText(java.lang.CharSequence arg0) {
+    public void setBeforeText(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->setBeforeText(Ljava/lang/CharSequence;)V");
     }
 
@@ -138,11 +142,11 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->setChecked(Z)V");
     }
 
-    public void setClassName(java.lang.CharSequence arg0) {
+    public void setClassName(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->setClassName(Ljava/lang/CharSequence;)V");
     }
 
-    public void setContentDescription(java.lang.CharSequence arg0) {
+    public void setContentDescription(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->setContentDescription(Ljava/lang/CharSequence;)V");
     }
 
@@ -174,7 +178,7 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->setMaxScrollY(I)V");
     }
 
-    public void setParcelableData(android.os.Parcelable arg0) {
+    public void setParcelableData(Parcelable arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->setParcelableData(Landroid/os/Parcelable;)V");
     }
 
@@ -206,11 +210,11 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->setScrollable(Z)V");
     }
 
-    public void setSource(android.view.View arg0) {
+    public void setSource(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->setSource(Landroid/view/View;)V");
     }
 
-    public void setSource(android.view.View arg0, int arg1) {
+    public void setSource(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->setSource(Landroid/view/View;I)V");
     }
 
@@ -218,7 +222,7 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->setToIndex(I)V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityRecord;->toString()Ljava/lang/String;");
     }
     }

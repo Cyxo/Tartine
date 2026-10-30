@@ -1,15 +1,18 @@
 package android.os;
 
-    public class PersistableBundle extends android.os.BaseBundle implements java.lang.Cloneable, android.os.Parcelable {
+import java.io.InputStream;
+import java.io.OutputStream;
 
-    public static android.os.Parcelable.Creator CREATOR;
-    public static android.os.PersistableBundle EMPTY;
+    public class PersistableBundle extends BaseBundle implements Cloneable, Parcelable {
+
+    public static Parcelable.Creator CREATOR;
+    public static PersistableBundle EMPTY;
 
     public PersistableBundle() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/PersistableBundle;-><init>()V");
     }
 
-    public PersistableBundle(android.os.PersistableBundle arg0) {
+    public PersistableBundle(PersistableBundle arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/PersistableBundle;-><init>(Landroid/os/PersistableBundle;)V");
     }
 
@@ -17,11 +20,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/PersistableBundle;-><init>(I)V");
     }
 
-    public java.lang.Object clone() {
+    public Object clone() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/PersistableBundle;->clone()Ljava/lang/Object;");
     }
 
-    public android.os.PersistableBundle deepCopy() {
+    public PersistableBundle deepCopy() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/PersistableBundle;->deepCopy()Landroid/os/PersistableBundle;");
     }
 
@@ -29,27 +32,27 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/PersistableBundle;->describeContents()I");
     }
 
-    public android.os.PersistableBundle getPersistableBundle(java.lang.String arg0) {
+    public PersistableBundle getPersistableBundle(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/PersistableBundle;->getPersistableBundle(Ljava/lang/String;)Landroid/os/PersistableBundle;");
     }
 
-    public void putPersistableBundle(java.lang.String arg0, android.os.PersistableBundle arg1) {
+    public void putPersistableBundle(String arg0, PersistableBundle arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/PersistableBundle;->putPersistableBundle(Ljava/lang/String;Landroid/os/PersistableBundle;)V");
     }
 
-    public static android.os.PersistableBundle readFromStream(java.io.InputStream arg0) {
+    public static PersistableBundle readFromStream(InputStream arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/PersistableBundle;->readFromStream(Ljava/io/InputStream;)Landroid/os/PersistableBundle;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/PersistableBundle;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/PersistableBundle;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 
-    public void writeToStream(java.io.OutputStream arg0) {
+    public void writeToStream(OutputStream arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/PersistableBundle;->writeToStream(Ljava/io/OutputStream;)V");
     }
     }

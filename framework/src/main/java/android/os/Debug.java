@@ -1,5 +1,8 @@
 package android.os;
 
+import java.io.FileDescriptor;
+import java.util.Map;
+
     public class Debug {
 
     public static final int SHOW_CLASSLOADER = 2;
@@ -7,7 +10,7 @@ package android.os;
     public static final int SHOW_INITIALIZED = 4;
     public static final int TRACE_COUNT_ALLOCS = 1;
 
-    public static void attachJvmtiAgent(java.lang.String arg0, java.lang.String arg1, java.lang.ClassLoader arg2) {
+    public static void attachJvmtiAgent(String arg0, String arg1, ClassLoader arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->attachJvmtiAgent(Ljava/lang/String;Ljava/lang/String;Ljava/lang/ClassLoader;)V");
     }
 
@@ -15,11 +18,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->changeDebugPort(I)V");
     }
 
-    public static void dumpHprofData(java.lang.String arg0) {
+    public static void dumpHprofData(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->dumpHprofData(Ljava/lang/String;)V");
     }
 
-    public static boolean dumpService(java.lang.String arg0, java.io.FileDescriptor arg1, java.lang.String[] arg2) {
+    public static boolean dumpService(String arg0, FileDescriptor arg1, String[] arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->dumpService(Ljava/lang/String;Ljava/io/FileDescriptor;[Ljava/lang/String;)Z");
     }
 
@@ -95,7 +98,7 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->getLoadedClassCount()I");
     }
 
-    public static void getMemoryInfo(android.os.Debug.MemoryInfo arg0) {
+    public static void getMemoryInfo(Debug.MemoryInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->getMemoryInfo(Landroid/os/Debug$MemoryInfo;)V");
     }
 
@@ -119,11 +122,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->getRss()J");
     }
 
-    public static java.lang.String getRuntimeStat(java.lang.String arg0) {
+    public static String getRuntimeStat(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->getRuntimeStat(Ljava/lang/String;)Ljava/lang/String;");
     }
 
-    public static java.util.Map<java.lang.String, java.lang.String> getRuntimeStats() {
+    public static Map<String, String> getRuntimeStats() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->getRuntimeStats()Ljava/util/Map;");
     }
 
@@ -239,19 +242,19 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->startMethodTracing()V");
     }
 
-    public static void startMethodTracing(java.lang.String arg0) {
+    public static void startMethodTracing(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->startMethodTracing(Ljava/lang/String;)V");
     }
 
-    public static void startMethodTracing(java.lang.String arg0, int arg1) {
+    public static void startMethodTracing(String arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->startMethodTracing(Ljava/lang/String;I)V");
     }
 
-    public static void startMethodTracing(java.lang.String arg0, int arg1, int arg2) {
+    public static void startMethodTracing(String arg0, int arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->startMethodTracing(Ljava/lang/String;II)V");
     }
 
-    public static void startMethodTracingSampling(java.lang.String arg0, int arg1, int arg2) {
+    public static void startMethodTracingSampling(String arg0, int arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->startMethodTracingSampling(Ljava/lang/String;II)V");
     }
 
@@ -282,9 +285,9 @@ package android.os;
     public static boolean waitingForDebugger() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug;->waitingForDebugger()Z");
     }
-        public static class MemoryInfo implements android.os.Parcelable {
+        public static class MemoryInfo implements Parcelable {
 
-        public static android.os.Parcelable.Creator CREATOR;
+        public static Parcelable.Creator CREATOR;
         public int dalvikPrivateDirty;
         public int dalvikPss;
         public int dalvikSharedDirty;
@@ -303,11 +306,11 @@ package android.os;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug$MemoryInfo;->describeContents()I");
         }
 
-        public java.lang.String getMemoryStat(java.lang.String arg0) {
+        public String getMemoryStat(String arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug$MemoryInfo;->getMemoryStat(Ljava/lang/String;)Ljava/lang/String;");
         }
 
-        public java.util.Map<java.lang.String, java.lang.String> getMemoryStats() {
+        public Map<String, String> getMemoryStats() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug$MemoryInfo;->getMemoryStats()Ljava/util/Map;");
         }
 
@@ -335,11 +338,11 @@ package android.os;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug$MemoryInfo;->getTotalSwappablePss()I");
         }
 
-        public void readFromParcel(android.os.Parcel arg0) {
+        public void readFromParcel(Parcel arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug$MemoryInfo;->readFromParcel(Landroid/os/Parcel;)V");
         }
 
-        public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        public void writeToParcel(Parcel arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Debug$MemoryInfo;->writeToParcel(Landroid/os/Parcel;I)V");
         }
         }

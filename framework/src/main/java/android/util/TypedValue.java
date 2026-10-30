@@ -48,34 +48,34 @@ package android.util;
     public int density;
     public int resourceId;
     public int sourceResourceId;
-    public java.lang.CharSequence string;
+    public CharSequence string;
     public int type;
 
     public TypedValue() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;-><init>()V");
     }
 
-    public static float applyDimension(int arg0, float arg1, android.util.DisplayMetrics arg2) {
+    public static float applyDimension(int arg0, float arg1, DisplayMetrics arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->applyDimension(IFLandroid/util/DisplayMetrics;)F");
     }
 
-    public final java.lang.CharSequence coerceToString() {
+    public final CharSequence coerceToString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->coerceToString()Ljava/lang/CharSequence;");
     }
 
-    public static final java.lang.String coerceToString(int arg0, int arg1) {
+    public static final String coerceToString(int arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->coerceToString(II)Ljava/lang/String;");
     }
 
-    public static float complexToDimension(int arg0, android.util.DisplayMetrics arg1) {
+    public static float complexToDimension(int arg0, DisplayMetrics arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->complexToDimension(ILandroid/util/DisplayMetrics;)F");
     }
 
-    public static int complexToDimensionPixelOffset(int arg0, android.util.DisplayMetrics arg1) {
+    public static int complexToDimensionPixelOffset(int arg0, DisplayMetrics arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->complexToDimensionPixelOffset(ILandroid/util/DisplayMetrics;)I");
     }
 
-    public static int complexToDimensionPixelSize(int arg0, android.util.DisplayMetrics arg1) {
+    public static int complexToDimensionPixelSize(int arg0, DisplayMetrics arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->complexToDimensionPixelSize(ILandroid/util/DisplayMetrics;)I");
     }
 
@@ -87,15 +87,15 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->complexToFraction(IFF)F");
     }
 
-    public static float convertDimensionToPixels(int arg0, float arg1, android.util.DisplayMetrics arg2) {
+    public static float convertDimensionToPixels(int arg0, float arg1, DisplayMetrics arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->convertDimensionToPixels(IFLandroid/util/DisplayMetrics;)F");
     }
 
-    public static float convertPixelsToDimension(int arg0, float arg1, android.util.DisplayMetrics arg2) {
+    public static float convertPixelsToDimension(int arg0, float arg1, DisplayMetrics arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->convertPixelsToDimension(IFLandroid/util/DisplayMetrics;)F");
     }
 
-    public static float deriveDimension(int arg0, float arg1, android.util.DisplayMetrics arg2) {
+    public static float deriveDimension(int arg0, float arg1, DisplayMetrics arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->deriveDimension(IFLandroid/util/DisplayMetrics;)F");
     }
 
@@ -103,7 +103,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->getComplexUnit()I");
     }
 
-    public float getDimension(android.util.DisplayMetrics arg0) {
+    public float getDimension(DisplayMetrics arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->getDimension(Landroid/util/DisplayMetrics;)F");
     }
 
@@ -119,11 +119,11 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->isColorType()Z");
     }
 
-    public void setTo(android.util.TypedValue arg0) {
+    public void setTo(TypedValue arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->setTo(Landroid/util/TypedValue;)V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/TypedValue;->toString()Ljava/lang/String;");
     }
     }

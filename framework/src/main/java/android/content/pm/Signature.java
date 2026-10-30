@@ -1,14 +1,17 @@
 package android.content.pm;
 
-    public class Signature implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class Signature implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
 
     public Signature(byte[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/Signature;-><init>([B)V");
     }
 
-    public Signature(java.lang.String arg0) {
+    public Signature(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/Signature;-><init>(Ljava/lang/String;)V");
     }
 
@@ -16,7 +19,7 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/Signature;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/Signature;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -36,11 +39,11 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/Signature;->toChars([C[I)[C");
     }
 
-    public java.lang.String toCharsString() {
+    public String toCharsString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/Signature;->toCharsString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/Signature;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

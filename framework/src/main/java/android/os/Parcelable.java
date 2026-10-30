@@ -7,7 +7,7 @@ package android.os;
 
     public abstract int describeContents();
 
-    public abstract void writeToParcel(android.os.Parcel arg0, int arg1);
+    public abstract void writeToParcel(Parcel arg0, int arg1);
         /**
      * AOSP Parcelable.ClassLoaderCreator (lines 233-249): specialization of
      * Creator that receives the ClassLoader of the instantiating context.
@@ -19,7 +19,7 @@ package android.os;
 
     public static interface Creator<T> {
 
-        public abstract T createFromParcel(android.os.Parcel arg0);
+        public abstract T createFromParcel(Parcel arg0);
 
         public abstract T[] newArray(int arg0);
         }

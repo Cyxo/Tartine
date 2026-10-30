@@ -1,5 +1,14 @@
 package android.view.inputmethod;
 
+import android.graphics.RectF;
+import android.os.Bundle;
+import android.os.CancellationSignal;
+import android.os.Handler;
+import android.view.KeyEvent;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+
     public interface InputConnection {
 
     public static final int CURSOR_UPDATE_FILTER_CHARACTER_BOUNDS = 8;
@@ -25,15 +34,15 @@ package android.view.inputmethod;
 
     public abstract void closeConnection();
 
-    public abstract boolean commitCompletion(android.view.inputmethod.CompletionInfo arg0);
+    public abstract boolean commitCompletion(CompletionInfo arg0);
 
-    public abstract boolean commitContent(android.view.inputmethod.InputContentInfo arg0, int arg1, android.os.Bundle arg2);
+    public abstract boolean commitContent(InputContentInfo arg0, int arg1, Bundle arg2);
 
-    public abstract boolean commitCorrection(android.view.inputmethod.CorrectionInfo arg0);
+    public abstract boolean commitCorrection(CorrectionInfo arg0);
 
-    public abstract boolean commitText(java.lang.CharSequence arg0, int arg1);
+    public abstract boolean commitText(CharSequence arg0, int arg1);
 
-    public default boolean commitText(java.lang.CharSequence arg0, int arg1, android.view.inputmethod.TextAttribute arg2) {
+    public default boolean commitText(CharSequence arg0, int arg1, TextAttribute arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputConnection;->commitText(Ljava/lang/CharSequence;ILandroid/view/inputmethod/TextAttribute;)Z");
     }
 
@@ -47,39 +56,39 @@ package android.view.inputmethod;
 
     public abstract int getCursorCapsMode(int arg0);
 
-    public abstract android.view.inputmethod.ExtractedText getExtractedText(android.view.inputmethod.ExtractedTextRequest arg0, int arg1);
+    public abstract ExtractedText getExtractedText(ExtractedTextRequest arg0, int arg1);
 
-    public abstract android.os.Handler getHandler();
+    public abstract Handler getHandler();
 
-    public abstract java.lang.CharSequence getSelectedText(int arg0);
+    public abstract CharSequence getSelectedText(int arg0);
 
-    public default android.view.inputmethod.SurroundingText getSurroundingText(int arg0, int arg1, int arg2) {
+    public default SurroundingText getSurroundingText(int arg0, int arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputConnection;->getSurroundingText(III)Landroid/view/inputmethod/SurroundingText;");
     }
 
-    public abstract java.lang.CharSequence getTextAfterCursor(int arg0, int arg1);
+    public abstract CharSequence getTextAfterCursor(int arg0, int arg1);
 
-    public abstract java.lang.CharSequence getTextBeforeCursor(int arg0, int arg1);
+    public abstract CharSequence getTextBeforeCursor(int arg0, int arg1);
 
     public abstract boolean performContextMenuAction(int arg0);
 
     public abstract boolean performEditorAction(int arg0);
 
-    public default void performHandwritingGesture(android.view.inputmethod.HandwritingGesture arg0, java.util.concurrent.Executor arg1, java.util.function.IntConsumer arg2) {
+    public default void performHandwritingGesture(HandwritingGesture arg0, Executor arg1, IntConsumer arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputConnection;->performHandwritingGesture(Landroid/view/inputmethod/HandwritingGesture;Ljava/util/concurrent/Executor;Ljava/util/function/IntConsumer;)V");
     }
 
-    public abstract boolean performPrivateCommand(java.lang.String arg0, android.os.Bundle arg1);
+    public abstract boolean performPrivateCommand(String arg0, Bundle arg1);
 
     public default boolean performSpellCheck() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputConnection;->performSpellCheck()Z");
     }
 
-    public default boolean previewHandwritingGesture(android.view.inputmethod.PreviewableHandwritingGesture arg0, android.os.CancellationSignal arg1) {
+    public default boolean previewHandwritingGesture(PreviewableHandwritingGesture arg0, CancellationSignal arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputConnection;->previewHandwritingGesture(Landroid/view/inputmethod/PreviewableHandwritingGesture;Landroid/os/CancellationSignal;)Z");
     }
 
-    public default boolean replaceText(int arg0, int arg1, java.lang.CharSequence arg2, int arg3, android.view.inputmethod.TextAttribute arg4) {
+    public default boolean replaceText(int arg0, int arg1, CharSequence arg2, int arg3, TextAttribute arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputConnection;->replaceText(IILjava/lang/CharSequence;ILandroid/view/inputmethod/TextAttribute;)Z");
     }
 
@@ -91,21 +100,21 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputConnection;->requestCursorUpdates(II)Z");
     }
 
-    public default void requestTextBoundsInfo(android.graphics.RectF arg0, java.util.concurrent.Executor arg1, java.util.function.Consumer<android.view.inputmethod.TextBoundsInfoResult> arg2) {
+    public default void requestTextBoundsInfo(RectF arg0, Executor arg1, Consumer<TextBoundsInfoResult> arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputConnection;->requestTextBoundsInfo(Landroid/graphics/RectF;Ljava/util/concurrent/Executor;Ljava/util/function/Consumer;)V");
     }
 
-    public abstract boolean sendKeyEvent(android.view.KeyEvent arg0);
+    public abstract boolean sendKeyEvent(KeyEvent arg0);
 
     public abstract boolean setComposingRegion(int arg0, int arg1);
 
-    public default boolean setComposingRegion(int arg0, int arg1, android.view.inputmethod.TextAttribute arg2) {
+    public default boolean setComposingRegion(int arg0, int arg1, TextAttribute arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputConnection;->setComposingRegion(IILandroid/view/inputmethod/TextAttribute;)Z");
     }
 
-    public abstract boolean setComposingText(java.lang.CharSequence arg0, int arg1);
+    public abstract boolean setComposingText(CharSequence arg0, int arg1);
 
-    public default boolean setComposingText(java.lang.CharSequence arg0, int arg1, android.view.inputmethod.TextAttribute arg2) {
+    public default boolean setComposingText(CharSequence arg0, int arg1, TextAttribute arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputConnection;->setComposingText(Ljava/lang/CharSequence;ILandroid/view/inputmethod/TextAttribute;)Z");
     }
 
@@ -115,7 +124,7 @@ package android.view.inputmethod;
 
     public abstract boolean setSelection(int arg0, int arg1);
 
-    public default android.view.inputmethod.TextSnapshot takeSnapshot() {
+    public default TextSnapshot takeSnapshot() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputConnection;->takeSnapshot()Landroid/view/inputmethod/TextSnapshot;");
     }
     }

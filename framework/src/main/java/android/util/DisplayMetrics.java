@@ -40,11 +40,11 @@ package android.util;
         // AOSP DisplayMetrics.java: public DisplayMetrics() {}
     }
 
-    public boolean equals(android.util.DisplayMetrics arg0) {
+    public boolean equals(DisplayMetrics arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/DisplayMetrics;->equals(Landroid/util/DisplayMetrics;)Z");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/DisplayMetrics;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -52,7 +52,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/DisplayMetrics;->hashCode()I");
     }
 
-    public void setTo(android.util.DisplayMetrics arg0) {
+    public void setTo(DisplayMetrics arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/DisplayMetrics;->setTo(Landroid/util/DisplayMetrics;)V");
     }
 
@@ -60,7 +60,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/DisplayMetrics;->setToDefaults()V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/DisplayMetrics;->toString()Ljava/lang/String;");
     }
     }

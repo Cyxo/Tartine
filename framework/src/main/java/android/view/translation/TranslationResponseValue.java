@@ -1,9 +1,13 @@
 package android.view.translation;
 
-    public class TranslationResponseValue implements android.os.Parcelable {
+import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
-    public static final java.lang.String EXTRA_DEFINITIONS = "android.view.translation.extra.DEFINITIONS";
+    public class TranslationResponseValue implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
+    public static final String EXTRA_DEFINITIONS = "android.view.translation.extra.DEFINITIONS";
     public static final int STATUS_ERROR = 1;
     public static final int STATUS_SUCCESS = 0;
 
@@ -11,15 +15,15 @@ package android.view.translation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationResponseValue;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationResponseValue;->equals(Ljava/lang/Object;)Z");
     }
 
-    public static android.view.translation.TranslationResponseValue forError() {
+    public static TranslationResponseValue forError() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationResponseValue;->forError()Landroid/view/translation/TranslationResponseValue;");
     }
 
-    public android.os.Bundle getExtras() {
+    public Bundle getExtras() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationResponseValue;->getExtras()Landroid/os/Bundle;");
     }
 
@@ -27,11 +31,11 @@ package android.view.translation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationResponseValue;->getStatusCode()I");
     }
 
-    public java.lang.CharSequence getText() {
+    public CharSequence getText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationResponseValue;->getText()Ljava/lang/CharSequence;");
     }
 
-    public java.lang.CharSequence getTransliteration() {
+    public CharSequence getTransliteration() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationResponseValue;->getTransliteration()Ljava/lang/CharSequence;");
     }
 
@@ -39,11 +43,11 @@ package android.view.translation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationResponseValue;->hashCode()I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationResponseValue;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/translation/TranslationResponseValue;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

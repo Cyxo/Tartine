@@ -1,5 +1,7 @@
 package tartine.dex;
 
+import com.android.tools.smali.dexlib2.DexFileFactory;
+import com.android.tools.smali.dexlib2.Opcodes;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,8 +14,8 @@ class DexLibPresenceTest {
     @Test
     void dexlib2TypesLink() {
         assertEquals("com.android.tools.smali.dexlib2.DexFileFactory",
-                com.android.tools.smali.dexlib2.DexFileFactory.class.getName());
+                DexFileFactory.class.getName());
         assertEquals("com.android.tools.smali.dexlib2.Opcodes",
-                com.android.tools.smali.dexlib2.Opcodes.class.getName());
+                Opcodes.class.getName());
     }
 }

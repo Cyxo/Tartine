@@ -1,12 +1,17 @@
 package android.content.res.loader;
 
-    public class ResourcesProvider implements java.lang.AutoCloseable, java.io.Closeable {
+import android.content.Context;
+import android.content.om.OverlayInfo;
+import android.os.ParcelFileDescriptor;
+import java.io.Closeable;
+
+    public class ResourcesProvider implements AutoCloseable, Closeable {
 
     public void close() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/loader/ResourcesProvider;->close()V");
     }
 
-    public static android.content.res.loader.ResourcesProvider empty(android.content.res.loader.AssetsProvider arg0) {
+    public static ResourcesProvider empty(AssetsProvider arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/loader/ResourcesProvider;->empty(Landroid/content/res/loader/AssetsProvider;)Landroid/content/res/loader/ResourcesProvider;");
     }
 
@@ -14,27 +19,27 @@ package android.content.res.loader;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/loader/ResourcesProvider;->finalize()V");
     }
 
-    public static android.content.res.loader.ResourcesProvider loadFromApk(android.os.ParcelFileDescriptor arg0) {
+    public static ResourcesProvider loadFromApk(ParcelFileDescriptor arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/loader/ResourcesProvider;->loadFromApk(Landroid/os/ParcelFileDescriptor;)Landroid/content/res/loader/ResourcesProvider;");
     }
 
-    public static android.content.res.loader.ResourcesProvider loadFromApk(android.os.ParcelFileDescriptor arg0, android.content.res.loader.AssetsProvider arg1) {
+    public static ResourcesProvider loadFromApk(ParcelFileDescriptor arg0, AssetsProvider arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/loader/ResourcesProvider;->loadFromApk(Landroid/os/ParcelFileDescriptor;Landroid/content/res/loader/AssetsProvider;)Landroid/content/res/loader/ResourcesProvider;");
     }
 
-    public static android.content.res.loader.ResourcesProvider loadFromDirectory(java.lang.String arg0, android.content.res.loader.AssetsProvider arg1) {
+    public static ResourcesProvider loadFromDirectory(String arg0, AssetsProvider arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/loader/ResourcesProvider;->loadFromDirectory(Ljava/lang/String;Landroid/content/res/loader/AssetsProvider;)Landroid/content/res/loader/ResourcesProvider;");
     }
 
-    public static android.content.res.loader.ResourcesProvider loadFromSplit(android.content.Context arg0, java.lang.String arg1) {
+    public static ResourcesProvider loadFromSplit(Context arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/loader/ResourcesProvider;->loadFromSplit(Landroid/content/Context;Ljava/lang/String;)Landroid/content/res/loader/ResourcesProvider;");
     }
 
-    public static android.content.res.loader.ResourcesProvider loadFromTable(android.os.ParcelFileDescriptor arg0, android.content.res.loader.AssetsProvider arg1) {
+    public static ResourcesProvider loadFromTable(ParcelFileDescriptor arg0, AssetsProvider arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/loader/ResourcesProvider;->loadFromTable(Landroid/os/ParcelFileDescriptor;Landroid/content/res/loader/AssetsProvider;)Landroid/content/res/loader/ResourcesProvider;");
     }
 
-    public static android.content.res.loader.ResourcesProvider loadOverlay(android.content.om.OverlayInfo arg0) {
+    public static ResourcesProvider loadOverlay(OverlayInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/loader/ResourcesProvider;->loadOverlay(Landroid/content/om/OverlayInfo;)Landroid/content/res/loader/ResourcesProvider;");
     }
     }

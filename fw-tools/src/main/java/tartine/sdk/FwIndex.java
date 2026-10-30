@@ -1,6 +1,7 @@
 package tartine.sdk;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -128,6 +129,11 @@ public final class FwIndex {
 
     public FwClass find(String descriptor) {
         return classes.get(descriptor);
+    }
+
+    /** Every indexed class (dev-time inspection only). */
+    public Collection<FwClass> classes() {
+        return Collections.unmodifiableCollection(classes.values());
     }
 
     public int classCount() {

@@ -1,8 +1,11 @@
 package android.content.pm;
 
-    public class ConfigurationInfo implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class ConfigurationInfo implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final int GL_ES_VERSION_UNDEFINED = 0;
     public static final int INPUT_FEATURE_FIVE_WAY_NAV = 2;
     public static final int INPUT_FEATURE_HARD_KEYBOARD = 1;
@@ -16,7 +19,7 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ConfigurationInfo;-><init>()V");
     }
 
-    public ConfigurationInfo(android.content.pm.ConfigurationInfo arg0) {
+    public ConfigurationInfo(ConfigurationInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ConfigurationInfo;-><init>(Landroid/content/pm/ConfigurationInfo;)V");
     }
 
@@ -24,15 +27,15 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ConfigurationInfo;->describeContents()I");
     }
 
-    public java.lang.String getGlEsVersion() {
+    public String getGlEsVersion() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ConfigurationInfo;->getGlEsVersion()Ljava/lang/String;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ConfigurationInfo;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ConfigurationInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

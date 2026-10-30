@@ -1,6 +1,6 @@
 package android.content;
 
-    public interface ComponentCallbacks2 extends android.content.ComponentCallbacks {
+    public interface ComponentCallbacks2 extends ComponentCallbacks {
 
     public static final int TRIM_MEMORY_BACKGROUND = 40;
     public static final int TRIM_MEMORY_COMPLETE = 80;

@@ -1,6 +1,6 @@
 package android.util;
 
-    public class SparseArray<E> implements java.lang.Cloneable {
+    public class SparseArray<E> implements Cloneable {
 
     public SparseArray() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SparseArray;-><init>()V");
@@ -18,7 +18,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SparseArray;->clear()V");
     }
 
-    public android.util.SparseArray<E> clone() {
+    public SparseArray<E> clone() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SparseArray;->clone()Landroid/util/SparseArray;");
     }
 
@@ -26,7 +26,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SparseArray;->contains(I)Z");
     }
 
-    public boolean contentEquals(android.util.SparseArray<?> arg0) {
+    public boolean contentEquals(SparseArray<?> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SparseArray;->contentEquals(Landroid/util/SparseArray;)Z");
     }
 
@@ -86,7 +86,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SparseArray;->size()I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/SparseArray;->toString()Ljava/lang/String;");
     }
 

@@ -1,14 +1,17 @@
 package android.view.inputmethod;
 
-    public class CompletionInfo implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class CompletionInfo implements Parcelable {
 
-    public CompletionInfo(long arg0, int arg1, java.lang.CharSequence arg2) {
+    public static Parcelable.Creator CREATOR;
+
+    public CompletionInfo(long arg0, int arg1, CharSequence arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CompletionInfo;-><init>(JILjava/lang/CharSequence;)V");
     }
 
-    public CompletionInfo(long arg0, int arg1, java.lang.CharSequence arg2, java.lang.CharSequence arg3) {
+    public CompletionInfo(long arg0, int arg1, CharSequence arg2, CharSequence arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CompletionInfo;-><init>(JILjava/lang/CharSequence;Ljava/lang/CharSequence;)V");
     }
 
@@ -20,7 +23,7 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CompletionInfo;->getId()J");
     }
 
-    public java.lang.CharSequence getLabel() {
+    public CharSequence getLabel() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CompletionInfo;->getLabel()Ljava/lang/CharSequence;");
     }
 
@@ -28,15 +31,15 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CompletionInfo;->getPosition()I");
     }
 
-    public java.lang.CharSequence getText() {
+    public CharSequence getText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CompletionInfo;->getText()Ljava/lang/CharSequence;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CompletionInfo;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/CompletionInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

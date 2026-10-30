@@ -1,8 +1,15 @@
 package android.view.inputmethod;
 
-    public class TextBoundsInfo implements android.os.Parcelable {
+import android.graphics.Matrix;
+import android.graphics.RectF;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.text.Layout;
+import android.text.SegmentFinder;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class TextBoundsInfo implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final int FLAG_CHARACTER_LINEFEED = 2;
     public static final int FLAG_CHARACTER_PUNCTUATION = 4;
     public static final int FLAG_CHARACTER_WHITESPACE = 1;
@@ -16,7 +23,7 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextBoundsInfo;->getCharacterBidiLevel(I)I");
     }
 
-    public void getCharacterBounds(int arg0, android.graphics.RectF arg1) {
+    public void getCharacterBounds(int arg0, RectF arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextBoundsInfo;->getCharacterBounds(ILandroid/graphics/RectF;)V");
     }
 
@@ -28,15 +35,15 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextBoundsInfo;->getEndIndex()I");
     }
 
-    public android.text.SegmentFinder getGraphemeSegmentFinder() {
+    public SegmentFinder getGraphemeSegmentFinder() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextBoundsInfo;->getGraphemeSegmentFinder()Landroid/text/SegmentFinder;");
     }
 
-    public android.text.SegmentFinder getLineSegmentFinder() {
+    public SegmentFinder getLineSegmentFinder() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextBoundsInfo;->getLineSegmentFinder()Landroid/text/SegmentFinder;");
     }
 
-    public void getMatrix(android.graphics.Matrix arg0) {
+    public void getMatrix(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextBoundsInfo;->getMatrix(Landroid/graphics/Matrix;)V");
     }
 
@@ -44,7 +51,7 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextBoundsInfo;->getOffsetForPosition(FF)I");
     }
 
-    public int[] getRangeForRect(android.graphics.RectF arg0, android.text.SegmentFinder arg1, android.text.Layout.TextInclusionStrategy arg2) {
+    public int[] getRangeForRect(RectF arg0, SegmentFinder arg1, Layout.TextInclusionStrategy arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextBoundsInfo;->getRangeForRect(Landroid/graphics/RectF;Landroid/text/SegmentFinder;Landroid/text/Layout$TextInclusionStrategy;)[I");
     }
 
@@ -52,11 +59,11 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextBoundsInfo;->getStartIndex()I");
     }
 
-    public android.text.SegmentFinder getWordSegmentFinder() {
+    public SegmentFinder getWordSegmentFinder() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextBoundsInfo;->getWordSegmentFinder()Landroid/text/SegmentFinder;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextBoundsInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

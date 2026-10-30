@@ -1,8 +1,11 @@
 package android.content.pm;
 
-    public class Checksum implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class Checksum implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final int TYPE_PARTIAL_MERKLE_ROOT_1M_SHA256 = 32;
     public static final int TYPE_PARTIAL_MERKLE_ROOT_1M_SHA512 = 64;
     public static final int TYPE_WHOLE_MD5 = 2;
@@ -27,7 +30,7 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/Checksum;->getValue()[B");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/Checksum;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

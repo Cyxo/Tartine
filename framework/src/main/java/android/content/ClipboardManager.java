@@ -12,7 +12,7 @@ public class ClipboardManager extends android.text.ClipboardManager {
      * ClipboardManager(Context): shell constructor delegates to the text
      * layer.
      */
-    public ClipboardManager(android.content.Context context) {
+    public ClipboardManager(Context context) {
         super(context);
     }
 
@@ -22,12 +22,12 @@ public class ClipboardManager extends android.text.ClipboardManager {
     }
 
     @Override
-    public android.content.ClipData getPrimaryClip() {
+    public ClipData getPrimaryClip() {
         return super.getPrimaryClip();
     }
 
     @Override
-    public void setPrimaryClip(android.content.ClipData clip) {
+    public void setPrimaryClip(ClipData clip) {
         super.setPrimaryClip(clip);
     }
 

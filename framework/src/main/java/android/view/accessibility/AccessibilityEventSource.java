@@ -4,5 +4,5 @@ package android.view.accessibility;
 
     public abstract void sendAccessibilityEvent(int arg0);
 
-    public abstract void sendAccessibilityEventUnchecked(android.view.accessibility.AccessibilityEvent arg0);
+    public abstract void sendAccessibilityEventUnchecked(AccessibilityEvent arg0);
     }

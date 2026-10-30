@@ -1,8 +1,11 @@
 package android.graphics.text;
 
+import android.graphics.Paint;
+import android.graphics.Rect;
+
     public class MeasuredText {
 
-    public void getBounds(int arg0, int arg1, android.graphics.Rect arg2) {
+    public void getBounds(int arg0, int arg1, Rect arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/text/MeasuredText;->getBounds(IILandroid/graphics/Rect;)V");
     }
 
@@ -10,7 +13,7 @@ package android.graphics.text;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/text/MeasuredText;->getCharWidthAt(I)F");
     }
 
-    public void getFontMetricsInt(int arg0, int arg1, android.graphics.Paint.FontMetricsInt arg2) {
+    public void getFontMetricsInt(int arg0, int arg1, Paint.FontMetricsInt arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/text/MeasuredText;->getFontMetricsInt(IILandroid/graphics/Paint$FontMetricsInt;)V");
     }
 

@@ -1,17 +1,6 @@
 package tartine.tx;
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.analysis.Analyzer;
-import org.objectweb.asm.tree.analysis.AnalyzerException;
-import org.objectweb.asm.tree.analysis.BasicVerifier;
-import tartine.dex.DexClass;
-import tartine.dex.DexMethod;
-
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -19,6 +8,27 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.IntInsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TypeInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
+import org.objectweb.asm.tree.analysis.Analyzer;
+import org.objectweb.asm.tree.analysis.AnalyzerException;
+import org.objectweb.asm.tree.analysis.BasicValue;
+import org.objectweb.asm.tree.analysis.BasicVerifier;
+import tartine.dex.DexClass;
+import tartine.dex.DexMethod;
+import tartine.dex.Insn;
 
 /**
  * Spikes the translation one class at a time: DEX model -> JVM bytecode.
@@ -37,8 +47,8 @@ public final class TxTranslator implements Opcodes {
      * declared members), so synthesized self-owned members keep getstatic/
      * putstatic resolvable on the JVM. Keyed by the owner type descriptor.
      */
-    public static Map<String, java.util.List<DexClass.DexField>> fieldSynths(
-            java.util.List<DexClass> all) {
+    public static Map<String, List<DexClass.DexField>> fieldSynths(
+            List<DexClass> all) {
         Map<String, Set<String>> declared = new HashMap<>();
         Map<String, String> superOf = new HashMap<>();
         for (DexClass cls : all) {
@@ -57,7 +67,7 @@ public final class TxTranslator implements Opcodes {
                 if (method.instructions == null) {
                     continue;
                 }
-                for (tartine.dex.Insn in : method.instructions) {
+                for (Insn in : method.instructions) {
                     boolean stat = in.opcode.startsWith("sget")
                             || in.opcode.startsWith("sput");
                     boolean inst = in.opcode.startsWith("iget")
@@ -112,7 +122,7 @@ public final class TxTranslator implements Opcodes {
                 }
             }
         }
-        Map<String, java.util.List<DexClass.DexField>> byOwner = new HashMap<>();
+        Map<String, List<DexClass.DexField>> byOwner = new HashMap<>();
         for (Map.Entry<String, LinkedHashMap<String, DexClass.DexField>> e
                 : out.entrySet()) {
             byOwner.put(e.getKey(), new ArrayList<>(e.getValue().values()));
@@ -152,17 +162,17 @@ public final class TxTranslator implements Opcodes {
     }
 
     public static byte[] translate(DexClass cls) {
-        return translate(cls, Map.of(), java.util.Set.of(), null, null);
+        return translate(cls, Map.of(), Set.of(), null, null);
     }
 
     public static byte[] translate(DexClass cls,
             Map<String, List<DexClass.DexField>> synthsByOwner) {
-        return translate(cls, synthsByOwner, java.util.Set.of(), null, null);
+        return translate(cls, synthsByOwner, Set.of(), null, null);
     }
 
     public static byte[] translate(DexClass cls,
             Map<String, List<DexClass.DexField>> synthsByOwner,
-            java.util.Set<String> guestInterfaces) {
+            Set<String> guestInterfaces) {
         return translate(cls, synthsByOwner, guestInterfaces, null, null);
     }
 
@@ -175,8 +185,8 @@ public final class TxTranslator implements Opcodes {
      *  encode before v1_8 — StackMapTable frames on, computed by ASM. */
     public static byte[] translate(DexClass cls,
             Map<String, List<DexClass.DexField>> synthsByOwner,
-            java.util.Set<String> guestInterfaces,
-            java.util.function.Function<String, DexClass> dexLookup,
+            Set<String> guestInterfaces,
+            Function<String, DexClass> dexLookup,
             ClassLoader hostLoader) {
         // Class-level flags come from the dex class_def_item (interfaces are
         // emitted ACC_INTERFACE: implementers fail at defineClass time
@@ -316,10 +326,10 @@ public final class TxTranslator implements Opcodes {
      * onto the host loader.
      */
     private static final class FrameWriter extends ClassWriter {
-        private final java.util.function.Function<String, DexClass> dexLookup;
+        private final Function<String, DexClass> dexLookup;
         private final ClassLoader hostLoader;
 
-        FrameWriter(java.util.function.Function<String, DexClass> dexLookup,
+        FrameWriter(Function<String, DexClass> dexLookup,
                 ClassLoader hostLoader) {
             super(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
             this.dexLookup = dexLookup;
@@ -349,8 +359,8 @@ public final class TxTranslator implements Opcodes {
                 }
                 return "[".repeat(depth) + "L" + merged + ";";
             }
-            java.util.LinkedHashSet<String> first = ancestors(type1);
-            java.util.LinkedHashSet<String> second = ancestors(type2);
+            LinkedHashSet<String> first = ancestors(type1);
+            LinkedHashSet<String> second = ancestors(type2);
             for (String candidate : first) {
                 if (second.contains(candidate)) {
                     return candidate;
@@ -364,9 +374,9 @@ public final class TxTranslator implements Opcodes {
          * superclass before interfaces), including interfaces — the JVM's
          * frame merge legitimately yields a common interface.
          */
-        private java.util.LinkedHashSet<String> ancestors(String type) {
-            java.util.LinkedHashSet<String> set = new java.util.LinkedHashSet<>();
-            java.util.ArrayDeque<String> queue = new java.util.ArrayDeque<>();
+        private LinkedHashSet<String> ancestors(String type) {
+            LinkedHashSet<String> set = new LinkedHashSet<>();
+            ArrayDeque<String> queue = new ArrayDeque<>();
             set.add(type);
             queue.add(type);
             while (!queue.isEmpty()) {
@@ -380,11 +390,11 @@ public final class TxTranslator implements Opcodes {
         }
 
         /** Superclass then interfaces of {@code type} (internal name). */
-        private java.util.List<String> supers(String type) {
+        private List<String> supers(String type) {
             if (type.equals("java/lang/Object")) {
-                return java.util.List.of();
+                return List.of();
             }
-            java.util.ArrayList<String> list = new java.util.ArrayList<>();
+            ArrayList<String> list = new ArrayList<>();
             DexClass dex = dexLookup == null ? null
                     : dexLookup.apply("L" + type + ";");
             if (dex != null) {
@@ -441,8 +451,8 @@ public final class TxTranslator implements Opcodes {
      */
     public static byte[] emitProbeSingle(DexClass cls,
             Map<String, List<DexClass.DexField>> synthsByOwner,
-            java.util.Set<String> guestInterfaces,
-            java.util.function.Function<String, DexClass> dexLookup,
+            Set<String> guestInterfaces,
+            Function<String, DexClass> dexLookup,
             ClassLoader hostLoader, String methodFilter) {
         int access = asmAccess(cls.accessFlags);
         if ((access & ACC_INTERFACE) == 0) {
@@ -487,7 +497,7 @@ public final class TxTranslator implements Opcodes {
         new ClassReader(bytes).accept(node, 0);
         for (MethodNode mn : node.methods) {
             if (mn.name.equals(name) && mn.desc.equals(desc)) {
-                Analyzer<org.objectweb.asm.tree.analysis.BasicValue>
+                Analyzer<BasicValue>
                         verifier = new Analyzer<>(new BasicVerifier());
                 try {
                     verifier.analyze(node.name, mn);
@@ -503,27 +513,27 @@ public final class TxTranslator implements Opcodes {
     /** Probe-only: print locals/stack frames around a verifier conflict so
      *  the guest dex shapes behind it can be matched quickly. */
     /** One-line description of a failing ASM instruction for the census. */
-    private static String brief(org.objectweb.asm.tree.AbstractInsnNode n) {
+    private static String brief(AbstractInsnNode n) {
         if (n == null) {
             return "?";
         }
         String head = n.getClass().getSimpleName();
-        if (n instanceof org.objectweb.asm.tree.FieldInsnNode f) {
+        if (n instanceof FieldInsnNode f) {
             return head + " " + f.owner + "." + f.name + " " + f.desc;
         }
-        if (n instanceof org.objectweb.asm.tree.MethodInsnNode m) {
+        if (n instanceof MethodInsnNode m) {
             return head + " " + m.owner + "." + m.name + m.desc;
         }
-        if (n instanceof org.objectweb.asm.tree.VarInsnNode v) {
+        if (n instanceof VarInsnNode v) {
             return head + " var=" + v.var;
         }
-        if (n instanceof org.objectweb.asm.tree.IntInsnNode ii) {
+        if (n instanceof IntInsnNode ii) {
             return head + " " + ii.operand;
         }
-        if (n instanceof org.objectweb.asm.tree.TypeInsnNode t) {
+        if (n instanceof TypeInsnNode t) {
             return head + " " + t.desc;
         }
-        if (n instanceof org.objectweb.asm.tree.LdcInsnNode ld) {
+        if (n instanceof LdcInsnNode ld) {
             return head + " " + ld.cst;
         }
         return head + " op=" + n.getOpcode();

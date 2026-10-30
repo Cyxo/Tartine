@@ -1,5 +1,8 @@
 package android.content;
 
+import android.os.Bundle;
+import android.os.IBinder;
+
     public class BroadcastReceiver {
 
     public BroadcastReceiver() {
@@ -26,15 +29,15 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->getResultCode()I");
     }
 
-    public final java.lang.String getResultData() {
+    public final String getResultData() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->getResultData()Ljava/lang/String;");
     }
 
-    public final android.os.Bundle getResultExtras(boolean arg0) {
+    public final Bundle getResultExtras(boolean arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->getResultExtras(Z)Landroid/os/Bundle;");
     }
 
-    public java.lang.String getSentFromPackage() {
+    public String getSentFromPackage() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->getSentFromPackage()Ljava/lang/String;");
     }
 
@@ -42,7 +45,7 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->getSentFromUid()I");
     }
 
-    public final android.content.BroadcastReceiver.PendingResult goAsync() {
+    public final BroadcastReceiver.PendingResult goAsync() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->goAsync()Landroid/content/BroadcastReceiver$PendingResult;");
     }
 
@@ -54,11 +57,11 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->isOrderedBroadcast()Z");
     }
 
-    public void onReceive(android.content.Context arg0, android.content.Intent arg1) {
+    public void onReceive(Context arg0, Intent arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->onReceive(Landroid/content/Context;Landroid/content/Intent;)V");
     }
 
-    public android.os.IBinder peekService(android.content.Context arg0, android.content.Intent arg1) {
+    public IBinder peekService(Context arg0, Intent arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->peekService(Landroid/content/Context;Landroid/content/Intent;)Landroid/os/IBinder;");
     }
 
@@ -70,7 +73,7 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->setOrderedHint(Z)V");
     }
 
-    public final void setResult(int arg0, java.lang.String arg1, android.os.Bundle arg2) {
+    public final void setResult(int arg0, String arg1, Bundle arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->setResult(ILjava/lang/String;Landroid/os/Bundle;)V");
     }
 
@@ -78,11 +81,11 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->setResultCode(I)V");
     }
 
-    public final void setResultData(java.lang.String arg0) {
+    public final void setResultData(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->setResultData(Ljava/lang/String;)V");
     }
 
-    public final void setResultExtras(android.os.Bundle arg0) {
+    public final void setResultExtras(Bundle arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver;->setResultExtras(Landroid/os/Bundle;)V");
     }
         public static class PendingResult {
@@ -107,15 +110,15 @@ package android.content;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver$PendingResult;->getResultCode()I");
         }
 
-        public final java.lang.String getResultData() {
+        public final String getResultData() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver$PendingResult;->getResultData()Ljava/lang/String;");
         }
 
-        public final android.os.Bundle getResultExtras(boolean arg0) {
+        public final Bundle getResultExtras(boolean arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver$PendingResult;->getResultExtras(Z)Landroid/os/Bundle;");
         }
 
-        public final void setResult(int arg0, java.lang.String arg1, android.os.Bundle arg2) {
+        public final void setResult(int arg0, String arg1, Bundle arg2) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver$PendingResult;->setResult(ILjava/lang/String;Landroid/os/Bundle;)V");
         }
 
@@ -123,11 +126,11 @@ package android.content;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver$PendingResult;->setResultCode(I)V");
         }
 
-        public final void setResultData(java.lang.String arg0) {
+        public final void setResultData(String arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver$PendingResult;->setResultData(Ljava/lang/String;)V");
         }
 
-        public final void setResultExtras(android.os.Bundle arg0) {
+        public final void setResultExtras(Bundle arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/BroadcastReceiver$PendingResult;->setResultExtras(Landroid/os/Bundle;)V");
         }
         }

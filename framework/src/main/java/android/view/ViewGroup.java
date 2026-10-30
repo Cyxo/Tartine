@@ -1,6 +1,33 @@
 package android.view;
 
-    public class ViewGroup extends android.view.View implements android.view.ViewManager, android.view.ViewParent {
+import android.animation.LayoutTransition;
+import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.TypedArray;
+import android.graphics.Canvas;
+import android.graphics.Point;
+import android.graphics.Rect;
+import android.graphics.Region;
+import android.os.Bundle;
+import android.os.Parcelable;
+import android.util.AttributeSet;
+import android.util.SparseArray;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.animation.Animation;
+import android.view.animation.LayoutAnimationController;
+import android.view.animation.Transformation;
+import android.view.autofill.AutofillId;
+import android.view.translation.TranslationCapability;
+import android.view.translation.ViewTranslationRequest;
+import android.window.OnBackInvokedDispatcher;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
+    public class ViewGroup extends View implements ViewManager, ViewParent {
 
     protected static final int CLIP_TO_PADDING_MASK = 34;
     public static final int FOCUS_AFTER_DESCENDANTS = 262144;
@@ -14,20 +41,20 @@ package android.view;
     public static final int PERSISTENT_SCROLLING_CACHE = 2;
 
     /** AOSP ViewGroup(Context) (line 702-704): chains this(context, null). */
-    public ViewGroup(android.content.Context arg0) {
+    public ViewGroup(Context arg0) {
         this(arg0, null);
     }
 
     /** AOSP ViewGroup(Context, AttributeSet) (line 706-708): chains
      * this(context, attrs, 0); the shell keeps the chain (the
      * attribute-flavored members flatten onto the View seed). */
-    public ViewGroup(android.content.Context arg0, android.util.AttributeSet arg1) {
+    public ViewGroup(Context arg0, AttributeSet arg1) {
         this(arg0, arg1, 0);
     }
 
     /** AOSP ViewGroup(Context, AttributeSet, int defStyleAttr) (lines
      * 710-712): chains this(..., defStyleAttr, 0). */
-    public ViewGroup(android.content.Context arg0, android.util.AttributeSet arg1, int arg2) {
+    public ViewGroup(Context arg0, AttributeSet arg1, int arg2) {
         this(arg0, arg1, arg2, 0);
     }
 
@@ -38,7 +65,7 @@ package android.view;
      * (initViewGroup); initFromAttributes defers with the XML-attr
      * machinery.
      */
-    public ViewGroup(android.content.Context arg0, android.util.AttributeSet arg1, int arg2,
+    public ViewGroup(Context arg0, AttributeSet arg1, int arg2,
             int arg3) {
         super(arg0, arg1, arg2, arg3);
         initViewGroup();
@@ -57,19 +84,19 @@ package android.view;
         mGroupFlags |= FLAG_CLIP_TO_PADDING;
     }
 
-    public void addChildrenForAccessibility(java.util.ArrayList<android.view.View> arg0) {
+    public void addChildrenForAccessibility(ArrayList<View> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addChildrenForAccessibility(Ljava/util/ArrayList;)V");
     }
 
-    public void addExtraDataToAccessibilityNodeInfo(android.view.accessibility.AccessibilityNodeInfo arg0, java.lang.String arg1, android.os.Bundle arg2) {
+    public void addExtraDataToAccessibilityNodeInfo(AccessibilityNodeInfo arg0, String arg1, Bundle arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addExtraDataToAccessibilityNodeInfo(Landroid/view/accessibility/AccessibilityNodeInfo;Ljava/lang/String;Landroid/os/Bundle;)V");
     }
 
-    public void addFocusables(java.util.ArrayList<android.view.View> arg0, int arg1, int arg2) {
+    public void addFocusables(ArrayList<View> arg0, int arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addFocusables(Ljava/util/ArrayList;II)V");
     }
 
-    public void addKeyboardNavigationClusters(java.util.Collection<android.view.View> arg0, int arg1) {
+    public void addKeyboardNavigationClusters(Collection<View> arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addKeyboardNavigationClusters(Ljava/util/Collection;I)V");
     }
 
@@ -77,7 +104,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addStatesFromChildren()Z");
     }
 
-    public void addTouchables(java.util.ArrayList<android.view.View> arg0) {
+    public void addTouchables(ArrayList<View> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addTouchables(Ljava/util/ArrayList;)V");
     }
 
@@ -85,29 +112,29 @@ package android.view;
     // addView null-checks are IllegalArgumentException and live in the addView
     // overloads (addViewInLayout itself performs none; a null child would trip
     // NPEs deeper in attachViewToParent on device).
-    public void addView(android.view.View arg0) {
+    public void addView(View arg0) {
         if (arg0 == null) {
             throw new IllegalArgumentException("Cannot add a null child view to a ViewGroup");
         }
         addViewInLayout(arg0, -1, null, false);
     }
 
-    public void addView(android.view.View arg0, android.view.ViewGroup.LayoutParams arg1) {
+    public void addView(View arg0, ViewGroup.LayoutParams arg1) {
         if (arg0 == null) {
             throw new IllegalArgumentException("Cannot add a null child view to a ViewGroup");
         }
         addViewInLayout(arg0, -1, arg1, false);
     }
 
-    public void addView(android.view.View arg0, int arg1) {
+    public void addView(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addView(Landroid/view/View;I)V");
     }
 
-    public void addView(android.view.View arg0, int arg1, android.view.ViewGroup.LayoutParams arg2) {
+    public void addView(View arg0, int arg1, ViewGroup.LayoutParams arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addView(Landroid/view/View;ILandroid/view/ViewGroup$LayoutParams;)V");
     }
 
-    public void addView(android.view.View arg0, int arg1, int arg2) {
+    public void addView(View arg0, int arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addView(Landroid/view/View;II)V");
     }
 
@@ -120,8 +147,8 @@ package android.view;
      * final: the interpreter swaps in the synced list object per call,
      * and between syncs the contents are a mirror/model mix.
      */
-    private java.util.List<android.view.View> mChildren =
-            new java.util.ArrayList<android.view.View>();
+    private List<View> mChildren =
+            new ArrayList<View>();
 
     /**
      * Attach child during an inflight layout pass. Composition attaches the
@@ -129,14 +156,14 @@ package android.view;
      * setLayoutParams (identity preserved), index -1 appends, and the
      * matched View entry keeps reference identity across mirror bridging.
      */
-    protected boolean addViewInLayout(android.view.View arg0, int arg1,
-            android.view.ViewGroup.LayoutParams arg2) {
+    protected boolean addViewInLayout(View arg0, int arg1,
+            ViewGroup.LayoutParams arg2) {
         return addViewInLayout(arg0, arg1, arg2, false);
     }
 
-    protected boolean addViewInLayout(android.view.View arg0, int arg1,
-            android.view.ViewGroup.LayoutParams arg2, boolean arg3) {
-        java.util.List<android.view.View> children = mChildren;
+    protected boolean addViewInLayout(View arg0, int arg1,
+            ViewGroup.LayoutParams arg2, boolean arg3) {
+        List<View> children = mChildren;
         // Ported from AOSP ViewGroup#addView-to-addViewInLayout flow: null
         // params falls back to generateDefaultLayoutParams() (the base
         // returns a WRAP_CONTENT pair, never null).
@@ -160,15 +187,15 @@ package android.view;
      * their port stays UOE until a probe wall needs them.
      */
 
-    protected void attachLayoutAnimationParameters(android.view.View arg0, android.view.ViewGroup.LayoutParams arg1, int arg2, int arg3) {
+    protected void attachLayoutAnimationParameters(View arg0, ViewGroup.LayoutParams arg1, int arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->attachLayoutAnimationParameters(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;II)V");
     }
 
-    protected void attachViewToParent(android.view.View arg0, int arg1, android.view.ViewGroup.LayoutParams arg2) {
+    protected void attachViewToParent(View arg0, int arg1, ViewGroup.LayoutParams arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->attachViewToParent(Landroid/view/View;ILandroid/view/ViewGroup$LayoutParams;)V");
     }
 
-    public void bringChildToFront(android.view.View arg0) {
+    public void bringChildToFront(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->bringChildToFront(Landroid/view/View;)V");
     }
 
@@ -176,25 +203,25 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->canAnimate()Z");
     }
 
-    protected boolean checkLayoutParams(android.view.ViewGroup.LayoutParams arg0) {
+    protected boolean checkLayoutParams(ViewGroup.LayoutParams arg0) {
         // Base ViewGroup validation: params exist and belong to this family
         // (each container refines shape checks; bare containers accept any).
         return arg0 != null;
     }
 
-    public void childDrawableStateChanged(android.view.View arg0) {
+    public void childDrawableStateChanged(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->childDrawableStateChanged(Landroid/view/View;)V");
     }
 
-    public void childHasTransientStateChanged(android.view.View arg0, boolean arg1) {
+    public void childHasTransientStateChanged(View arg0, boolean arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->childHasTransientStateChanged(Landroid/view/View;Z)V");
     }
 
-    protected void cleanupLayoutState(android.view.View arg0) {
+    protected void cleanupLayoutState(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->cleanupLayoutState(Landroid/view/View;)V");
     }
 
-    public void clearChildFocus(android.view.View arg0) {
+    public void clearChildFocus(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->clearChildFocus(Landroid/view/View;)V");
     }
 
@@ -214,7 +241,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->detachAllViewsFromParent()V");
     }
 
-    protected void detachViewFromParent(android.view.View arg0) {
+    protected void detachViewFromParent(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->detachViewFromParent(Landroid/view/View;)V");
     }
 
@@ -226,19 +253,19 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->detachViewsFromParent(II)V");
     }
 
-    public android.view.WindowInsets dispatchApplyWindowInsets(android.view.WindowInsets arg0) {
+    public WindowInsets dispatchApplyWindowInsets(WindowInsets arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchApplyWindowInsets(Landroid/view/WindowInsets;)Landroid/view/WindowInsets;");
     }
 
-    public boolean dispatchCapturedPointerEvent(android.view.MotionEvent arg0) {
+    public boolean dispatchCapturedPointerEvent(MotionEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchCapturedPointerEvent(Landroid/view/MotionEvent;)Z");
     }
 
-    public void dispatchConfigurationChanged(android.content.res.Configuration arg0) {
+    public void dispatchConfigurationChanged(Configuration arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchConfigurationChanged(Landroid/content/res/Configuration;)V");
     }
 
-    public void dispatchCreateViewTranslationRequest(java.util.Map<android.view.autofill.AutofillId, long[]> arg0, int[] arg1, android.view.translation.TranslationCapability arg2, java.util.List<android.view.translation.ViewTranslationRequest> arg3) {
+    public void dispatchCreateViewTranslationRequest(Map<AutofillId, long[]> arg0, int[] arg1, TranslationCapability arg2, List<ViewTranslationRequest> arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchCreateViewTranslationRequest(Ljava/util/Map;[ILandroid/view/translation/TranslationCapability;Ljava/util/List;)V");
     }
 
@@ -246,7 +273,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchDisplayHint(I)V");
     }
 
-    public boolean dispatchDragEvent(android.view.DragEvent arg0) {
+    public boolean dispatchDragEvent(DragEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchDragEvent(Landroid/view/DragEvent;)Z");
     }
 
@@ -281,14 +308,14 @@ package android.view;
      * unset, AOSP:3999-4005, so on-device the clip does not happen either).
      */
     @Override
-    protected void dispatchDraw(android.graphics.Canvas arg0) {
-        final java.util.List<android.view.View> children = mChildren;
+    protected void dispatchDraw(Canvas arg0) {
+        final List<View> children = mChildren;
         final int childrenCount = children.size();
         int flags = stagingGroupFlags();
         boolean more = false;
         final long drawingTime = getDrawingTime();
         for (int i = 0; i < childrenCount; i++) {
-            final android.view.View child = children.get(i);
+            final View child = children.get(i);
             more |= drawChild(arg0, child, drawingTime);
         }
         // AOSP:4371-4376 FLAG_INVALIDATE_REQUIRED/animation-listener legs and
@@ -304,31 +331,31 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchFinishTemporaryDetach()V");
     }
 
-    protected void dispatchFreezeSelfOnly(android.util.SparseArray<android.os.Parcelable> arg0) {
+    protected void dispatchFreezeSelfOnly(SparseArray<Parcelable> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchFreezeSelfOnly(Landroid/util/SparseArray;)V");
     }
 
-    protected boolean dispatchGenericFocusedEvent(android.view.MotionEvent arg0) {
+    protected boolean dispatchGenericFocusedEvent(MotionEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchGenericFocusedEvent(Landroid/view/MotionEvent;)Z");
     }
 
-    protected boolean dispatchGenericPointerEvent(android.view.MotionEvent arg0) {
+    protected boolean dispatchGenericPointerEvent(MotionEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchGenericPointerEvent(Landroid/view/MotionEvent;)Z");
     }
 
-    protected boolean dispatchHoverEvent(android.view.MotionEvent arg0) {
+    protected boolean dispatchHoverEvent(MotionEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchHoverEvent(Landroid/view/MotionEvent;)Z");
     }
 
-    public boolean dispatchKeyEvent(android.view.KeyEvent arg0) {
+    public boolean dispatchKeyEvent(KeyEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchKeyEvent(Landroid/view/KeyEvent;)Z");
     }
 
-    public boolean dispatchKeyEventPreIme(android.view.KeyEvent arg0) {
+    public boolean dispatchKeyEventPreIme(KeyEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchKeyEventPreIme(Landroid/view/KeyEvent;)Z");
     }
 
-    public boolean dispatchKeyShortcutEvent(android.view.KeyEvent arg0) {
+    public boolean dispatchKeyShortcutEvent(KeyEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchKeyShortcutEvent(Landroid/view/KeyEvent;)Z");
     }
 
@@ -336,23 +363,23 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchPointerCaptureChanged(Z)V");
     }
 
-    public void dispatchProvideAutofillStructure(android.view.ViewStructure arg0, int arg1) {
+    public void dispatchProvideAutofillStructure(ViewStructure arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchProvideAutofillStructure(Landroid/view/ViewStructure;I)V");
     }
 
-    public void dispatchProvideStructure(android.view.ViewStructure arg0) {
+    public void dispatchProvideStructure(ViewStructure arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchProvideStructure(Landroid/view/ViewStructure;)V");
     }
 
-    protected void dispatchRestoreInstanceState(android.util.SparseArray<android.os.Parcelable> arg0) {
+    protected void dispatchRestoreInstanceState(SparseArray<Parcelable> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchRestoreInstanceState(Landroid/util/SparseArray;)V");
     }
 
-    protected void dispatchSaveInstanceState(android.util.SparseArray<android.os.Parcelable> arg0) {
+    protected void dispatchSaveInstanceState(SparseArray<Parcelable> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchSaveInstanceState(Landroid/util/SparseArray;)V");
     }
 
-    public void dispatchScrollCaptureSearch(android.graphics.Rect arg0, android.graphics.Point arg1, java.util.function.Consumer<android.view.ScrollCaptureTarget> arg2) {
+    public void dispatchScrollCaptureSearch(Rect arg0, Point arg1, Consumer<ScrollCaptureTarget> arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchScrollCaptureSearch(Landroid/graphics/Rect;Landroid/graphics/Point;Ljava/util/function/Consumer;)V");
     }
 
@@ -376,23 +403,23 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchSystemUiVisibilityChanged(I)V");
     }
 
-    protected void dispatchThawSelfOnly(android.util.SparseArray<android.os.Parcelable> arg0) {
+    protected void dispatchThawSelfOnly(SparseArray<Parcelable> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchThawSelfOnly(Landroid/util/SparseArray;)V");
     }
 
-    public boolean dispatchTouchEvent(android.view.MotionEvent arg0) {
+    public boolean dispatchTouchEvent(MotionEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchTouchEvent(Landroid/view/MotionEvent;)Z");
     }
 
-    public boolean dispatchTrackballEvent(android.view.MotionEvent arg0) {
+    public boolean dispatchTrackballEvent(MotionEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchTrackballEvent(Landroid/view/MotionEvent;)Z");
     }
 
-    public boolean dispatchUnhandledMove(android.view.View arg0, int arg1) {
+    public boolean dispatchUnhandledMove(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchUnhandledMove(Landroid/view/View;I)Z");
     }
 
-    protected void dispatchVisibilityChanged(android.view.View arg0, int arg1) {
+    protected void dispatchVisibilityChanged(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchVisibilityChanged(Landroid/view/View;I)V");
     }
 
@@ -400,28 +427,28 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchWindowFocusChanged(Z)V");
     }
 
-    public void dispatchWindowInsetsAnimationEnd(android.view.WindowInsetsAnimation arg0) {
+    public void dispatchWindowInsetsAnimationEnd(WindowInsetsAnimation arg0) {
         // AOSP ViewGroup.dispatchWindowInsetsAnimationEnd: notifies children
         // that an insets animation ended. No insets system runs on the
         // shell, so no-op (matches the interpreter's no-op builtin).
     }
 
-    public void dispatchWindowInsetsAnimationPrepare(android.view.WindowInsetsAnimation arg0) {
+    public void dispatchWindowInsetsAnimationPrepare(WindowInsetsAnimation arg0) {
         // AOSP ViewGroup.dispatchWindowInsetsAnimationPrepare: notifies
         // children that an insets animation is about to start. No-op on
         // the shell.
     }
 
-    public android.view.WindowInsets dispatchWindowInsetsAnimationProgress(android.view.WindowInsets arg0,
-            java.util.List<android.view.WindowInsetsAnimation> arg1) {
+    public WindowInsets dispatchWindowInsetsAnimationProgress(WindowInsets arg0,
+            List<WindowInsetsAnimation> arg1) {
         // AOSP ViewGroup.dispatchWindowInsetsAnimationProgress: returns
         // updated insets during an animation. No animation runs on the
         // shell, so returns the input unchanged.
         return arg0;
     }
 
-    public android.view.WindowInsetsAnimation.Bounds dispatchWindowInsetsAnimationStart(
-            android.view.WindowInsetsAnimation arg0, android.view.WindowInsetsAnimation.Bounds arg1) {
+    public WindowInsetsAnimation.Bounds dispatchWindowInsetsAnimationStart(
+            WindowInsetsAnimation arg0, WindowInsetsAnimation.Bounds arg1) {
         // AOSP ViewGroup.dispatchWindowInsetsAnimationStart: returns the
         // starting bounds for an insets animation. No animation runs on
         // the shell, so returns the input unchanged.
@@ -443,7 +470,7 @@ package android.view;
      * bytecode; otherwise the framework software leg (View.draw(C,V,J))
      * runs.
      */
-    protected boolean drawChild(android.graphics.Canvas arg0, android.view.View arg1, long arg2) {
+    protected boolean drawChild(Canvas arg0, View arg1, long arg2) {
         return arg1.draw(arg0, this, arg2);
     }
 
@@ -451,31 +478,31 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->drawableStateChanged()V");
     }
 
-    public void endViewTransition(android.view.View arg0) {
+    public void endViewTransition(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->endViewTransition(Landroid/view/View;)V");
     }
 
-    public android.view.View findFocus() {
+    public View findFocus() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->findFocus()Landroid/view/View;");
     }
 
-    public android.window.OnBackInvokedDispatcher findOnBackInvokedDispatcherForChild(android.view.View arg0, android.view.View arg1) {
+    public OnBackInvokedDispatcher findOnBackInvokedDispatcherForChild(View arg0, View arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->findOnBackInvokedDispatcherForChild(Landroid/view/View;Landroid/view/View;)Landroid/window/OnBackInvokedDispatcher;");
     }
 
-    public void findViewsWithText(java.util.ArrayList<android.view.View> arg0, java.lang.CharSequence arg1, int arg2) {
+    public void findViewsWithText(ArrayList<View> arg0, CharSequence arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->findViewsWithText(Ljava/util/ArrayList;Ljava/lang/CharSequence;I)V");
     }
 
-    public android.view.View focusSearch(android.view.View arg0, int arg1) {
+    public View focusSearch(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->focusSearch(Landroid/view/View;I)Landroid/view/View;");
     }
 
-    public void focusableViewAvailable(android.view.View arg0) {
+    public void focusableViewAvailable(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->focusableViewAvailable(Landroid/view/View;)V");
     }
 
-    public boolean gatherTransparentRegion(android.graphics.Region arg0) {
+    public boolean gatherTransparentRegion(Region arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->gatherTransparentRegion(Landroid/graphics/Region;)Z");
     }
 
@@ -485,21 +512,21 @@ package android.view;
      * generateDefaultLayoutParams}): the base returns a WRAP_CONTENT pair,
      * not null. Containers override; their overrides port per wall.
      */
-    protected android.view.ViewGroup.LayoutParams generateDefaultLayoutParams() {
-        return new android.view.ViewGroup.LayoutParams(
-                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-                android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
+        return new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
-    public android.view.ViewGroup.LayoutParams generateLayoutParams(android.util.AttributeSet arg0) {
+    public ViewGroup.LayoutParams generateLayoutParams(AttributeSet arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->generateLayoutParams(Landroid/util/AttributeSet;)Landroid/view/ViewGroup$LayoutParams;");
     }
 
-    protected android.view.ViewGroup.LayoutParams generateLayoutParams(android.view.ViewGroup.LayoutParams arg0) {
+    protected ViewGroup.LayoutParams generateLayoutParams(ViewGroup.LayoutParams arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->generateLayoutParams(Landroid/view/ViewGroup$LayoutParams;)Landroid/view/ViewGroup$LayoutParams;");
     }
 
-    public java.lang.CharSequence getAccessibilityClassName() {
+    public CharSequence getAccessibilityClassName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getAccessibilityClassName()Ljava/lang/CharSequence;");
     }
 
@@ -511,7 +538,7 @@ package android.view;
      * probes {@code content.getChildAt(0)} unguarded on a fresh window and
      * relies on the null return to take its create-new-ComposeView branch.
      */
-    public android.view.View getChildAt(int arg0) {
+    public View getChildAt(int arg0) {
         if (arg0 < 0 || arg0 >= mChildren.size()) {
             return null;
         }
@@ -534,11 +561,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getChildMeasureSpec(III)I");
     }
 
-    protected boolean getChildStaticTransformation(android.view.View arg0, android.view.animation.Transformation arg1) {
+    protected boolean getChildStaticTransformation(View arg0, Transformation arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getChildStaticTransformation(Landroid/view/View;Landroid/view/animation/Transformation;)Z");
     }
 
-    public boolean getChildVisibleRect(android.view.View arg0, android.graphics.Rect arg1, android.graphics.Point arg2) {
+    public boolean getChildVisibleRect(View arg0, Rect arg1, Point arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getChildVisibleRect(Landroid/view/View;Landroid/graphics/Rect;Landroid/graphics/Point;)Z");
     }
 
@@ -558,15 +585,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getDescendantFocusability()I");
     }
 
-    public android.view.View getFocusedChild() {
+    public View getFocusedChild() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getFocusedChild()Landroid/view/View;");
     }
 
-    public android.view.animation.LayoutAnimationController getLayoutAnimation() {
+    public LayoutAnimationController getLayoutAnimation() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getLayoutAnimation()Landroid/view/animation/LayoutAnimationController;");
     }
 
-    public android.view.animation.Animation.AnimationListener getLayoutAnimationListener() {
+    public Animation.AnimationListener getLayoutAnimationListener() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getLayoutAnimationListener()Landroid/view/animation/Animation$AnimationListener;");
     }
 
@@ -574,7 +601,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getLayoutMode()I");
     }
 
-    public android.animation.LayoutTransition getLayoutTransition() {
+    public LayoutTransition getLayoutTransition() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getLayoutTransition()Landroid/animation/LayoutTransition;");
     }
 
@@ -582,7 +609,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getNestedScrollAxes()I");
     }
 
-    public android.view.ViewGroupOverlay getOverlay() {
+    public ViewGroupOverlay getOverlay() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getOverlay()Landroid/view/ViewGroupOverlay;");
     }
 
@@ -605,15 +632,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->hasTransientState()Z");
     }
 
-    public int indexOfChild(android.view.View arg0) {
+    public int indexOfChild(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->indexOfChild(Landroid/view/View;)I");
     }
 
-    public final void invalidateChild(android.view.View arg0, android.graphics.Rect arg1) {
+    public final void invalidateChild(View arg0, Rect arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->invalidateChild(Landroid/view/View;Landroid/graphics/Rect;)V");
     }
 
-    public android.view.ViewParent invalidateChildInParent(int[] arg0, android.graphics.Rect arg1) {
+    public ViewParent invalidateChildInParent(int[] arg0, Rect arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->invalidateChildInParent([ILandroid/graphics/Rect;)Landroid/view/ViewParent;");
     }
 
@@ -653,11 +680,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->layout(IIII)V");
     }
 
-    protected void measureChild(android.view.View arg0, int arg1, int arg2) {
+    protected void measureChild(View arg0, int arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->measureChild(Landroid/view/View;II)V");
     }
 
-    protected void measureChildWithMargins(android.view.View arg0, int arg1, int arg2, int arg3, int arg4) {
+    protected void measureChildWithMargins(View arg0, int arg1, int arg2, int arg3, int arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->measureChildWithMargins(Landroid/view/View;IIII)V");
     }
 
@@ -665,15 +692,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->measureChildren(II)V");
     }
 
-    public void notifySubtreeAccessibilityStateChanged(android.view.View arg0, android.view.View arg1, int arg2) {
+    public void notifySubtreeAccessibilityStateChanged(View arg0, View arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->notifySubtreeAccessibilityStateChanged(Landroid/view/View;Landroid/view/View;I)V");
     }
 
-    public final void offsetDescendantRectToMyCoords(android.view.View arg0, android.graphics.Rect arg1) {
+    public final void offsetDescendantRectToMyCoords(View arg0, Rect arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->offsetDescendantRectToMyCoords(Landroid/view/View;Landroid/graphics/Rect;)V");
     }
 
-    public final void offsetRectIntoDescendantCoords(android.view.View arg0, android.graphics.Rect arg1) {
+    public final void offsetRectIntoDescendantCoords(View arg0, Rect arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->offsetRectIntoDescendantCoords(Landroid/view/View;Landroid/graphics/Rect;)V");
     }
 
@@ -691,7 +718,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onCreateDrawableState(I)[I");
     }
 
-    public void onDescendantInvalidated(android.view.View arg0, android.view.View arg1) {
+    public void onDescendantInvalidated(View arg0, View arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onDescendantInvalidated(Landroid/view/View;Landroid/view/View;)V");
     }
 
@@ -699,11 +726,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onDetachedFromWindow()V");
     }
 
-    public boolean onInterceptHoverEvent(android.view.MotionEvent arg0) {
+    public boolean onInterceptHoverEvent(MotionEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onInterceptHoverEvent(Landroid/view/MotionEvent;)Z");
     }
 
-    public boolean onInterceptTouchEvent(android.view.MotionEvent arg0) {
+    public boolean onInterceptTouchEvent(MotionEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onInterceptTouchEvent(Landroid/view/MotionEvent;)Z");
     }
 
@@ -711,55 +738,55 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onLayout(ZIIII)V");
     }
 
-    public boolean onNestedFling(android.view.View arg0, float arg1, float arg2, boolean arg3) {
+    public boolean onNestedFling(View arg0, float arg1, float arg2, boolean arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onNestedFling(Landroid/view/View;FFZ)Z");
     }
 
-    public boolean onNestedPreFling(android.view.View arg0, float arg1, float arg2) {
+    public boolean onNestedPreFling(View arg0, float arg1, float arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onNestedPreFling(Landroid/view/View;FF)Z");
     }
 
-    public boolean onNestedPrePerformAccessibilityAction(android.view.View arg0, int arg1, android.os.Bundle arg2) {
+    public boolean onNestedPrePerformAccessibilityAction(View arg0, int arg1, Bundle arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onNestedPrePerformAccessibilityAction(Landroid/view/View;ILandroid/os/Bundle;)Z");
     }
 
-    public void onNestedPreScroll(android.view.View arg0, int arg1, int arg2, int[] arg3) {
+    public void onNestedPreScroll(View arg0, int arg1, int arg2, int[] arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onNestedPreScroll(Landroid/view/View;II[I)V");
     }
 
-    public void onNestedScroll(android.view.View arg0, int arg1, int arg2, int arg3, int arg4) {
+    public void onNestedScroll(View arg0, int arg1, int arg2, int arg3, int arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onNestedScroll(Landroid/view/View;IIII)V");
     }
 
-    public void onNestedScrollAccepted(android.view.View arg0, android.view.View arg1, int arg2) {
+    public void onNestedScrollAccepted(View arg0, View arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onNestedScrollAccepted(Landroid/view/View;Landroid/view/View;I)V");
     }
 
-    protected boolean onRequestFocusInDescendants(int arg0, android.graphics.Rect arg1) {
+    protected boolean onRequestFocusInDescendants(int arg0, Rect arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onRequestFocusInDescendants(ILandroid/graphics/Rect;)Z");
     }
 
-    public boolean onRequestSendAccessibilityEvent(android.view.View arg0, android.view.accessibility.AccessibilityEvent arg1) {
+    public boolean onRequestSendAccessibilityEvent(View arg0, AccessibilityEvent arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onRequestSendAccessibilityEvent(Landroid/view/View;Landroid/view/accessibility/AccessibilityEvent;)Z");
     }
 
-    public android.view.PointerIcon onResolvePointerIcon(android.view.MotionEvent arg0, int arg1) {
+    public PointerIcon onResolvePointerIcon(MotionEvent arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onResolvePointerIcon(Landroid/view/MotionEvent;I)Landroid/view/PointerIcon;");
     }
 
-    public boolean onStartNestedScroll(android.view.View arg0, android.view.View arg1, int arg2) {
+    public boolean onStartNestedScroll(View arg0, View arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onStartNestedScroll(Landroid/view/View;Landroid/view/View;I)Z");
     }
 
-    public void onStopNestedScroll(android.view.View arg0) {
+    public void onStopNestedScroll(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onStopNestedScroll(Landroid/view/View;)V");
     }
 
-    public void onViewAdded(android.view.View arg0) {
+    public void onViewAdded(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onViewAdded(Landroid/view/View;)V");
     }
 
-    public void onViewRemoved(android.view.View arg0) {
+    public void onViewRemoved(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onViewRemoved(Landroid/view/View;)V");
     }
 
@@ -767,15 +794,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->propagateRequestedFrameRate(FZ)V");
     }
 
-    public void recomputeViewAttributes(android.view.View arg0) {
+    public void recomputeViewAttributes(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->recomputeViewAttributes(Landroid/view/View;)V");
     }
 
     public void removeAllViews() {
         for (Object child : mChildren) {
-            if (child instanceof android.view.View) {
-                ((android.view.View) child).mParent = null;
-                ((android.view.View) child).mAttached = 0;
+            if (child instanceof View) {
+                ((View) child).mParent = null;
+                ((View) child).mAttached = 0;
             }
         }
         mChildren.clear();
@@ -783,19 +810,19 @@ package android.view;
 
     public void removeAllViewsInLayout() {
         for (Object child : mChildren) {
-            if (child instanceof android.view.View) {
-                ((android.view.View) child).mParent = null;
-                ((android.view.View) child).mAttached = 0;
+            if (child instanceof View) {
+                ((View) child).mParent = null;
+                ((View) child).mAttached = 0;
             }
         }
         mChildren.clear();
     }
 
-    protected void removeDetachedView(android.view.View arg0, boolean arg1) {
+    protected void removeDetachedView(View arg0, boolean arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->removeDetachedView(Landroid/view/View;Z)V");
     }
 
-    public void removeView(android.view.View arg0) {
+    public void removeView(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->removeView(Landroid/view/View;)V");
     }
 
@@ -803,7 +830,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->removeViewAt(I)V");
     }
 
-    public void removeViewInLayout(android.view.View arg0) {
+    public void removeViewInLayout(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->removeViewInLayout(Landroid/view/View;)V");
     }
 
@@ -815,11 +842,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->removeViewsInLayout(II)V");
     }
 
-    public void requestChildFocus(android.view.View arg0, android.view.View arg1) {
+    public void requestChildFocus(View arg0, View arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->requestChildFocus(Landroid/view/View;Landroid/view/View;)V");
     }
 
-    public boolean requestChildRectangleOnScreen(android.view.View arg0, android.graphics.Rect arg1, boolean arg2) {
+    public boolean requestChildRectangleOnScreen(View arg0, Rect arg1, boolean arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->requestChildRectangleOnScreen(Landroid/view/View;Landroid/graphics/Rect;Z)Z");
     }
 
@@ -827,15 +854,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->requestDisallowInterceptTouchEvent(Z)V");
     }
 
-    public boolean requestFocus(int arg0, android.graphics.Rect arg1) {
+    public boolean requestFocus(int arg0, Rect arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->requestFocus(ILandroid/graphics/Rect;)Z");
     }
 
-    public boolean requestSendAccessibilityEvent(android.view.View arg0, android.view.accessibility.AccessibilityEvent arg1) {
+    public boolean requestSendAccessibilityEvent(View arg0, AccessibilityEvent arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->requestSendAccessibilityEvent(Landroid/view/View;Landroid/view/accessibility/AccessibilityEvent;)Z");
     }
 
-    public void requestTransparentRegion(android.view.View arg0) {
+    public void requestTransparentRegion(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->requestTransparentRegion(Landroid/view/View;)V");
     }
 
@@ -909,11 +936,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setDescendantFocusability(I)V");
     }
 
-    public void setLayoutAnimation(android.view.animation.LayoutAnimationController arg0) {
+    public void setLayoutAnimation(LayoutAnimationController arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setLayoutAnimation(Landroid/view/animation/LayoutAnimationController;)V");
     }
 
-    public void setLayoutAnimationListener(android.view.animation.Animation.AnimationListener arg0) {
+    public void setLayoutAnimationListener(Animation.AnimationListener arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setLayoutAnimationListener(Landroid/view/animation/Animation$AnimationListener;)V");
     }
 
@@ -921,7 +948,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setLayoutMode(I)V");
     }
 
-    public void setLayoutTransition(android.animation.LayoutTransition arg0) {
+    public void setLayoutTransition(LayoutTransition arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setLayoutTransition(Landroid/animation/LayoutTransition;)V");
     }
 
@@ -929,7 +956,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setMotionEventSplittingEnabled(Z)V");
     }
 
-    public void setOnHierarchyChangeListener(android.view.ViewGroup.OnHierarchyChangeListener arg0) {
+    public void setOnHierarchyChangeListener(ViewGroup.OnHierarchyChangeListener arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setOnHierarchyChangeListener(Landroid/view/ViewGroup$OnHierarchyChangeListener;)V");
     }
 
@@ -953,7 +980,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setTransitionGroup(Z)V");
     }
 
-    public void setWindowInsetsAnimationCallback(android.view.WindowInsetsAnimation.Callback arg0) {
+    public void setWindowInsetsAnimationCallback(WindowInsetsAnimation.Callback arg0) {
         // AOSP ViewGroup.setWindowInsetsAnimationCallback: sets the callback
         // for insets animation events. No insets system on the shell, so
         // no-op (matches the interpreter's no-op builtin).
@@ -963,19 +990,19 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->shouldDelayChildPressedState()Z");
     }
 
-    public boolean showContextMenuForChild(android.view.View arg0) {
+    public boolean showContextMenuForChild(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->showContextMenuForChild(Landroid/view/View;)Z");
     }
 
-    public boolean showContextMenuForChild(android.view.View arg0, float arg1, float arg2) {
+    public boolean showContextMenuForChild(View arg0, float arg1, float arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->showContextMenuForChild(Landroid/view/View;FF)Z");
     }
 
-    public android.view.ActionMode startActionModeForChild(android.view.View arg0, android.view.ActionMode.Callback arg1) {
+    public ActionMode startActionModeForChild(View arg0, ActionMode.Callback arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->startActionModeForChild(Landroid/view/View;Landroid/view/ActionMode$Callback;)Landroid/view/ActionMode;");
     }
 
-    public android.view.ActionMode startActionModeForChild(android.view.View arg0, android.view.ActionMode.Callback arg1, int arg2) {
+    public ActionMode startActionModeForChild(View arg0, ActionMode.Callback arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->startActionModeForChild(Landroid/view/View;Landroid/view/ActionMode$Callback;I)Landroid/view/ActionMode;");
     }
 
@@ -983,7 +1010,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->startLayoutAnimation()V");
     }
 
-    public void startViewTransition(android.view.View arg0) {
+    public void startViewTransition(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->startViewTransition(Landroid/view/View;)V");
     }
 
@@ -991,7 +1018,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->suppressLayout(Z)V");
     }
 
-    public void updateViewLayout(android.view.View arg0, android.view.ViewGroup.LayoutParams arg1) {
+    public void updateViewLayout(View arg0, ViewGroup.LayoutParams arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->updateViewLayout(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V");
     }
 
@@ -1004,10 +1031,10 @@ package android.view;
         public static final int MATCH_PARENT = -1;
         public static final int WRAP_CONTENT = -2;
         public int height;
-        public android.view.animation.LayoutAnimationController.AnimationParameters layoutAnimationParameters;
+        public LayoutAnimationController.AnimationParameters layoutAnimationParameters;
         public int width;
 
-        public LayoutParams(android.content.Context arg0, android.util.AttributeSet arg1) {
+        public LayoutParams(Context arg0, AttributeSet arg1) {
             // Real Android inflates width/height from XML attrs; nothing
             // reads XML layouts yet, so the default pair applies until
             // attribute parsing ports.
@@ -1015,7 +1042,7 @@ package android.view;
             height = WRAP_CONTENT;
         }
 
-        public LayoutParams(android.view.ViewGroup.LayoutParams arg0) {
+        public LayoutParams(ViewGroup.LayoutParams arg0) {
             width = arg0.width;
             height = arg0.height;
         }
@@ -1029,7 +1056,7 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup$LayoutParams;->resolveLayoutDirection(I)V");
         }
 
-        protected void setBaseAttributes(android.content.res.TypedArray arg0, int arg1, int arg2) {
+        protected void setBaseAttributes(TypedArray arg0, int arg1, int arg2) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup$LayoutParams;->setBaseAttributes(Landroid/content/res/TypedArray;II)V");
         }
 
@@ -1039,8 +1066,8 @@ package android.view;
         }
         public static interface OnHierarchyChangeListener {
 
-        public abstract void onChildViewAdded(android.view.View arg0, android.view.View arg1);
+        public abstract void onChildViewAdded(View arg0, View arg1);
 
-        public abstract void onChildViewRemoved(android.view.View arg0, android.view.View arg1);
+        public abstract void onChildViewRemoved(View arg0, View arg1);
         }
     }

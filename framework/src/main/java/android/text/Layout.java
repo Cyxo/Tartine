@@ -1,5 +1,13 @@
 package android.text;
 
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.text.LineBreakConfig;
+import java.util.List;
+
     public class Layout {
 
     public static final int BREAK_STRATEGY_BALANCED = 2;
@@ -14,15 +22,15 @@ package android.text;
     public static final int HYPHENATION_FREQUENCY_NONE = 0;
     public static final int HYPHENATION_FREQUENCY_NORMAL = 1;
     public static final int HYPHENATION_FREQUENCY_NORMAL_FAST = 3;
-    public static android.text.Layout.TextInclusionStrategy INCLUSION_STRATEGY_ANY_OVERLAP;
-    public static android.text.Layout.TextInclusionStrategy INCLUSION_STRATEGY_CONTAINS_ALL;
-    public static android.text.Layout.TextInclusionStrategy INCLUSION_STRATEGY_CONTAINS_CENTER;
+    public static Layout.TextInclusionStrategy INCLUSION_STRATEGY_ANY_OVERLAP;
+    public static Layout.TextInclusionStrategy INCLUSION_STRATEGY_CONTAINS_ALL;
+    public static Layout.TextInclusionStrategy INCLUSION_STRATEGY_CONTAINS_CENTER;
     public static final int JUSTIFICATION_MODE_INTER_CHARACTER = 2;
     public static final int JUSTIFICATION_MODE_INTER_WORD = 1;
     public static final int JUSTIFICATION_MODE_NONE = 0;
 
-    protected java.lang.CharSequence text;
-    protected android.text.TextPaint paint;
+    protected CharSequence text;
+    protected TextPaint paint;
     protected int width;
     protected float spacingMul = 1.0f;
     protected float spacingAdd = 0.0f;
@@ -37,13 +45,13 @@ package android.text;
      *  (extra vertical padding) instead of {@code ascent}/{@code descent}. */
     protected boolean includePad;
 
-    protected Layout(java.lang.CharSequence arg0, android.text.TextPaint arg1, int arg2, android.text.Layout.Alignment arg3, float arg4, float arg5) {
+    protected Layout(CharSequence arg0, TextPaint arg1, int arg2, Layout.Alignment arg3, float arg4, float arg5) {
         this(arg0, arg1, arg2, arg3, arg4, arg5, false);
     }
 
-    protected Layout(java.lang.CharSequence arg0, android.text.TextPaint arg1, int arg2, android.text.Layout.Alignment arg3, float arg4, float arg5, boolean arg6) {
+    protected Layout(CharSequence arg0, TextPaint arg1, int arg2, Layout.Alignment arg3, float arg4, float arg5, boolean arg6) {
         this.text = (arg0 == null ? "" : arg0);
-        if (arg1 == null) this.paint = new android.text.TextPaint();
+        if (arg1 == null) this.paint = new TextPaint();
         else this.paint = arg1;
         this.width = (arg2 <= 0) ? 480 : arg2;
         this.spacingMul = arg4;
@@ -65,10 +73,10 @@ package android.text;
      * makes the baseline independent of the added spacing.
      */
     protected void recomputeLineMetrics() {
-        if (this.paint == null) this.paint = new android.text.TextPaint();
+        if (this.paint == null) this.paint = new TextPaint();
         float size = this.paint.getTextSize() > 0.0f
                 ? this.paint.getTextSize() : 14.0f;
-        android.graphics.Paint.FontMetrics fm = this.paint.getFontMetrics();
+        Paint.FontMetrics fm = this.paint.getFontMetrics();
         float above = this.includePad ? fm.top : fm.ascent;
         float below = this.includePad ? fm.bottom : fm.descent;
         if (above >= 0.0f) above = -size;
@@ -87,7 +95,7 @@ package android.text;
         this.lineAscent = -this.lineBaseline;
     }
 
-    public android.graphics.RectF computeDrawingBoundingBox() {
+    public RectF computeDrawingBoundingBox() {
         return null;
     }
 
@@ -99,27 +107,27 @@ package android.text;
      * drawText(Canvas,int,int) and the builtin parity note). One line only
      * here, so that is exactly {@link #getLineBaseline(int)}.
      */
-    public void draw(android.graphics.Canvas canvas) {
+    public void draw(Canvas canvas) {
         if (canvas == null || text == null) return;
         String s = text.toString();
         if (s.isEmpty()) return;
-        android.text.TextPaint pnt = (paint == null) ? new android.text.TextPaint() : paint;
+        TextPaint pnt = (paint == null) ? new TextPaint() : paint;
         canvas.drawText(s, 0.0f, (float) getLineBaseline(0), pnt);
     }
 
-    public void draw(android.graphics.Canvas arg0, android.graphics.Path arg1, android.graphics.Paint arg2, int arg3) {
+    public void draw(Canvas arg0, Path arg1, Paint arg2, int arg3) {
         draw(arg0);
     }
 
-    public void draw(android.graphics.Canvas arg0, java.util.List<android.graphics.Path> arg1, java.util.List<android.graphics.Paint> arg2, android.graphics.Path arg3, android.graphics.Paint arg4, int arg5) {
+    public void draw(Canvas arg0, List<Path> arg1, List<Paint> arg2, Path arg3, Paint arg4, int arg5) {
 
     }
 
-    public void drawBackground(android.graphics.Canvas arg0) {
+    public void drawBackground(Canvas arg0) {
 
     }
 
-    public void drawText(android.graphics.Canvas arg0) {
+    public void drawText(Canvas arg0) {
 
     }
 
@@ -127,7 +135,7 @@ package android.text;
 
     }
 
-    public final android.text.Layout.Alignment getAlignment() {
+    public final Layout.Alignment getAlignment() {
         return null;
     }
 
@@ -139,15 +147,15 @@ package android.text;
         return 0;
     }
 
-    public void getCursorPath(int arg0, android.graphics.Path arg1, java.lang.CharSequence arg2) {
+    public void getCursorPath(int arg0, Path arg1, CharSequence arg2) {
 
     }
 
-    public static float getDesiredWidth(java.lang.CharSequence arg0, android.text.TextPaint arg1) {
+    public static float getDesiredWidth(CharSequence arg0, TextPaint arg1) {
         return getDesiredWidth(arg0, 0, arg0 == null ? 0 : arg0.length(), arg1);
     }
 
-    public static float getDesiredWidth(java.lang.CharSequence arg0, int arg1, int arg2, android.text.TextPaint arg3) {
+    public static float getDesiredWidth(CharSequence arg0, int arg1, int arg2, TextPaint arg3) {
         CharSequence body = (arg0 == null) ? "" : (arg1 == 0 && arg2 == 0 ? arg0 : arg0.subSequence(arg1, Math.min(arg0.length(),arg2)));
         return arg3 == null ? (float) body.length() * 10.0f : arg3.measureText(body.toString());
     }
@@ -160,7 +168,7 @@ package android.text;
         return 0;
     }
 
-    public final android.text.TextUtils.TruncateAt getEllipsize() {
+    public final TextUtils.TruncateAt getEllipsize() {
         return null;
     }
 
@@ -207,7 +215,7 @@ package android.text;
                 : getLineTop(arg0 + 1) - getLineExtra(arg0);
     }
 
-    public int getLineBounds(int arg0, android.graphics.Rect arg1) {
+    public int getLineBounds(int arg0, Rect arg1) {
         // AOSP Layout.java: getLineBounds fills left/top/right/bottom from
         // the line box and returns the baseline.
         if (arg1 != null) {
@@ -219,7 +227,7 @@ package android.text;
         return getLineBaseline(arg0);
     }
 
-    public android.graphics.text.LineBreakConfig getLineBreakConfig() {
+    public LineBreakConfig getLineBreakConfig() {
         return null;
     }
 
@@ -242,7 +250,7 @@ package android.text;
         return lineExtra;
     }
 
-    public android.text.Layout.Directions getLineDirections(int arg0) {
+    public Layout.Directions getLineDirections(int arg0) {
         return null;
     }
 
@@ -308,7 +316,7 @@ package android.text;
         return 0;
     }
 
-    public android.graphics.Paint.FontMetrics getMinimumFontMetrics() {
+    public Paint.FontMetrics getMinimumFontMetrics() {
         return null;
     }
 
@@ -324,12 +332,12 @@ package android.text;
         return 0;
     }
 
-    public final android.text.TextPaint getPaint() {
-        if (paint == null) paint = new android.text.TextPaint();
+    public final TextPaint getPaint() {
+        if (paint == null) paint = new TextPaint();
         return paint;
     }
 
-    public final android.text.Layout.Alignment getParagraphAlignment(int arg0) {
+    public final Layout.Alignment getParagraphAlignment(int arg0) {
         return null;
     }
 
@@ -349,7 +357,7 @@ package android.text;
         return 0.0f;
     }
 
-    public int[] getRangeForRect(android.graphics.RectF arg0, android.text.SegmentFinder arg1, android.text.Layout.TextInclusionStrategy arg2) {
+    public int[] getRangeForRect(RectF arg0, SegmentFinder arg1, Layout.TextInclusionStrategy arg2) {
         return null;
     }
 
@@ -361,7 +369,7 @@ package android.text;
         return 0.0f;
     }
 
-    public void getSelectionPath(int arg0, int arg1, android.graphics.Path arg2) {
+    public void getSelectionPath(int arg0, int arg1, Path arg2) {
 
     }
 
@@ -377,11 +385,11 @@ package android.text;
         return spacingMul;
     }
 
-    public final java.lang.CharSequence getText() {
-        return (text == null) ? new android.text.SpannableString("") : text;
+    public final CharSequence getText() {
+        return (text == null) ? new SpannableString("") : text;
     }
 
-    public final android.text.TextDirectionHeuristic getTextDirectionHeuristic() {
+    public final TextDirectionHeuristic getTextDirectionHeuristic() {
         return null;
     }
 
@@ -413,10 +421,10 @@ package android.text;
         return false;
     }
 
-    public android.graphics.Paint.FontMetricsInt getLineFontMetrics(int arg0) {
-        android.graphics.Paint.FontMetricsInt fm = new android.graphics.Paint.FontMetricsInt();
+    public Paint.FontMetricsInt getLineFontMetrics(int arg0) {
+        Paint.FontMetricsInt fm = new Paint.FontMetricsInt();
         if (paint != null) {
-            android.graphics.Paint.FontMetrics m = paint.getFontMetrics();
+            Paint.FontMetrics m = paint.getFontMetrics();
             fm.ascent = (int) m.ascent;
             fm.descent = (int) m.descent;
             fm.top = (int) m.top;
@@ -440,6 +448,6 @@ package android.text;
         }
         public static interface TextInclusionStrategy {
 
-        public abstract boolean isSegmentInside(android.graphics.RectF arg0, android.graphics.RectF arg1);
+        public abstract boolean isSegmentInside(RectF arg0, RectF arg1);
         }
     }

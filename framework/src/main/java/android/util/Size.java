@@ -6,7 +6,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Size;-><init>(II)V");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Size;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -22,11 +22,11 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Size;->hashCode()I");
     }
 
-    public static android.util.Size parseSize(java.lang.String arg0) {
+    public static Size parseSize(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Size;->parseSize(Ljava/lang/String;)Landroid/util/Size;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Size;->toString()Ljava/lang/String;");
     }
 

@@ -1,17 +1,17 @@
 package android.util;
 
-    public class Rational extends java.lang.Number implements java.lang.Comparable<android.util.Rational> {
+    public class Rational extends Number implements Comparable<Rational> {
 
-    public static android.util.Rational NEGATIVE_INFINITY;
-    public static android.util.Rational NaN;
-    public static android.util.Rational POSITIVE_INFINITY;
-    public static android.util.Rational ZERO;
+    public static Rational NEGATIVE_INFINITY;
+    public static Rational NaN;
+    public static Rational POSITIVE_INFINITY;
+    public static Rational ZERO;
 
     public Rational(int arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Rational;-><init>(II)V");
     }
 
-    public int compareTo(android.util.Rational arg0) {
+    public int compareTo(Rational arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Rational;->compareTo(Landroid/util/Rational;)I");
     }
 
@@ -19,7 +19,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Rational;->doubleValue()D");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Rational;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -63,7 +63,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Rational;->longValue()J");
     }
 
-    public static android.util.Rational parseRational(java.lang.String arg0) {
+    public static Rational parseRational(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Rational;->parseRational(Ljava/lang/String;)Landroid/util/Rational;");
     }
 
@@ -71,7 +71,7 @@ package android.util;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Rational;->shortValue()S");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/util/Rational;->toString()Ljava/lang/String;");
     }
 

@@ -2,15 +2,15 @@ package android.graphics.fonts;
 
     public class FontVariationAxis {
 
-    public FontVariationAxis(java.lang.String arg0, float arg1) {
+    public FontVariationAxis(String arg0, float arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/fonts/FontVariationAxis;-><init>(Ljava/lang/String;F)V");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/fonts/FontVariationAxis;->equals(Ljava/lang/Object;)Z");
     }
 
-    public static android.graphics.fonts.FontVariationAxis[] fromFontVariationSettings(java.lang.String arg0) {
+    public static FontVariationAxis[] fromFontVariationSettings(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/fonts/FontVariationAxis;->fromFontVariationSettings(Ljava/lang/String;)[Landroid/graphics/fonts/FontVariationAxis;");
     }
 
@@ -18,7 +18,7 @@ package android.graphics.fonts;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/fonts/FontVariationAxis;->getStyleValue()F");
     }
 
-    public java.lang.String getTag() {
+    public String getTag() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/fonts/FontVariationAxis;->getTag()Ljava/lang/String;");
     }
 
@@ -26,11 +26,11 @@ package android.graphics.fonts;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/fonts/FontVariationAxis;->hashCode()I");
     }
 
-    public static java.lang.String toFontVariationSettings(android.graphics.fonts.FontVariationAxis[] arg0) {
+    public static String toFontVariationSettings(FontVariationAxis[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/fonts/FontVariationAxis;->toFontVariationSettings([Landroid/graphics/fonts/FontVariationAxis;)Ljava/lang/String;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/fonts/FontVariationAxis;->toString()Ljava/lang/String;");
     }
 

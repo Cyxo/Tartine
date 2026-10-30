@@ -1,6 +1,8 @@
 package android.database.sqlite;
 
-    public class SQLiteStatement extends android.database.sqlite.SQLiteProgram {
+import android.os.ParcelFileDescriptor;
+
+    public class SQLiteStatement extends SQLiteProgram {
 
     public void execute() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteStatement;->execute()V");
@@ -14,7 +16,7 @@ package android.database.sqlite;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteStatement;->executeUpdateDelete()I");
     }
 
-    public android.os.ParcelFileDescriptor simpleQueryForBlobFileDescriptor() {
+    public ParcelFileDescriptor simpleQueryForBlobFileDescriptor() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteStatement;->simpleQueryForBlobFileDescriptor()Landroid/os/ParcelFileDescriptor;");
     }
 
@@ -22,11 +24,11 @@ package android.database.sqlite;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteStatement;->simpleQueryForLong()J");
     }
 
-    public java.lang.String simpleQueryForString() {
+    public String simpleQueryForString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteStatement;->simpleQueryForString()Ljava/lang/String;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteStatement;->toString()Ljava/lang/String;");
     }
     }

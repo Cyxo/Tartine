@@ -1,8 +1,14 @@
 package android.view;
 
-    public class ContentInfo implements android.os.Parcelable {
+import android.content.ClipData;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class ContentInfo implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final int FLAG_CONVERT_TO_PLAIN_TEXT = 1;
     public static final int SOURCE_APP = 0;
     public static final int SOURCE_AUTOFILL = 4;
@@ -15,11 +21,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ContentInfo;->describeContents()I");
     }
 
-    public android.content.ClipData getClip() {
+    public ClipData getClip() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ContentInfo;->getClip()Landroid/content/ClipData;");
     }
 
-    public android.os.Bundle getExtras() {
+    public Bundle getExtras() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ContentInfo;->getExtras()Landroid/os/Bundle;");
     }
 
@@ -27,7 +33,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ContentInfo;->getFlags()I");
     }
 
-    public android.net.Uri getLinkUri() {
+    public Uri getLinkUri() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ContentInfo;->getLinkUri()Landroid/net/Uri;");
     }
 
@@ -35,11 +41,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ContentInfo;->getSource()I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ContentInfo;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ContentInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

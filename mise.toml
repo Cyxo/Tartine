@@ -49,3 +49,7 @@ run_windows = "pwsh -File scripts/dump.ps1"
 description = "Regenerate framework skeletons from the local android-36 android.jar (adds classes not yet on disk)"
 depends = ["build"]
 run = "gradle :fw-tools:fwGen"
+
+[tasks.shorten]
+description = "Rewrite needless fully-qualified names to imports (idempotent; add --check via -PshortenCheck)"
+run = "gradle :fw-tools:fwShorten"

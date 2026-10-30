@@ -1,10 +1,14 @@
 package android.view.autofill;
 
-    public class AutofillId implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.view.View;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class AutofillId implements Parcelable {
 
-    public static android.view.autofill.AutofillId create(android.view.View arg0, int arg1) {
+    public static Parcelable.Creator CREATOR;
+
+    public static AutofillId create(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillId;->create(Landroid/view/View;I)Landroid/view/autofill/AutofillId;");
     }
 
@@ -12,7 +16,7 @@ package android.view.autofill;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillId;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillId;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -40,11 +44,11 @@ package android.view.autofill;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillId;->isVirtual()Z");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillId;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillId;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

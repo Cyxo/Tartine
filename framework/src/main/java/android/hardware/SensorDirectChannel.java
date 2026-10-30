@@ -1,6 +1,8 @@
 package android.hardware;
 
-    public class SensorDirectChannel implements java.nio.channels.Channel {
+import java.nio.channels.Channel;
+
+    public class SensorDirectChannel implements Channel {
 
     public static final int RATE_FAST = 2;
     public static final int RATE_NORMAL = 1;
@@ -13,7 +15,7 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorDirectChannel;->close()V");
     }
 
-    public int configure(android.hardware.Sensor arg0, int arg1) {
+    public int configure(Sensor arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/SensorDirectChannel;->configure(Landroid/hardware/Sensor;I)I");
     }
 

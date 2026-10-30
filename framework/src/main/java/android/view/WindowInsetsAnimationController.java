@@ -1,5 +1,7 @@
 package android.view;
 
+import android.graphics.Insets;
+
     public interface WindowInsetsAnimationController {
 
     public abstract void finish(boolean arg0);
@@ -8,11 +10,11 @@ package android.view;
 
     public abstract float getCurrentFraction();
 
-    public abstract android.graphics.Insets getCurrentInsets();
+    public abstract Insets getCurrentInsets();
 
-    public abstract android.graphics.Insets getHiddenStateInsets();
+    public abstract Insets getHiddenStateInsets();
 
-    public abstract android.graphics.Insets getShownStateInsets();
+    public abstract Insets getShownStateInsets();
 
     public abstract int getTypes();
 
@@ -24,5 +26,5 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimationController;->isReady()Z");
     }
 
-    public abstract void setInsetsAndAlpha(android.graphics.Insets arg0, float arg1, float arg2);
+    public abstract void setInsetsAndAlpha(Insets arg0, float arg1, float arg2);
     }

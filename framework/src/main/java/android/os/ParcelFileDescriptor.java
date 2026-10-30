@@ -1,8 +1,15 @@
 package android.os;
 
-    public class ParcelFileDescriptor implements java.io.Closeable, android.os.Parcelable {
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileDescriptor;
+import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.Socket;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class ParcelFileDescriptor implements Closeable, Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final int MODE_APPEND = 33554432;
     public static final int MODE_CREATE = 134217728;
     public static final int MODE_READ_ONLY = 268435456;
@@ -12,11 +19,11 @@ package android.os;
     public static final int MODE_WORLD_WRITEABLE = 2;
     public static final int MODE_WRITE_ONLY = 536870912;
 
-    public ParcelFileDescriptor(android.os.ParcelFileDescriptor arg0) {
+    public ParcelFileDescriptor(ParcelFileDescriptor arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;-><init>(Landroid/os/ParcelFileDescriptor;)V");
     }
 
-    public static android.os.ParcelFileDescriptor adoptFd(int arg0) {
+    public static ParcelFileDescriptor adoptFd(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->adoptFd(I)Landroid/os/ParcelFileDescriptor;");
     }
 
@@ -32,23 +39,23 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->close()V");
     }
 
-    public void closeWithError(java.lang.String arg0) {
+    public void closeWithError(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->closeWithError(Ljava/lang/String;)V");
     }
 
-    public static android.os.ParcelFileDescriptor[] createPipe() {
+    public static ParcelFileDescriptor[] createPipe() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->createPipe()[Landroid/os/ParcelFileDescriptor;");
     }
 
-    public static android.os.ParcelFileDescriptor[] createReliablePipe() {
+    public static ParcelFileDescriptor[] createReliablePipe() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->createReliablePipe()[Landroid/os/ParcelFileDescriptor;");
     }
 
-    public static android.os.ParcelFileDescriptor[] createReliableSocketPair() {
+    public static ParcelFileDescriptor[] createReliableSocketPair() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->createReliableSocketPair()[Landroid/os/ParcelFileDescriptor;");
     }
 
-    public static android.os.ParcelFileDescriptor[] createSocketPair() {
+    public static ParcelFileDescriptor[] createSocketPair() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->createSocketPair()[Landroid/os/ParcelFileDescriptor;");
     }
 
@@ -60,11 +67,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->detachFd()I");
     }
 
-    public android.os.ParcelFileDescriptor dup() {
+    public ParcelFileDescriptor dup() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->dup()Landroid/os/ParcelFileDescriptor;");
     }
 
-    public static android.os.ParcelFileDescriptor dup(java.io.FileDescriptor arg0) {
+    public static ParcelFileDescriptor dup(FileDescriptor arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->dup(Ljava/io/FileDescriptor;)Landroid/os/ParcelFileDescriptor;");
     }
 
@@ -72,15 +79,15 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->finalize()V");
     }
 
-    public static android.os.ParcelFileDescriptor fromDatagramSocket(java.net.DatagramSocket arg0) {
+    public static ParcelFileDescriptor fromDatagramSocket(DatagramSocket arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->fromDatagramSocket(Ljava/net/DatagramSocket;)Landroid/os/ParcelFileDescriptor;");
     }
 
-    public static android.os.ParcelFileDescriptor fromFd(int arg0) {
+    public static ParcelFileDescriptor fromFd(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->fromFd(I)Landroid/os/ParcelFileDescriptor;");
     }
 
-    public static android.os.ParcelFileDescriptor fromSocket(java.net.Socket arg0) {
+    public static ParcelFileDescriptor fromSocket(Socket arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->fromSocket(Ljava/net/Socket;)Landroid/os/ParcelFileDescriptor;");
     }
 
@@ -88,7 +95,7 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->getFd()I");
     }
 
-    public java.io.FileDescriptor getFileDescriptor() {
+    public FileDescriptor getFileDescriptor() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->getFileDescriptor()Ljava/io/FileDescriptor;");
     }
 
@@ -96,27 +103,27 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->getStatSize()J");
     }
 
-    public static android.os.ParcelFileDescriptor open(java.io.File arg0, int arg1) {
+    public static ParcelFileDescriptor open(File arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->open(Ljava/io/File;I)Landroid/os/ParcelFileDescriptor;");
     }
 
-    public static android.os.ParcelFileDescriptor open(java.io.File arg0, int arg1, android.os.Handler arg2, android.os.ParcelFileDescriptor.OnCloseListener arg3) {
+    public static ParcelFileDescriptor open(File arg0, int arg1, Handler arg2, ParcelFileDescriptor.OnCloseListener arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->open(Ljava/io/File;ILandroid/os/Handler;Landroid/os/ParcelFileDescriptor$OnCloseListener;)Landroid/os/ParcelFileDescriptor;");
     }
 
-    public static int parseMode(java.lang.String arg0) {
+    public static int parseMode(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->parseMode(Ljava/lang/String;)I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->toString()Ljava/lang/String;");
     }
 
-    public static android.os.ParcelFileDescriptor wrap(android.os.ParcelFileDescriptor arg0, android.os.Handler arg1, android.os.ParcelFileDescriptor.OnCloseListener arg2) {
+    public static ParcelFileDescriptor wrap(ParcelFileDescriptor arg0, Handler arg1, ParcelFileDescriptor.OnCloseListener arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->wrap(Landroid/os/ParcelFileDescriptor;Landroid/os/Handler;Landroid/os/ParcelFileDescriptor$OnCloseListener;)Landroid/os/ParcelFileDescriptor;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/ParcelFileDescriptor;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 
@@ -125,6 +132,6 @@ package android.os;
         }
         public static interface OnCloseListener {
 
-        public abstract void onClose(java.io.IOException arg0);
+        public abstract void onClose(IOException arg0);
         }
     }

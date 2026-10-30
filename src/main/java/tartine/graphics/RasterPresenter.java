@@ -1,5 +1,6 @@
 package tartine.graphics;
 
+import android.graphics.Canvas;
 import tartine.gfx.GfxBackend;
 import tartine.gfx.GfxSurface;
 
@@ -25,7 +26,7 @@ public final class RasterPresenter {
      * Mints a framework canvas bound to the given surface (host renderer
      * path; on-device ViewRootImpl/HardwareRenderer plays this role).
      */
-    public static android.graphics.Canvas createSurfaceCanvas(GfxSurface surface) {
-        return android.graphics.Canvas.tartineCreate(surface.getCanvas());
+    public static Canvas createSurfaceCanvas(GfxSurface surface) {
+        return Canvas.tartineCreate(surface.getCanvas());
     }
 }

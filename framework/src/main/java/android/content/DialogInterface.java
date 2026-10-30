@@ -1,5 +1,7 @@
 package android.content;
 
+import android.view.KeyEvent;
+
     public interface DialogInterface {
 
     public static final int BUTTON1 = -1;
@@ -14,18 +16,18 @@ package android.content;
     public abstract void dismiss();
         public static interface OnCancelListener {
 
-        public abstract void onCancel(android.content.DialogInterface arg0);
+        public abstract void onCancel(DialogInterface arg0);
         }
         public static interface OnDismissListener {
 
-        public abstract void onDismiss(android.content.DialogInterface arg0);
+        public abstract void onDismiss(DialogInterface arg0);
         }
         public static interface OnKeyListener {
 
-        public abstract boolean onKey(android.content.DialogInterface arg0, int arg1, android.view.KeyEvent arg2);
+        public abstract boolean onKey(DialogInterface arg0, int arg1, KeyEvent arg2);
         }
         public static interface OnShowListener {
 
-        public abstract void onShow(android.content.DialogInterface arg0);
+        public abstract void onShow(DialogInterface arg0);
         }
     }

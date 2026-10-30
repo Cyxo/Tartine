@@ -1,30 +1,33 @@
 package android.content.om;
 
-    public class OverlayInfo implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class OverlayInfo implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
 
     public int describeContents() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/om/OverlayInfo;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/om/OverlayInfo;->equals(Ljava/lang/Object;)Z");
     }
 
-    public android.content.om.OverlayIdentifier getOverlayIdentifier() {
+    public OverlayIdentifier getOverlayIdentifier() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/om/OverlayInfo;->getOverlayIdentifier()Landroid/content/om/OverlayIdentifier;");
     }
 
-    public java.lang.String getOverlayName() {
+    public String getOverlayName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/om/OverlayInfo;->getOverlayName()Ljava/lang/String;");
     }
 
-    public java.lang.String getTargetOverlayableName() {
+    public String getTargetOverlayableName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/om/OverlayInfo;->getTargetOverlayableName()Ljava/lang/String;");
     }
 
-    public java.lang.String getTargetPackageName() {
+    public String getTargetPackageName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/om/OverlayInfo;->getTargetPackageName()Ljava/lang/String;");
     }
 
@@ -32,11 +35,11 @@ package android.content.om;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/om/OverlayInfo;->hashCode()I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/om/OverlayInfo;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/om/OverlayInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

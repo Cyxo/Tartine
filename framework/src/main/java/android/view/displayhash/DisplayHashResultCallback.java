@@ -11,5 +11,5 @@ package android.view.displayhash;
 
     public abstract void onDisplayHashError(int arg0);
 
-    public abstract void onDisplayHashResult(android.view.displayhash.DisplayHash arg0);
+    public abstract void onDisplayHashResult(DisplayHash arg0);
     }

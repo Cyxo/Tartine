@@ -1,5 +1,7 @@
 package android.graphics;
 
+import android.os.Handler;
+
     public class SurfaceTexture {
 
     public SurfaceTexture(boolean arg0) {
@@ -54,11 +56,11 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/SurfaceTexture;->setDefaultBufferSize(II)V");
     }
 
-    public void setOnFrameAvailableListener(android.graphics.SurfaceTexture.OnFrameAvailableListener arg0) {
+    public void setOnFrameAvailableListener(SurfaceTexture.OnFrameAvailableListener arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/SurfaceTexture;->setOnFrameAvailableListener(Landroid/graphics/SurfaceTexture$OnFrameAvailableListener;)V");
     }
 
-    public void setOnFrameAvailableListener(android.graphics.SurfaceTexture.OnFrameAvailableListener arg0, android.os.Handler arg1) {
+    public void setOnFrameAvailableListener(SurfaceTexture.OnFrameAvailableListener arg0, Handler arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/SurfaceTexture;->setOnFrameAvailableListener(Landroid/graphics/SurfaceTexture$OnFrameAvailableListener;Landroid/os/Handler;)V");
     }
 
@@ -71,6 +73,6 @@ package android.graphics;
         }
         public static interface OnFrameAvailableListener {
 
-        public abstract void onFrameAvailable(android.graphics.SurfaceTexture arg0);
+        public abstract void onFrameAvailable(SurfaceTexture arg0);
         }
     }

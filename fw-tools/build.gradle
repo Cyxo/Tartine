@@ -40,3 +40,27 @@ tasks.register('fwGen', JavaExec) {
     args = [rootProject.file('framework/src/main/java').path]
     environment 'ANDROID_HOME': (System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT') ?: '')
 }
+
+// One-time (and repeatable) import cleanup: replace needless fully-qualified
+// names with imports across the committed sources. Idempotent; the generator
+// runs the same transform on its output.
+tasks.register('fwShorten', JavaExec) {
+    group = 'framework'
+    description = 'Shorten fully-qualified type names to imports across repo sources'
+    mainClass = 'tartine.sdk.Imports'
+    classpath = sourceSets.main.runtimeClasspath
+    args = [
+        rootProject.file('framework/src/main/java').path,
+        rootProject.file('framework/src/test/java').path,
+        rootProject.file('src/main/java').path,
+        rootProject.file('src/test/java').path,
+        rootProject.file('gfx-api/src/main/java').path,
+        rootProject.file('gfx-skija/src/main/java').path,
+        rootProject.file('fw-tools/src/main/java').path,
+        rootProject.file('fw-tools/src/test/java').path,
+    ]
+    if (project.findProperty('shortenCheck') != null) {
+        args += '--check'
+    }
+    environment 'ANDROID_HOME': (System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT') ?: '')
+}

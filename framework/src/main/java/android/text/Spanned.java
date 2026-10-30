@@ -1,6 +1,6 @@
 package android.text;
 
-    public interface Spanned extends java.lang.CharSequence {
+    public interface Spanned extends CharSequence {
 
     public static final int SPAN_COMPOSING = 256;
     public static final int SPAN_EXCLUSIVE_EXCLUSIVE = 33;
@@ -19,13 +19,13 @@ package android.text;
     public static final int SPAN_USER = -16777216;
     public static final int SPAN_USER_SHIFT = 24;
 
-    public abstract int getSpanEnd(java.lang.Object arg0);
+    public abstract int getSpanEnd(Object arg0);
 
-    public abstract int getSpanFlags(java.lang.Object arg0);
+    public abstract int getSpanFlags(Object arg0);
 
-    public abstract int getSpanStart(java.lang.Object arg0);
+    public abstract int getSpanStart(Object arg0);
 
-    public abstract <T> T[] getSpans(int arg0, int arg1, java.lang.Class<T> arg2);
+    public abstract <T> T[] getSpans(int arg0, int arg1, Class<T> arg2);
 
-    public abstract int nextSpanTransition(int arg0, int arg1, java.lang.Class arg2);
+    public abstract int nextSpanTransition(int arg0, int arg1, Class arg2);
     }

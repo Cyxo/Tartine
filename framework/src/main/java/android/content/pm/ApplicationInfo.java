@@ -1,6 +1,13 @@
 package android.content.pm;
 
-    public class ApplicationInfo extends android.content.pm.PackageItemInfo implements android.os.Parcelable {
+import android.content.Context;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.Printer;
+import java.util.Set;
+import java.util.UUID;
+
+    public class ApplicationInfo extends PackageItemInfo implements Parcelable {
 
     public static final int CATEGORY_ACCESSIBILITY = 8;
     public static final int CATEGORY_AUDIO = 1;
@@ -12,7 +19,7 @@ package android.content.pm;
     public static final int CATEGORY_SOCIAL = 4;
     public static final int CATEGORY_UNDEFINED = -1;
     public static final int CATEGORY_VIDEO = 2;
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
     public static final int FLAG_ALLOW_BACKUP = 32768;
     public static final int FLAG_ALLOW_CLEAR_USER_DATA = 64;
     public static final int FLAG_ALLOW_TASK_REPARENTING = 32;
@@ -58,34 +65,34 @@ package android.content.pm;
     public static final int ZEROINIT_DEFAULT = -1;
     public static final int ZEROINIT_DISABLED = 0;
     public static final int ZEROINIT_ENABLED = 1;
-    public java.lang.String appComponentFactory;
-    public java.lang.String backupAgentName;
+    public String appComponentFactory;
+    public String backupAgentName;
     public int category;
-    public java.lang.String className;
+    public String className;
     public int compatibleWidthLimitDp;
     public int compileSdkVersion;
-    public java.lang.String compileSdkVersionCodename;
-    public java.lang.String dataDir;
+    public String compileSdkVersionCodename;
+    public String dataDir;
     public int descriptionRes;
-    public java.lang.String deviceProtectedDataDir;
+    public String deviceProtectedDataDir;
     public boolean enabled;
     public int flags;
     public int largestWidthLimitDp;
-    public java.lang.String manageSpaceActivityName;
+    public String manageSpaceActivityName;
     public int minSdkVersion;
-    public java.lang.String nativeLibraryDir;
-    public java.lang.String permission;
-    public java.lang.String processName;
-    public java.lang.String publicSourceDir;
+    public String nativeLibraryDir;
+    public String permission;
+    public String processName;
+    public String publicSourceDir;
     public int requiresSmallestWidthDp;
-    public java.lang.String[] sharedLibraryFiles;
-    public java.lang.String sourceDir;
-    public java.lang.String[] splitNames;
-    public java.lang.String[] splitPublicSourceDirs;
-    public java.lang.String[] splitSourceDirs;
-    public java.util.UUID storageUuid;
+    public String[] sharedLibraryFiles;
+    public String sourceDir;
+    public String[] splitNames;
+    public String[] splitPublicSourceDirs;
+    public String[] splitSourceDirs;
+    public UUID storageUuid;
     public int targetSdkVersion;
-    public java.lang.String taskAffinity;
+    public String taskAffinity;
     public int theme;
     public int uiOptions;
     public int uid;
@@ -94,7 +101,7 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApplicationInfo;-><init>()V");
     }
 
-    public ApplicationInfo(android.content.pm.ApplicationInfo arg0) {
+    public ApplicationInfo(ApplicationInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApplicationInfo;-><init>(Landroid/content/pm/ApplicationInfo;)V");
     }
 
@@ -106,11 +113,11 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApplicationInfo;->describeContents()I");
     }
 
-    public void dump(android.util.Printer arg0, java.lang.String arg1) {
+    public void dump(Printer arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApplicationInfo;->dump(Landroid/util/Printer;Ljava/lang/String;)V");
     }
 
-    public static java.lang.CharSequence getCategoryTitle(android.content.Context arg0, int arg1) {
+    public static CharSequence getCategoryTitle(Context arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApplicationInfo;->getCategoryTitle(Landroid/content/Context;I)Ljava/lang/CharSequence;");
     }
 
@@ -118,7 +125,7 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApplicationInfo;->getGwpAsanMode()I");
     }
 
-    public java.util.Set<java.lang.String> getKnownActivityEmbeddingCerts() {
+    public Set<String> getKnownActivityEmbeddingCerts() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApplicationInfo;->getKnownActivityEmbeddingCerts()Ljava/util/Set;");
     }
 
@@ -150,15 +157,15 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApplicationInfo;->isVirtualPreload()Z");
     }
 
-    public java.lang.CharSequence loadDescription(android.content.pm.PackageManager arg0) {
+    public CharSequence loadDescription(PackageManager arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApplicationInfo;->loadDescription(Landroid/content/pm/PackageManager;)Ljava/lang/CharSequence;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApplicationInfo;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApplicationInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

@@ -3,7 +3,8 @@ package tartine.apk;
 import com.github.weisj.jsvg.SVGDocument;
 import com.github.weisj.jsvg.parser.LoaderContext;
 import com.github.weisj.jsvg.parser.SVGLoader;
-
+import com.github.weisj.jsvg.view.ViewBox;
+import java.awt.Component;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -15,7 +16,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-
 import tartine.gfx.GfxBackend;
 import tartine.gfx.GfxImage;
 import tartine.graphics.WindowIcon;
@@ -994,8 +994,8 @@ public final class AppIcon {
                         RenderingHints.VALUE_ANTIALIAS_ON);
                 graphics.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
                         RenderingHints.VALUE_STROKE_PURE);
-                document.render((java.awt.Component) null, graphics,
-                        new com.github.weisj.jsvg.view.ViewBox(0, 0, size, size));
+                document.render((Component) null, graphics,
+                        new ViewBox(0, 0, size, size));
             } finally {
                 graphics.dispose();
             }

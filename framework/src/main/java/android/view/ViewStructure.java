@@ -1,9 +1,21 @@
 package android.view;
 
+import android.credentials.GetCredentialException;
+import android.credentials.GetCredentialRequest;
+import android.credentials.GetCredentialResponse;
+import android.graphics.Matrix;
+import android.os.Bundle;
+import android.os.LocaleList;
+import android.os.OutcomeReceiver;
+import android.util.Pair;
+import android.view.autofill.AutofillId;
+import android.view.autofill.AutofillValue;
+import java.util.List;
+
     public class ViewStructure {
 
-    public static final java.lang.String EXTRA_VIRTUAL_STRUCTURE_TYPE = "android.view.extra.VIRTUAL_STRUCTURE_TYPE";
-    public static final java.lang.String EXTRA_VIRTUAL_STRUCTURE_VERSION_NUMBER = "android.view.extra.VIRTUAL_STRUCTURE_VERSION_NUMBER";
+    public static final String EXTRA_VIRTUAL_STRUCTURE_TYPE = "android.view.extra.VIRTUAL_STRUCTURE_TYPE";
+    public static final String EXTRA_VIRTUAL_STRUCTURE_VERSION_NUMBER = "android.view.extra.VIRTUAL_STRUCTURE_VERSION_NUMBER";
 
     public ViewStructure() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;-><init>()V");
@@ -17,7 +29,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->asyncCommit()V");
     }
 
-    public android.view.ViewStructure asyncNewChild(int arg0) {
+    public ViewStructure asyncNewChild(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->asyncNewChild(I)Landroid/view/ViewStructure;");
     }
 
@@ -25,7 +37,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->clearCredentialManagerRequest()V");
     }
 
-    public android.view.autofill.AutofillId getAutofillId() {
+    public AutofillId getAutofillId() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->getAutofillId()Landroid/view/autofill/AutofillId;");
     }
 
@@ -33,23 +45,23 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->getChildCount()I");
     }
 
-    public android.os.Bundle getExtras() {
+    public Bundle getExtras() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->getExtras()Landroid/os/Bundle;");
     }
 
-    public java.lang.CharSequence getHint() {
+    public CharSequence getHint() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->getHint()Ljava/lang/CharSequence;");
     }
 
-    public android.os.OutcomeReceiver<android.credentials.GetCredentialResponse, android.credentials.GetCredentialException> getPendingCredentialCallback() {
+    public OutcomeReceiver<GetCredentialResponse, GetCredentialException> getPendingCredentialCallback() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->getPendingCredentialCallback()Landroid/os/OutcomeReceiver;");
     }
 
-    public android.credentials.GetCredentialRequest getPendingCredentialRequest() {
+    public GetCredentialRequest getPendingCredentialRequest() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->getPendingCredentialRequest()Landroid/credentials/GetCredentialRequest;");
     }
 
-    public java.lang.CharSequence getText() {
+    public CharSequence getText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->getText()Ljava/lang/CharSequence;");
     }
 
@@ -65,11 +77,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->hasExtras()Z");
     }
 
-    public android.view.ViewStructure newChild(int arg0) {
+    public ViewStructure newChild(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->newChild(I)Landroid/view/ViewStructure;");
     }
 
-    public android.view.ViewStructure.HtmlInfo.Builder newHtmlInfoBuilder(java.lang.String arg0) {
+    public ViewStructure.HtmlInfo.Builder newHtmlInfoBuilder(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->newHtmlInfoBuilder(Ljava/lang/String;)Landroid/view/ViewStructure$HtmlInfo$Builder;");
     }
 
@@ -85,19 +97,19 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setAlpha(F)V");
     }
 
-    public void setAutofillHints(java.lang.String[] arg0) {
+    public void setAutofillHints(String[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setAutofillHints([Ljava/lang/String;)V");
     }
 
-    public void setAutofillId(android.view.autofill.AutofillId arg0) {
+    public void setAutofillId(AutofillId arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setAutofillId(Landroid/view/autofill/AutofillId;)V");
     }
 
-    public void setAutofillId(android.view.autofill.AutofillId arg0, int arg1) {
+    public void setAutofillId(AutofillId arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setAutofillId(Landroid/view/autofill/AutofillId;I)V");
     }
 
-    public void setAutofillOptions(java.lang.CharSequence[] arg0) {
+    public void setAutofillOptions(CharSequence[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setAutofillOptions([Ljava/lang/CharSequence;)V");
     }
 
@@ -105,7 +117,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setAutofillType(I)V");
     }
 
-    public void setAutofillValue(android.view.autofill.AutofillValue arg0) {
+    public void setAutofillValue(AutofillValue arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setAutofillValue(Landroid/view/autofill/AutofillValue;)V");
     }
 
@@ -121,7 +133,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setChildCount(I)V");
     }
 
-    public void setClassName(java.lang.String arg0) {
+    public void setClassName(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setClassName(Ljava/lang/String;)V");
     }
 
@@ -129,7 +141,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setClickable(Z)V");
     }
 
-    public void setContentDescription(java.lang.CharSequence arg0) {
+    public void setContentDescription(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setContentDescription(Ljava/lang/CharSequence;)V");
     }
 
@@ -161,19 +173,19 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setFocused(Z)V");
     }
 
-    public void setHint(java.lang.CharSequence arg0) {
+    public void setHint(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setHint(Ljava/lang/CharSequence;)V");
     }
 
-    public void setHintIdEntry(java.lang.String arg0) {
+    public void setHintIdEntry(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setHintIdEntry(Ljava/lang/String;)V");
     }
 
-    public void setHtmlInfo(android.view.ViewStructure.HtmlInfo arg0) {
+    public void setHtmlInfo(ViewStructure.HtmlInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setHtmlInfo(Landroid/view/ViewStructure$HtmlInfo;)V");
     }
 
-    public void setId(int arg0, java.lang.String arg1, java.lang.String arg2, java.lang.String arg3) {
+    public void setId(int arg0, String arg1, String arg2, String arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setId(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
     }
 
@@ -185,7 +197,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setInputType(I)V");
     }
 
-    public void setLocaleList(android.os.LocaleList arg0) {
+    public void setLocaleList(LocaleList arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setLocaleList(Landroid/os/LocaleList;)V");
     }
 
@@ -209,11 +221,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setOpaque(Z)V");
     }
 
-    public void setPendingCredentialRequest(android.credentials.GetCredentialRequest arg0, android.os.OutcomeReceiver<android.credentials.GetCredentialResponse, android.credentials.GetCredentialException> arg1) {
+    public void setPendingCredentialRequest(GetCredentialRequest arg0, OutcomeReceiver<GetCredentialResponse, GetCredentialException> arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setPendingCredentialRequest(Landroid/credentials/GetCredentialRequest;Landroid/os/OutcomeReceiver;)V");
     }
 
-    public void setReceiveContentMimeTypes(java.lang.String[] arg0) {
+    public void setReceiveContentMimeTypes(String[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setReceiveContentMimeTypes([Ljava/lang/String;)V");
     }
 
@@ -221,15 +233,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setSelected(Z)V");
     }
 
-    public void setText(java.lang.CharSequence arg0) {
+    public void setText(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setText(Ljava/lang/CharSequence;)V");
     }
 
-    public void setText(java.lang.CharSequence arg0, int arg1, int arg2) {
+    public void setText(CharSequence arg0, int arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setText(Ljava/lang/CharSequence;II)V");
     }
 
-    public void setTextIdEntry(java.lang.String arg0) {
+    public void setTextIdEntry(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setTextIdEntry(Ljava/lang/String;)V");
     }
 
@@ -241,7 +253,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setTextStyle(FIII)V");
     }
 
-    public void setTransformation(android.graphics.Matrix arg0) {
+    public void setTransformation(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setTransformation(Landroid/graphics/Matrix;)V");
     }
 
@@ -249,7 +261,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setVisibility(I)V");
     }
 
-    public void setWebDomain(java.lang.String arg0) {
+    public void setWebDomain(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure;->setWebDomain(Ljava/lang/String;)V");
     }
         public static class HtmlInfo {
@@ -258,11 +270,11 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure$HtmlInfo;-><init>()V");
         }
 
-        public java.util.List<android.util.Pair<java.lang.String, java.lang.String>> getAttributes() {
+        public List<Pair<String, String>> getAttributes() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure$HtmlInfo;->getAttributes()Ljava/util/List;");
         }
 
-        public java.lang.String getTag() {
+        public String getTag() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure$HtmlInfo;->getTag()Ljava/lang/String;");
         }
             public static class Builder {
@@ -271,11 +283,11 @@ package android.view;
                 throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure$HtmlInfo$Builder;-><init>()V");
             }
 
-            public android.view.ViewStructure.HtmlInfo.Builder addAttribute(java.lang.String arg0, java.lang.String arg1) {
+            public ViewStructure.HtmlInfo.Builder addAttribute(String arg0, String arg1) {
                 throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure$HtmlInfo$Builder;->addAttribute(Ljava/lang/String;Ljava/lang/String;)Landroid/view/ViewStructure$HtmlInfo$Builder;");
             }
 
-            public android.view.ViewStructure.HtmlInfo build() {
+            public ViewStructure.HtmlInfo build() {
                 throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewStructure$HtmlInfo$Builder;->build()Landroid/view/ViewStructure$HtmlInfo;");
             }
             }

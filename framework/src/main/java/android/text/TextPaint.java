@@ -1,6 +1,8 @@
 package android.text;
 
-    public class TextPaint extends android.graphics.Paint {
+import android.graphics.Paint;
+
+    public class TextPaint extends Paint {
 
     // AOSP core/java/android/text/TextPaint.java:30-47 field block; density
     // default 1.0f is a field initializer there (:37), covering every ctor.
@@ -20,7 +22,7 @@ package android.text;
         super();
     }
 
-    public TextPaint(android.graphics.Paint arg0) {
+    public TextPaint(Paint arg0) {
         super(arg0);
     }
 
@@ -33,7 +35,7 @@ package android.text;
      * TextPaint, including the fields inherited from Paint"): super.set
      * then the TextPaint-only fields verbatim.
      */
-    public void set(android.text.TextPaint arg0) {
+    public void set(TextPaint arg0) {
         super.set(arg0);
         bgColor = arg0.bgColor;
         baselineShift = arg0.baselineShift;

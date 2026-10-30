@@ -2,23 +2,23 @@ package android.graphics;
 
     public class NinePatch {
 
-    public NinePatch(android.graphics.Bitmap arg0, byte[] arg1) {
+    public NinePatch(Bitmap arg0, byte[] arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;-><init>(Landroid/graphics/Bitmap;[B)V");
     }
 
-    public NinePatch(android.graphics.Bitmap arg0, byte[] arg1, java.lang.String arg2) {
+    public NinePatch(Bitmap arg0, byte[] arg1, String arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;-><init>(Landroid/graphics/Bitmap;[BLjava/lang/String;)V");
     }
 
-    public void draw(android.graphics.Canvas arg0, android.graphics.Rect arg1) {
+    public void draw(Canvas arg0, Rect arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;->draw(Landroid/graphics/Canvas;Landroid/graphics/Rect;)V");
     }
 
-    public void draw(android.graphics.Canvas arg0, android.graphics.Rect arg1, android.graphics.Paint arg2) {
+    public void draw(Canvas arg0, Rect arg1, Paint arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;->draw(Landroid/graphics/Canvas;Landroid/graphics/Rect;Landroid/graphics/Paint;)V");
     }
 
-    public void draw(android.graphics.Canvas arg0, android.graphics.RectF arg1) {
+    public void draw(Canvas arg0, RectF arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;->draw(Landroid/graphics/Canvas;Landroid/graphics/RectF;)V");
     }
 
@@ -26,7 +26,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;->finalize()V");
     }
 
-    public android.graphics.Bitmap getBitmap() {
+    public Bitmap getBitmap() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;->getBitmap()Landroid/graphics/Bitmap;");
     }
 
@@ -38,15 +38,15 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;->getHeight()I");
     }
 
-    public java.lang.String getName() {
+    public String getName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;->getName()Ljava/lang/String;");
     }
 
-    public android.graphics.Paint getPaint() {
+    public Paint getPaint() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;->getPaint()Landroid/graphics/Paint;");
     }
 
-    public final android.graphics.Region getTransparentRegion(android.graphics.Rect arg0) {
+    public final Region getTransparentRegion(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;->getTransparentRegion(Landroid/graphics/Rect;)Landroid/graphics/Region;");
     }
 
@@ -62,7 +62,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;->isNinePatchChunk([B)Z");
     }
 
-    public void setPaint(android.graphics.Paint arg0) {
+    public void setPaint(Paint arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/NinePatch;->setPaint(Landroid/graphics/Paint;)V");
     }
 

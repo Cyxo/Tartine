@@ -8,13 +8,13 @@ package android.content;
  * placeholder-model approach (the interpreter never implements this class
  * as a builtin — it's a guest framework class resolved as a placeholder).
  */
-public class ActivityNotFoundException extends java.lang.RuntimeException {
+public class ActivityNotFoundException extends RuntimeException {
 
     public ActivityNotFoundException() {
         super();
     }
 
-    public ActivityNotFoundException(java.lang.String detailMessage) {
+    public ActivityNotFoundException(String detailMessage) {
         super(detailMessage);
     }
 }

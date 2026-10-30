@@ -1,8 +1,10 @@
 package android.view;
 
+import android.graphics.drawable.Drawable;
+
     public class ViewOverlay {
 
-    public void add(android.graphics.drawable.Drawable arg0) {
+    public void add(Drawable arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewOverlay;->add(Landroid/graphics/drawable/Drawable;)V");
     }
 
@@ -10,7 +12,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewOverlay;->clear()V");
     }
 
-    public void remove(android.graphics.drawable.Drawable arg0) {
+    public void remove(Drawable arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewOverlay;->remove(Landroid/graphics/drawable/Drawable;)V");
     }
     }

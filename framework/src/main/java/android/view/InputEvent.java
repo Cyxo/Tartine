@@ -1,17 +1,20 @@
 package android.view;
 
-    public class InputEvent implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public class InputEvent implements Parcelable {
+
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputEvent;->writeToParcel(Landroid/os/Parcel;I)V");
     }
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
 
     public int describeContents() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputEvent;->describeContents()I");
     }
 
-    public final android.view.InputDevice getDevice() {
+    public final InputDevice getDevice() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputEvent;->getDevice()Landroid/view/InputDevice;");
     }
 

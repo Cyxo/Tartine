@@ -2,7 +2,7 @@ package android.view.inputmethod;
 
     public class TextSnapshot {
 
-    public TextSnapshot(android.view.inputmethod.SurroundingText arg0, int arg1, int arg2, int arg3) {
+    public TextSnapshot(SurroundingText arg0, int arg1, int arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextSnapshot;-><init>(Landroid/view/inputmethod/SurroundingText;III)V");
     }
 
@@ -26,7 +26,7 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextSnapshot;->getSelectionStart()I");
     }
 
-    public android.view.inputmethod.SurroundingText getSurroundingText() {
+    public SurroundingText getSurroundingText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/TextSnapshot;->getSurroundingText()Landroid/view/inputmethod/SurroundingText;");
     }
 

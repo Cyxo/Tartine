@@ -1,5 +1,9 @@
 package android.animation;
 
+import android.view.View;
+import android.view.ViewGroup;
+import java.util.List;
+
     public class LayoutTransition {
 
     public static final int APPEARING = 2;
@@ -12,11 +16,11 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;-><init>()V");
     }
 
-    public void addChild(android.view.ViewGroup arg0, android.view.View arg1) {
+    public void addChild(ViewGroup arg0, View arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->addChild(Landroid/view/ViewGroup;Landroid/view/View;)V");
     }
 
-    public void addTransitionListener(android.animation.LayoutTransition.TransitionListener arg0) {
+    public void addTransitionListener(LayoutTransition.TransitionListener arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->addTransitionListener(Landroid/animation/LayoutTransition$TransitionListener;)V");
     }
 
@@ -28,7 +32,7 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->enableTransitionType(I)V");
     }
 
-    public android.animation.Animator getAnimator(int arg0) {
+    public Animator getAnimator(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->getAnimator(I)Landroid/animation/Animator;");
     }
 
@@ -36,7 +40,7 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->getDuration(I)J");
     }
 
-    public android.animation.TimeInterpolator getInterpolator(int arg0) {
+    public TimeInterpolator getInterpolator(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->getInterpolator(I)Landroid/animation/TimeInterpolator;");
     }
 
@@ -48,15 +52,15 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->getStartDelay(I)J");
     }
 
-    public java.util.List<android.animation.LayoutTransition.TransitionListener> getTransitionListeners() {
+    public List<LayoutTransition.TransitionListener> getTransitionListeners() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->getTransitionListeners()Ljava/util/List;");
     }
 
-    public void hideChild(android.view.ViewGroup arg0, android.view.View arg1) {
+    public void hideChild(ViewGroup arg0, View arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->hideChild(Landroid/view/ViewGroup;Landroid/view/View;)V");
     }
 
-    public void hideChild(android.view.ViewGroup arg0, android.view.View arg1, int arg2) {
+    public void hideChild(ViewGroup arg0, View arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->hideChild(Landroid/view/ViewGroup;Landroid/view/View;I)V");
     }
 
@@ -72,11 +76,11 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->isTransitionTypeEnabled(I)Z");
     }
 
-    public void removeChild(android.view.ViewGroup arg0, android.view.View arg1) {
+    public void removeChild(ViewGroup arg0, View arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->removeChild(Landroid/view/ViewGroup;Landroid/view/View;)V");
     }
 
-    public void removeTransitionListener(android.animation.LayoutTransition.TransitionListener arg0) {
+    public void removeTransitionListener(LayoutTransition.TransitionListener arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->removeTransitionListener(Landroid/animation/LayoutTransition$TransitionListener;)V");
     }
 
@@ -84,7 +88,7 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->setAnimateParentHierarchy(Z)V");
     }
 
-    public void setAnimator(int arg0, android.animation.Animator arg1) {
+    public void setAnimator(int arg0, Animator arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->setAnimator(ILandroid/animation/Animator;)V");
     }
 
@@ -96,7 +100,7 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->setDuration(J)V");
     }
 
-    public void setInterpolator(int arg0, android.animation.TimeInterpolator arg1) {
+    public void setInterpolator(int arg0, TimeInterpolator arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->setInterpolator(ILandroid/animation/TimeInterpolator;)V");
     }
 
@@ -108,17 +112,17 @@ package android.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->setStartDelay(IJ)V");
     }
 
-    public void showChild(android.view.ViewGroup arg0, android.view.View arg1) {
+    public void showChild(ViewGroup arg0, View arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->showChild(Landroid/view/ViewGroup;Landroid/view/View;)V");
     }
 
-    public void showChild(android.view.ViewGroup arg0, android.view.View arg1, int arg2) {
+    public void showChild(ViewGroup arg0, View arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/animation/LayoutTransition;->showChild(Landroid/view/ViewGroup;Landroid/view/View;I)V");
     }
         public static interface TransitionListener {
 
-        public abstract void endTransition(android.animation.LayoutTransition arg0, android.view.ViewGroup arg1, android.view.View arg2, int arg3);
+        public abstract void endTransition(LayoutTransition arg0, ViewGroup arg1, View arg2, int arg3);
 
-        public abstract void startTransition(android.animation.LayoutTransition arg0, android.view.ViewGroup arg1, android.view.View arg2, int arg3);
+        public abstract void startTransition(LayoutTransition arg0, ViewGroup arg1, View arg2, int arg3);
         }
     }

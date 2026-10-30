@@ -1,8 +1,14 @@
 package android.view;
 
-    public class PointerIcon implements android.os.Parcelable {
+import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class PointerIcon implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final int TYPE_ALIAS = 1010;
     public static final int TYPE_ALL_SCROLL = 1013;
     public static final int TYPE_ARROW = 1000;
@@ -28,7 +34,7 @@ package android.view;
     public static final int TYPE_ZOOM_IN = 1018;
     public static final int TYPE_ZOOM_OUT = 1019;
 
-    public static android.view.PointerIcon create(android.graphics.Bitmap arg0, float arg1, float arg2) {
+    public static PointerIcon create(Bitmap arg0, float arg1, float arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/PointerIcon;->create(Landroid/graphics/Bitmap;FF)Landroid/view/PointerIcon;");
     }
 
@@ -36,23 +42,23 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/PointerIcon;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/PointerIcon;->equals(Ljava/lang/Object;)Z");
     }
 
-    public static android.view.PointerIcon getSystemIcon(android.content.Context arg0, int arg1) {
+    public static PointerIcon getSystemIcon(Context arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/PointerIcon;->getSystemIcon(Landroid/content/Context;I)Landroid/view/PointerIcon;");
     }
 
-    public static android.view.PointerIcon load(android.content.res.Resources arg0, int arg1) {
+    public static PointerIcon load(Resources arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/PointerIcon;->load(Landroid/content/res/Resources;I)Landroid/view/PointerIcon;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/PointerIcon;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/PointerIcon;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

@@ -20,9 +20,9 @@ package android.graphics;
     public int mMode = MODE_EMPTY;
 
     /** Only guaranteed to be non-null when mode == MODE_PATH. */
-    public android.graphics.Path mPath;
+    public Path mPath;
 
-    public android.graphics.Rect mRect;
+    public Rect mRect;
 
     public float mRadius = RADIUS_UNDEFINED;
 
@@ -33,7 +33,7 @@ package android.graphics;
     public Outline() {
     }
 
-    public Outline(android.graphics.Outline arg0) {
+    public Outline(Outline arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;-><init>(Landroid/graphics/Outline;)V");
     }
 
@@ -54,7 +54,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->getRadius()F");
     }
 
-    public boolean getRect(android.graphics.Rect arg0) {
+    public boolean getRect(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->getRect(Landroid/graphics/Rect;)Z");
     }
 
@@ -68,7 +68,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->offset(II)V");
     }
 
-    public void set(android.graphics.Outline arg0) {
+    public void set(Outline arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->set(Landroid/graphics/Outline;)V");
     }
 
@@ -77,7 +77,7 @@ package android.graphics;
         mAlpha = arg0;
     }
 
-    public void setConvexPath(android.graphics.Path arg0) {
+    public void setConvexPath(Path arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->setConvexPath(Landroid/graphics/Path;)V");
     }
 
@@ -95,7 +95,7 @@ package android.graphics;
         mRadius = RADIUS_UNDEFINED;
     }
 
-    public void setOval(android.graphics.Rect arg0) {
+    public void setOval(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->setOval(Landroid/graphics/Rect;)V");
     }
 
@@ -103,11 +103,11 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->setOval(IIII)V");
     }
 
-    public void setPath(android.graphics.Path arg0) {
+    public void setPath(Path arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->setPath(Landroid/graphics/Path;)V");
     }
 
-    public void setRect(android.graphics.Rect arg0) {
+    public void setRect(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->setRect(Landroid/graphics/Rect;)V");
     }
 
@@ -115,7 +115,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->setRect(IIII)V");
     }
 
-    public void setRoundRect(android.graphics.Rect arg0, float arg1) {
+    public void setRoundRect(Rect arg0, float arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Outline;->setRoundRect(Landroid/graphics/Rect;F)V");
     }
 

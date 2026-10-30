@@ -1,5 +1,7 @@
 package android.view;
 
+import android.content.Context;
+
 /**
  * Tartine: minimal shell window. The device concrete is PhoneWindow,
  * created in AOSP Activity.attach (core/java/android/app/Activity.java
@@ -28,7 +30,7 @@ public class Window {
      * resources from the context the way the device does. The decor is the
      * shell's flattened content holder ({@link DecorView}).
      */
-    public Window(android.content.Context context) {
+    public Window(Context context) {
         mDecor = new DecorView(context);
     }
 

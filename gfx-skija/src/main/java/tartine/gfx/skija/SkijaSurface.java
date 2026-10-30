@@ -1,10 +1,9 @@
 package tartine.gfx.skija;
 
-import java.nio.ByteBuffer;
-
 import io.github.humbleui.skija.Bitmap;
 import io.github.humbleui.skija.Pixmap;
 import io.github.humbleui.skija.Surface;
+import java.nio.ByteBuffer;
 import tartine.gfx.GfxCanvas;
 import tartine.gfx.GfxSurface;
 

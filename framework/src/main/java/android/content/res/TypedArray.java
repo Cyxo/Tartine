@@ -1,6 +1,10 @@
 package android.content.res;
 
-    public class TypedArray implements java.lang.AutoCloseable {
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.util.TypedValue;
+
+    public class TypedArray implements AutoCloseable {
 
     public void close() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->close()V");
@@ -18,7 +22,7 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getColor(II)I");
     }
 
-    public android.content.res.ColorStateList getColorStateList(int arg0) {
+    public ColorStateList getColorStateList(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getColorStateList(I)Landroid/content/res/ColorStateList;");
     }
 
@@ -34,7 +38,7 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getDimensionPixelSize(II)I");
     }
 
-    public android.graphics.drawable.Drawable getDrawable(int arg0) {
+    public Drawable getDrawable(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getDrawable(I)Landroid/graphics/drawable/Drawable;");
     }
 
@@ -42,7 +46,7 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getFloat(IF)F");
     }
 
-    public android.graphics.Typeface getFont(int arg0) {
+    public Typeface getFont(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getFont(I)Landroid/graphics/Typeface;");
     }
 
@@ -70,15 +74,15 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getLayoutDimension(II)I");
     }
 
-    public int getLayoutDimension(int arg0, java.lang.String arg1) {
+    public int getLayoutDimension(int arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getLayoutDimension(ILjava/lang/String;)I");
     }
 
-    public java.lang.String getNonResourceString(int arg0) {
+    public String getNonResourceString(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getNonResourceString(I)Ljava/lang/String;");
     }
 
-    public java.lang.String getPositionDescription() {
+    public String getPositionDescription() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getPositionDescription()Ljava/lang/String;");
     }
 
@@ -86,7 +90,7 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getResourceId(II)I");
     }
 
-    public android.content.res.Resources getResources() {
+    public Resources getResources() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getResources()Landroid/content/res/Resources;");
     }
 
@@ -94,15 +98,15 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getSourceResourceId(II)I");
     }
 
-    public java.lang.String getString(int arg0) {
+    public String getString(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getString(I)Ljava/lang/String;");
     }
 
-    public java.lang.CharSequence getText(int arg0) {
+    public CharSequence getText(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getText(I)Ljava/lang/CharSequence;");
     }
 
-    public java.lang.CharSequence[] getTextArray(int arg0) {
+    public CharSequence[] getTextArray(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getTextArray(I)[Ljava/lang/CharSequence;");
     }
 
@@ -110,7 +114,7 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getType(I)I");
     }
 
-    public boolean getValue(int arg0, android.util.TypedValue arg1) {
+    public boolean getValue(int arg0, TypedValue arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->getValue(ILandroid/util/TypedValue;)Z");
     }
 
@@ -126,7 +130,7 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->length()I");
     }
 
-    public android.util.TypedValue peekValue(int arg0) {
+    public TypedValue peekValue(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->peekValue(I)Landroid/util/TypedValue;");
     }
 
@@ -134,7 +138,7 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->recycle()V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/TypedArray;->toString()Ljava/lang/String;");
     }
     }

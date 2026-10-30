@@ -18,7 +18,7 @@ package android.view;
     public static final int UNKNOWN_DELAY_DURATION = 0;
     public static final int VSYNC_TIMESTAMP = 11;
 
-    public FrameMetrics(android.view.FrameMetrics arg0) {
+    public FrameMetrics(FrameMetrics arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/FrameMetrics;-><init>(Landroid/view/FrameMetrics;)V");
     }
 

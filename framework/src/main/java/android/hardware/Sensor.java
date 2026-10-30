@@ -6,40 +6,40 @@ package android.hardware;
     public static final int REPORTING_MODE_ONE_SHOT = 2;
     public static final int REPORTING_MODE_ON_CHANGE = 1;
     public static final int REPORTING_MODE_SPECIAL_TRIGGER = 3;
-    public static final java.lang.String STRING_TYPE_ACCELEROMETER = "android.sensor.accelerometer";
-    public static final java.lang.String STRING_TYPE_ACCELEROMETER_LIMITED_AXES = "android.sensor.accelerometer_limited_axes";
-    public static final java.lang.String STRING_TYPE_ACCELEROMETER_LIMITED_AXES_UNCALIBRATED = "android.sensor.accelerometer_limited_axes_uncalibrated";
-    public static final java.lang.String STRING_TYPE_ACCELEROMETER_UNCALIBRATED = "android.sensor.accelerometer_uncalibrated";
-    public static final java.lang.String STRING_TYPE_AMBIENT_TEMPERATURE = "android.sensor.ambient_temperature";
-    public static final java.lang.String STRING_TYPE_GAME_ROTATION_VECTOR = "android.sensor.game_rotation_vector";
-    public static final java.lang.String STRING_TYPE_GEOMAGNETIC_ROTATION_VECTOR = "android.sensor.geomagnetic_rotation_vector";
-    public static final java.lang.String STRING_TYPE_GRAVITY = "android.sensor.gravity";
-    public static final java.lang.String STRING_TYPE_GYROSCOPE = "android.sensor.gyroscope";
-    public static final java.lang.String STRING_TYPE_GYROSCOPE_LIMITED_AXES = "android.sensor.gyroscope_limited_axes";
-    public static final java.lang.String STRING_TYPE_GYROSCOPE_LIMITED_AXES_UNCALIBRATED = "android.sensor.gyroscope_limited_axes_uncalibrated";
-    public static final java.lang.String STRING_TYPE_GYROSCOPE_UNCALIBRATED = "android.sensor.gyroscope_uncalibrated";
-    public static final java.lang.String STRING_TYPE_HEADING = "android.sensor.heading";
-    public static final java.lang.String STRING_TYPE_HEAD_TRACKER = "android.sensor.head_tracker";
-    public static final java.lang.String STRING_TYPE_HEART_BEAT = "android.sensor.heart_beat";
-    public static final java.lang.String STRING_TYPE_HEART_RATE = "android.sensor.heart_rate";
-    public static final java.lang.String STRING_TYPE_HINGE_ANGLE = "android.sensor.hinge_angle";
-    public static final java.lang.String STRING_TYPE_LIGHT = "android.sensor.light";
-    public static final java.lang.String STRING_TYPE_LINEAR_ACCELERATION = "android.sensor.linear_acceleration";
-    public static final java.lang.String STRING_TYPE_LOW_LATENCY_OFFBODY_DETECT = "android.sensor.low_latency_offbody_detect";
-    public static final java.lang.String STRING_TYPE_MAGNETIC_FIELD = "android.sensor.magnetic_field";
-    public static final java.lang.String STRING_TYPE_MAGNETIC_FIELD_UNCALIBRATED = "android.sensor.magnetic_field_uncalibrated";
-    public static final java.lang.String STRING_TYPE_MOTION_DETECT = "android.sensor.motion_detect";
-    public static final java.lang.String STRING_TYPE_ORIENTATION = "android.sensor.orientation";
-    public static final java.lang.String STRING_TYPE_POSE_6DOF = "android.sensor.pose_6dof";
-    public static final java.lang.String STRING_TYPE_PRESSURE = "android.sensor.pressure";
-    public static final java.lang.String STRING_TYPE_PROXIMITY = "android.sensor.proximity";
-    public static final java.lang.String STRING_TYPE_RELATIVE_HUMIDITY = "android.sensor.relative_humidity";
-    public static final java.lang.String STRING_TYPE_ROTATION_VECTOR = "android.sensor.rotation_vector";
-    public static final java.lang.String STRING_TYPE_SIGNIFICANT_MOTION = "android.sensor.significant_motion";
-    public static final java.lang.String STRING_TYPE_STATIONARY_DETECT = "android.sensor.stationary_detect";
-    public static final java.lang.String STRING_TYPE_STEP_COUNTER = "android.sensor.step_counter";
-    public static final java.lang.String STRING_TYPE_STEP_DETECTOR = "android.sensor.step_detector";
-    public static final java.lang.String STRING_TYPE_TEMPERATURE = "android.sensor.temperature";
+    public static final String STRING_TYPE_ACCELEROMETER = "android.sensor.accelerometer";
+    public static final String STRING_TYPE_ACCELEROMETER_LIMITED_AXES = "android.sensor.accelerometer_limited_axes";
+    public static final String STRING_TYPE_ACCELEROMETER_LIMITED_AXES_UNCALIBRATED = "android.sensor.accelerometer_limited_axes_uncalibrated";
+    public static final String STRING_TYPE_ACCELEROMETER_UNCALIBRATED = "android.sensor.accelerometer_uncalibrated";
+    public static final String STRING_TYPE_AMBIENT_TEMPERATURE = "android.sensor.ambient_temperature";
+    public static final String STRING_TYPE_GAME_ROTATION_VECTOR = "android.sensor.game_rotation_vector";
+    public static final String STRING_TYPE_GEOMAGNETIC_ROTATION_VECTOR = "android.sensor.geomagnetic_rotation_vector";
+    public static final String STRING_TYPE_GRAVITY = "android.sensor.gravity";
+    public static final String STRING_TYPE_GYROSCOPE = "android.sensor.gyroscope";
+    public static final String STRING_TYPE_GYROSCOPE_LIMITED_AXES = "android.sensor.gyroscope_limited_axes";
+    public static final String STRING_TYPE_GYROSCOPE_LIMITED_AXES_UNCALIBRATED = "android.sensor.gyroscope_limited_axes_uncalibrated";
+    public static final String STRING_TYPE_GYROSCOPE_UNCALIBRATED = "android.sensor.gyroscope_uncalibrated";
+    public static final String STRING_TYPE_HEADING = "android.sensor.heading";
+    public static final String STRING_TYPE_HEAD_TRACKER = "android.sensor.head_tracker";
+    public static final String STRING_TYPE_HEART_BEAT = "android.sensor.heart_beat";
+    public static final String STRING_TYPE_HEART_RATE = "android.sensor.heart_rate";
+    public static final String STRING_TYPE_HINGE_ANGLE = "android.sensor.hinge_angle";
+    public static final String STRING_TYPE_LIGHT = "android.sensor.light";
+    public static final String STRING_TYPE_LINEAR_ACCELERATION = "android.sensor.linear_acceleration";
+    public static final String STRING_TYPE_LOW_LATENCY_OFFBODY_DETECT = "android.sensor.low_latency_offbody_detect";
+    public static final String STRING_TYPE_MAGNETIC_FIELD = "android.sensor.magnetic_field";
+    public static final String STRING_TYPE_MAGNETIC_FIELD_UNCALIBRATED = "android.sensor.magnetic_field_uncalibrated";
+    public static final String STRING_TYPE_MOTION_DETECT = "android.sensor.motion_detect";
+    public static final String STRING_TYPE_ORIENTATION = "android.sensor.orientation";
+    public static final String STRING_TYPE_POSE_6DOF = "android.sensor.pose_6dof";
+    public static final String STRING_TYPE_PRESSURE = "android.sensor.pressure";
+    public static final String STRING_TYPE_PROXIMITY = "android.sensor.proximity";
+    public static final String STRING_TYPE_RELATIVE_HUMIDITY = "android.sensor.relative_humidity";
+    public static final String STRING_TYPE_ROTATION_VECTOR = "android.sensor.rotation_vector";
+    public static final String STRING_TYPE_SIGNIFICANT_MOTION = "android.sensor.significant_motion";
+    public static final String STRING_TYPE_STATIONARY_DETECT = "android.sensor.stationary_detect";
+    public static final String STRING_TYPE_STEP_COUNTER = "android.sensor.step_counter";
+    public static final String STRING_TYPE_STEP_DETECTOR = "android.sensor.step_detector";
+    public static final String STRING_TYPE_TEMPERATURE = "android.sensor.temperature";
     public static final int TYPE_ACCELEROMETER = 1;
     public static final int TYPE_ACCELEROMETER_LIMITED_AXES = 38;
     public static final int TYPE_ACCELEROMETER_LIMITED_AXES_UNCALIBRATED = 40;
@@ -105,7 +105,7 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/Sensor;->getMinDelay()I");
     }
 
-    public java.lang.String getName() {
+    public String getName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/Sensor;->getName()Ljava/lang/String;");
     }
 
@@ -121,7 +121,7 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/Sensor;->getResolution()F");
     }
 
-    public java.lang.String getStringType() {
+    public String getStringType() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/Sensor;->getStringType()Ljava/lang/String;");
     }
 
@@ -129,7 +129,7 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/Sensor;->getType()I");
     }
 
-    public java.lang.String getVendor() {
+    public String getVendor() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/Sensor;->getVendor()Ljava/lang/String;");
     }
 
@@ -153,7 +153,7 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/Sensor;->isWakeUpSensor()Z");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/Sensor;->toString()Ljava/lang/String;");
     }
     }

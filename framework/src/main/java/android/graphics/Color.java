@@ -1,5 +1,7 @@
 package android.graphics;
 
+import java.util.Locale;
+
     public class Color {
 
     public static final int BLACK = -16777216;
@@ -65,7 +67,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->blue(J)F");
     }
 
-    public static android.graphics.ColorSpace colorSpace(long arg0) {
+    public static ColorSpace colorSpace(long arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->colorSpace(J)Landroid/graphics/ColorSpace;");
     }
 
@@ -73,35 +75,35 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->colorToHSV(I[F)V");
     }
 
-    public android.graphics.Color convert(android.graphics.ColorSpace arg0) {
+    public Color convert(ColorSpace arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->convert(Landroid/graphics/ColorSpace;)Landroid/graphics/Color;");
     }
 
-    public static long convert(float arg0, float arg1, float arg2, float arg3, android.graphics.ColorSpace arg4, android.graphics.ColorSpace arg5) {
+    public static long convert(float arg0, float arg1, float arg2, float arg3, ColorSpace arg4, ColorSpace arg5) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->convert(FFFFLandroid/graphics/ColorSpace;Landroid/graphics/ColorSpace;)J");
     }
 
-    public static long convert(float arg0, float arg1, float arg2, float arg3, android.graphics.ColorSpace.Connector arg4) {
+    public static long convert(float arg0, float arg1, float arg2, float arg3, ColorSpace.Connector arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->convert(FFFFLandroid/graphics/ColorSpace$Connector;)J");
     }
 
-    public static long convert(int arg0, android.graphics.ColorSpace arg1) {
+    public static long convert(int arg0, ColorSpace arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->convert(ILandroid/graphics/ColorSpace;)J");
     }
 
-    public static long convert(long arg0, android.graphics.ColorSpace arg1) {
+    public static long convert(long arg0, ColorSpace arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->convert(JLandroid/graphics/ColorSpace;)J");
     }
 
-    public static long convert(long arg0, android.graphics.ColorSpace.Connector arg1) {
+    public static long convert(long arg0, ColorSpace.Connector arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->convert(JLandroid/graphics/ColorSpace$Connector;)J");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->equals(Ljava/lang/Object;)Z");
     }
 
-    public android.graphics.ColorSpace getColorSpace() {
+    public ColorSpace getColorSpace() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->getColorSpace()Landroid/graphics/ColorSpace;");
     }
 
@@ -121,7 +123,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->getComponents([F)[F");
     }
 
-    public android.graphics.ColorSpace.Model getModel() {
+    public ColorSpace.Model getModel() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->getModel()Landroid/graphics/ColorSpace$Model;");
     }
 
@@ -141,7 +143,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->hashCode()I");
     }
 
-    public static boolean isInColorSpace(long arg0, android.graphics.ColorSpace arg1) {
+    public static boolean isInColorSpace(long arg0, ColorSpace arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->isInColorSpace(JLandroid/graphics/ColorSpace;)Z");
     }
 
@@ -185,7 +187,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->pack(FFFF)J");
     }
 
-    public static long pack(float arg0, float arg1, float arg2, float arg3, android.graphics.ColorSpace arg4) {
+    public static long pack(float arg0, float arg1, float arg2, float arg3, ColorSpace arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->pack(FFFFLandroid/graphics/ColorSpace;)J");
     }
 
@@ -193,7 +195,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->pack(I)J");
     }
 
-    public static int parseColor(java.lang.String arg0) {
+    public static int parseColor(String arg0) {
         // AOSP Color.parseColor: "#RRGGBB", "#AARRGGBB", or a named color.
         if (arg0 == null || arg0.isEmpty()) {
             throw new IllegalArgumentException("Unknown color");
@@ -207,7 +209,7 @@ package android.graphics;
             }
             return (int) color;
         }
-        switch (arg0.toLowerCase(java.util.Locale.ROOT)) {
+        switch (arg0.toLowerCase(Locale.ROOT)) {
             case "black": return BLACK;
             case "darkgray": case "darkgrey": return DKGRAY;
             case "gray": case "grey": return GRAY;
@@ -253,31 +255,31 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->toArgb(J)I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->toString()Ljava/lang/String;");
     }
 
-    public static android.graphics.Color valueOf(float arg0, float arg1, float arg2) {
+    public static Color valueOf(float arg0, float arg1, float arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->valueOf(FFF)Landroid/graphics/Color;");
     }
 
-    public static android.graphics.Color valueOf(float arg0, float arg1, float arg2, float arg3) {
+    public static Color valueOf(float arg0, float arg1, float arg2, float arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->valueOf(FFFF)Landroid/graphics/Color;");
     }
 
-    public static android.graphics.Color valueOf(float arg0, float arg1, float arg2, float arg3, android.graphics.ColorSpace arg4) {
+    public static Color valueOf(float arg0, float arg1, float arg2, float arg3, ColorSpace arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->valueOf(FFFFLandroid/graphics/ColorSpace;)Landroid/graphics/Color;");
     }
 
-    public static android.graphics.Color valueOf(float[] arg0, android.graphics.ColorSpace arg1) {
+    public static Color valueOf(float[] arg0, ColorSpace arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->valueOf([FLandroid/graphics/ColorSpace;)Landroid/graphics/Color;");
     }
 
-    public static android.graphics.Color valueOf(int arg0) {
+    public static Color valueOf(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->valueOf(I)Landroid/graphics/Color;");
     }
 
-    public static android.graphics.Color valueOf(long arg0) {
+    public static Color valueOf(long arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->valueOf(J)Landroid/graphics/Color;");
     }
     }

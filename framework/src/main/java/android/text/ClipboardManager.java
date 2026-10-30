@@ -1,5 +1,8 @@
 package android.text;
 
+import android.content.ClipData;
+import android.content.Context;
+
 /**
  * Clipboard service handle (android.jar stub re-embodied as shell Java).
  * The desktop exposes no clipboard service; every query answers the empty
@@ -12,7 +15,7 @@ public class ClipboardManager {
      * AOSP frameworks-base core/java/android/text/ClipboardManager.java#ClipboardManager(Context):
      * base shell no-op — holds the context for later delegation.
      */
-    public ClipboardManager(android.content.Context context) {
+    public ClipboardManager(Context context) {
     }
 
     /**
@@ -26,14 +29,14 @@ public class ClipboardManager {
      * AOSP .../ClipboardManager.java#getPrimaryClip: no service → null;
      * consumers (Compose clipboard bookkeeping) must tolerate null.
      */
-    public android.content.ClipData getPrimaryClip() {
+    public ClipData getPrimaryClip() {
         return null;
     }
 
     /**
      * AOSP .../ClipboardManager.java#setPrimaryClip: no service → dropped.
      */
-    public void setPrimaryClip(android.content.ClipData clip) {
+    public void setPrimaryClip(ClipData clip) {
     }
 
     /**

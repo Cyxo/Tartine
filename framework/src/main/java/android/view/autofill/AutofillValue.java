@@ -1,30 +1,33 @@
 package android.view.autofill;
 
-    public class AutofillValue implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class AutofillValue implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
 
     public int describeContents() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillValue;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillValue;->equals(Ljava/lang/Object;)Z");
     }
 
-    public static android.view.autofill.AutofillValue forDate(long arg0) {
+    public static AutofillValue forDate(long arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillValue;->forDate(J)Landroid/view/autofill/AutofillValue;");
     }
 
-    public static android.view.autofill.AutofillValue forList(int arg0) {
+    public static AutofillValue forList(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillValue;->forList(I)Landroid/view/autofill/AutofillValue;");
     }
 
-    public static android.view.autofill.AutofillValue forText(java.lang.CharSequence arg0) {
+    public static AutofillValue forText(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillValue;->forText(Ljava/lang/CharSequence;)Landroid/view/autofill/AutofillValue;");
     }
 
-    public static android.view.autofill.AutofillValue forToggle(boolean arg0) {
+    public static AutofillValue forToggle(boolean arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillValue;->forToggle(Z)Landroid/view/autofill/AutofillValue;");
     }
 
@@ -36,7 +39,7 @@ package android.view.autofill;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillValue;->getListValue()I");
     }
 
-    public java.lang.CharSequence getTextValue() {
+    public CharSequence getTextValue() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillValue;->getTextValue()Ljava/lang/CharSequence;");
     }
 
@@ -64,11 +67,11 @@ package android.view.autofill;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillValue;->isToggle()Z");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillValue;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/autofill/AutofillValue;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

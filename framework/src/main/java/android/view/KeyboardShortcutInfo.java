@@ -1,14 +1,17 @@
 package android.view;
 
-    public class KeyboardShortcutInfo implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class KeyboardShortcutInfo implements Parcelable {
 
-    public KeyboardShortcutInfo(java.lang.CharSequence arg0, char arg1, int arg2) {
+    public static Parcelable.Creator CREATOR;
+
+    public KeyboardShortcutInfo(CharSequence arg0, char arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutInfo;-><init>(Ljava/lang/CharSequence;CI)V");
     }
 
-    public KeyboardShortcutInfo(java.lang.CharSequence arg0, int arg1, int arg2) {
+    public KeyboardShortcutInfo(CharSequence arg0, int arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutInfo;-><init>(Ljava/lang/CharSequence;II)V");
     }
 
@@ -24,7 +27,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutInfo;->getKeycode()I");
     }
 
-    public java.lang.CharSequence getLabel() {
+    public CharSequence getLabel() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutInfo;->getLabel()Ljava/lang/CharSequence;");
     }
 
@@ -32,7 +35,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutInfo;->getModifiers()I");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

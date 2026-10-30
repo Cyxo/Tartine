@@ -1,8 +1,10 @@
 package android.text;
 
-import android.text.TextPaint;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.text.Layout;
 import android.text.TextDirectionHeuristic;
+import android.text.TextPaint;
 
 public class BoringLayout extends Layout {
     public BoringLayout(CharSequence source, TextPaint paint, int width, Alignment align, float spacingmult, float spacingadd, BoringLayout.Metrics metrics, boolean includePad) {
@@ -14,10 +16,10 @@ public class BoringLayout extends Layout {
     public BoringLayout(CharSequence source, TextPaint paint, int width, Alignment align, float spacingmult, float spacingadd, BoringLayout.Metrics metrics, boolean includePad, TextUtils.TruncateAt ellipsize, int ellipsizedWidth, boolean unknown) {
     }
 
-    public static class Metrics extends android.graphics.Paint.FontMetricsInt {
+    public static class Metrics extends Paint.FontMetricsInt {
         public int width;
         public Metrics() { }
-        public android.graphics.RectF getDrawingBoundingBox() { return new android.graphics.RectF(); }
+        public RectF getDrawingBoundingBox() { return new RectF(); }
         public String toString() { return ""; }
     }
 

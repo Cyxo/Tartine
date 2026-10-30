@@ -6,15 +6,15 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Picture;-><init>()V");
     }
 
-    public Picture(android.graphics.Picture arg0) {
+    public Picture(Picture arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Picture;-><init>(Landroid/graphics/Picture;)V");
     }
 
-    public android.graphics.Canvas beginRecording(int arg0, int arg1) {
+    public Canvas beginRecording(int arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Picture;->beginRecording(II)Landroid/graphics/Canvas;");
     }
 
-    public void draw(android.graphics.Canvas arg0) {
+    public void draw(Canvas arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Picture;->draw(Landroid/graphics/Canvas;)V");
     }
 

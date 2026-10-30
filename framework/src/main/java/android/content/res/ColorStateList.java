@@ -1,18 +1,22 @@
 package android.content.res;
 
-    public class ColorStateList implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
+import org.xmlpull.v1.XmlPullParser;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class ColorStateList implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
 
     public ColorStateList(int[][] arg0, int[] arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/ColorStateList;-><init>([[I[I)V");
     }
 
-    public static android.content.res.ColorStateList createFromXml(android.content.res.Resources arg0, org.xmlpull.v1.XmlPullParser arg1) {
+    public static ColorStateList createFromXml(Resources arg0, XmlPullParser arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/ColorStateList;->createFromXml(Landroid/content/res/Resources;Lorg/xmlpull/v1/XmlPullParser;)Landroid/content/res/ColorStateList;");
     }
 
-    public static android.content.res.ColorStateList createFromXml(android.content.res.Resources arg0, org.xmlpull.v1.XmlPullParser arg1, android.content.res.Resources.Theme arg2) {
+    public static ColorStateList createFromXml(Resources arg0, XmlPullParser arg1, Resources.Theme arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/ColorStateList;->createFromXml(Landroid/content/res/Resources;Lorg/xmlpull/v1/XmlPullParser;Landroid/content/res/Resources$Theme;)Landroid/content/res/ColorStateList;");
     }
 
@@ -40,23 +44,23 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/ColorStateList;->isStateful()Z");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/ColorStateList;->toString()Ljava/lang/String;");
     }
 
-    public static android.content.res.ColorStateList valueOf(int arg0) {
+    public static ColorStateList valueOf(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/ColorStateList;->valueOf(I)Landroid/content/res/ColorStateList;");
     }
 
-    public android.content.res.ColorStateList withAlpha(int arg0) {
+    public ColorStateList withAlpha(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/ColorStateList;->withAlpha(I)Landroid/content/res/ColorStateList;");
     }
 
-    public android.content.res.ColorStateList withLStar(float arg0) {
+    public ColorStateList withLStar(float arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/ColorStateList;->withLStar(F)Landroid/content/res/ColorStateList;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/ColorStateList;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

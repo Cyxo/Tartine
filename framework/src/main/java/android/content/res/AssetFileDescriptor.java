@@ -1,15 +1,24 @@
 package android.content.res;
 
-    public class AssetFileDescriptor implements java.io.Closeable, android.os.Parcelable {
+import android.os.Bundle;
+import android.os.Parcel;
+import android.os.ParcelFileDescriptor;
+import android.os.Parcelable;
+import java.io.Closeable;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class AssetFileDescriptor implements Closeable, Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final long UNKNOWN_LENGTH = -1L;
 
-    public AssetFileDescriptor(android.os.ParcelFileDescriptor arg0, long arg1, long arg2) {
+    public AssetFileDescriptor(ParcelFileDescriptor arg0, long arg1, long arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;-><init>(Landroid/os/ParcelFileDescriptor;JJ)V");
     }
 
-    public AssetFileDescriptor(android.os.ParcelFileDescriptor arg0, long arg1, long arg2, android.os.Bundle arg3) {
+    public AssetFileDescriptor(ParcelFileDescriptor arg0, long arg1, long arg2, Bundle arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;-><init>(Landroid/os/ParcelFileDescriptor;JJLandroid/os/Bundle;)V");
     }
 
@@ -17,11 +26,11 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;->close()V");
     }
 
-    public java.io.FileInputStream createInputStream() {
+    public FileInputStream createInputStream() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;->createInputStream()Ljava/io/FileInputStream;");
     }
 
-    public java.io.FileOutputStream createOutputStream() {
+    public FileOutputStream createOutputStream() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;->createOutputStream()Ljava/io/FileOutputStream;");
     }
 
@@ -33,11 +42,11 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;->getDeclaredLength()J");
     }
 
-    public android.os.Bundle getExtras() {
+    public Bundle getExtras() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;->getExtras()Landroid/os/Bundle;");
     }
 
-    public java.io.FileDescriptor getFileDescriptor() {
+    public FileDescriptor getFileDescriptor() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;->getFileDescriptor()Ljava/io/FileDescriptor;");
     }
 
@@ -45,7 +54,7 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;->getLength()J");
     }
 
-    public android.os.ParcelFileDescriptor getParcelFileDescriptor() {
+    public ParcelFileDescriptor getParcelFileDescriptor() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;->getParcelFileDescriptor()Landroid/os/ParcelFileDescriptor;");
     }
 
@@ -53,11 +62,11 @@ package android.content.res;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;->getStartOffset()J");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/AssetFileDescriptor;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

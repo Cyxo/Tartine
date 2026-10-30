@@ -1,12 +1,14 @@
 package android.os;
 
+import java.io.FileDescriptor;
+
     public class MessageQueue {
 
-    public void addIdleHandler(android.os.MessageQueue.IdleHandler arg0) {
+    public void addIdleHandler(MessageQueue.IdleHandler arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/MessageQueue;->addIdleHandler(Landroid/os/MessageQueue$IdleHandler;)V");
     }
 
-    public void addOnFileDescriptorEventListener(java.io.FileDescriptor arg0, int arg1, android.os.MessageQueue.OnFileDescriptorEventListener arg2) {
+    public void addOnFileDescriptorEventListener(FileDescriptor arg0, int arg1, MessageQueue.OnFileDescriptorEventListener arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/MessageQueue;->addOnFileDescriptorEventListener(Ljava/io/FileDescriptor;ILandroid/os/MessageQueue$OnFileDescriptorEventListener;)V");
     }
 
@@ -18,11 +20,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/MessageQueue;->isIdle()Z");
     }
 
-    public void removeIdleHandler(android.os.MessageQueue.IdleHandler arg0) {
+    public void removeIdleHandler(MessageQueue.IdleHandler arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/MessageQueue;->removeIdleHandler(Landroid/os/MessageQueue$IdleHandler;)V");
     }
 
-    public void removeOnFileDescriptorEventListener(java.io.FileDescriptor arg0) {
+    public void removeOnFileDescriptorEventListener(FileDescriptor arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/MessageQueue;->removeOnFileDescriptorEventListener(Ljava/io/FileDescriptor;)V");
     }
         public static interface IdleHandler {
@@ -35,6 +37,6 @@ package android.os;
         public static final int EVENT_INPUT = 1;
         public static final int EVENT_OUTPUT = 2;
 
-        public abstract int onFileDescriptorEvents(java.io.FileDescriptor arg0, int arg1);
+        public abstract int onFileDescriptorEvents(FileDescriptor arg0, int arg1);
         }
     }

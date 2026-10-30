@@ -1,5 +1,11 @@
 package android.view;
 
+import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.BlendMode;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
+
     public interface MenuItem {
 
     public static final int SHOW_AS_ACTION_ALWAYS = 2;
@@ -12,9 +18,9 @@ package android.view;
 
     public abstract boolean expandActionView();
 
-    public abstract android.view.ActionProvider getActionProvider();
+    public abstract ActionProvider getActionProvider();
 
-    public abstract android.view.View getActionView();
+    public abstract View getActionView();
 
     public default int getAlphabeticModifiers() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->getAlphabeticModifiers()I");
@@ -22,31 +28,31 @@ package android.view;
 
     public abstract char getAlphabeticShortcut();
 
-    public default java.lang.CharSequence getContentDescription() {
+    public default CharSequence getContentDescription() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->getContentDescription()Ljava/lang/CharSequence;");
     }
 
     public abstract int getGroupId();
 
-    public abstract android.graphics.drawable.Drawable getIcon();
+    public abstract Drawable getIcon();
 
-    public default android.graphics.BlendMode getIconTintBlendMode() {
+    public default BlendMode getIconTintBlendMode() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->getIconTintBlendMode()Landroid/graphics/BlendMode;");
     }
 
-    public default android.content.res.ColorStateList getIconTintList() {
+    public default ColorStateList getIconTintList() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->getIconTintList()Landroid/content/res/ColorStateList;");
     }
 
-    public default android.graphics.PorterDuff.Mode getIconTintMode() {
+    public default PorterDuff.Mode getIconTintMode() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->getIconTintMode()Landroid/graphics/PorterDuff$Mode;");
     }
 
-    public abstract android.content.Intent getIntent();
+    public abstract Intent getIntent();
 
     public abstract int getItemId();
 
-    public abstract android.view.ContextMenu.ContextMenuInfo getMenuInfo();
+    public abstract ContextMenu.ContextMenuInfo getMenuInfo();
 
     public default int getNumericModifiers() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->getNumericModifiers()I");
@@ -56,13 +62,13 @@ package android.view;
 
     public abstract int getOrder();
 
-    public abstract android.view.SubMenu getSubMenu();
+    public abstract SubMenu getSubMenu();
 
-    public abstract java.lang.CharSequence getTitle();
+    public abstract CharSequence getTitle();
 
-    public abstract java.lang.CharSequence getTitleCondensed();
+    public abstract CharSequence getTitleCondensed();
 
-    public default java.lang.CharSequence getTooltipText() {
+    public default CharSequence getTooltipText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->getTooltipText()Ljava/lang/CharSequence;");
     }
 
@@ -78,85 +84,85 @@ package android.view;
 
     public abstract boolean isVisible();
 
-    public abstract android.view.MenuItem setActionProvider(android.view.ActionProvider arg0);
+    public abstract MenuItem setActionProvider(ActionProvider arg0);
 
-    public abstract android.view.MenuItem setActionView(android.view.View arg0);
+    public abstract MenuItem setActionView(View arg0);
 
-    public abstract android.view.MenuItem setActionView(int arg0);
+    public abstract MenuItem setActionView(int arg0);
 
-    public abstract android.view.MenuItem setAlphabeticShortcut(char arg0);
+    public abstract MenuItem setAlphabeticShortcut(char arg0);
 
-    public default android.view.MenuItem setAlphabeticShortcut(char arg0, int arg1) {
+    public default MenuItem setAlphabeticShortcut(char arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->setAlphabeticShortcut(CI)Landroid/view/MenuItem;");
     }
 
-    public abstract android.view.MenuItem setCheckable(boolean arg0);
+    public abstract MenuItem setCheckable(boolean arg0);
 
-    public abstract android.view.MenuItem setChecked(boolean arg0);
+    public abstract MenuItem setChecked(boolean arg0);
 
-    public default android.view.MenuItem setContentDescription(java.lang.CharSequence arg0) {
+    public default MenuItem setContentDescription(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->setContentDescription(Ljava/lang/CharSequence;)Landroid/view/MenuItem;");
     }
 
-    public abstract android.view.MenuItem setEnabled(boolean arg0);
+    public abstract MenuItem setEnabled(boolean arg0);
 
-    public abstract android.view.MenuItem setIcon(android.graphics.drawable.Drawable arg0);
+    public abstract MenuItem setIcon(Drawable arg0);
 
-    public abstract android.view.MenuItem setIcon(int arg0);
+    public abstract MenuItem setIcon(int arg0);
 
-    public default android.view.MenuItem setIconTintBlendMode(android.graphics.BlendMode arg0) {
+    public default MenuItem setIconTintBlendMode(BlendMode arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->setIconTintBlendMode(Landroid/graphics/BlendMode;)Landroid/view/MenuItem;");
     }
 
-    public default android.view.MenuItem setIconTintList(android.content.res.ColorStateList arg0) {
+    public default MenuItem setIconTintList(ColorStateList arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->setIconTintList(Landroid/content/res/ColorStateList;)Landroid/view/MenuItem;");
     }
 
-    public default android.view.MenuItem setIconTintMode(android.graphics.PorterDuff.Mode arg0) {
+    public default MenuItem setIconTintMode(PorterDuff.Mode arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->setIconTintMode(Landroid/graphics/PorterDuff$Mode;)Landroid/view/MenuItem;");
     }
 
-    public abstract android.view.MenuItem setIntent(android.content.Intent arg0);
+    public abstract MenuItem setIntent(Intent arg0);
 
-    public abstract android.view.MenuItem setNumericShortcut(char arg0);
+    public abstract MenuItem setNumericShortcut(char arg0);
 
-    public default android.view.MenuItem setNumericShortcut(char arg0, int arg1) {
+    public default MenuItem setNumericShortcut(char arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->setNumericShortcut(CI)Landroid/view/MenuItem;");
     }
 
-    public abstract android.view.MenuItem setOnActionExpandListener(android.view.MenuItem.OnActionExpandListener arg0);
+    public abstract MenuItem setOnActionExpandListener(MenuItem.OnActionExpandListener arg0);
 
-    public abstract android.view.MenuItem setOnMenuItemClickListener(android.view.MenuItem.OnMenuItemClickListener arg0);
+    public abstract MenuItem setOnMenuItemClickListener(MenuItem.OnMenuItemClickListener arg0);
 
-    public abstract android.view.MenuItem setShortcut(char arg0, char arg1);
+    public abstract MenuItem setShortcut(char arg0, char arg1);
 
-    public default android.view.MenuItem setShortcut(char arg0, char arg1, int arg2, int arg3) {
+    public default MenuItem setShortcut(char arg0, char arg1, int arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->setShortcut(CCII)Landroid/view/MenuItem;");
     }
 
     public abstract void setShowAsAction(int arg0);
 
-    public abstract android.view.MenuItem setShowAsActionFlags(int arg0);
+    public abstract MenuItem setShowAsActionFlags(int arg0);
 
-    public abstract android.view.MenuItem setTitle(int arg0);
+    public abstract MenuItem setTitle(int arg0);
 
-    public abstract android.view.MenuItem setTitle(java.lang.CharSequence arg0);
+    public abstract MenuItem setTitle(CharSequence arg0);
 
-    public abstract android.view.MenuItem setTitleCondensed(java.lang.CharSequence arg0);
+    public abstract MenuItem setTitleCondensed(CharSequence arg0);
 
-    public default android.view.MenuItem setTooltipText(java.lang.CharSequence arg0) {
+    public default MenuItem setTooltipText(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuItem;->setTooltipText(Ljava/lang/CharSequence;)Landroid/view/MenuItem;");
     }
 
-    public abstract android.view.MenuItem setVisible(boolean arg0);
+    public abstract MenuItem setVisible(boolean arg0);
         public static interface OnActionExpandListener {
 
-        public abstract boolean onMenuItemActionCollapse(android.view.MenuItem arg0);
+        public abstract boolean onMenuItemActionCollapse(MenuItem arg0);
 
-        public abstract boolean onMenuItemActionExpand(android.view.MenuItem arg0);
+        public abstract boolean onMenuItemActionExpand(MenuItem arg0);
         }
         public static interface OnMenuItemClickListener {
 
-        public abstract boolean onMenuItemClick(android.view.MenuItem arg0);
+        public abstract boolean onMenuItemClick(MenuItem arg0);
         }
     }

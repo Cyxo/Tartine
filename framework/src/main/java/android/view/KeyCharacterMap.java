@@ -1,12 +1,15 @@
 package android.view;
 
-    public class KeyCharacterMap implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+    public class KeyCharacterMap implements Parcelable {
 
     public static final int ALPHA = 3;
     public static final int BUILT_IN_KEYBOARD = 0;
     public static final int COMBINING_ACCENT = -2147483648;
     public static final int COMBINING_ACCENT_MASK = 2147483647;
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
     public static final int FULL = 4;
     public static final char HEX_INPUT = 61184;
     public static final int MODIFIER_BEHAVIOR_CHORDED = 0;
@@ -29,7 +32,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyCharacterMap;->deviceHasKeys([I)[Z");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyCharacterMap;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -49,11 +52,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyCharacterMap;->getDisplayLabel(I)C");
     }
 
-    public android.view.KeyEvent[] getEvents(char[] arg0) {
+    public KeyEvent[] getEvents(char[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyCharacterMap;->getEvents([C)[Landroid/view/KeyEvent;");
     }
 
-    public boolean getKeyData(int arg0, android.view.KeyCharacterMap.KeyData arg1) {
+    public boolean getKeyData(int arg0, KeyCharacterMap.KeyData arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyCharacterMap;->getKeyData(ILandroid/view/KeyCharacterMap$KeyData;)Z");
     }
 
@@ -81,11 +84,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyCharacterMap;->isPrintingKey(I)Z");
     }
 
-    public static android.view.KeyCharacterMap load(int arg0) {
+    public static KeyCharacterMap load(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyCharacterMap;->load(I)Landroid/view/KeyCharacterMap;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyCharacterMap;->writeToParcel(Landroid/os/Parcel;I)V");
     }
         public static class KeyData {

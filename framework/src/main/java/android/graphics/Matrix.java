@@ -1,8 +1,10 @@
 package android.graphics;
 
+import java.io.PrintWriter;
+
     public class Matrix {
 
-    public static android.graphics.Matrix IDENTITY_MATRIX;
+    public static Matrix IDENTITY_MATRIX;
     public static final int MPERSP_0 = 6;
     public static final int MPERSP_1 = 7;
     public static final int MPERSP_2 = 8;
@@ -20,15 +22,15 @@ package android.graphics;
         // body is the identity by convention.
     }
 
-    public Matrix(android.graphics.Matrix arg0) {
+    public Matrix(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;-><init>(Landroid/graphics/Matrix;)V");
     }
 
-    public final void dump(java.io.PrintWriter arg0) {
+    public final void dump(PrintWriter arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->dump(Ljava/io/PrintWriter;)V");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -40,7 +42,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->hashCode()I");
     }
 
-    public boolean invert(android.graphics.Matrix arg0) {
+    public boolean invert(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->invert(Landroid/graphics/Matrix;)Z");
     }
 
@@ -68,11 +70,11 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->mapRadius(F)F");
     }
 
-    public boolean mapRect(android.graphics.RectF arg0) {
+    public boolean mapRect(RectF arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->mapRect(Landroid/graphics/RectF;)Z");
     }
 
-    public boolean mapRect(android.graphics.RectF arg0, android.graphics.RectF arg1) {
+    public boolean mapRect(RectF arg0, RectF arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->mapRect(Landroid/graphics/RectF;Landroid/graphics/RectF;)Z");
     }
 
@@ -88,7 +90,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->mapVectors([FI[FII)V");
     }
 
-    public boolean postConcat(android.graphics.Matrix arg0) {
+    public boolean postConcat(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->postConcat(Landroid/graphics/Matrix;)Z");
     }
 
@@ -120,7 +122,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->postTranslate(FF)Z");
     }
 
-    public boolean preConcat(android.graphics.Matrix arg0) {
+    public boolean preConcat(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->preConcat(Landroid/graphics/Matrix;)Z");
     }
 
@@ -160,11 +162,11 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->reset()V");
     }
 
-    public void set(android.graphics.Matrix arg0) {
+    public void set(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->set(Landroid/graphics/Matrix;)V");
     }
 
-    public boolean setConcat(android.graphics.Matrix arg0, android.graphics.Matrix arg1) {
+    public boolean setConcat(Matrix arg0, Matrix arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->setConcat(Landroid/graphics/Matrix;Landroid/graphics/Matrix;)Z");
     }
 
@@ -172,7 +174,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->setPolyToPoly([FI[FII)Z");
     }
 
-    public boolean setRectToRect(android.graphics.RectF arg0, android.graphics.RectF arg1, android.graphics.Matrix.ScaleToFit arg2) {
+    public boolean setRectToRect(RectF arg0, RectF arg1, Matrix.ScaleToFit arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->setRectToRect(Landroid/graphics/RectF;Landroid/graphics/RectF;Landroid/graphics/Matrix$ScaleToFit;)Z");
     }
 
@@ -216,11 +218,11 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->setValues([F)V");
     }
 
-    public java.lang.String toShortString() {
+    public String toShortString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->toShortString()Ljava/lang/String;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Matrix;->toString()Ljava/lang/String;");
     }
         public static enum ScaleToFit {

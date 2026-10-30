@@ -2,11 +2,11 @@ package android.view;
 
     public class SearchEvent {
 
-    public SearchEvent(android.view.InputDevice arg0) {
+    public SearchEvent(InputDevice arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/SearchEvent;-><init>(Landroid/view/InputDevice;)V");
     }
 
-    public android.view.InputDevice getInputDevice() {
+    public InputDevice getInputDevice() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/SearchEvent;->getInputDevice()Landroid/view/InputDevice;");
     }
 

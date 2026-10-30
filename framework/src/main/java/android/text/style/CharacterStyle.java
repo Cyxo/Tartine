@@ -1,17 +1,19 @@
 package android.text.style;
 
+import android.text.TextPaint;
+
 public class CharacterStyle {
     public CharacterStyle() {
     }
 
-    public android.text.style.CharacterStyle getUnderlying() {
+    public CharacterStyle getUnderlying() {
         return this;
     }
 
-    public void updateDrawState(android.text.TextPaint arg0) {
+    public void updateDrawState(TextPaint arg0) {
     }
 
-    public static android.text.style.CharacterStyle wrap(android.text.style.CharacterStyle arg0) {
+    public static CharacterStyle wrap(CharacterStyle arg0) {
         return arg0;
     }
 }

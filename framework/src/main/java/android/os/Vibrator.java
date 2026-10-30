@@ -1,5 +1,9 @@
 package android.os;
 
+import android.media.AudioAttributes;
+import android.os.vibrator.VibratorEnvelopeEffectInfo;
+import android.os.vibrator.VibratorFrequencyProfile;
+
     public class Vibrator {
 
     public static final int VIBRATION_EFFECT_SUPPORT_NO = 2;
@@ -30,11 +34,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->cancel()V");
     }
 
-    public android.os.vibrator.VibratorEnvelopeEffectInfo getEnvelopeEffectInfo() {
+    public VibratorEnvelopeEffectInfo getEnvelopeEffectInfo() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->getEnvelopeEffectInfo()Landroid/os/vibrator/VibratorEnvelopeEffectInfo;");
     }
 
-    public android.os.vibrator.VibratorFrequencyProfile getFrequencyProfile() {
+    public VibratorFrequencyProfile getFrequencyProfile() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->getFrequencyProfile()Landroid/os/vibrator/VibratorFrequencyProfile;");
     }
 
@@ -62,15 +66,15 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->hasVibrator()Z");
     }
 
-    public void vibrate(android.os.VibrationEffect arg0) {
+    public void vibrate(VibrationEffect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->vibrate(Landroid/os/VibrationEffect;)V");
     }
 
-    public void vibrate(android.os.VibrationEffect arg0, android.media.AudioAttributes arg1) {
+    public void vibrate(VibrationEffect arg0, AudioAttributes arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->vibrate(Landroid/os/VibrationEffect;Landroid/media/AudioAttributes;)V");
     }
 
-    public void vibrate(android.os.VibrationEffect arg0, android.os.VibrationAttributes arg1) {
+    public void vibrate(VibrationEffect arg0, VibrationAttributes arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->vibrate(Landroid/os/VibrationEffect;Landroid/os/VibrationAttributes;)V");
     }
 
@@ -78,7 +82,7 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->vibrate(J)V");
     }
 
-    public void vibrate(long arg0, android.media.AudioAttributes arg1) {
+    public void vibrate(long arg0, AudioAttributes arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->vibrate(JLandroid/media/AudioAttributes;)V");
     }
 
@@ -86,7 +90,7 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->vibrate([JI)V");
     }
 
-    public void vibrate(long[] arg0, int arg1, android.media.AudioAttributes arg2) {
+    public void vibrate(long[] arg0, int arg1, AudioAttributes arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Vibrator;->vibrate([JILandroid/media/AudioAttributes;)V");
     }
     }

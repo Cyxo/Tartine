@@ -1,22 +1,33 @@
 package android.view.accessibility;
 
-    public class AccessibilityNodeInfo implements android.os.Parcelable {
+import android.graphics.Rect;
+import android.graphics.Region;
+import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.Size;
+import android.view.View;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+
+    public class AccessibilityNodeInfo implements Parcelable {
 
     public static final int ACTION_ACCESSIBILITY_FOCUS = 64;
-    public static final java.lang.String ACTION_ARGUMENT_COLUMN_INT = "android.view.accessibility.action.ARGUMENT_COLUMN_INT";
-    public static final java.lang.String ACTION_ARGUMENT_DIRECTION_INT = "android.view.accessibility.action.ARGUMENT_DIRECTION_INT";
-    public static final java.lang.String ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN = "ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN";
-    public static final java.lang.String ACTION_ARGUMENT_HTML_ELEMENT_STRING = "ACTION_ARGUMENT_HTML_ELEMENT_STRING";
-    public static final java.lang.String ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT = "ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT";
-    public static final java.lang.String ACTION_ARGUMENT_MOVE_WINDOW_X = "ACTION_ARGUMENT_MOVE_WINDOW_X";
-    public static final java.lang.String ACTION_ARGUMENT_MOVE_WINDOW_Y = "ACTION_ARGUMENT_MOVE_WINDOW_Y";
-    public static final java.lang.String ACTION_ARGUMENT_PRESS_AND_HOLD_DURATION_MILLIS_INT = "android.view.accessibility.action.ARGUMENT_PRESS_AND_HOLD_DURATION_MILLIS_INT";
-    public static final java.lang.String ACTION_ARGUMENT_PROGRESS_VALUE = "android.view.accessibility.action.ARGUMENT_PROGRESS_VALUE";
-    public static final java.lang.String ACTION_ARGUMENT_ROW_INT = "android.view.accessibility.action.ARGUMENT_ROW_INT";
-    public static final java.lang.String ACTION_ARGUMENT_SCROLL_AMOUNT_FLOAT = "android.view.accessibility.action.ARGUMENT_SCROLL_AMOUNT_FLOAT";
-    public static final java.lang.String ACTION_ARGUMENT_SELECTION_END_INT = "ACTION_ARGUMENT_SELECTION_END_INT";
-    public static final java.lang.String ACTION_ARGUMENT_SELECTION_START_INT = "ACTION_ARGUMENT_SELECTION_START_INT";
-    public static final java.lang.String ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE = "ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE";
+    public static final String ACTION_ARGUMENT_COLUMN_INT = "android.view.accessibility.action.ARGUMENT_COLUMN_INT";
+    public static final String ACTION_ARGUMENT_DIRECTION_INT = "android.view.accessibility.action.ARGUMENT_DIRECTION_INT";
+    public static final String ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN = "ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN";
+    public static final String ACTION_ARGUMENT_HTML_ELEMENT_STRING = "ACTION_ARGUMENT_HTML_ELEMENT_STRING";
+    public static final String ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT = "ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT";
+    public static final String ACTION_ARGUMENT_MOVE_WINDOW_X = "ACTION_ARGUMENT_MOVE_WINDOW_X";
+    public static final String ACTION_ARGUMENT_MOVE_WINDOW_Y = "ACTION_ARGUMENT_MOVE_WINDOW_Y";
+    public static final String ACTION_ARGUMENT_PRESS_AND_HOLD_DURATION_MILLIS_INT = "android.view.accessibility.action.ARGUMENT_PRESS_AND_HOLD_DURATION_MILLIS_INT";
+    public static final String ACTION_ARGUMENT_PROGRESS_VALUE = "android.view.accessibility.action.ARGUMENT_PROGRESS_VALUE";
+    public static final String ACTION_ARGUMENT_ROW_INT = "android.view.accessibility.action.ARGUMENT_ROW_INT";
+    public static final String ACTION_ARGUMENT_SCROLL_AMOUNT_FLOAT = "android.view.accessibility.action.ARGUMENT_SCROLL_AMOUNT_FLOAT";
+    public static final String ACTION_ARGUMENT_SELECTION_END_INT = "ACTION_ARGUMENT_SELECTION_END_INT";
+    public static final String ACTION_ARGUMENT_SELECTION_START_INT = "ACTION_ARGUMENT_SELECTION_START_INT";
+    public static final String ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE = "ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE";
     public static final int ACTION_CLEAR_ACCESSIBILITY_FOCUS = 128;
     public static final int ACTION_CLEAR_FOCUS = 2;
     public static final int ACTION_CLEAR_SELECTION = 8;
@@ -41,17 +52,17 @@ package android.view.accessibility;
     public static final int CHECKED_STATE_FALSE = 0;
     public static final int CHECKED_STATE_PARTIAL = 2;
     public static final int CHECKED_STATE_TRUE = 1;
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
     public static final int EXPANDED_STATE_COLLAPSED = 1;
     public static final int EXPANDED_STATE_FULL = 3;
     public static final int EXPANDED_STATE_PARTIAL = 2;
     public static final int EXPANDED_STATE_UNDEFINED = 0;
-    public static final java.lang.String EXTRA_DATA_RENDERING_INFO_KEY = "android.view.accessibility.extra.DATA_RENDERING_INFO_KEY";
-    public static final java.lang.String EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH";
+    public static final String EXTRA_DATA_RENDERING_INFO_KEY = "android.view.accessibility.extra.DATA_RENDERING_INFO_KEY";
+    public static final String EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH";
     public static final int EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_MAX_LENGTH = 20000;
-    public static final java.lang.String EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX";
-    public static final java.lang.String EXTRA_DATA_TEXT_CHARACTER_LOCATION_IN_WINDOW_KEY = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_IN_WINDOW_KEY";
-    public static final java.lang.String EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_KEY";
+    public static final String EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX";
+    public static final String EXTRA_DATA_TEXT_CHARACTER_LOCATION_IN_WINDOW_KEY = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_IN_WINDOW_KEY";
+    public static final String EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_KEY";
     public static final int FLAG_PREFETCH_ANCESTORS = 1;
     public static final int FLAG_PREFETCH_DESCENDANTS_BREADTH_FIRST = 16;
     public static final int FLAG_PREFETCH_DESCENDANTS_DEPTH_FIRST = 8;
@@ -71,19 +82,19 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;-><init>()V");
     }
 
-    public AccessibilityNodeInfo(android.view.accessibility.AccessibilityNodeInfo arg0) {
+    public AccessibilityNodeInfo(AccessibilityNodeInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;-><init>(Landroid/view/accessibility/AccessibilityNodeInfo;)V");
     }
 
-    public AccessibilityNodeInfo(android.view.View arg0) {
+    public AccessibilityNodeInfo(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;-><init>(Landroid/view/View;)V");
     }
 
-    public AccessibilityNodeInfo(android.view.View arg0, int arg1) {
+    public AccessibilityNodeInfo(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;-><init>(Landroid/view/View;I)V");
     }
 
-    public void addAction(android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction arg0) {
+    public void addAction(AccessibilityNodeInfo.AccessibilityAction arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->addAction(Landroid/view/accessibility/AccessibilityNodeInfo$AccessibilityAction;)V");
     }
 
@@ -91,19 +102,19 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->addAction(I)V");
     }
 
-    public void addChild(android.view.View arg0) {
+    public void addChild(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->addChild(Landroid/view/View;)V");
     }
 
-    public void addChild(android.view.View arg0, int arg1) {
+    public void addChild(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->addChild(Landroid/view/View;I)V");
     }
 
-    public void addLabeledBy(android.view.View arg0) {
+    public void addLabeledBy(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->addLabeledBy(Landroid/view/View;)V");
     }
 
-    public void addLabeledBy(android.view.View arg0, int arg1) {
+    public void addLabeledBy(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->addLabeledBy(Landroid/view/View;I)V");
     }
 
@@ -115,27 +126,27 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->equals(Ljava/lang/Object;)Z");
     }
 
-    public java.util.List<android.view.accessibility.AccessibilityNodeInfo> findAccessibilityNodeInfosByText(java.lang.String arg0) {
+    public List<AccessibilityNodeInfo> findAccessibilityNodeInfosByText(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->findAccessibilityNodeInfosByText(Ljava/lang/String;)Ljava/util/List;");
     }
 
-    public java.util.List<android.view.accessibility.AccessibilityNodeInfo> findAccessibilityNodeInfosByViewId(java.lang.String arg0) {
+    public List<AccessibilityNodeInfo> findAccessibilityNodeInfosByViewId(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->findAccessibilityNodeInfosByViewId(Ljava/lang/String;)Ljava/util/List;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo findFocus(int arg0) {
+    public AccessibilityNodeInfo findFocus(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->findFocus(I)Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo focusSearch(int arg0) {
+    public AccessibilityNodeInfo focusSearch(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->focusSearch(I)Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public java.util.List<android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction> getActionList() {
+    public List<AccessibilityNodeInfo.AccessibilityAction> getActionList() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getActionList()Ljava/util/List;");
     }
 
@@ -143,19 +154,19 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getActions()I");
     }
 
-    public java.util.List<java.lang.String> getAvailableExtraData() {
+    public List<String> getAvailableExtraData() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getAvailableExtraData()Ljava/util/List;");
     }
 
-    public void getBoundsInParent(android.graphics.Rect arg0) {
+    public void getBoundsInParent(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getBoundsInParent(Landroid/graphics/Rect;)V");
     }
 
-    public void getBoundsInScreen(android.graphics.Rect arg0) {
+    public void getBoundsInScreen(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getBoundsInScreen(Landroid/graphics/Rect;)V");
     }
 
-    public void getBoundsInWindow(android.graphics.Rect arg0) {
+    public void getBoundsInWindow(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getBoundsInWindow(Landroid/graphics/Rect;)V");
     }
 
@@ -163,11 +174,11 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getChecked()I");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo getChild(int arg0) {
+    public AccessibilityNodeInfo getChild(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getChild(I)Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo getChild(int arg0, int arg1) {
+    public AccessibilityNodeInfo getChild(int arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getChild(II)Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
@@ -175,23 +186,23 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getChildCount()I");
     }
 
-    public java.lang.CharSequence getClassName() {
+    public CharSequence getClassName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getClassName()Ljava/lang/CharSequence;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo.CollectionInfo getCollectionInfo() {
+    public AccessibilityNodeInfo.CollectionInfo getCollectionInfo() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getCollectionInfo()Landroid/view/accessibility/AccessibilityNodeInfo$CollectionInfo;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo.CollectionItemInfo getCollectionItemInfo() {
+    public AccessibilityNodeInfo.CollectionItemInfo getCollectionItemInfo() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getCollectionItemInfo()Landroid/view/accessibility/AccessibilityNodeInfo$CollectionItemInfo;");
     }
 
-    public java.lang.CharSequence getContainerTitle() {
+    public CharSequence getContainerTitle() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getContainerTitle()Ljava/lang/CharSequence;");
     }
 
-    public java.lang.CharSequence getContentDescription() {
+    public CharSequence getContentDescription() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getContentDescription()Ljava/lang/CharSequence;");
     }
 
@@ -199,7 +210,7 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getDrawingOrder()I");
     }
 
-    public java.lang.CharSequence getError() {
+    public CharSequence getError() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getError()Ljava/lang/CharSequence;");
     }
 
@@ -207,15 +218,15 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getExpandedState()I");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo.ExtraRenderingInfo getExtraRenderingInfo() {
+    public AccessibilityNodeInfo.ExtraRenderingInfo getExtraRenderingInfo() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getExtraRenderingInfo()Landroid/view/accessibility/AccessibilityNodeInfo$ExtraRenderingInfo;");
     }
 
-    public android.os.Bundle getExtras() {
+    public Bundle getExtras() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getExtras()Landroid/os/Bundle;");
     }
 
-    public java.lang.CharSequence getHintText() {
+    public CharSequence getHintText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getHintText()Ljava/lang/CharSequence;");
     }
 
@@ -223,15 +234,15 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getInputType()I");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo getLabelFor() {
+    public AccessibilityNodeInfo getLabelFor() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getLabelFor()Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo getLabeledBy() {
+    public AccessibilityNodeInfo getLabeledBy() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getLabeledBy()Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public java.util.List<android.view.accessibility.AccessibilityNodeInfo> getLabeledByList() {
+    public List<AccessibilityNodeInfo> getLabeledByList() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getLabeledByList()Ljava/util/List;");
     }
 
@@ -243,7 +254,7 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getMaxTextLength()I");
     }
 
-    public java.time.Duration getMinDurationBetweenContentChanges() {
+    public Duration getMinDurationBetweenContentChanges() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getMinDurationBetweenContentChanges()Ljava/time/Duration;");
     }
 
@@ -251,35 +262,35 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getMovementGranularities()I");
     }
 
-    public java.lang.CharSequence getPackageName() {
+    public CharSequence getPackageName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getPackageName()Ljava/lang/CharSequence;");
     }
 
-    public java.lang.CharSequence getPaneTitle() {
+    public CharSequence getPaneTitle() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getPaneTitle()Ljava/lang/CharSequence;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo getParent() {
+    public AccessibilityNodeInfo getParent() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getParent()Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo getParent(int arg0) {
+    public AccessibilityNodeInfo getParent(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getParent(I)Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo.RangeInfo getRangeInfo() {
+    public AccessibilityNodeInfo.RangeInfo getRangeInfo() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getRangeInfo()Landroid/view/accessibility/AccessibilityNodeInfo$RangeInfo;");
     }
 
-    public java.lang.CharSequence getStateDescription() {
+    public CharSequence getStateDescription() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getStateDescription()Ljava/lang/CharSequence;");
     }
 
-    public java.lang.CharSequence getSupplementalDescription() {
+    public CharSequence getSupplementalDescription() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getSupplementalDescription()Ljava/lang/CharSequence;");
     }
 
-    public java.lang.CharSequence getText() {
+    public CharSequence getText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getText()Ljava/lang/CharSequence;");
     }
 
@@ -291,31 +302,31 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getTextSelectionStart()I");
     }
 
-    public java.lang.CharSequence getTooltipText() {
+    public CharSequence getTooltipText() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getTooltipText()Ljava/lang/CharSequence;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo.TouchDelegateInfo getTouchDelegateInfo() {
+    public AccessibilityNodeInfo.TouchDelegateInfo getTouchDelegateInfo() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getTouchDelegateInfo()Landroid/view/accessibility/AccessibilityNodeInfo$TouchDelegateInfo;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo getTraversalAfter() {
+    public AccessibilityNodeInfo getTraversalAfter() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getTraversalAfter()Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public android.view.accessibility.AccessibilityNodeInfo getTraversalBefore() {
+    public AccessibilityNodeInfo getTraversalBefore() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getTraversalBefore()Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public java.lang.String getUniqueId() {
+    public String getUniqueId() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getUniqueId()Ljava/lang/String;");
     }
 
-    public java.lang.String getViewIdResourceName() {
+    public String getViewIdResourceName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getViewIdResourceName()Ljava/lang/String;");
     }
 
-    public android.view.accessibility.AccessibilityWindowInfo getWindow() {
+    public AccessibilityWindowInfo getWindow() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->getWindow()Landroid/view/accessibility/AccessibilityWindowInfo;");
     }
 
@@ -435,19 +446,19 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->isVisibleToUser()Z");
     }
 
-    public static android.view.accessibility.AccessibilityNodeInfo obtain() {
+    public static AccessibilityNodeInfo obtain() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->obtain()Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public static android.view.accessibility.AccessibilityNodeInfo obtain(android.view.accessibility.AccessibilityNodeInfo arg0) {
+    public static AccessibilityNodeInfo obtain(AccessibilityNodeInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->obtain(Landroid/view/accessibility/AccessibilityNodeInfo;)Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public static android.view.accessibility.AccessibilityNodeInfo obtain(android.view.View arg0) {
+    public static AccessibilityNodeInfo obtain(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->obtain(Landroid/view/View;)Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
-    public static android.view.accessibility.AccessibilityNodeInfo obtain(android.view.View arg0, int arg1) {
+    public static AccessibilityNodeInfo obtain(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->obtain(Landroid/view/View;I)Landroid/view/accessibility/AccessibilityNodeInfo;");
     }
 
@@ -455,7 +466,7 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->performAction(I)Z");
     }
 
-    public boolean performAction(int arg0, android.os.Bundle arg1) {
+    public boolean performAction(int arg0, Bundle arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->performAction(ILandroid/os/Bundle;)Z");
     }
 
@@ -467,11 +478,11 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->refresh()Z");
     }
 
-    public boolean refreshWithExtraData(java.lang.String arg0, android.os.Bundle arg1) {
+    public boolean refreshWithExtraData(String arg0, Bundle arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->refreshWithExtraData(Ljava/lang/String;Landroid/os/Bundle;)Z");
     }
 
-    public boolean removeAction(android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction arg0) {
+    public boolean removeAction(AccessibilityNodeInfo.AccessibilityAction arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->removeAction(Landroid/view/accessibility/AccessibilityNodeInfo$AccessibilityAction;)Z");
     }
 
@@ -479,19 +490,19 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->removeAction(I)V");
     }
 
-    public boolean removeChild(android.view.View arg0) {
+    public boolean removeChild(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->removeChild(Landroid/view/View;)Z");
     }
 
-    public boolean removeChild(android.view.View arg0, int arg1) {
+    public boolean removeChild(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->removeChild(Landroid/view/View;I)Z");
     }
 
-    public boolean removeLabeledBy(android.view.View arg0) {
+    public boolean removeLabeledBy(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->removeLabeledBy(Landroid/view/View;)Z");
     }
 
-    public boolean removeLabeledBy(android.view.View arg0, int arg1) {
+    public boolean removeLabeledBy(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->removeLabeledBy(Landroid/view/View;I)Z");
     }
 
@@ -503,19 +514,19 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setAccessibilityFocused(Z)V");
     }
 
-    public void setAvailableExtraData(java.util.List<java.lang.String> arg0) {
+    public void setAvailableExtraData(List<String> arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setAvailableExtraData(Ljava/util/List;)V");
     }
 
-    public void setBoundsInParent(android.graphics.Rect arg0) {
+    public void setBoundsInParent(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setBoundsInParent(Landroid/graphics/Rect;)V");
     }
 
-    public void setBoundsInScreen(android.graphics.Rect arg0) {
+    public void setBoundsInScreen(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setBoundsInScreen(Landroid/graphics/Rect;)V");
     }
 
-    public void setBoundsInWindow(android.graphics.Rect arg0) {
+    public void setBoundsInWindow(Rect arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setBoundsInWindow(Landroid/graphics/Rect;)V");
     }
 
@@ -535,7 +546,7 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setChecked(I)V");
     }
 
-    public void setClassName(java.lang.CharSequence arg0) {
+    public void setClassName(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setClassName(Ljava/lang/CharSequence;)V");
     }
 
@@ -543,19 +554,19 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setClickable(Z)V");
     }
 
-    public void setCollectionInfo(android.view.accessibility.AccessibilityNodeInfo.CollectionInfo arg0) {
+    public void setCollectionInfo(AccessibilityNodeInfo.CollectionInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setCollectionInfo(Landroid/view/accessibility/AccessibilityNodeInfo$CollectionInfo;)V");
     }
 
-    public void setCollectionItemInfo(android.view.accessibility.AccessibilityNodeInfo.CollectionItemInfo arg0) {
+    public void setCollectionItemInfo(AccessibilityNodeInfo.CollectionItemInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setCollectionItemInfo(Landroid/view/accessibility/AccessibilityNodeInfo$CollectionItemInfo;)V");
     }
 
-    public void setContainerTitle(java.lang.CharSequence arg0) {
+    public void setContainerTitle(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setContainerTitle(Ljava/lang/CharSequence;)V");
     }
 
-    public void setContentDescription(java.lang.CharSequence arg0) {
+    public void setContentDescription(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setContentDescription(Ljava/lang/CharSequence;)V");
     }
 
@@ -583,7 +594,7 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setEnabled(Z)V");
     }
 
-    public void setError(java.lang.CharSequence arg0) {
+    public void setError(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setError(Ljava/lang/CharSequence;)V");
     }
 
@@ -611,7 +622,7 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setHeading(Z)V");
     }
 
-    public void setHintText(java.lang.CharSequence arg0) {
+    public void setHintText(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setHintText(Ljava/lang/CharSequence;)V");
     }
 
@@ -623,19 +634,19 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setInputType(I)V");
     }
 
-    public void setLabelFor(android.view.View arg0) {
+    public void setLabelFor(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setLabelFor(Landroid/view/View;)V");
     }
 
-    public void setLabelFor(android.view.View arg0, int arg1) {
+    public void setLabelFor(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setLabelFor(Landroid/view/View;I)V");
     }
 
-    public void setLabeledBy(android.view.View arg0) {
+    public void setLabeledBy(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setLabeledBy(Landroid/view/View;)V");
     }
 
-    public void setLabeledBy(android.view.View arg0, int arg1) {
+    public void setLabeledBy(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setLabeledBy(Landroid/view/View;I)V");
     }
 
@@ -651,7 +662,7 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setMaxTextLength(I)V");
     }
 
-    public void setMinDurationBetweenContentChanges(java.time.Duration arg0) {
+    public void setMinDurationBetweenContentChanges(Duration arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setMinDurationBetweenContentChanges(Ljava/time/Duration;)V");
     }
 
@@ -663,19 +674,19 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setMultiLine(Z)V");
     }
 
-    public void setPackageName(java.lang.CharSequence arg0) {
+    public void setPackageName(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setPackageName(Ljava/lang/CharSequence;)V");
     }
 
-    public void setPaneTitle(java.lang.CharSequence arg0) {
+    public void setPaneTitle(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setPaneTitle(Ljava/lang/CharSequence;)V");
     }
 
-    public void setParent(android.view.View arg0) {
+    public void setParent(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setParent(Landroid/view/View;)V");
     }
 
-    public void setParent(android.view.View arg0, int arg1) {
+    public void setParent(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setParent(Landroid/view/View;I)V");
     }
 
@@ -683,11 +694,11 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setPassword(Z)V");
     }
 
-    public void setQueryFromAppProcessEnabled(android.view.View arg0, boolean arg1) {
+    public void setQueryFromAppProcessEnabled(View arg0, boolean arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setQueryFromAppProcessEnabled(Landroid/view/View;Z)V");
     }
 
-    public void setRangeInfo(android.view.accessibility.AccessibilityNodeInfo.RangeInfo arg0) {
+    public void setRangeInfo(AccessibilityNodeInfo.RangeInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setRangeInfo(Landroid/view/accessibility/AccessibilityNodeInfo$RangeInfo;)V");
     }
 
@@ -711,23 +722,23 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setShowingHintText(Z)V");
     }
 
-    public void setSource(android.view.View arg0) {
+    public void setSource(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setSource(Landroid/view/View;)V");
     }
 
-    public void setSource(android.view.View arg0, int arg1) {
+    public void setSource(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setSource(Landroid/view/View;I)V");
     }
 
-    public void setStateDescription(java.lang.CharSequence arg0) {
+    public void setStateDescription(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setStateDescription(Ljava/lang/CharSequence;)V");
     }
 
-    public void setSupplementalDescription(java.lang.CharSequence arg0) {
+    public void setSupplementalDescription(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setSupplementalDescription(Ljava/lang/CharSequence;)V");
     }
 
-    public void setText(java.lang.CharSequence arg0) {
+    public void setText(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setText(Ljava/lang/CharSequence;)V");
     }
 
@@ -743,35 +754,35 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setTextSelection(II)V");
     }
 
-    public void setTooltipText(java.lang.CharSequence arg0) {
+    public void setTooltipText(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setTooltipText(Ljava/lang/CharSequence;)V");
     }
 
-    public void setTouchDelegateInfo(android.view.accessibility.AccessibilityNodeInfo.TouchDelegateInfo arg0) {
+    public void setTouchDelegateInfo(AccessibilityNodeInfo.TouchDelegateInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setTouchDelegateInfo(Landroid/view/accessibility/AccessibilityNodeInfo$TouchDelegateInfo;)V");
     }
 
-    public void setTraversalAfter(android.view.View arg0) {
+    public void setTraversalAfter(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setTraversalAfter(Landroid/view/View;)V");
     }
 
-    public void setTraversalAfter(android.view.View arg0, int arg1) {
+    public void setTraversalAfter(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setTraversalAfter(Landroid/view/View;I)V");
     }
 
-    public void setTraversalBefore(android.view.View arg0) {
+    public void setTraversalBefore(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setTraversalBefore(Landroid/view/View;)V");
     }
 
-    public void setTraversalBefore(android.view.View arg0, int arg1) {
+    public void setTraversalBefore(View arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setTraversalBefore(Landroid/view/View;I)V");
     }
 
-    public void setUniqueId(java.lang.String arg0) {
+    public void setUniqueId(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setUniqueId(Ljava/lang/String;)V");
     }
 
-    public void setViewIdResourceName(java.lang.String arg0) {
+    public void setViewIdResourceName(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setViewIdResourceName(Ljava/lang/String;)V");
     }
 
@@ -779,62 +790,62 @@ package android.view.accessibility;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->setVisibleToUser(Z)V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
-        public static class AccessibilityAction implements android.os.Parcelable {
+        public static class AccessibilityAction implements Parcelable {
 
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_ACCESSIBILITY_FOCUS;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_CLEAR_ACCESSIBILITY_FOCUS;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_CLEAR_FOCUS;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_CLEAR_SELECTION;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_CLICK;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_COLLAPSE;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_CONTEXT_CLICK;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_COPY;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_CUT;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_DISMISS;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_DRAG_CANCEL;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_DRAG_DROP;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_DRAG_START;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_EXPAND;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_FOCUS;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_HIDE_TOOLTIP;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_IME_ENTER;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_LONG_CLICK;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_MOVE_WINDOW;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_NEXT_AT_MOVEMENT_GRANULARITY;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_NEXT_HTML_ELEMENT;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_PAGE_DOWN;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_PAGE_LEFT;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_PAGE_RIGHT;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_PAGE_UP;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_PASTE;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_PRESS_AND_HOLD;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_PREVIOUS_HTML_ELEMENT;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_BACKWARD;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_DOWN;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_FORWARD;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_IN_DIRECTION;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_LEFT;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_RIGHT;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_TO_POSITION;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_UP;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SELECT;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SET_PROGRESS;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SET_SELECTION;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SET_TEXT;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SHOW_ON_SCREEN;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SHOW_TEXT_SUGGESTIONS;
-        public static android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction ACTION_SHOW_TOOLTIP;
-        public static android.os.Parcelable.Creator CREATOR;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_ACCESSIBILITY_FOCUS;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_CLEAR_ACCESSIBILITY_FOCUS;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_CLEAR_FOCUS;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_CLEAR_SELECTION;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_CLICK;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_COLLAPSE;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_CONTEXT_CLICK;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_COPY;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_CUT;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_DISMISS;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_DRAG_CANCEL;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_DRAG_DROP;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_DRAG_START;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_EXPAND;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_FOCUS;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_HIDE_TOOLTIP;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_IME_ENTER;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_LONG_CLICK;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_MOVE_WINDOW;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_NEXT_AT_MOVEMENT_GRANULARITY;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_NEXT_HTML_ELEMENT;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_PAGE_DOWN;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_PAGE_LEFT;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_PAGE_RIGHT;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_PAGE_UP;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_PASTE;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_PRESS_AND_HOLD;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_PREVIOUS_HTML_ELEMENT;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_BACKWARD;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_DOWN;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_FORWARD;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_IN_DIRECTION;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_LEFT;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_RIGHT;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_TO_POSITION;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SCROLL_UP;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SELECT;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SET_PROGRESS;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SET_SELECTION;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SET_TEXT;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SHOW_ON_SCREEN;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SHOW_TEXT_SUGGESTIONS;
+        public static AccessibilityNodeInfo.AccessibilityAction ACTION_SHOW_TOOLTIP;
+        public static Parcelable.Creator CREATOR;
 
-        public AccessibilityAction(int arg0, java.lang.CharSequence arg1) {
+        public AccessibilityAction(int arg0, CharSequence arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$AccessibilityAction;-><init>(ILjava/lang/CharSequence;)V");
         }
 
@@ -842,7 +853,7 @@ package android.view.accessibility;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$AccessibilityAction;->describeContents()I");
         }
 
-        public boolean equals(java.lang.Object arg0) {
+        public boolean equals(Object arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$AccessibilityAction;->equals(Ljava/lang/Object;)Z");
         }
 
@@ -850,7 +861,7 @@ package android.view.accessibility;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$AccessibilityAction;->getId()I");
         }
 
-        public java.lang.CharSequence getLabel() {
+        public CharSequence getLabel() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$AccessibilityAction;->getLabel()Ljava/lang/CharSequence;");
         }
 
@@ -858,11 +869,11 @@ package android.view.accessibility;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$AccessibilityAction;->hashCode()I");
         }
 
-        public java.lang.String toString() {
+        public String toString() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$AccessibilityAction;->toString()Ljava/lang/String;");
         }
 
-        public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        public void writeToParcel(Parcel arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$AccessibilityAction;->writeToParcel(Landroid/os/Parcel;I)V");
         }
 
@@ -909,11 +920,11 @@ package android.view.accessibility;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$CollectionInfo;->isHierarchical()Z");
         }
 
-        public static android.view.accessibility.AccessibilityNodeInfo.CollectionInfo obtain(int arg0, int arg1, boolean arg2) {
+        public static AccessibilityNodeInfo.CollectionInfo obtain(int arg0, int arg1, boolean arg2) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$CollectionInfo;->obtain(IIZ)Landroid/view/accessibility/AccessibilityNodeInfo$CollectionInfo;");
         }
 
-        public static android.view.accessibility.AccessibilityNodeInfo.CollectionInfo obtain(int arg0, int arg1, boolean arg2, int arg3) {
+        public static AccessibilityNodeInfo.CollectionInfo obtain(int arg0, int arg1, boolean arg2, int arg3) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$CollectionInfo;->obtain(IIZI)Landroid/view/accessibility/AccessibilityNodeInfo$CollectionInfo;");
         }
 
@@ -939,7 +950,7 @@ package android.view.accessibility;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$CollectionItemInfo;->getColumnSpan()I");
         }
 
-        public java.lang.String getColumnTitle() {
+        public String getColumnTitle() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$CollectionItemInfo;->getColumnTitle()Ljava/lang/String;");
         }
 
@@ -951,7 +962,7 @@ package android.view.accessibility;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$CollectionItemInfo;->getRowSpan()I");
         }
 
-        public java.lang.String getRowTitle() {
+        public String getRowTitle() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$CollectionItemInfo;->getRowTitle()Ljava/lang/String;");
         }
 
@@ -963,11 +974,11 @@ package android.view.accessibility;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$CollectionItemInfo;->isSelected()Z");
         }
 
-        public static android.view.accessibility.AccessibilityNodeInfo.CollectionItemInfo obtain(int arg0, int arg1, int arg2, int arg3, boolean arg4) {
+        public static AccessibilityNodeInfo.CollectionItemInfo obtain(int arg0, int arg1, int arg2, int arg3, boolean arg4) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$CollectionItemInfo;->obtain(IIIIZ)Landroid/view/accessibility/AccessibilityNodeInfo$CollectionItemInfo;");
         }
 
-        public static android.view.accessibility.AccessibilityNodeInfo.CollectionItemInfo obtain(int arg0, int arg1, int arg2, int arg3, boolean arg4, boolean arg5) {
+        public static AccessibilityNodeInfo.CollectionItemInfo obtain(int arg0, int arg1, int arg2, int arg3, boolean arg4, boolean arg5) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$CollectionItemInfo;->obtain(IIIIZZ)Landroid/view/accessibility/AccessibilityNodeInfo$CollectionItemInfo;");
         }
 
@@ -977,7 +988,7 @@ package android.view.accessibility;
         }
         public static class ExtraRenderingInfo {
 
-        public android.util.Size getLayoutSize() {
+        public Size getLayoutSize() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$ExtraRenderingInfo;->getLayoutSize()Landroid/util/Size;");
         }
 
@@ -991,7 +1002,7 @@ package android.view.accessibility;
         }
         public static class RangeInfo {
 
-        public static android.view.accessibility.AccessibilityNodeInfo.RangeInfo INDETERMINATE;
+        public static AccessibilityNodeInfo.RangeInfo INDETERMINATE;
         public static final int RANGE_TYPE_FLOAT = 1;
         public static final int RANGE_TYPE_INDETERMINATE = 3;
         public static final int RANGE_TYPE_INT = 0;
@@ -1017,7 +1028,7 @@ package android.view.accessibility;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$RangeInfo;->getType()I");
         }
 
-        public static android.view.accessibility.AccessibilityNodeInfo.RangeInfo obtain(int arg0, float arg1, float arg2, float arg3) {
+        public static AccessibilityNodeInfo.RangeInfo obtain(int arg0, float arg1, float arg2, float arg3) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$RangeInfo;->obtain(IFFF)Landroid/view/accessibility/AccessibilityNodeInfo$RangeInfo;");
         }
 
@@ -1025,11 +1036,11 @@ package android.view.accessibility;
             public RangeInfo() {
             }
         }
-        public static class TouchDelegateInfo implements android.os.Parcelable {
+        public static class TouchDelegateInfo implements Parcelable {
 
-        public static android.os.Parcelable.Creator CREATOR;
+        public static Parcelable.Creator CREATOR;
 
-        public TouchDelegateInfo(java.util.Map arg0) {
+        public TouchDelegateInfo(Map arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$TouchDelegateInfo;-><init>(Ljava/util/Map;)V");
         }
 
@@ -1037,7 +1048,7 @@ package android.view.accessibility;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$TouchDelegateInfo;->describeContents()I");
         }
 
-        public android.graphics.Region getRegionAt(int arg0) {
+        public Region getRegionAt(int arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$TouchDelegateInfo;->getRegionAt(I)Landroid/graphics/Region;");
         }
 
@@ -1045,11 +1056,11 @@ package android.view.accessibility;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$TouchDelegateInfo;->getRegionCount()I");
         }
 
-        public android.view.accessibility.AccessibilityNodeInfo getTargetForRegion(android.graphics.Region arg0) {
+        public AccessibilityNodeInfo getTargetForRegion(Region arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$TouchDelegateInfo;->getTargetForRegion(Landroid/graphics/Region;)Landroid/view/accessibility/AccessibilityNodeInfo;");
         }
 
-        public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        public void writeToParcel(Parcel arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/accessibility/AccessibilityNodeInfo$TouchDelegateInfo;->writeToParcel(Landroid/os/Parcel;I)V");
         }
 

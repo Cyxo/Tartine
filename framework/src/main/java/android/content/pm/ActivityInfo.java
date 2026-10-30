@@ -1,6 +1,11 @@
 package android.content.pm;
 
-    public class ActivityInfo extends android.content.pm.ComponentInfo implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.Printer;
+import java.util.Set;
+
+    public class ActivityInfo extends ComponentInfo implements Parcelable {
 
     public static final int COLOR_MODE_DEFAULT = 0;
     public static final int COLOR_MODE_HDR = 2;
@@ -25,7 +30,7 @@ package android.content.pm;
     public static final int CONFIG_SMALLEST_SCREEN_SIZE = 2048;
     public static final int CONFIG_TOUCHSCREEN = 8;
     public static final int CONFIG_UI_MODE = 512;
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
     public static final int DOCUMENT_LAUNCH_ALWAYS = 2;
     public static final int DOCUMENT_LAUNCH_INTO_EXISTING = 1;
     public static final int DOCUMENT_LAUNCH_NEVER = 3;
@@ -79,23 +84,23 @@ package android.content.pm;
     public int flags;
     public int launchMode;
     public int maxRecents;
-    public java.lang.String parentActivityName;
-    public java.lang.String permission;
+    public String parentActivityName;
+    public String permission;
     public int persistableMode;
-    public java.lang.String requiredDisplayCategory;
+    public String requiredDisplayCategory;
     public int screenOrientation;
     public int softInputMode;
-    public java.lang.String targetActivity;
-    public java.lang.String taskAffinity;
+    public String targetActivity;
+    public String taskAffinity;
     public int theme;
     public int uiOptions;
-    public android.content.pm.ActivityInfo.WindowLayout windowLayout;
+    public ActivityInfo.WindowLayout windowLayout;
 
     public ActivityInfo() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ActivityInfo;-><init>()V");
     }
 
-    public ActivityInfo(android.content.pm.ActivityInfo arg0) {
+    public ActivityInfo(ActivityInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ActivityInfo;-><init>(Landroid/content/pm/ActivityInfo;)V");
     }
 
@@ -103,11 +108,11 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ActivityInfo;->describeContents()I");
     }
 
-    public void dump(android.util.Printer arg0, java.lang.String arg1) {
+    public void dump(Printer arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ActivityInfo;->dump(Landroid/util/Printer;Ljava/lang/String;)V");
     }
 
-    public java.util.Set<java.lang.String> getKnownActivityEmbeddingCerts() {
+    public Set<String> getKnownActivityEmbeddingCerts() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ActivityInfo;->getKnownActivityEmbeddingCerts()Ljava/util/Set;");
     }
 
@@ -115,11 +120,11 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ActivityInfo;->getThemeResource()I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ActivityInfo;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ActivityInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
         public static class WindowLayout {

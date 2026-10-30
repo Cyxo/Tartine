@@ -1,5 +1,7 @@
 package android.app;
 
+import android.content.ContextWrapper;
+import android.os.Bundle;
 import java.util.ArrayList;
 
 /**
@@ -21,7 +23,7 @@ import java.util.ArrayList;
  *       has no attached base context yet.</li>
  * </ul>
  */
-public class Application extends android.content.ContextWrapper {
+public class Application extends ContextWrapper {
 
     /** AOSP line 58. */
     final ArrayList<ActivityLifecycleCallbacks> mActivityLifecycleCallbacks =
@@ -52,15 +54,15 @@ public class Application extends android.content.ContextWrapper {
 
         /** AOSP onActivityPreCreated default — inert until dispatch lands. */
         default void onActivityPreCreated(Activity activity,
-                android.os.Bundle savedInstanceState) {
+                Bundle savedInstanceState) {
         }
 
         void onActivityCreated(Activity activity,
-                android.os.Bundle savedInstanceState);
+                Bundle savedInstanceState);
 
         /** AOSP onActivityPostCreated default. */
         default void onActivityPostCreated(Activity activity,
-                android.os.Bundle savedInstanceState) {
+                Bundle savedInstanceState) {
         }
 
         /** AOSP onActivityPreStarted default. */
@@ -105,15 +107,15 @@ public class Application extends android.content.ContextWrapper {
 
         /** AOSP onActivityPreSaveInstanceState default. */
         default void onActivityPreSaveInstanceState(Activity activity,
-                android.os.Bundle outState) {
+                Bundle outState) {
         }
 
         void onActivitySaveInstanceState(Activity activity,
-                android.os.Bundle outState);
+                Bundle outState);
 
         /** AOSP onActivityPostSaveInstanceState default. */
         default void onActivityPostSaveInstanceState(Activity activity,
-                android.os.Bundle outState) {
+                Bundle outState) {
         }
 
         /** AOSP onActivityPreDestroyed default. */

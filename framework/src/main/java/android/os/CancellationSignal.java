@@ -14,7 +14,7 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/CancellationSignal;->isCanceled()Z");
     }
 
-    public void setOnCancelListener(android.os.CancellationSignal.OnCancelListener arg0) {
+    public void setOnCancelListener(CancellationSignal.OnCancelListener arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/CancellationSignal;->setOnCancelListener(Landroid/os/CancellationSignal$OnCancelListener;)V");
     }
 

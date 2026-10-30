@@ -1,20 +1,20 @@
 package tartine.config;
 
+import android.graphics.Paint;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import tartine.fw.SystemColors;
+import tartine.runtime.Vfs;
+
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
-import tartine.runtime.Vfs;
 
 /**
  * Pins the host config file seam: per-id system-color overrides beat the
@@ -27,15 +27,15 @@ class HostConfigTest {
 
     @BeforeEach
     void resetSeams() {
-        tartine.fw.SystemColors.clearOverrides();
-        android.graphics.Paint.tartineSetPreferredFamilies(null);
+        SystemColors.clearOverrides();
+        Paint.tartineSetPreferredFamilies(null);
         Vfs.resetCard();
     }
 
     @AfterEach
     void restoreSeams() {
-        tartine.fw.SystemColors.clearOverrides();
-        android.graphics.Paint.tartineSetPreferredFamilies(null);
+        SystemColors.clearOverrides();
+        Paint.tartineSetPreferredFamilies(null);
         Vfs.resetCard();
     }
 
@@ -49,7 +49,7 @@ class HostConfigTest {
     void colorOverrideBeatsBaseline() throws Exception {
         config("color.17170488 = 0xFF102433");
         assertEquals(0xFF102433,
-                tartine.fw.SystemColors.get(17170488).intValue());
+                SystemColors.get(17170488).intValue());
     }
 
     @Test
@@ -59,7 +59,7 @@ class HostConfigTest {
         // generated table translate them to ids.
         config("color.system_accent1_10 = 0xFF112233");
         assertEquals(0xFF112233,
-                tartine.fw.SystemColors.get(17170488).intValue());
+                SystemColors.get(17170488).intValue());
     }
 
     @Test
@@ -67,7 +67,7 @@ class HostConfigTest {
         config("color.not_a_color_name = #102433");
         // No override took effect: the baseline row answers untouched.
         assertEquals(0xFFFAF8FF,
-                tartine.fw.SystemColors.get(17170538).intValue());
+                SystemColors.get(17170538).intValue());
     }
 
     @Test
@@ -75,12 +75,12 @@ class HostConfigTest {
         config("color.17170538 = #FAF8FF", "color.17170539 = 0x123456",
                 "color.17170540 = 1193046");
         assertEquals(0xFFFAF8FF,
-                tartine.fw.SystemColors.get(17170538).intValue());
+                SystemColors.get(17170538).intValue());
         assertEquals(0x123456,
-                tartine.fw.SystemColors.get(17170539).intValue());
+                SystemColors.get(17170539).intValue());
         // Decimal: the same 32-bit ARGB (#00123456) rides as decimal.
         assertEquals(1193046,
-                tartine.fw.SystemColors.get(17170540).intValue());
+                SystemColors.get(17170540).intValue());
     }
 
     @Test
@@ -88,27 +88,27 @@ class HostConfigTest {
         config("color.nope = 12345", "color.17170488 = not-a-color");
         // 999 is no baseline row either way; the point is the junk keys
         // surfaced a warning without crashing or misapplying anything.
-        assertNull(tartine.fw.SystemColors.get(999));
+        assertNull(SystemColors.get(999));
     }
 
     @Test
     void unknownKeyIgnored() throws Exception {
         config("mystery = 5");
-        assertNull(tartine.fw.SystemColors.get(999));
+        assertNull(SystemColors.get(999));
     }
 
     @Test
     void fontFamilyListApplied() throws Exception {
         config("font.families = Verdana, Comic New , Arial");
         assertArrayEquals(new String[]{"Verdana", "Comic New", "Arial"},
-                android.graphics.Paint.tartinePreferredFamilies());
+                Paint.tartinePreferredFamilies());
     }
 
     @Test
     void emptyFontListIgnored() throws Exception {
         config("font.families = , ,");
         assertEquals("Roboto",
-                android.graphics.Paint.tartinePreferredFamilies()[0]);
+                Paint.tartinePreferredFamilies()[0]);
     }
 
     @Test
@@ -116,7 +116,7 @@ class HostConfigTest {
         HostConfig.loadFrom(Path.of(temp.toString(), "absent.properties"));
         // Default behavior: no overrides at all (real id 999 absent from
         // the baseline table).
-        assertNull(tartine.fw.SystemColors.get(999));
+        assertNull(SystemColors.get(999));
     }
 
     @Test

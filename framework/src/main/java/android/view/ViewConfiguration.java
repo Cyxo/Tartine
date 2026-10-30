@@ -1,5 +1,7 @@
 package android.view;
 
+import android.content.Context;
+
 /**
  * View configuration constants (android.jar stub re-embodied as shell Java).
  * The desktop reports the device-default values a small phone would use —
@@ -16,7 +18,7 @@ public class ViewConfiguration {
      * resources; the shell hard-codes the mdpi defaults (touch slop 8,
      * minimum fling 50), the values a small physical device reports.
      */
-    private ViewConfiguration(android.content.Context context) {
+    private ViewConfiguration(Context context) {
         mScaledTouchSlop = 8;
         mScaledMinimumFlingVelocity = 50;
     }
@@ -27,7 +29,7 @@ public class ViewConfiguration {
      * AOSP .../ViewConfiguration.java#get(Context): process-wide singleton
      * cached per context density; the shell keeps one global instance.
      */
-    public static ViewConfiguration get(android.content.Context context) {
+    public static ViewConfiguration get(Context context) {
         if (sInstance == null) {
             sInstance = new ViewConfiguration(context);
         }

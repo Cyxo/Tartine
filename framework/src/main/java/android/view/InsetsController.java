@@ -1,5 +1,8 @@
 package android.view;
 
+import android.os.CancellationSignal;
+import android.view.animation.Interpolator;
+
 /**
  * Tartine: minimal shell insets controller standing in for the AOSP
  * {@code android.view.InsetsController} (frameworks/base
@@ -64,7 +67,7 @@ public class InsetsController implements WindowInsetsController {
      * animation session machinery on the shell yet). */
     @Override
     public void controlWindowInsetsAnimation(int arg0, long arg1,
-            android.view.animation.Interpolator arg2, android.os.CancellationSignal arg3,
+            Interpolator arg2, CancellationSignal arg3,
             WindowInsetsAnimationControlListener arg4) {
     }
 

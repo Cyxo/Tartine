@@ -1,8 +1,10 @@
 package android.view;
 
+import android.content.Context;
+
     public class ActionProvider {
 
-    public ActionProvider(android.content.Context arg0) {
+    public ActionProvider(Context arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;-><init>(Landroid/content/Context;)V");
     }
 
@@ -14,11 +16,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;->isVisible()Z");
     }
 
-    public android.view.View onCreateActionView() {
+    public View onCreateActionView() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;->onCreateActionView()Landroid/view/View;");
     }
 
-    public android.view.View onCreateActionView(android.view.MenuItem arg0) {
+    public View onCreateActionView(MenuItem arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;->onCreateActionView(Landroid/view/MenuItem;)Landroid/view/View;");
     }
 
@@ -26,7 +28,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;->onPerformDefaultAction()Z");
     }
 
-    public void onPrepareSubMenu(android.view.SubMenu arg0) {
+    public void onPrepareSubMenu(SubMenu arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;->onPrepareSubMenu(Landroid/view/SubMenu;)V");
     }
 
@@ -38,7 +40,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;->refreshVisibility()V");
     }
 
-    public void setVisibilityListener(android.view.ActionProvider.VisibilityListener arg0) {
+    public void setVisibilityListener(ActionProvider.VisibilityListener arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ActionProvider;->setVisibilityListener(Landroid/view/ActionProvider$VisibilityListener;)V");
     }
 

@@ -1,22 +1,27 @@
 package android.content;
 
-    public class ContentProviderResult implements android.os.Parcelable {
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
-    public java.lang.Integer count;
-    public java.lang.Throwable exception;
-    public android.os.Bundle extras;
-    public android.net.Uri uri;
+    public class ContentProviderResult implements Parcelable {
 
-    public ContentProviderResult(android.net.Uri arg0) {
+    public static Parcelable.Creator CREATOR;
+    public Integer count;
+    public Throwable exception;
+    public Bundle extras;
+    public Uri uri;
+
+    public ContentProviderResult(Uri arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProviderResult;-><init>(Landroid/net/Uri;)V");
     }
 
-    public ContentProviderResult(android.os.Bundle arg0) {
+    public ContentProviderResult(Bundle arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProviderResult;-><init>(Landroid/os/Bundle;)V");
     }
 
-    public ContentProviderResult(android.os.Parcel arg0) {
+    public ContentProviderResult(Parcel arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProviderResult;-><init>(Landroid/os/Parcel;)V");
     }
 
@@ -24,7 +29,7 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProviderResult;-><init>(I)V");
     }
 
-    public ContentProviderResult(java.lang.Throwable arg0) {
+    public ContentProviderResult(Throwable arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProviderResult;-><init>(Ljava/lang/Throwable;)V");
     }
 
@@ -32,11 +37,11 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProviderResult;->describeContents()I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProviderResult;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContentProviderResult;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

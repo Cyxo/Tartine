@@ -10,7 +10,7 @@ package android.media;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/VolumeProvider;-><init>(III)V");
     }
 
-    public VolumeProvider(int arg0, int arg1, int arg2, java.lang.String arg3) {
+    public VolumeProvider(int arg0, int arg1, int arg2, String arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/VolumeProvider;-><init>(IIILjava/lang/String;)V");
     }
 
@@ -26,7 +26,7 @@ package android.media;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/VolumeProvider;->getVolumeControl()I");
     }
 
-    public final java.lang.String getVolumeControlId() {
+    public final String getVolumeControlId() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/VolumeProvider;->getVolumeControlId()Ljava/lang/String;");
     }
 

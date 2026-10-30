@@ -1,5 +1,12 @@
 package android.app;
 
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import java.util.ArrayList;
+
 /**
  * Tartine: minimal skeleton for the translation spike. The fw-gen closure
  * for the real class drags ActionBar/Fragment (whose nested types cannot
@@ -19,7 +26,7 @@ public class Activity extends ContextThemeWrapper {
      * guest's ComponentActivity chain performs the app-side bookkeeping, so
      * the shell body is inert until the window layer lands.
      */
-    protected void onCreate(android.os.Bundle arg0) {
+    protected void onCreate(Bundle arg0) {
     }
 
     /**
@@ -27,9 +34,9 @@ public class Activity extends ContextThemeWrapper {
      * unregister under the list monitor (AOSP lines 1530-1550). Dispatch is
      * inert until the shell-side lifecycle steps land.
      */
-    private final java.util.ArrayList<Application.ActivityLifecycleCallbacks>
+    private final ArrayList<Application.ActivityLifecycleCallbacks>
             mActivityLifecycleCallbacks =
-            new java.util.ArrayList<Application.ActivityLifecycleCallbacks>();
+            new ArrayList<Application.ActivityLifecycleCallbacks>();
 
     /** AOSP Activity lines 1530-1535. */
     public void registerActivityLifecycleCallbacks(
@@ -52,7 +59,7 @@ public class Activity extends ContextThemeWrapper {
      * delegates to the window; the shell pairs it with the flattened
      * window content flow.
      */
-    public void setContentView(android.view.View arg0) {
+    public void setContentView(View arg0) {
         getWindow().setContentView(arg0);
     }
 
@@ -60,8 +67,8 @@ public class Activity extends ContextThemeWrapper {
      * AOSP Activity.setContentView(View, LayoutParams) (Activity.java lines
      * 3922+) delegates to the window with the caller's params.
      */
-    public void setContentView(android.view.View arg0,
-            android.view.ViewGroup.LayoutParams arg1) {
+    public void setContentView(View arg0,
+            ViewGroup.LayoutParams arg1) {
         getWindow().setContentView(arg0, arg1);
     }
 
@@ -71,28 +78,28 @@ public class Activity extends ContextThemeWrapper {
      * PhoneWindow); the shell lazily owns one concrete Window per
      * activity standing in for PhoneWindow.
      */
-    public android.view.Window getWindow() {
+    public Window getWindow() {
         if (mWindow == null) {
-            mWindow = new android.view.Window(this);
+            mWindow = new Window(this);
         }
         return mWindow;
     }
 
-    private android.view.Window mWindow;
+    private Window mWindow;
 
     /**
      * AOSP Activity.getFragmentManager() (line 3582 — the device delegates
      * to the FragmentController's HostCallbacks); the shell owns one lazy
      * manager per activity and no attached fragment history.
      */
-    public android.app.FragmentManager getFragmentManager() {
+    public FragmentManager getFragmentManager() {
         if (mFragmentManager == null) {
-            mFragmentManager = new android.app.FragmentManager();
+            mFragmentManager = new FragmentManager();
         }
         return mFragmentManager;
     }
 
-    private android.app.FragmentManager mFragmentManager;
+    private FragmentManager mFragmentManager;
 
     /**
      * AOSP frameworks-base core/java/android/app/Activity.java:1312-1314
@@ -101,14 +108,14 @@ public class Activity extends ContextThemeWrapper {
      * process singleton (matches the interpreter's per-activity cached
      * placeholder).
      */
-    public final android.app.Application getApplication() {
+    public final Application getApplication() {
         if (mApplication == null) {
-            mApplication = new android.app.Application();
+            mApplication = new Application();
         }
         return mApplication;
     }
 
-    private android.app.Application mApplication;
+    private Application mApplication;
 
     /**
      * AOSP frameworks-base core/java/android/app/Activity.java:1167-1169
@@ -117,14 +124,14 @@ public class Activity extends ContextThemeWrapper {
      * or extras: the shell lazily owns one stable empty Intent per
      * activity (matches the interpreter's cached-placeholder builtin).
      */
-    public android.content.Intent getIntent() {
+    public Intent getIntent() {
         if (mIntent == null) {
-            mIntent = new android.content.Intent();
+            mIntent = new Intent();
         }
         return mIntent;
     }
 
-    private android.content.Intent mIntent;
+    private Intent mIntent;
 
     /**
      * AOSP frameworks-base core/java/android/app/Activity.java:3431-3434

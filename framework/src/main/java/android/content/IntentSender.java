@@ -1,18 +1,26 @@
 package android.content;
 
-    public class IntentSender implements android.os.Parcelable {
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.os.UserHandle;
+import android.util.AndroidException;
+import java.util.concurrent.Executor;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class IntentSender implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
 
     public int describeContents() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->equals(Ljava/lang/Object;)Z");
     }
 
-    public java.lang.String getCreatorPackage() {
+    public String getCreatorPackage() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->getCreatorPackage()Ljava/lang/String;");
     }
 
@@ -20,11 +28,11 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->getCreatorUid()I");
     }
 
-    public android.os.UserHandle getCreatorUserHandle() {
+    public UserHandle getCreatorUserHandle() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->getCreatorUserHandle()Landroid/os/UserHandle;");
     }
 
-    public java.lang.String getTargetPackage() {
+    public String getTargetPackage() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->getTargetPackage()Ljava/lang/String;");
     }
 
@@ -32,36 +40,36 @@ package android.content;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->hashCode()I");
     }
 
-    public static android.content.IntentSender readIntentSenderOrNullFromParcel(android.os.Parcel arg0) {
+    public static IntentSender readIntentSenderOrNullFromParcel(Parcel arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->readIntentSenderOrNullFromParcel(Landroid/os/Parcel;)Landroid/content/IntentSender;");
     }
 
-    public void sendIntent(android.content.Context arg0, int arg1, android.content.Intent arg2, android.content.IntentSender.OnFinished arg3, android.os.Handler arg4) {
+    public void sendIntent(Context arg0, int arg1, Intent arg2, IntentSender.OnFinished arg3, Handler arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->sendIntent(Landroid/content/Context;ILandroid/content/Intent;Landroid/content/IntentSender$OnFinished;Landroid/os/Handler;)V");
     }
 
-    public void sendIntent(android.content.Context arg0, int arg1, android.content.Intent arg2, android.content.IntentSender.OnFinished arg3, android.os.Handler arg4, java.lang.String arg5) {
+    public void sendIntent(Context arg0, int arg1, Intent arg2, IntentSender.OnFinished arg3, Handler arg4, String arg5) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->sendIntent(Landroid/content/Context;ILandroid/content/Intent;Landroid/content/IntentSender$OnFinished;Landroid/os/Handler;Ljava/lang/String;)V");
     }
 
-    public void sendIntent(android.content.Context arg0, int arg1, android.content.Intent arg2, java.lang.String arg3, android.os.Bundle arg4, java.util.concurrent.Executor arg5, android.content.IntentSender.OnFinished arg6) {
+    public void sendIntent(Context arg0, int arg1, Intent arg2, String arg3, Bundle arg4, Executor arg5, IntentSender.OnFinished arg6) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->sendIntent(Landroid/content/Context;ILandroid/content/Intent;Ljava/lang/String;Landroid/os/Bundle;Ljava/util/concurrent/Executor;Landroid/content/IntentSender$OnFinished;)V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->toString()Ljava/lang/String;");
     }
 
-    public static void writeIntentSenderOrNullToParcel(android.content.IntentSender arg0, android.os.Parcel arg1) {
+    public static void writeIntentSenderOrNullToParcel(IntentSender arg0, Parcel arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->writeIntentSenderOrNullToParcel(Landroid/content/IntentSender;Landroid/os/Parcel;)V");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/IntentSender;->writeToParcel(Landroid/os/Parcel;I)V");
     }
         public static interface OnFinished {
 
-        public abstract void onSendFinished(android.content.IntentSender arg0, android.content.Intent arg1, int arg2, java.lang.String arg3, android.os.Bundle arg4);
+        public abstract void onSendFinished(IntentSender arg0, Intent arg1, int arg2, String arg3, Bundle arg4);
         }
 
     /**
@@ -70,16 +78,16 @@ package android.content;
      * thrown from IntentSender-send failures ("problems encountered while
      * sending through the IntentSender").
      */
-    public static class SendIntentException extends android.util.AndroidException {
+    public static class SendIntentException extends AndroidException {
 
         public SendIntentException() {
         }
 
-        public SendIntentException(java.lang.String name) {
+        public SendIntentException(String name) {
             super(name);
         }
 
-        public SendIntentException(java.lang.Exception cause) {
+        public SendIntentException(Exception cause) {
             super(cause);
         }
     }

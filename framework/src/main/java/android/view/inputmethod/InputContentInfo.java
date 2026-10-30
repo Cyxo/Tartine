@@ -1,14 +1,19 @@
 package android.view.inputmethod;
 
-    public class InputContentInfo implements android.os.Parcelable {
+import android.content.ClipDescription;
+import android.net.Uri;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class InputContentInfo implements Parcelable {
 
-    public InputContentInfo(android.net.Uri arg0, android.content.ClipDescription arg1) {
+    public static Parcelable.Creator CREATOR;
+
+    public InputContentInfo(Uri arg0, ClipDescription arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputContentInfo;-><init>(Landroid/net/Uri;Landroid/content/ClipDescription;)V");
     }
 
-    public InputContentInfo(android.net.Uri arg0, android.content.ClipDescription arg1, android.net.Uri arg2) {
+    public InputContentInfo(Uri arg0, ClipDescription arg1, Uri arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputContentInfo;-><init>(Landroid/net/Uri;Landroid/content/ClipDescription;Landroid/net/Uri;)V");
     }
 
@@ -16,15 +21,15 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputContentInfo;->describeContents()I");
     }
 
-    public android.net.Uri getContentUri() {
+    public Uri getContentUri() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputContentInfo;->getContentUri()Landroid/net/Uri;");
     }
 
-    public android.content.ClipDescription getDescription() {
+    public ClipDescription getDescription() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputContentInfo;->getDescription()Landroid/content/ClipDescription;");
     }
 
-    public android.net.Uri getLinkUri() {
+    public Uri getLinkUri() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputContentInfo;->getLinkUri()Landroid/net/Uri;");
     }
 
@@ -36,7 +41,7 @@ package android.view.inputmethod;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputContentInfo;->requestPermission()V");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/inputmethod/InputContentInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

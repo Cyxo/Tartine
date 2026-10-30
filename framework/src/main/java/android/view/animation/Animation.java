@@ -1,6 +1,9 @@
 package android.view.animation;
 
-    public class Animation implements java.lang.Cloneable {
+import android.content.Context;
+import android.util.AttributeSet;
+
+    public class Animation implements Cloneable {
 
     public static final int ABSOLUTE = 0;
     public static final int INFINITE = -1;
@@ -17,11 +20,11 @@ package android.view.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;-><init>()V");
     }
 
-    public Animation(android.content.Context arg0, android.util.AttributeSet arg1) {
+    public Animation(Context arg0, AttributeSet arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;)V");
     }
 
-    protected void applyTransformation(float arg0, android.view.animation.Transformation arg1) {
+    protected void applyTransformation(float arg0, Transformation arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->applyTransformation(FLandroid/view/animation/Transformation;)V");
     }
 
@@ -29,7 +32,7 @@ package android.view.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->cancel()V");
     }
 
-    protected android.view.animation.Animation clone() {
+    protected Animation clone() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->clone()Landroid/view/animation/Animation;");
     }
 
@@ -69,7 +72,7 @@ package android.view.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->getFillBefore()Z");
     }
 
-    public android.view.animation.Interpolator getInterpolator() {
+    public Interpolator getInterpolator() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->getInterpolator()Landroid/view/animation/Interpolator;");
     }
 
@@ -97,11 +100,11 @@ package android.view.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->getStartTime()J");
     }
 
-    public boolean getTransformation(long arg0, android.view.animation.Transformation arg1) {
+    public boolean getTransformation(long arg0, Transformation arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->getTransformation(JLandroid/view/animation/Transformation;)Z");
     }
 
-    public boolean getTransformation(long arg0, android.view.animation.Transformation arg1, float arg2) {
+    public boolean getTransformation(long arg0, Transformation arg1, float arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->getTransformation(JLandroid/view/animation/Transformation;F)Z");
     }
 
@@ -145,7 +148,7 @@ package android.view.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->scaleCurrentDuration(F)V");
     }
 
-    public void setAnimationListener(android.view.animation.Animation.AnimationListener arg0) {
+    public void setAnimationListener(Animation.AnimationListener arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->setAnimationListener(Landroid/view/animation/Animation$AnimationListener;)V");
     }
 
@@ -177,11 +180,11 @@ package android.view.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->setFillEnabled(Z)V");
     }
 
-    public void setInterpolator(android.content.Context arg0, int arg1) {
+    public void setInterpolator(Context arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->setInterpolator(Landroid/content/Context;I)V");
     }
 
-    public void setInterpolator(android.view.animation.Interpolator arg0) {
+    public void setInterpolator(Interpolator arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Animation;->setInterpolator(Landroid/view/animation/Interpolator;)V");
     }
 
@@ -226,10 +229,10 @@ package android.view.animation;
     }
         public static interface AnimationListener {
 
-        public abstract void onAnimationEnd(android.view.animation.Animation arg0);
+        public abstract void onAnimationEnd(Animation arg0);
 
-        public abstract void onAnimationRepeat(android.view.animation.Animation arg0);
+        public abstract void onAnimationRepeat(Animation arg0);
 
-        public abstract void onAnimationStart(android.view.animation.Animation arg0);
+        public abstract void onAnimationStart(Animation arg0);
         }
     }

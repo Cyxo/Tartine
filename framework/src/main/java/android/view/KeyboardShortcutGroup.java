@@ -1,18 +1,22 @@
 package android.view;
 
-    public class KeyboardShortcutGroup implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
+import java.util.List;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class KeyboardShortcutGroup implements Parcelable {
 
-    public KeyboardShortcutGroup(java.lang.CharSequence arg0) {
+    public static Parcelable.Creator CREATOR;
+
+    public KeyboardShortcutGroup(CharSequence arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutGroup;-><init>(Ljava/lang/CharSequence;)V");
     }
 
-    public KeyboardShortcutGroup(java.lang.CharSequence arg0, java.util.List arg1) {
+    public KeyboardShortcutGroup(CharSequence arg0, List arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutGroup;-><init>(Ljava/lang/CharSequence;Ljava/util/List;)V");
     }
 
-    public void addItem(android.view.KeyboardShortcutInfo arg0) {
+    public void addItem(KeyboardShortcutInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutGroup;->addItem(Landroid/view/KeyboardShortcutInfo;)V");
     }
 
@@ -20,15 +24,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutGroup;->describeContents()I");
     }
 
-    public java.util.List<android.view.KeyboardShortcutInfo> getItems() {
+    public List<KeyboardShortcutInfo> getItems() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutGroup;->getItems()Ljava/util/List;");
     }
 
-    public java.lang.CharSequence getLabel() {
+    public CharSequence getLabel() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutGroup;->getLabel()Ljava/lang/CharSequence;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyboardShortcutGroup;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

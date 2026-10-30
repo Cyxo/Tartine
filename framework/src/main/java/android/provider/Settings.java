@@ -1,5 +1,6 @@
 package android.provider;
 
+import android.content.ContentResolver;
 import android.net.Uri;
 
 public final class Settings {
@@ -17,18 +18,18 @@ public final class Settings {
             return Uri.parse("content://" + AUTHORITY + "/global/" + name);
         }
 
-        public static float getFloat(android.content.ContentResolver cr,
+        public static float getFloat(ContentResolver cr,
                 String name, float def) {
             return def;
         }
 
         // Settings... methods often return int too
-        public static int getInt(android.content.ContentResolver cr,
+        public static int getInt(ContentResolver cr,
                 String name, int def) {
             return def;
         }
 
-        public static String getString(android.content.ContentResolver cr,
+        public static String getString(ContentResolver cr,
                 String name) {
             return null;
         }

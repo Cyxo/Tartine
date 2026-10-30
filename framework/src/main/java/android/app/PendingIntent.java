@@ -1,8 +1,17 @@
 package android.app;
 
-    public class PendingIntent implements android.os.Parcelable {
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentSender;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.os.UserHandle;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class PendingIntent implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final int FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT = 16777216;
     public static final int FLAG_CANCEL_CURRENT = 268435456;
     public static final int FLAG_IMMUTABLE = 67108864;
@@ -19,31 +28,31 @@ package android.app;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->equals(Ljava/lang/Object;)Z");
     }
 
-    public static android.app.PendingIntent getActivities(android.content.Context arg0, int arg1, android.content.Intent[] arg2, int arg3) {
+    public static PendingIntent getActivities(Context arg0, int arg1, Intent[] arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->getActivities(Landroid/content/Context;I[Landroid/content/Intent;I)Landroid/app/PendingIntent;");
     }
 
-    public static android.app.PendingIntent getActivities(android.content.Context arg0, int arg1, android.content.Intent[] arg2, int arg3, android.os.Bundle arg4) {
+    public static PendingIntent getActivities(Context arg0, int arg1, Intent[] arg2, int arg3, Bundle arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->getActivities(Landroid/content/Context;I[Landroid/content/Intent;ILandroid/os/Bundle;)Landroid/app/PendingIntent;");
     }
 
-    public static android.app.PendingIntent getActivity(android.content.Context arg0, int arg1, android.content.Intent arg2, int arg3) {
+    public static PendingIntent getActivity(Context arg0, int arg1, Intent arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->getActivity(Landroid/content/Context;ILandroid/content/Intent;I)Landroid/app/PendingIntent;");
     }
 
-    public static android.app.PendingIntent getActivity(android.content.Context arg0, int arg1, android.content.Intent arg2, int arg3, android.os.Bundle arg4) {
+    public static PendingIntent getActivity(Context arg0, int arg1, Intent arg2, int arg3, Bundle arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->getActivity(Landroid/content/Context;ILandroid/content/Intent;ILandroid/os/Bundle;)Landroid/app/PendingIntent;");
     }
 
-    public static android.app.PendingIntent getBroadcast(android.content.Context arg0, int arg1, android.content.Intent arg2, int arg3) {
+    public static PendingIntent getBroadcast(Context arg0, int arg1, Intent arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->getBroadcast(Landroid/content/Context;ILandroid/content/Intent;I)Landroid/app/PendingIntent;");
     }
 
-    public java.lang.String getCreatorPackage() {
+    public String getCreatorPackage() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->getCreatorPackage()Ljava/lang/String;");
     }
 
@@ -51,23 +60,23 @@ package android.app;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->getCreatorUid()I");
     }
 
-    public android.os.UserHandle getCreatorUserHandle() {
+    public UserHandle getCreatorUserHandle() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->getCreatorUserHandle()Landroid/os/UserHandle;");
     }
 
-    public static android.app.PendingIntent getForegroundService(android.content.Context arg0, int arg1, android.content.Intent arg2, int arg3) {
+    public static PendingIntent getForegroundService(Context arg0, int arg1, Intent arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->getForegroundService(Landroid/content/Context;ILandroid/content/Intent;I)Landroid/app/PendingIntent;");
     }
 
-    public android.content.IntentSender getIntentSender() {
+    public IntentSender getIntentSender() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->getIntentSender()Landroid/content/IntentSender;");
     }
 
-    public static android.app.PendingIntent getService(android.content.Context arg0, int arg1, android.content.Intent arg2, int arg3) {
+    public static PendingIntent getService(Context arg0, int arg1, Intent arg2, int arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->getService(Landroid/content/Context;ILandroid/content/Intent;I)Landroid/app/PendingIntent;");
     }
 
-    public java.lang.String getTargetPackage() {
+    public String getTargetPackage() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->getTargetPackage()Ljava/lang/String;");
     }
 
@@ -95,7 +104,7 @@ package android.app;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->isService()Z");
     }
 
-    public static android.app.PendingIntent readPendingIntentOrNullFromParcel(android.os.Parcel arg0) {
+    public static PendingIntent readPendingIntentOrNullFromParcel(Parcel arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->readPendingIntentOrNullFromParcel(Landroid/os/Parcel;)Landroid/app/PendingIntent;");
     }
 
@@ -103,23 +112,23 @@ package android.app;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->send()V");
     }
 
-    public void send(android.content.Context arg0, int arg1, android.content.Intent arg2) {
+    public void send(Context arg0, int arg1, Intent arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->send(Landroid/content/Context;ILandroid/content/Intent;)V");
     }
 
-    public void send(android.content.Context arg0, int arg1, android.content.Intent arg2, android.app.PendingIntent.OnFinished arg3, android.os.Handler arg4) {
+    public void send(Context arg0, int arg1, Intent arg2, PendingIntent.OnFinished arg3, Handler arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->send(Landroid/content/Context;ILandroid/content/Intent;Landroid/app/PendingIntent$OnFinished;Landroid/os/Handler;)V");
     }
 
-    public void send(android.content.Context arg0, int arg1, android.content.Intent arg2, android.app.PendingIntent.OnFinished arg3, android.os.Handler arg4, java.lang.String arg5) {
+    public void send(Context arg0, int arg1, Intent arg2, PendingIntent.OnFinished arg3, Handler arg4, String arg5) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->send(Landroid/content/Context;ILandroid/content/Intent;Landroid/app/PendingIntent$OnFinished;Landroid/os/Handler;Ljava/lang/String;)V");
     }
 
-    public void send(android.content.Context arg0, int arg1, android.content.Intent arg2, android.app.PendingIntent.OnFinished arg3, android.os.Handler arg4, java.lang.String arg5, android.os.Bundle arg6) {
+    public void send(Context arg0, int arg1, Intent arg2, PendingIntent.OnFinished arg3, Handler arg4, String arg5, Bundle arg6) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->send(Landroid/content/Context;ILandroid/content/Intent;Landroid/app/PendingIntent$OnFinished;Landroid/os/Handler;Ljava/lang/String;Landroid/os/Bundle;)V");
     }
 
-    public void send(android.os.Bundle arg0) {
+    public void send(Bundle arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->send(Landroid/os/Bundle;)V");
     }
 
@@ -127,23 +136,23 @@ package android.app;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->send(I)V");
     }
 
-    public void send(int arg0, android.app.PendingIntent.OnFinished arg1, android.os.Handler arg2) {
+    public void send(int arg0, PendingIntent.OnFinished arg1, Handler arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->send(ILandroid/app/PendingIntent$OnFinished;Landroid/os/Handler;)V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->toString()Ljava/lang/String;");
     }
 
-    public static void writePendingIntentOrNullToParcel(android.app.PendingIntent arg0, android.os.Parcel arg1) {
+    public static void writePendingIntentOrNullToParcel(PendingIntent arg0, Parcel arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->writePendingIntentOrNullToParcel(Landroid/app/PendingIntent;Landroid/os/Parcel;)V");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/app/PendingIntent;->writeToParcel(Landroid/os/Parcel;I)V");
     }
         public static interface OnFinished {
 
-        public abstract void onSendFinished(android.app.PendingIntent arg0, android.content.Intent arg1, int arg2, java.lang.String arg3, android.os.Bundle arg4);
+        public abstract void onSendFinished(PendingIntent arg0, Intent arg1, int arg2, String arg3, Bundle arg4);
         }
     }

@@ -1,5 +1,8 @@
 package android.view;
 
+import android.graphics.Outline;
+import android.graphics.drawable.Drawable;
+
     public class ViewOutlineProvider {
 
     // Ported from aosp-mirror/platform_frameworks_base
@@ -18,12 +21,12 @@ package android.view;
      * the View's background, or generates a 0 alpha, rectangular Outline
      * the size of the View if a background isn't present.
      */
-    public static final android.view.ViewOutlineProvider BACKGROUND =
-            new android.view.ViewOutlineProvider() {
+    public static final ViewOutlineProvider BACKGROUND =
+            new ViewOutlineProvider() {
 
         @Override
-        public void getOutline(android.view.View arg0, android.graphics.Outline arg1) {
-            android.graphics.drawable.Drawable background = arg0.getBackground();
+        public void getOutline(View arg0, Outline arg1) {
+            Drawable background = arg0.getBackground();
             if (background != null) {
                 background.getOutline(arg1);
             } else {
@@ -37,11 +40,11 @@ package android.view;
      * Maintains the outline of the View to match its rectangular bounds,
      * at <code>1.0f</code> alpha.
      */
-    public static final android.view.ViewOutlineProvider BOUNDS =
-            new android.view.ViewOutlineProvider() {
+    public static final ViewOutlineProvider BOUNDS =
+            new ViewOutlineProvider() {
 
         @Override
-        public void getOutline(android.view.View arg0, android.graphics.Outline arg1) {
+        public void getOutline(View arg0, Outline arg1) {
             arg1.setRect(0, 0, arg0.getWidth(), arg0.getHeight());
         }
     };
@@ -50,11 +53,11 @@ package android.view;
      * Maintains the outline of the View to match its rectangular padded
      * bounds, at <code>1.0f</code> alpha.
      */
-    public static final android.view.ViewOutlineProvider PADDED_BOUNDS =
-            new android.view.ViewOutlineProvider() {
+    public static final ViewOutlineProvider PADDED_BOUNDS =
+            new ViewOutlineProvider() {
 
         @Override
-        public void getOutline(android.view.View arg0, android.graphics.Outline arg1) {
+        public void getOutline(View arg0, Outline arg1) {
             arg1.setRect(arg0.getPaddingLeft(),
                     arg0.getPaddingTop(),
                     arg0.getWidth() - arg0.getPaddingRight(),
@@ -62,7 +65,7 @@ package android.view;
         }
     };
 
-    public void getOutline(android.view.View arg0, android.graphics.Outline arg1) {
+    public void getOutline(View arg0, Outline arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewOutlineProvider;->getOutline(Landroid/view/View;Landroid/graphics/Outline;)V");
     }
     }

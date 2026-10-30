@@ -1,16 +1,19 @@
 package android.graphics;
 
-    public class Gainmap implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class Gainmap implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final int GAINMAP_DIRECTION_HDR_TO_SDR = 1;
     public static final int GAINMAP_DIRECTION_SDR_TO_HDR = 0;
 
-    public Gainmap(android.graphics.Bitmap arg0) {
+    public Gainmap(Bitmap arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Gainmap;-><init>(Landroid/graphics/Bitmap;)V");
     }
 
-    public Gainmap(android.graphics.Gainmap arg0, android.graphics.Bitmap arg1) {
+    public Gainmap(Gainmap arg0, Bitmap arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Gainmap;-><init>(Landroid/graphics/Gainmap;Landroid/graphics/Bitmap;)V");
     }
 
@@ -18,7 +21,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Gainmap;->describeContents()I");
     }
 
-    public android.graphics.ColorSpace getAlternativeImagePrimaries() {
+    public ColorSpace getAlternativeImagePrimaries() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Gainmap;->getAlternativeImagePrimaries()Landroid/graphics/ColorSpace;");
     }
 
@@ -34,7 +37,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Gainmap;->getEpsilonSdr()[F");
     }
 
-    public android.graphics.Bitmap getGainmapContents() {
+    public Bitmap getGainmapContents() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Gainmap;->getGainmapContents()Landroid/graphics/Bitmap;");
     }
 
@@ -58,7 +61,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Gainmap;->getRatioMin()[F");
     }
 
-    public void setAlternativeImagePrimaries(android.graphics.ColorSpace arg0) {
+    public void setAlternativeImagePrimaries(ColorSpace arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Gainmap;->setAlternativeImagePrimaries(Landroid/graphics/ColorSpace;)V");
     }
 
@@ -74,7 +77,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Gainmap;->setEpsilonSdr(FFF)V");
     }
 
-    public void setGainmapContents(android.graphics.Bitmap arg0) {
+    public void setGainmapContents(Bitmap arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Gainmap;->setGainmapContents(Landroid/graphics/Bitmap;)V");
     }
 
@@ -98,7 +101,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Gainmap;->setRatioMin(FFF)V");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Gainmap;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

@@ -1,14 +1,17 @@
 package android.content.pm;
 
-    public class VersionedPackage implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class VersionedPackage implements Parcelable {
 
-    public VersionedPackage(java.lang.String arg0, int arg1) {
+    public static Parcelable.Creator CREATOR;
+
+    public VersionedPackage(String arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;-><init>(Ljava/lang/String;I)V");
     }
 
-    public VersionedPackage(java.lang.String arg0, long arg1) {
+    public VersionedPackage(String arg0, long arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;-><init>(Ljava/lang/String;J)V");
     }
 
@@ -16,7 +19,7 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -24,7 +27,7 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->getLongVersionCode()J");
     }
 
-    public java.lang.String getPackageName() {
+    public String getPackageName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->getPackageName()Ljava/lang/String;");
     }
 
@@ -36,11 +39,11 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->hashCode()I");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->writeToParcel(Landroid/os/Parcel;I)V");
     }
 

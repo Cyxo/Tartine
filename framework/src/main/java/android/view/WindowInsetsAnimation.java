@@ -1,8 +1,12 @@
 package android.view;
 
+import android.graphics.Insets;
+import android.view.animation.Interpolator;
+import java.util.List;
+
     public class WindowInsetsAnimation {
 
-    public WindowInsetsAnimation(int arg0, android.view.animation.Interpolator arg1, long arg2) {
+    public WindowInsetsAnimation(int arg0, Interpolator arg1, long arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation;-><init>(ILandroid/view/animation/Interpolator;J)V");
     }
 
@@ -22,7 +26,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation;->getInterpolatedFraction()F");
     }
 
-    public android.view.animation.Interpolator getInterpolator() {
+    public Interpolator getInterpolator() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation;->getInterpolator()Landroid/view/animation/Interpolator;");
     }
 
@@ -43,23 +47,23 @@ package android.view;
         }
         public static class Bounds {
 
-        public Bounds(android.graphics.Insets arg0, android.graphics.Insets arg1) {
+        public Bounds(Insets arg0, Insets arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Bounds;-><init>(Landroid/graphics/Insets;Landroid/graphics/Insets;)V");
         }
 
-        public android.graphics.Insets getLowerBound() {
+        public Insets getLowerBound() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Bounds;->getLowerBound()Landroid/graphics/Insets;");
         }
 
-        public android.graphics.Insets getUpperBound() {
+        public Insets getUpperBound() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Bounds;->getUpperBound()Landroid/graphics/Insets;");
         }
 
-        public android.view.WindowInsetsAnimation.Bounds inset(android.graphics.Insets arg0) {
+        public WindowInsetsAnimation.Bounds inset(Insets arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Bounds;->inset(Landroid/graphics/Insets;)Landroid/view/WindowInsetsAnimation$Bounds;");
         }
 
-        public java.lang.String toString() {
+        public String toString() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Bounds;->toString()Ljava/lang/String;");
         }
 
@@ -83,19 +87,19 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Callback;->getDispatchMode()I");
         }
 
-        public void onEnd(android.view.WindowInsetsAnimation arg0) {
+        public void onEnd(WindowInsetsAnimation arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Callback;->onEnd(Landroid/view/WindowInsetsAnimation;)V");
         }
 
-        public void onPrepare(android.view.WindowInsetsAnimation arg0) {
+        public void onPrepare(WindowInsetsAnimation arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Callback;->onPrepare(Landroid/view/WindowInsetsAnimation;)V");
         }
 
-        public android.view.WindowInsets onProgress(android.view.WindowInsets arg0, java.util.List<android.view.WindowInsetsAnimation> arg1) {
+        public WindowInsets onProgress(WindowInsets arg0, List<WindowInsetsAnimation> arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Callback;->onProgress(Landroid/view/WindowInsets;Ljava/util/List;)Landroid/view/WindowInsets;");
         }
 
-        public android.view.WindowInsetsAnimation.Bounds onStart(android.view.WindowInsetsAnimation arg0, android.view.WindowInsetsAnimation.Bounds arg1) {
+        public WindowInsetsAnimation.Bounds onStart(WindowInsetsAnimation arg0, WindowInsetsAnimation.Bounds arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/WindowInsetsAnimation$Callback;->onStart(Landroid/view/WindowInsetsAnimation;Landroid/view/WindowInsetsAnimation$Bounds;)Landroid/view/WindowInsetsAnimation$Bounds;");
         }
 

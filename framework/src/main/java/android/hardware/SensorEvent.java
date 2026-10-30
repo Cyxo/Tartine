@@ -4,7 +4,7 @@ package android.hardware;
 
     public int accuracy;
     public boolean firstEventAfterDiscontinuity;
-    public android.hardware.Sensor sensor;
+    public Sensor sensor;
     public long timestamp;
     public float[] values;
     }

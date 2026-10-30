@@ -1,12 +1,15 @@
 package android.os.vibrator;
 
+import android.util.Range;
+import android.util.SparseArray;
+
     public class VibratorFrequencyProfile {
 
-    public android.util.SparseArray<java.lang.Float> getFrequenciesOutputAcceleration() {
+    public SparseArray<Float> getFrequenciesOutputAcceleration() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/vibrator/VibratorFrequencyProfile;->getFrequenciesOutputAcceleration()Landroid/util/SparseArray;");
     }
 
-    public android.util.Range<java.lang.Float> getFrequencyRange(float arg0) {
+    public Range<Float> getFrequencyRange(float arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/vibrator/VibratorFrequencyProfile;->getFrequencyRange(F)Landroid/util/Range;");
     }
 

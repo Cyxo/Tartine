@@ -97,9 +97,11 @@ GitLab `android_translation_layer/android_translation_layer`
   add/remove pairs, getters returning constants, service-name dispatch arms,
   no-op setters), port the WHOLE family from the AOSP source in one pass.
   Stop batching when shapes stop being uniform.
-- Generator state: `SkeletonGen`/`Sdk`/`FwIndex` live in the dev-time
-  `fw-tools` module (never on the runtime classpath); see AGENTS for current
-  behavior and deletion+regen refresh rules.
+- Generator state: `SkeletonGen`/`Sdk`/`FwIndex`/`Imports` live in the
+  dev-time `fw-tools` module (never on the runtime classpath); see AGENTS for
+  current behavior and deletion+regen refresh rules. `SkeletonGen` runs the
+  shared `Imports` pass over each emitted file, so regenerated skeletons use
+  simple names + imports instead of fully-qualified names.
 - Translator: ASM emitting classfile version 49 (no
   StackMapTable — the old type-inferencing verifier covers it), with
   dex2jar/Enjarify as oracles, `COMPUTE_FRAMES` and a DEX-hierarchy
@@ -208,8 +210,10 @@ Carried from the 2026-10 audits; do later:
   section).
 - Decouple Skija from `android.*` (done 2026-10-29: `gfx-api`/`gfx-skija`
   seam, host-installed backend, ArchUnit guard; see ADR-0007).
-- Adopt import convention (FQNs only where names clash + generator
-  clash-aware import manager + one-time shorten pass).
+- Adopt import convention (done 2026-10-30): simple names + imports, with a
+  fully-qualified name kept only where a simple-name clash makes an import
+  impossible. The clash-aware `tartine.sdk.Imports` pass runs inside
+  `SkeletonGen` and over the committed sources via `fwShorten` (idempotent).
 - Move generator (`SkeletonGen`, `Sdk`, `FwIndex`, `FwIndexLoader`) out of the
   runtime source set into a tools module (done 2026-10-29: `fw-tools`).
 - Split `tartine.fw` across modules (done 2026-10-30): the runtime

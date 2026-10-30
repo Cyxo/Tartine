@@ -1,8 +1,17 @@
 package android.view;
 
-    public class InputDevice implements android.os.Parcelable {
+import android.hardware.BatteryState;
+import android.hardware.SensorManager;
+import android.hardware.lights.LightsManager;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.os.Vibrator;
+import android.os.VibratorManager;
+import java.util.List;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class InputDevice implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final int KEYBOARD_TYPE_ALPHABETIC = 2;
     public static final int KEYBOARD_TYPE_NONE = 0;
     public static final int KEYBOARD_TYPE_NON_ALPHABETIC = 1;
@@ -44,7 +53,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->describeContents()I");
     }
 
-    public android.hardware.BatteryState getBatteryState() {
+    public BatteryState getBatteryState() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getBatteryState()Landroid/hardware/BatteryState;");
     }
 
@@ -52,11 +61,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getControllerNumber()I");
     }
 
-    public java.lang.String getDescriptor() {
+    public String getDescriptor() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getDescriptor()Ljava/lang/String;");
     }
 
-    public static android.view.InputDevice getDevice(int arg0) {
+    public static InputDevice getDevice(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getDevice(I)Landroid/view/InputDevice;");
     }
 
@@ -68,7 +77,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getId()I");
     }
 
-    public android.view.KeyCharacterMap getKeyCharacterMap() {
+    public KeyCharacterMap getKeyCharacterMap() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getKeyCharacterMap()Landroid/view/KeyCharacterMap;");
     }
 
@@ -80,23 +89,23 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getKeyboardType()I");
     }
 
-    public android.hardware.lights.LightsManager getLightsManager() {
+    public LightsManager getLightsManager() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getLightsManager()Landroid/hardware/lights/LightsManager;");
     }
 
-    public android.view.InputDevice.MotionRange getMotionRange(int arg0) {
+    public InputDevice.MotionRange getMotionRange(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getMotionRange(I)Landroid/view/InputDevice$MotionRange;");
     }
 
-    public android.view.InputDevice.MotionRange getMotionRange(int arg0, int arg1) {
+    public InputDevice.MotionRange getMotionRange(int arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getMotionRange(II)Landroid/view/InputDevice$MotionRange;");
     }
 
-    public java.util.List<android.view.InputDevice.MotionRange> getMotionRanges() {
+    public List<InputDevice.MotionRange> getMotionRanges() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getMotionRanges()Ljava/util/List;");
     }
 
-    public java.lang.String getName() {
+    public String getName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getName()Ljava/lang/String;");
     }
 
@@ -104,7 +113,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getProductId()I");
     }
 
-    public android.hardware.SensorManager getSensorManager() {
+    public SensorManager getSensorManager() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getSensorManager()Landroid/hardware/SensorManager;");
     }
 
@@ -116,11 +125,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getVendorId()I");
     }
 
-    public android.os.Vibrator getVibrator() {
+    public Vibrator getVibrator() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getVibrator()Landroid/os/Vibrator;");
     }
 
-    public android.os.VibratorManager getVibratorManager() {
+    public VibratorManager getVibratorManager() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->getVibratorManager()Landroid/os/VibratorManager;");
     }
 
@@ -148,11 +157,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->supportsSource(I)Z");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputDevice;->writeToParcel(Landroid/os/Parcel;I)V");
     }
         public static class MotionRange {

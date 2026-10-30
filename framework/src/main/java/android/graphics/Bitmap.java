@@ -1,91 +1,98 @@
 package android.graphics;
 
-    public class Bitmap implements android.os.Parcelable {
+import android.hardware.HardwareBuffer;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.DisplayMetrics;
+import java.io.OutputStream;
+import java.nio.Buffer;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class Bitmap implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
     public static final int DENSITY_NONE = 0;
 
-    public android.graphics.Bitmap asShared() {
+    public Bitmap asShared() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->asShared()Landroid/graphics/Bitmap;");
     }
 
-    public boolean compress(android.graphics.Bitmap.CompressFormat arg0, int arg1, java.io.OutputStream arg2) {
+    public boolean compress(Bitmap.CompressFormat arg0, int arg1, OutputStream arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->compress(Landroid/graphics/Bitmap$CompressFormat;ILjava/io/OutputStream;)Z");
     }
 
-    public android.graphics.Bitmap copy(android.graphics.Bitmap.Config arg0, boolean arg1) {
+    public Bitmap copy(Bitmap.Config arg0, boolean arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->copy(Landroid/graphics/Bitmap$Config;Z)Landroid/graphics/Bitmap;");
     }
 
-    public void copyPixelsFromBuffer(java.nio.Buffer arg0) {
+    public void copyPixelsFromBuffer(Buffer arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->copyPixelsFromBuffer(Ljava/nio/Buffer;)V");
     }
 
-    public void copyPixelsToBuffer(java.nio.Buffer arg0) {
+    public void copyPixelsToBuffer(Buffer arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->copyPixelsToBuffer(Ljava/nio/Buffer;)V");
     }
 
-    public static android.graphics.Bitmap createBitmap(android.graphics.Bitmap arg0) {
+    public static Bitmap createBitmap(Bitmap arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(Landroid/graphics/Bitmap;)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(android.graphics.Bitmap arg0, int arg1, int arg2, int arg3, int arg4) {
+    public static Bitmap createBitmap(Bitmap arg0, int arg1, int arg2, int arg3, int arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(Landroid/graphics/Bitmap;IIII)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(android.graphics.Bitmap arg0, int arg1, int arg2, int arg3, int arg4, android.graphics.Matrix arg5, boolean arg6) {
+    public static Bitmap createBitmap(Bitmap arg0, int arg1, int arg2, int arg3, int arg4, Matrix arg5, boolean arg6) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(Landroid/graphics/Bitmap;IIIILandroid/graphics/Matrix;Z)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(android.graphics.Picture arg0) {
+    public static Bitmap createBitmap(Picture arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(Landroid/graphics/Picture;)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(android.graphics.Picture arg0, int arg1, int arg2, android.graphics.Bitmap.Config arg3) {
+    public static Bitmap createBitmap(Picture arg0, int arg1, int arg2, Bitmap.Config arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(Landroid/graphics/Picture;IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(android.util.DisplayMetrics arg0, int arg1, int arg2, android.graphics.Bitmap.Config arg3) {
+    public static Bitmap createBitmap(DisplayMetrics arg0, int arg1, int arg2, Bitmap.Config arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(Landroid/util/DisplayMetrics;IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(android.util.DisplayMetrics arg0, int arg1, int arg2, android.graphics.Bitmap.Config arg3, boolean arg4) {
+    public static Bitmap createBitmap(DisplayMetrics arg0, int arg1, int arg2, Bitmap.Config arg3, boolean arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(Landroid/util/DisplayMetrics;IILandroid/graphics/Bitmap$Config;Z)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(android.util.DisplayMetrics arg0, int arg1, int arg2, android.graphics.Bitmap.Config arg3, boolean arg4, android.graphics.ColorSpace arg5) {
+    public static Bitmap createBitmap(DisplayMetrics arg0, int arg1, int arg2, Bitmap.Config arg3, boolean arg4, ColorSpace arg5) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(Landroid/util/DisplayMetrics;IILandroid/graphics/Bitmap$Config;ZLandroid/graphics/ColorSpace;)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(android.util.DisplayMetrics arg0, int[] arg1, int arg2, int arg3, android.graphics.Bitmap.Config arg4) {
+    public static Bitmap createBitmap(DisplayMetrics arg0, int[] arg1, int arg2, int arg3, Bitmap.Config arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(Landroid/util/DisplayMetrics;[IIILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(android.util.DisplayMetrics arg0, int[] arg1, int arg2, int arg3, int arg4, int arg5, android.graphics.Bitmap.Config arg6) {
+    public static Bitmap createBitmap(DisplayMetrics arg0, int[] arg1, int arg2, int arg3, int arg4, int arg5, Bitmap.Config arg6) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(Landroid/util/DisplayMetrics;[IIIIILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(int arg0, int arg1, android.graphics.Bitmap.Config arg2) {
+    public static Bitmap createBitmap(int arg0, int arg1, Bitmap.Config arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(int arg0, int arg1, android.graphics.Bitmap.Config arg2, boolean arg3) {
+    public static Bitmap createBitmap(int arg0, int arg1, Bitmap.Config arg2, boolean arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(IILandroid/graphics/Bitmap$Config;Z)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(int arg0, int arg1, android.graphics.Bitmap.Config arg2, boolean arg3, android.graphics.ColorSpace arg4) {
+    public static Bitmap createBitmap(int arg0, int arg1, Bitmap.Config arg2, boolean arg3, ColorSpace arg4) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap(IILandroid/graphics/Bitmap$Config;ZLandroid/graphics/ColorSpace;)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(int[] arg0, int arg1, int arg2, android.graphics.Bitmap.Config arg3) {
+    public static Bitmap createBitmap(int[] arg0, int arg1, int arg2, Bitmap.Config arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap([IIILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createBitmap(int[] arg0, int arg1, int arg2, int arg3, int arg4, android.graphics.Bitmap.Config arg5) {
+    public static Bitmap createBitmap(int[] arg0, int arg1, int arg2, int arg3, int arg4, Bitmap.Config arg5) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createBitmap([IIIIILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
     }
 
-    public static android.graphics.Bitmap createScaledBitmap(android.graphics.Bitmap arg0, int arg1, int arg2, boolean arg3) {
+    public static Bitmap createScaledBitmap(Bitmap arg0, int arg1, int arg2, boolean arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->createScaledBitmap(Landroid/graphics/Bitmap;IIZ)Landroid/graphics/Bitmap;");
     }
 
@@ -101,11 +108,11 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->eraseColor(J)V");
     }
 
-    public android.graphics.Bitmap extractAlpha() {
+    public Bitmap extractAlpha() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->extractAlpha()Landroid/graphics/Bitmap;");
     }
 
-    public android.graphics.Bitmap extractAlpha(android.graphics.Paint arg0, int[] arg1) {
+    public Bitmap extractAlpha(Paint arg0, int[] arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->extractAlpha(Landroid/graphics/Paint;[I)Landroid/graphics/Bitmap;");
     }
 
@@ -117,15 +124,15 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getByteCount()I");
     }
 
-    public android.graphics.Color getColor(int arg0, int arg1) {
+    public Color getColor(int arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getColor(II)Landroid/graphics/Color;");
     }
 
-    public android.graphics.ColorSpace getColorSpace() {
+    public ColorSpace getColorSpace() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getColorSpace()Landroid/graphics/ColorSpace;");
     }
 
-    public android.graphics.Bitmap.Config getConfig() {
+    public Bitmap.Config getConfig() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getConfig()Landroid/graphics/Bitmap$Config;");
     }
 
@@ -133,7 +140,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getDensity()I");
     }
 
-    public android.graphics.Gainmap getGainmap() {
+    public Gainmap getGainmap() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getGainmap()Landroid/graphics/Gainmap;");
     }
 
@@ -141,7 +148,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getGenerationId()I");
     }
 
-    public android.hardware.HardwareBuffer getHardwareBuffer() {
+    public HardwareBuffer getHardwareBuffer() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getHardwareBuffer()Landroid/hardware/HardwareBuffer;");
     }
 
@@ -165,11 +172,11 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getRowBytes()I");
     }
 
-    public int getScaledHeight(android.graphics.Canvas arg0) {
+    public int getScaledHeight(Canvas arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getScaledHeight(Landroid/graphics/Canvas;)I");
     }
 
-    public int getScaledHeight(android.util.DisplayMetrics arg0) {
+    public int getScaledHeight(DisplayMetrics arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getScaledHeight(Landroid/util/DisplayMetrics;)I");
     }
 
@@ -177,11 +184,11 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getScaledHeight(I)I");
     }
 
-    public int getScaledWidth(android.graphics.Canvas arg0) {
+    public int getScaledWidth(Canvas arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getScaledWidth(Landroid/graphics/Canvas;)I");
     }
 
-    public int getScaledWidth(android.util.DisplayMetrics arg0) {
+    public int getScaledWidth(DisplayMetrics arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->getScaledWidth(Landroid/util/DisplayMetrics;)I");
     }
 
@@ -221,7 +228,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->prepareToDraw()V");
     }
 
-    public void reconfigure(int arg0, int arg1, android.graphics.Bitmap.Config arg2) {
+    public void reconfigure(int arg0, int arg1, Bitmap.Config arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->reconfigure(IILandroid/graphics/Bitmap$Config;)V");
     }
 
@@ -229,15 +236,15 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->recycle()V");
     }
 
-    public boolean sameAs(android.graphics.Bitmap arg0) {
+    public boolean sameAs(Bitmap arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->sameAs(Landroid/graphics/Bitmap;)Z");
     }
 
-    public void setColorSpace(android.graphics.ColorSpace arg0) {
+    public void setColorSpace(ColorSpace arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->setColorSpace(Landroid/graphics/ColorSpace;)V");
     }
 
-    public void setConfig(android.graphics.Bitmap.Config arg0) {
+    public void setConfig(Bitmap.Config arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->setConfig(Landroid/graphics/Bitmap$Config;)V");
     }
 
@@ -245,7 +252,7 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->setDensity(I)V");
     }
 
-    public void setGainmap(android.graphics.Gainmap arg0) {
+    public void setGainmap(Gainmap arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->setGainmap(Landroid/graphics/Gainmap;)V");
     }
 
@@ -277,11 +284,11 @@ package android.graphics;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->setWidth(I)V");
     }
 
-    public static android.graphics.Bitmap wrapHardwareBuffer(android.hardware.HardwareBuffer arg0, android.graphics.ColorSpace arg1) {
+    public static Bitmap wrapHardwareBuffer(HardwareBuffer arg0, ColorSpace arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->wrapHardwareBuffer(Landroid/hardware/HardwareBuffer;Landroid/graphics/ColorSpace;)Landroid/graphics/Bitmap;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Bitmap;->writeToParcel(Landroid/os/Parcel;I)V");
     }
         public static enum CompressFormat {

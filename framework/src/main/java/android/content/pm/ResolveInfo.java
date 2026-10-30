@@ -1,28 +1,34 @@
 package android.content.pm;
 
-    public class ResolveInfo implements android.os.Parcelable {
+import android.content.IntentFilter;
+import android.graphics.drawable.Drawable;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.Printer;
 
-    public static android.os.Parcelable.Creator CREATOR;
-    public android.content.pm.ActivityInfo activityInfo;
-    public android.content.IntentFilter filter;
+    public class ResolveInfo implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
+    public ActivityInfo activityInfo;
+    public IntentFilter filter;
     public int icon;
     public boolean isDefault;
     public boolean isInstantAppAvailable;
     public int labelRes;
     public int match;
-    public java.lang.CharSequence nonLocalizedLabel;
+    public CharSequence nonLocalizedLabel;
     public int preferredOrder;
     public int priority;
-    public android.content.pm.ProviderInfo providerInfo;
-    public java.lang.String resolvePackageName;
-    public android.content.pm.ServiceInfo serviceInfo;
+    public ProviderInfo providerInfo;
+    public String resolvePackageName;
+    public ServiceInfo serviceInfo;
     public int specificIndex;
 
     public ResolveInfo() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ResolveInfo;-><init>()V");
     }
 
-    public ResolveInfo(android.content.pm.ResolveInfo arg0) {
+    public ResolveInfo(ResolveInfo arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ResolveInfo;-><init>(Landroid/content/pm/ResolveInfo;)V");
     }
 
@@ -30,7 +36,7 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ResolveInfo;->describeContents()I");
     }
 
-    public void dump(android.util.Printer arg0, java.lang.String arg1) {
+    public void dump(Printer arg0, String arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ResolveInfo;->dump(Landroid/util/Printer;Ljava/lang/String;)V");
     }
 
@@ -42,19 +48,19 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ResolveInfo;->isCrossProfileIntentForwarderActivity()Z");
     }
 
-    public android.graphics.drawable.Drawable loadIcon(android.content.pm.PackageManager arg0) {
+    public Drawable loadIcon(PackageManager arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ResolveInfo;->loadIcon(Landroid/content/pm/PackageManager;)Landroid/graphics/drawable/Drawable;");
     }
 
-    public java.lang.CharSequence loadLabel(android.content.pm.PackageManager arg0) {
+    public CharSequence loadLabel(PackageManager arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ResolveInfo;->loadLabel(Landroid/content/pm/PackageManager;)Ljava/lang/CharSequence;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ResolveInfo;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ResolveInfo;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

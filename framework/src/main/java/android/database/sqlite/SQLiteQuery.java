@@ -1,8 +1,8 @@
 package android.database.sqlite;
 
-    public class SQLiteQuery extends android.database.sqlite.SQLiteProgram {
+    public class SQLiteQuery extends SQLiteProgram {
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/database/sqlite/SQLiteQuery;->toString()Ljava/lang/String;");
     }
     }

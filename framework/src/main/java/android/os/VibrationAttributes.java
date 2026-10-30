@@ -1,8 +1,8 @@
 package android.os;
 
-    public class VibrationAttributes implements android.os.Parcelable {
+    public class VibrationAttributes implements Parcelable {
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
     public static final int FLAG_BYPASS_INTERRUPTION_POLICY = 1;
     public static final int USAGE_ACCESSIBILITY = 66;
     public static final int USAGE_ALARM = 17;
@@ -20,7 +20,7 @@ package android.os;
     public static final int USAGE_TOUCH = 18;
     public static final int USAGE_UNKNOWN = 0;
 
-    public static android.os.VibrationAttributes createForUsage(int arg0) {
+    public static VibrationAttributes createForUsage(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/VibrationAttributes;->createForUsage(I)Landroid/os/VibrationAttributes;");
     }
 
@@ -28,7 +28,7 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/VibrationAttributes;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/VibrationAttributes;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -52,11 +52,11 @@ package android.os;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/VibrationAttributes;->isFlagSet(I)Z");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/VibrationAttributes;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/VibrationAttributes;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

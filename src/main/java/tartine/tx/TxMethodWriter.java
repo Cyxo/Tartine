@@ -1,17 +1,20 @@
 package tartine.tx;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.function.Function;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import tartine.dex.Descriptors;
 import tartine.dex.DexClass;
 import tartine.dex.DexMethod;
 import tartine.dex.Insn;
@@ -83,7 +86,7 @@ final class TxMethodWriter implements Opcodes {
 
     /** Dex model lookup for guest field-owner resolution (null in the
      *  single-class probe path: the raw ref owner is used verbatim). */
-    private final java.util.function.Function<String, DexClass> dexLookup;
+    private final Function<String, DexClass> dexLookup;
     /** Memo of ref-owner to declaring-class rewrites (see fieldDeclaring). */
     private final Map<String, String> declaringMemo = new HashMap<>();
 
@@ -116,7 +119,7 @@ final class TxMethodWriter implements Opcodes {
     /** Instruction currently emitted (context for load-side gap messages). */
     private Insn currentInsn;
     /** DEX-owned interface type descriptors, for virtual-on-interface refs. */
-    private final java.util.Set<String> guestInterfaces;
+    private final Set<String> guestInterfaces;
     /**
      * Non-final static fields carrying dex static_values initial values.
      * The JVM ConstantValue cannot seed those (JVMS §4.7.3 restricts it to
@@ -137,9 +140,9 @@ final class TxMethodWriter implements Opcodes {
     private Map<Integer, Set<Integer>> loopWritten;
 
     TxMethodWriter(ClassWriter cw, DexMethod method,
-            java.util.Set<String> guestInterfaces,
+            Set<String> guestInterfaces,
             List<DexClass.DexField> staticSeeds,
-            java.util.function.Function<String, DexClass> dexLookup) {
+            Function<String, DexClass> dexLookup) {
         this.method = method;
         this.guestInterfaces = guestInterfaces;
         this.dexLookup = dexLookup;
@@ -195,10 +198,10 @@ final class TxMethodWriter implements Opcodes {
      * starting conditions (the preview pass mutates these fields).
      */
     private void resetRegisterState() {
-        java.util.Arrays.fill(regKind, UNKNOWN);
-        java.util.Arrays.fill(regArray, null);
-        java.util.Arrays.fill(regZero, false);
-        java.util.Arrays.fill(regUninit, false);
+        Arrays.fill(regKind, UNKNOWN);
+        Arrays.fill(regArray, null);
+        Arrays.fill(regZero, false);
+        Arrays.fill(regUninit, false);
         labels.clear();
         labelsVisited.clear();
         joinPreds.clear();
@@ -445,7 +448,7 @@ final class TxMethodWriter implements Opcodes {
             // even though it now holds a reference at catch entry). Reset only
             // regZero — regKind drives the load type and must survive so
             // load(14, OBJ) emits ALOAD not ACONST_NULL.
-            java.util.Arrays.fill(regZero, false);
+            Arrays.fill(regZero, false);
         }
         List<JoinPred> preds = joinPreds.get(off);
         if (preds == null || preds.isEmpty()) {
@@ -1192,7 +1195,7 @@ final class TxMethodWriter implements Opcodes {
     private List<String> paramsOf(String ref) {
         int open = ref.indexOf('(');
         int close = ref.indexOf(')', open);
-        return tartine.dex.Descriptors.splitTypes(ref.substring(open + 1, close));
+        return Descriptors.splitTypes(ref.substring(open + 1, close));
     }
 
     /** Type descriptor of a field reference text. */
@@ -1566,7 +1569,7 @@ final class TxMethodWriter implements Opcodes {
         }
         if (op.equals("const-class")) {
             int dst = in.registers.get(0);
-            mv.visitLdcInsn(org.objectweb.asm.Type.getType(in.reference));
+            mv.visitLdcInsn(Type.getType(in.reference));
             store(dst, OBJ);
             regArray[dst] = null;
             return;
@@ -1681,8 +1684,8 @@ final class TxMethodWriter implements Opcodes {
             int dst = in.registers.get(0);
             load(dst, OBJ);
             if (in.reference.equals("Ljava/util/Set;")) {
-                org.objectweb.asm.Label isSet = new org.objectweb.asm.Label();
-                org.objectweb.asm.Label done = new org.objectweb.asm.Label();
+                Label isSet = new Label();
+                Label done = new Label();
                 mv.visitInsn(DUP);
                 mv.visitTypeInsn(INSTANCEOF, "java/util/Set");
                 mv.visitJumpInsn(IFNE, isSet);
@@ -2176,7 +2179,7 @@ final class TxMethodWriter implements Opcodes {
         // loader, not the host, is the source of truth. Class.forName only
         // covers host types.
         try {
-            tartine.dex.DexClass dex = dexLookup == null ? null
+            DexClass dex = dexLookup == null ? null
                     : dexLookup.apply(owner);
             if (dex != null) {
                 return (dex.accessFlags & TxTranslator.ACC_INTERFACE) != 0;

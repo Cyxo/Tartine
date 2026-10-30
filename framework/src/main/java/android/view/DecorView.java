@@ -1,5 +1,7 @@
 package android.view;
 
+import android.content.Context;
+
 /**
  * Tartine: shell decor view. The device decor belongs to PhoneWindow
  * (AOSP com/android/internal/policy/PhoneWindow.java — a ViewGroup wrapping
@@ -19,7 +21,7 @@ public class DecorView extends ViewGroup {
      * hierarchy; the shell seeds context resources through the View ctor
      * and assumes the content id (Window.ID_ANDROID_CONTENT).
      */
-    public DecorView(android.content.Context context) {
+    public DecorView(Context context) {
         super(context);
         setId(WINDOW_CONTENT_ID);
     }

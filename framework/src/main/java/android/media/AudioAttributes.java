@@ -1,6 +1,9 @@
 package android.media;
 
-    public class AudioAttributes implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+    public class AudioAttributes implements Parcelable {
 
     public static final int ALLOW_CAPTURE_BY_ALL = 1;
     public static final int ALLOW_CAPTURE_BY_NONE = 3;
@@ -10,7 +13,7 @@ package android.media;
     public static final int CONTENT_TYPE_SONIFICATION = 4;
     public static final int CONTENT_TYPE_SPEECH = 1;
     public static final int CONTENT_TYPE_UNKNOWN = 0;
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
     public static final int FLAG_AUDIBILITY_ENFORCED = 1;
     public static final int FLAG_HW_AV_SYNC = 16;
     public static final int FLAG_LOW_LATENCY = 256;
@@ -41,7 +44,7 @@ package android.media;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/AudioAttributes;->describeContents()I");
     }
 
-    public boolean equals(java.lang.Object arg0) {
+    public boolean equals(Object arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/AudioAttributes;->equals(Ljava/lang/Object;)Z");
     }
 
@@ -77,11 +80,11 @@ package android.media;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/AudioAttributes;->isContentSpatialized()Z");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/AudioAttributes;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/media/AudioAttributes;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

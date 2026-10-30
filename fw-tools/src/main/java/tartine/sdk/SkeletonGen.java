@@ -103,6 +103,10 @@ public final class SkeletonGen {
         }
         Map<String, FwIndex.FwClass> closure = closure(index, DEFAULT_SEEDS);
         Map<String, List<FwIndex.FwClass>> files = group(closure);
+        Imports.Universe universe = new Imports.Universe()
+                .addIndex(index)
+                .addJdk()
+                .addClasspath();
         for (Map.Entry<String, List<FwIndex.FwClass>> file : files.entrySet()) {
             Path src = sourcePath(outDir, file.getKey());
             if (!force && Files.exists(src)) {
@@ -110,8 +114,9 @@ public final class SkeletonGen {
                 continue;
             }
             Files.createDirectories(src.getParent());
-            Files.writeString(src, emitFile(file.getKey(), file.getValue(), closure),
-                    StandardCharsets.UTF_8);
+            String source = emitFile(file.getKey(), file.getValue(), closure);
+            source = Imports.shorten(source, simpleName(file.getKey()), universe);
+            Files.writeString(src, source, StandardCharsets.UTF_8);
             System.out.println("wrote: " + src);
         }
         System.out.println("classes in closure: " + closure.size()

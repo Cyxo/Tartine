@@ -1,24 +1,44 @@
 package android.content.pm;
 
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.content.IntentSender;
+import android.graphics.Bitmap;
+import android.icu.util.ULocale;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.os.PersistableBundle;
+import android.os.UserHandle;
+import java.io.Closeable;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.cert.Certificate;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+
     public class PackageInstaller {
 
-    public static final java.lang.String ACTION_SESSION_COMMITTED = "android.content.pm.action.SESSION_COMMITTED";
-    public static final java.lang.String ACTION_SESSION_DETAILS = "android.content.pm.action.SESSION_DETAILS";
-    public static final java.lang.String ACTION_SESSION_UPDATED = "android.content.pm.action.SESSION_UPDATED";
-    public static final java.lang.String EXTRA_INSTALL_CONSTRAINTS = "android.content.pm.extra.INSTALL_CONSTRAINTS";
-    public static final java.lang.String EXTRA_INSTALL_CONSTRAINTS_RESULT = "android.content.pm.extra.INSTALL_CONSTRAINTS_RESULT";
-    public static final java.lang.String EXTRA_OTHER_PACKAGE_NAME = "android.content.pm.extra.OTHER_PACKAGE_NAME";
-    public static final java.lang.String EXTRA_PACKAGE_NAME = "android.content.pm.extra.PACKAGE_NAME";
-    public static final java.lang.String EXTRA_PRE_APPROVAL = "android.content.pm.extra.PRE_APPROVAL";
-    public static final java.lang.String EXTRA_SESSION = "android.content.pm.extra.SESSION";
-    public static final java.lang.String EXTRA_SESSION_ID = "android.content.pm.extra.SESSION_ID";
-    public static final java.lang.String EXTRA_STATUS = "android.content.pm.extra.STATUS";
-    public static final java.lang.String EXTRA_STATUS_MESSAGE = "android.content.pm.extra.STATUS_MESSAGE";
-    public static final java.lang.String EXTRA_STORAGE_PATH = "android.content.pm.extra.STORAGE_PATH";
-    public static final java.lang.String EXTRA_UNARCHIVE_ALL_USERS = "android.content.pm.extra.UNARCHIVE_ALL_USERS";
-    public static final java.lang.String EXTRA_UNARCHIVE_ID = "android.content.pm.extra.UNARCHIVE_ID";
-    public static final java.lang.String EXTRA_UNARCHIVE_PACKAGE_NAME = "android.content.pm.extra.UNARCHIVE_PACKAGE_NAME";
-    public static final java.lang.String EXTRA_UNARCHIVE_STATUS = "android.content.pm.extra.UNARCHIVE_STATUS";
+    public static final String ACTION_SESSION_COMMITTED = "android.content.pm.action.SESSION_COMMITTED";
+    public static final String ACTION_SESSION_DETAILS = "android.content.pm.action.SESSION_DETAILS";
+    public static final String ACTION_SESSION_UPDATED = "android.content.pm.action.SESSION_UPDATED";
+    public static final String EXTRA_INSTALL_CONSTRAINTS = "android.content.pm.extra.INSTALL_CONSTRAINTS";
+    public static final String EXTRA_INSTALL_CONSTRAINTS_RESULT = "android.content.pm.extra.INSTALL_CONSTRAINTS_RESULT";
+    public static final String EXTRA_OTHER_PACKAGE_NAME = "android.content.pm.extra.OTHER_PACKAGE_NAME";
+    public static final String EXTRA_PACKAGE_NAME = "android.content.pm.extra.PACKAGE_NAME";
+    public static final String EXTRA_PRE_APPROVAL = "android.content.pm.extra.PRE_APPROVAL";
+    public static final String EXTRA_SESSION = "android.content.pm.extra.SESSION";
+    public static final String EXTRA_SESSION_ID = "android.content.pm.extra.SESSION_ID";
+    public static final String EXTRA_STATUS = "android.content.pm.extra.STATUS";
+    public static final String EXTRA_STATUS_MESSAGE = "android.content.pm.extra.STATUS_MESSAGE";
+    public static final String EXTRA_STORAGE_PATH = "android.content.pm.extra.STORAGE_PATH";
+    public static final String EXTRA_UNARCHIVE_ALL_USERS = "android.content.pm.extra.UNARCHIVE_ALL_USERS";
+    public static final String EXTRA_UNARCHIVE_ID = "android.content.pm.extra.UNARCHIVE_ID";
+    public static final String EXTRA_UNARCHIVE_PACKAGE_NAME = "android.content.pm.extra.UNARCHIVE_PACKAGE_NAME";
+    public static final String EXTRA_UNARCHIVE_STATUS = "android.content.pm.extra.UNARCHIVE_STATUS";
     public static final int PACKAGE_SOURCE_DOWNLOADED_FILE = 4;
     public static final int PACKAGE_SOURCE_LOCAL_FILE = 3;
     public static final int PACKAGE_SOURCE_OTHER = 1;
@@ -46,119 +66,119 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->abandonSession(I)V");
     }
 
-    public void checkInstallConstraints(java.util.List<java.lang.String> arg0, android.content.pm.PackageInstaller.InstallConstraints arg1, java.util.concurrent.Executor arg2, java.util.function.Consumer<android.content.pm.PackageInstaller.InstallConstraintsResult> arg3) {
+    public void checkInstallConstraints(List<String> arg0, PackageInstaller.InstallConstraints arg1, Executor arg2, Consumer<PackageInstaller.InstallConstraintsResult> arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->checkInstallConstraints(Ljava/util/List;Landroid/content/pm/PackageInstaller$InstallConstraints;Ljava/util/concurrent/Executor;Ljava/util/function/Consumer;)V");
     }
 
-    public void commitSessionAfterInstallConstraintsAreMet(int arg0, android.content.IntentSender arg1, android.content.pm.PackageInstaller.InstallConstraints arg2, long arg3) {
+    public void commitSessionAfterInstallConstraintsAreMet(int arg0, IntentSender arg1, PackageInstaller.InstallConstraints arg2, long arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->commitSessionAfterInstallConstraintsAreMet(ILandroid/content/IntentSender;Landroid/content/pm/PackageInstaller$InstallConstraints;J)V");
     }
 
-    public int createSession(android.content.pm.PackageInstaller.SessionParams arg0) {
+    public int createSession(PackageInstaller.SessionParams arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->createSession(Landroid/content/pm/PackageInstaller$SessionParams;)I");
     }
 
-    public android.content.pm.PackageInstaller.SessionInfo getActiveStagedSession() {
+    public PackageInstaller.SessionInfo getActiveStagedSession() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->getActiveStagedSession()Landroid/content/pm/PackageInstaller$SessionInfo;");
     }
 
-    public java.util.List<android.content.pm.PackageInstaller.SessionInfo> getActiveStagedSessions() {
+    public List<PackageInstaller.SessionInfo> getActiveStagedSessions() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->getActiveStagedSessions()Ljava/util/List;");
     }
 
-    public java.util.List<android.content.pm.PackageInstaller.SessionInfo> getAllSessions() {
+    public List<PackageInstaller.SessionInfo> getAllSessions() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->getAllSessions()Ljava/util/List;");
     }
 
-    public java.util.List<android.content.pm.PackageInstaller.SessionInfo> getMySessions() {
+    public List<PackageInstaller.SessionInfo> getMySessions() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->getMySessions()Ljava/util/List;");
     }
 
-    public android.content.pm.PackageInstaller.SessionInfo getSessionInfo(int arg0) {
+    public PackageInstaller.SessionInfo getSessionInfo(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->getSessionInfo(I)Landroid/content/pm/PackageInstaller$SessionInfo;");
     }
 
-    public java.util.List<android.content.pm.PackageInstaller.SessionInfo> getStagedSessions() {
+    public List<PackageInstaller.SessionInfo> getStagedSessions() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->getStagedSessions()Ljava/util/List;");
     }
 
-    public void installExistingPackage(java.lang.String arg0, int arg1, android.content.IntentSender arg2) {
+    public void installExistingPackage(String arg0, int arg1, IntentSender arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->installExistingPackage(Ljava/lang/String;ILandroid/content/IntentSender;)V");
     }
 
-    public void installPackageArchived(android.content.pm.ArchivedPackageInfo arg0, android.content.pm.PackageInstaller.SessionParams arg1, android.content.IntentSender arg2) {
+    public void installPackageArchived(ArchivedPackageInfo arg0, PackageInstaller.SessionParams arg1, IntentSender arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->installPackageArchived(Landroid/content/pm/ArchivedPackageInfo;Landroid/content/pm/PackageInstaller$SessionParams;Landroid/content/IntentSender;)V");
     }
 
-    public android.content.pm.PackageInstaller.Session openSession(int arg0) {
+    public PackageInstaller.Session openSession(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->openSession(I)Landroid/content/pm/PackageInstaller$Session;");
     }
 
-    public void registerSessionCallback(android.content.pm.PackageInstaller.SessionCallback arg0) {
+    public void registerSessionCallback(PackageInstaller.SessionCallback arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->registerSessionCallback(Landroid/content/pm/PackageInstaller$SessionCallback;)V");
     }
 
-    public void registerSessionCallback(android.content.pm.PackageInstaller.SessionCallback arg0, android.os.Handler arg1) {
+    public void registerSessionCallback(PackageInstaller.SessionCallback arg0, Handler arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->registerSessionCallback(Landroid/content/pm/PackageInstaller$SessionCallback;Landroid/os/Handler;)V");
     }
 
-    public void reportUnarchivalState(android.content.pm.PackageInstaller.UnarchivalState arg0) {
+    public void reportUnarchivalState(PackageInstaller.UnarchivalState arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->reportUnarchivalState(Landroid/content/pm/PackageInstaller$UnarchivalState;)V");
     }
 
-    public void reportUnarchivalStatus(int arg0, int arg1, long arg2, android.app.PendingIntent arg3) {
+    public void reportUnarchivalStatus(int arg0, int arg1, long arg2, PendingIntent arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->reportUnarchivalStatus(IIJLandroid/app/PendingIntent;)V");
     }
 
-    public void requestArchive(java.lang.String arg0, android.content.IntentSender arg1) {
+    public void requestArchive(String arg0, IntentSender arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->requestArchive(Ljava/lang/String;Landroid/content/IntentSender;)V");
     }
 
-    public void requestUnarchive(java.lang.String arg0, android.content.IntentSender arg1) {
+    public void requestUnarchive(String arg0, IntentSender arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->requestUnarchive(Ljava/lang/String;Landroid/content/IntentSender;)V");
     }
 
-    public void uninstall(android.content.pm.VersionedPackage arg0, android.content.IntentSender arg1) {
+    public void uninstall(VersionedPackage arg0, IntentSender arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->uninstall(Landroid/content/pm/VersionedPackage;Landroid/content/IntentSender;)V");
     }
 
-    public void uninstall(android.content.pm.VersionedPackage arg0, int arg1, android.content.IntentSender arg2) {
+    public void uninstall(VersionedPackage arg0, int arg1, IntentSender arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->uninstall(Landroid/content/pm/VersionedPackage;ILandroid/content/IntentSender;)V");
     }
 
-    public void uninstall(java.lang.String arg0, android.content.IntentSender arg1) {
+    public void uninstall(String arg0, IntentSender arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->uninstall(Ljava/lang/String;Landroid/content/IntentSender;)V");
     }
 
-    public void uninstallExistingPackage(java.lang.String arg0, android.content.IntentSender arg1) {
+    public void uninstallExistingPackage(String arg0, IntentSender arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->uninstallExistingPackage(Ljava/lang/String;Landroid/content/IntentSender;)V");
     }
 
-    public void unregisterSessionCallback(android.content.pm.PackageInstaller.SessionCallback arg0) {
+    public void unregisterSessionCallback(PackageInstaller.SessionCallback arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->unregisterSessionCallback(Landroid/content/pm/PackageInstaller$SessionCallback;)V");
     }
 
-    public void updateSessionAppIcon(int arg0, android.graphics.Bitmap arg1) {
+    public void updateSessionAppIcon(int arg0, Bitmap arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->updateSessionAppIcon(ILandroid/graphics/Bitmap;)V");
     }
 
-    public void updateSessionAppLabel(int arg0, java.lang.CharSequence arg1) {
+    public void updateSessionAppLabel(int arg0, CharSequence arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->updateSessionAppLabel(ILjava/lang/CharSequence;)V");
     }
 
-    public void waitForInstallConstraints(java.util.List<java.lang.String> arg0, android.content.pm.PackageInstaller.InstallConstraints arg1, android.content.IntentSender arg2, long arg3) {
+    public void waitForInstallConstraints(List<String> arg0, PackageInstaller.InstallConstraints arg1, IntentSender arg2, long arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller;->waitForInstallConstraints(Ljava/util/List;Landroid/content/pm/PackageInstaller$InstallConstraints;Landroid/content/IntentSender;J)V");
     }
-        public static class InstallConstraints implements android.os.Parcelable {
+        public static class InstallConstraints implements Parcelable {
 
-        public static android.os.Parcelable.Creator CREATOR;
-        public static android.content.pm.PackageInstaller.InstallConstraints GENTLE_UPDATE;
+        public static Parcelable.Creator CREATOR;
+        public static PackageInstaller.InstallConstraints GENTLE_UPDATE;
 
         public int describeContents() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$InstallConstraints;->describeContents()I");
         }
 
-        public boolean equals(java.lang.Object arg0) {
+        public boolean equals(Object arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$InstallConstraints;->equals(Ljava/lang/Object;)Z");
         }
 
@@ -186,13 +206,13 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$InstallConstraints;->isNotInCallRequired()Z");
         }
 
-        public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        public void writeToParcel(Parcel arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$InstallConstraints;->writeToParcel(Landroid/os/Parcel;I)V");
         }
         }
-        public static class InstallConstraintsResult implements android.os.Parcelable {
+        public static class InstallConstraintsResult implements Parcelable {
 
-        public static android.os.Parcelable.Creator CREATOR;
+        public static Parcelable.Creator CREATOR;
 
         public boolean areAllConstraintsSatisfied() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$InstallConstraintsResult;->areAllConstraintsSatisfied()Z");
@@ -202,43 +222,43 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$InstallConstraintsResult;->describeContents()I");
         }
 
-        public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        public void writeToParcel(Parcel arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$InstallConstraintsResult;->writeToParcel(Landroid/os/Parcel;I)V");
         }
         }
-        public static class PreapprovalDetails implements android.os.Parcelable {
+        public static class PreapprovalDetails implements Parcelable {
 
-        public static android.os.Parcelable.Creator CREATOR;
+        public static Parcelable.Creator CREATOR;
 
         public int describeContents() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$PreapprovalDetails;->describeContents()I");
         }
 
-        public android.graphics.Bitmap getIcon() {
+        public Bitmap getIcon() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$PreapprovalDetails;->getIcon()Landroid/graphics/Bitmap;");
         }
 
-        public java.lang.CharSequence getLabel() {
+        public CharSequence getLabel() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$PreapprovalDetails;->getLabel()Ljava/lang/CharSequence;");
         }
 
-        public android.icu.util.ULocale getLocale() {
+        public ULocale getLocale() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$PreapprovalDetails;->getLocale()Landroid/icu/util/ULocale;");
         }
 
-        public java.lang.String getPackageName() {
+        public String getPackageName() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$PreapprovalDetails;->getPackageName()Ljava/lang/String;");
         }
 
-        public java.lang.String toString() {
+        public String toString() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$PreapprovalDetails;->toString()Ljava/lang/String;");
         }
 
-        public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        public void writeToParcel(Parcel arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$PreapprovalDetails;->writeToParcel(Landroid/os/Parcel;I)V");
         }
         }
-        public static class Session implements java.io.Closeable {
+        public static class Session implements Closeable {
 
         public void abandon() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->abandon()V");
@@ -252,15 +272,15 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->close()V");
         }
 
-        public void commit(android.content.IntentSender arg0) {
+        public void commit(IntentSender arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->commit(Landroid/content/IntentSender;)V");
         }
 
-        public void fsync(java.io.OutputStream arg0) {
+        public void fsync(OutputStream arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->fsync(Ljava/io/OutputStream;)V");
         }
 
-        public android.os.PersistableBundle getAppMetadata() {
+        public PersistableBundle getAppMetadata() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->getAppMetadata()Landroid/os/PersistableBundle;");
         }
 
@@ -268,7 +288,7 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->getChildSessionIds()[I");
         }
 
-        public java.lang.String[] getNames() {
+        public String[] getNames() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->getNames()[Ljava/lang/String;");
         }
 
@@ -292,11 +312,11 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->isStaged()Z");
         }
 
-        public java.io.InputStream openRead(java.lang.String arg0) {
+        public InputStream openRead(String arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->openRead(Ljava/lang/String;)Ljava/io/InputStream;");
         }
 
-        public java.io.OutputStream openWrite(java.lang.String arg0, long arg1, long arg2) {
+        public OutputStream openWrite(String arg0, long arg1, long arg2) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->openWrite(Ljava/lang/String;JJ)Ljava/io/OutputStream;");
         }
 
@@ -304,23 +324,23 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->removeChildSessionId(I)V");
         }
 
-        public void removeSplit(java.lang.String arg0) {
+        public void removeSplit(String arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->removeSplit(Ljava/lang/String;)V");
         }
 
-        public void requestChecksums(java.lang.String arg0, int arg1, java.util.List<java.security.cert.Certificate> arg2, java.util.concurrent.Executor arg3, android.content.pm.PackageManager.OnChecksumsReadyListener arg4) {
+        public void requestChecksums(String arg0, int arg1, List<Certificate> arg2, Executor arg3, PackageManager.OnChecksumsReadyListener arg4) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->requestChecksums(Ljava/lang/String;ILjava/util/List;Ljava/util/concurrent/Executor;Landroid/content/pm/PackageManager$OnChecksumsReadyListener;)V");
         }
 
-        public void requestUserPreapproval(android.content.pm.PackageInstaller.PreapprovalDetails arg0, android.content.IntentSender arg1) {
+        public void requestUserPreapproval(PackageInstaller.PreapprovalDetails arg0, IntentSender arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->requestUserPreapproval(Landroid/content/pm/PackageInstaller$PreapprovalDetails;Landroid/content/IntentSender;)V");
         }
 
-        public void setAppMetadata(android.os.PersistableBundle arg0) {
+        public void setAppMetadata(PersistableBundle arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->setAppMetadata(Landroid/os/PersistableBundle;)V");
         }
 
-        public void setChecksums(java.lang.String arg0, java.util.List<android.content.pm.Checksum> arg1, byte[] arg2) {
+        public void setChecksums(String arg0, List<Checksum> arg1, byte[] arg2) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->setChecksums(Ljava/lang/String;Ljava/util/List;[B)V");
         }
 
@@ -328,7 +348,7 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->setStagingProgress(F)V");
         }
 
-        public void transfer(java.lang.String arg0) {
+        public void transfer(String arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$Session;->transfer(Ljava/lang/String;)V");
         }
         }
@@ -358,9 +378,9 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionCallback;->onProgressChanged(IF)V");
         }
         }
-        public static class SessionInfo implements android.os.Parcelable {
+        public static class SessionInfo implements Parcelable {
 
-        public static android.os.Parcelable.Creator CREATOR;
+        public static Parcelable.Creator CREATOR;
         public static final int INVALID_ID = -1;
         public static final int SESSION_ACTIVATION_FAILED = 2;
         public static final int SESSION_CONFLICT = 4;
@@ -373,7 +393,7 @@ package android.content.pm;
         public static final int STAGED_SESSION_UNKNOWN = 3;
         public static final int STAGED_SESSION_VERIFICATION_FAILED = 1;
 
-        public android.content.Intent createDetailsIntent() {
+        public Intent createDetailsIntent() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->createDetailsIntent()Landroid/content/Intent;");
         }
 
@@ -381,15 +401,15 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->describeContents()I");
         }
 
-        public android.graphics.Bitmap getAppIcon() {
+        public Bitmap getAppIcon() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getAppIcon()Landroid/graphics/Bitmap;");
         }
 
-        public java.lang.CharSequence getAppLabel() {
+        public CharSequence getAppLabel() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getAppLabel()Ljava/lang/CharSequence;");
         }
 
-        public java.lang.String getAppPackageName() {
+        public String getAppPackageName() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getAppPackageName()Ljava/lang/String;");
         }
 
@@ -413,11 +433,11 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getInstallReason()I");
         }
 
-        public java.lang.String getInstallerAttributionTag() {
+        public String getInstallerAttributionTag() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getInstallerAttributionTag()Ljava/lang/String;");
         }
 
-        public java.lang.String getInstallerPackageName() {
+        public String getInstallerPackageName() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getInstallerPackageName()Ljava/lang/String;");
         }
 
@@ -433,7 +453,7 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getOriginatingUid()I");
         }
 
-        public android.net.Uri getOriginatingUri() {
+        public Uri getOriginatingUri() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getOriginatingUri()Landroid/net/Uri;");
         }
 
@@ -449,7 +469,7 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getProgress()F");
         }
 
-        public android.net.Uri getReferrerUri() {
+        public Uri getReferrerUri() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getReferrerUri()Landroid/net/Uri;");
         }
 
@@ -469,7 +489,7 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getStagedSessionErrorCode()I");
         }
 
-        public java.lang.String getStagedSessionErrorMessage() {
+        public String getStagedSessionErrorMessage() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getStagedSessionErrorMessage()Ljava/lang/String;");
         }
 
@@ -477,7 +497,7 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getUpdatedMillis()J");
         }
 
-        public android.os.UserHandle getUser() {
+        public UserHandle getUser() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->getUser()Landroid/os/UserHandle;");
         }
 
@@ -541,19 +561,19 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->isUnarchival()Z");
         }
 
-        public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        public void writeToParcel(Parcel arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionInfo;->writeToParcel(Landroid/os/Parcel;I)V");
         }
         }
-        public static class SessionParams implements android.os.Parcelable {
+        public static class SessionParams implements Parcelable {
 
-        public static android.os.Parcelable.Creator CREATOR;
+        public static Parcelable.Creator CREATOR;
         public static final int MODE_FULL_INSTALL = 1;
         public static final int MODE_INHERIT_EXISTING = 2;
         public static final int PERMISSION_STATE_DEFAULT = 0;
         public static final int PERMISSION_STATE_DENIED = 2;
         public static final int PERMISSION_STATE_GRANTED = 1;
-        public static java.util.Set RESTRICTED_PERMISSIONS_ALL;
+        public static Set RESTRICTED_PERMISSIONS_ALL;
         public static final int USER_ACTION_NOT_REQUIRED = 2;
         public static final int USER_ACTION_REQUIRED = 1;
         public static final int USER_ACTION_UNSPECIFIED = 0;
@@ -566,15 +586,15 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->describeContents()I");
         }
 
-        public void setAppIcon(android.graphics.Bitmap arg0) {
+        public void setAppIcon(Bitmap arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->setAppIcon(Landroid/graphics/Bitmap;)V");
         }
 
-        public void setAppLabel(java.lang.CharSequence arg0) {
+        public void setAppLabel(CharSequence arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->setAppLabel(Ljava/lang/CharSequence;)V");
         }
 
-        public void setAppPackageName(java.lang.String arg0) {
+        public void setAppPackageName(String arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->setAppPackageName(Ljava/lang/String;)V");
         }
 
@@ -606,7 +626,7 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->setInstallScenario(I)V");
         }
 
-        public void setInstallerPackageName(java.lang.String arg0) {
+        public void setInstallerPackageName(String arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->setInstallerPackageName(Ljava/lang/String;)V");
         }
 
@@ -618,7 +638,7 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->setOriginatingUid(I)V");
         }
 
-        public void setOriginatingUri(android.net.Uri arg0) {
+        public void setOriginatingUri(Uri arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->setOriginatingUri(Landroid/net/Uri;)V");
         }
 
@@ -626,11 +646,11 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->setPackageSource(I)V");
         }
 
-        public android.content.pm.PackageInstaller.SessionParams setPermissionState(java.lang.String arg0, int arg1) {
+        public PackageInstaller.SessionParams setPermissionState(String arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->setPermissionState(Ljava/lang/String;I)Landroid/content/pm/PackageInstaller$SessionParams;");
         }
 
-        public void setReferrerUri(android.net.Uri arg0) {
+        public void setReferrerUri(Uri arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->setReferrerUri(Landroid/net/Uri;)V");
         }
 
@@ -650,11 +670,11 @@ package android.content.pm;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->setUnarchiveId(I)V");
         }
 
-        public void setWhitelistedRestrictedPermissions(java.util.Set<java.lang.String> arg0) {
+        public void setWhitelistedRestrictedPermissions(Set<String> arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->setWhitelistedRestrictedPermissions(Ljava/util/Set;)V");
         }
 
-        public void writeToParcel(android.os.Parcel arg0, int arg1) {
+        public void writeToParcel(Parcel arg0, int arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$SessionParams;->writeToParcel(Landroid/os/Parcel;I)V");
         }
 
@@ -664,23 +684,23 @@ package android.content.pm;
         }
         public static class UnarchivalState {
 
-        public static android.content.pm.PackageInstaller.UnarchivalState createGenericErrorState(int arg0) {
+        public static PackageInstaller.UnarchivalState createGenericErrorState(int arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$UnarchivalState;->createGenericErrorState(I)Landroid/content/pm/PackageInstaller$UnarchivalState;");
         }
 
-        public static android.content.pm.PackageInstaller.UnarchivalState createInsufficientStorageState(int arg0, long arg1, android.app.PendingIntent arg2) {
+        public static PackageInstaller.UnarchivalState createInsufficientStorageState(int arg0, long arg1, PendingIntent arg2) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$UnarchivalState;->createInsufficientStorageState(IJLandroid/app/PendingIntent;)Landroid/content/pm/PackageInstaller$UnarchivalState;");
         }
 
-        public static android.content.pm.PackageInstaller.UnarchivalState createNoConnectivityState(int arg0) {
+        public static PackageInstaller.UnarchivalState createNoConnectivityState(int arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$UnarchivalState;->createNoConnectivityState(I)Landroid/content/pm/PackageInstaller$UnarchivalState;");
         }
 
-        public static android.content.pm.PackageInstaller.UnarchivalState createOkState(int arg0) {
+        public static PackageInstaller.UnarchivalState createOkState(int arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$UnarchivalState;->createOkState(I)Landroid/content/pm/PackageInstaller$UnarchivalState;");
         }
 
-        public static android.content.pm.PackageInstaller.UnarchivalState createUserActionRequiredState(int arg0, android.app.PendingIntent arg1) {
+        public static PackageInstaller.UnarchivalState createUserActionRequiredState(int arg0, PendingIntent arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInstaller$UnarchivalState;->createUserActionRequiredState(ILandroid/app/PendingIntent;)Landroid/content/pm/PackageInstaller$UnarchivalState;");
         }
         }

@@ -1,16 +1,26 @@
 package android.content.res;
 
+import android.content.pm.ApplicationInfo;
+import android.content.res.loader.ResourcesLoader;
+import android.graphics.Movie;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.os.Bundle;
+import android.util.AttributeSet;
+import android.util.DisplayMetrics;
+import android.util.TypedValue;
+import java.io.InputStream;
 import tartine.fw.SystemColors;
 
     public class Resources {
 
     public static final int ID_NULL = 0;
 
-    public Resources(android.content.res.AssetManager arg0, android.util.DisplayMetrics arg1, android.content.res.Configuration arg2) {
+    public Resources(AssetManager arg0, DisplayMetrics arg1, Configuration arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;-><init>(Landroid/content/res/AssetManager;Landroid/util/DisplayMetrics;Landroid/content/res/Configuration;)V");
     }
 
-    public void addLoaders(android.content.res.loader.ResourcesLoader[] arg0) {
+    public void addLoaders(ResourcesLoader[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->addLoaders([Landroid/content/res/loader/ResourcesLoader;)V");
     }
 
@@ -22,15 +32,15 @@ import tartine.fw.SystemColors;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->flushLayoutCache()V");
     }
 
-    public android.content.res.XmlResourceParser getAnimation(int arg0) {
+    public XmlResourceParser getAnimation(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getAnimation(I)Landroid/content/res/XmlResourceParser;");
     }
 
-    public final android.content.res.AssetManager getAssets() {
+    public final AssetManager getAssets() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getAssets()Landroid/content/res/AssetManager;");
     }
 
-    public static int getAttributeSetSourceResId(android.util.AttributeSet arg0) {
+    public static int getAttributeSetSourceResId(AttributeSet arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getAttributeSetSourceResId(Landroid/util/AttributeSet;)I");
     }
 
@@ -62,15 +72,15 @@ import tartine.fw.SystemColors;
      * theme-resolved (no RRO/theme overlay runs here), so both overloads read
      * the same baseline table. App-package resources remain a gap.
      */
-    public int getColor(int arg0, android.content.res.Resources.Theme arg1) {
+    public int getColor(int arg0, Resources.Theme arg1) {
         return getColor(arg0);
     }
 
-    public android.content.res.ColorStateList getColorStateList(int arg0) {
+    public ColorStateList getColorStateList(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getColorStateList(I)Landroid/content/res/ColorStateList;");
     }
 
-    public android.content.res.ColorStateList getColorStateList(int arg0, android.content.res.Resources.Theme arg1) {
+    public ColorStateList getColorStateList(int arg0, Resources.Theme arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getColorStateList(ILandroid/content/res/Resources$Theme;)Landroid/content/res/ColorStateList;");
     }
 
@@ -89,7 +99,7 @@ import tartine.fw.SystemColors;
      * guest text size collapsed to 0 px, which the draw path then papered
      * over with a hardcoded 14 px fallback.
      */
-    private final android.content.res.Configuration mConfiguration =
+    private final Configuration mConfiguration =
             probeConfiguration();
 
     /**
@@ -99,28 +109,28 @@ import tartine.fw.SystemColors;
      * a 480x960 dp screen, close to a modern phone's dp size, so app layouts
      * keep their phone proportions.
      */
-    private static android.content.res.Configuration probeConfiguration() {
-        android.content.res.Configuration config =
-                new android.content.res.Configuration();
+    private static Configuration probeConfiguration() {
+        Configuration config =
+                new Configuration();
         config.setToDefaults();
         config.densityDpi = 160;
         config.screenWidthDp = 480;
         config.screenHeightDp = 960;
         config.smallestScreenWidthDp = 480;
         config.orientation =
-                android.content.res.Configuration.ORIENTATION_PORTRAIT;
+                Configuration.ORIENTATION_PORTRAIT;
         config.touchscreen =
-                android.content.res.Configuration.TOUCHSCREEN_FINGER;
-        config.keyboard = android.content.res.Configuration.KEYBOARD_NOKEYS;
+                Configuration.TOUCHSCREEN_FINGER;
+        config.keyboard = Configuration.KEYBOARD_NOKEYS;
         config.keyboardHidden =
-                android.content.res.Configuration.KEYBOARDHIDDEN_YES;
+                Configuration.KEYBOARDHIDDEN_YES;
         config.hardKeyboardHidden =
-                android.content.res.Configuration.HARDKEYBOARDHIDDEN_YES;
-        config.navigation = android.content.res.Configuration.NAVIGATION_NONAV;
+                Configuration.HARDKEYBOARDHIDDEN_YES;
+        config.navigation = Configuration.NAVIGATION_NONAV;
         config.navigationHidden =
-                android.content.res.Configuration.NAVIGATIONHIDDEN_YES;
-        config.uiMode = android.content.res.Configuration.UI_MODE_TYPE_NORMAL
-                | android.content.res.Configuration.UI_MODE_NIGHT_NO;
+                Configuration.NAVIGATIONHIDDEN_YES;
+        config.uiMode = Configuration.UI_MODE_TYPE_NORMAL
+                | Configuration.UI_MODE_NIGHT_NO;
         return config;
     }
 
@@ -130,15 +140,15 @@ import tartine.fw.SystemColors;
      * probe display's metrics are owned here. Values mirror the interpreter's
      * display builtins (480x960 at density 1.0, 160 dpi).
      */
-    private final android.util.DisplayMetrics mMetrics =
+    private final DisplayMetrics mMetrics =
             probeDisplayMetrics(mConfiguration.fontScale);
 
     /** AOSP DisplayMetrics field contract: {@code scaledDensity} is the
      *  density multiplied by the configuration font scale (the legacy
      *  text-size path; Compose reads density + fontScale directly). */
-    private static android.util.DisplayMetrics probeDisplayMetrics(
+    private static DisplayMetrics probeDisplayMetrics(
             float fontScale) {
-        android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+        DisplayMetrics metrics = new DisplayMetrics();
         metrics.widthPixels = 480;
         metrics.heightPixels = 960;
         metrics.density = 1.0f;
@@ -149,7 +159,7 @@ import tartine.fw.SystemColors;
         return metrics;
     }
 
-    public android.content.res.Configuration getConfiguration() {
+    public Configuration getConfiguration() {
         return mConfiguration;
     }
 
@@ -165,23 +175,23 @@ import tartine.fw.SystemColors;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDimensionPixelSize(I)I");
     }
 
-    public android.util.DisplayMetrics getDisplayMetrics() {
+    public DisplayMetrics getDisplayMetrics() {
         return mMetrics;
     }
 
-    public android.graphics.drawable.Drawable getDrawable(int arg0) {
+    public Drawable getDrawable(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDrawable(I)Landroid/graphics/drawable/Drawable;");
     }
 
-    public android.graphics.drawable.Drawable getDrawable(int arg0, android.content.res.Resources.Theme arg1) {
+    public Drawable getDrawable(int arg0, Resources.Theme arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDrawable(ILandroid/content/res/Resources$Theme;)Landroid/graphics/drawable/Drawable;");
     }
 
-    public android.graphics.drawable.Drawable getDrawableForDensity(int arg0, int arg1) {
+    public Drawable getDrawableForDensity(int arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDrawableForDensity(II)Landroid/graphics/drawable/Drawable;");
     }
 
-    public android.graphics.drawable.Drawable getDrawableForDensity(int arg0, int arg1, android.content.res.Resources.Theme arg2) {
+    public Drawable getDrawableForDensity(int arg0, int arg1, Resources.Theme arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDrawableForDensity(IILandroid/content/res/Resources$Theme;)Landroid/graphics/drawable/Drawable;");
     }
 
@@ -189,7 +199,7 @@ import tartine.fw.SystemColors;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getFloat(I)F");
     }
 
-    public android.graphics.Typeface getFont(int arg0) {
+    public Typeface getFont(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getFont(I)Landroid/graphics/Typeface;");
     }
 
@@ -197,7 +207,7 @@ import tartine.fw.SystemColors;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getFraction(III)F");
     }
 
-    public int getIdentifier(java.lang.String arg0, java.lang.String arg1, java.lang.String arg2) {
+    public int getIdentifier(String arg0, String arg1, String arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getIdentifier(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I");
     }
 
@@ -209,127 +219,127 @@ import tartine.fw.SystemColors;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getInteger(I)I");
     }
 
-    public android.content.res.XmlResourceParser getLayout(int arg0) {
+    public XmlResourceParser getLayout(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getLayout(I)Landroid/content/res/XmlResourceParser;");
     }
 
-    public android.graphics.Movie getMovie(int arg0) {
+    public Movie getMovie(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getMovie(I)Landroid/graphics/Movie;");
     }
 
-    public java.lang.String getQuantityString(int arg0, int arg1) {
+    public String getQuantityString(int arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getQuantityString(II)Ljava/lang/String;");
     }
 
-    public java.lang.String getQuantityString(int arg0, int arg1, java.lang.Object[] arg2) {
+    public String getQuantityString(int arg0, int arg1, Object[] arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getQuantityString(II[Ljava/lang/Object;)Ljava/lang/String;");
     }
 
-    public java.lang.CharSequence getQuantityText(int arg0, int arg1) {
+    public CharSequence getQuantityText(int arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getQuantityText(II)Ljava/lang/CharSequence;");
     }
 
-    public java.lang.String getResourceEntryName(int arg0) {
+    public String getResourceEntryName(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getResourceEntryName(I)Ljava/lang/String;");
     }
 
-    public java.lang.String getResourceName(int arg0) {
+    public String getResourceName(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getResourceName(I)Ljava/lang/String;");
     }
 
-    public java.lang.String getResourcePackageName(int arg0) {
+    public String getResourcePackageName(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getResourcePackageName(I)Ljava/lang/String;");
     }
 
-    public java.lang.String getResourceTypeName(int arg0) {
+    public String getResourceTypeName(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getResourceTypeName(I)Ljava/lang/String;");
     }
 
-    public java.lang.String getString(int arg0) {
+    public String getString(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getString(I)Ljava/lang/String;");
     }
 
-    public java.lang.String getString(int arg0, java.lang.Object[] arg1) {
+    public String getString(int arg0, Object[] arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getString(I[Ljava/lang/Object;)Ljava/lang/String;");
     }
 
-    public java.lang.String[] getStringArray(int arg0) {
+    public String[] getStringArray(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getStringArray(I)[Ljava/lang/String;");
     }
 
-    public static android.content.res.Resources getSystem() {
+    public static Resources getSystem() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getSystem()Landroid/content/res/Resources;");
     }
 
-    public java.lang.CharSequence getText(int arg0) {
+    public CharSequence getText(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getText(I)Ljava/lang/CharSequence;");
     }
 
-    public java.lang.CharSequence getText(int arg0, java.lang.CharSequence arg1) {
+    public CharSequence getText(int arg0, CharSequence arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getText(ILjava/lang/CharSequence;)Ljava/lang/CharSequence;");
     }
 
-    public java.lang.CharSequence[] getTextArray(int arg0) {
+    public CharSequence[] getTextArray(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getTextArray(I)[Ljava/lang/CharSequence;");
     }
 
-    public void getValue(int arg0, android.util.TypedValue arg1, boolean arg2) {
+    public void getValue(int arg0, TypedValue arg1, boolean arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getValue(ILandroid/util/TypedValue;Z)V");
     }
 
-    public void getValue(java.lang.String arg0, android.util.TypedValue arg1, boolean arg2) {
+    public void getValue(String arg0, TypedValue arg1, boolean arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getValue(Ljava/lang/String;Landroid/util/TypedValue;Z)V");
     }
 
-    public void getValueForDensity(int arg0, int arg1, android.util.TypedValue arg2, boolean arg3) {
+    public void getValueForDensity(int arg0, int arg1, TypedValue arg2, boolean arg3) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getValueForDensity(IILandroid/util/TypedValue;Z)V");
     }
 
-    public android.content.res.XmlResourceParser getXml(int arg0) {
+    public XmlResourceParser getXml(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getXml(I)Landroid/content/res/XmlResourceParser;");
     }
 
-    public final android.content.res.Resources.Theme newTheme() {
+    public final Resources.Theme newTheme() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->newTheme()Landroid/content/res/Resources$Theme;");
     }
 
-    public android.content.res.TypedArray obtainAttributes(android.util.AttributeSet arg0, int[] arg1) {
+    public TypedArray obtainAttributes(AttributeSet arg0, int[] arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->obtainAttributes(Landroid/util/AttributeSet;[I)Landroid/content/res/TypedArray;");
     }
 
-    public android.content.res.TypedArray obtainTypedArray(int arg0) {
+    public TypedArray obtainTypedArray(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->obtainTypedArray(I)Landroid/content/res/TypedArray;");
     }
 
-    public java.io.InputStream openRawResource(int arg0) {
+    public InputStream openRawResource(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->openRawResource(I)Ljava/io/InputStream;");
     }
 
-    public java.io.InputStream openRawResource(int arg0, android.util.TypedValue arg1) {
+    public InputStream openRawResource(int arg0, TypedValue arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->openRawResource(ILandroid/util/TypedValue;)Ljava/io/InputStream;");
     }
 
-    public android.content.res.AssetFileDescriptor openRawResourceFd(int arg0) {
+    public AssetFileDescriptor openRawResourceFd(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->openRawResourceFd(I)Landroid/content/res/AssetFileDescriptor;");
     }
 
-    public void parseBundleExtra(java.lang.String arg0, android.util.AttributeSet arg1, android.os.Bundle arg2) {
+    public void parseBundleExtra(String arg0, AttributeSet arg1, Bundle arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->parseBundleExtra(Ljava/lang/String;Landroid/util/AttributeSet;Landroid/os/Bundle;)V");
     }
 
-    public void parseBundleExtras(android.content.res.XmlResourceParser arg0, android.os.Bundle arg1) {
+    public void parseBundleExtras(XmlResourceParser arg0, Bundle arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->parseBundleExtras(Landroid/content/res/XmlResourceParser;Landroid/os/Bundle;)V");
     }
 
-    public static void registerResourcePaths(java.lang.String arg0, android.content.pm.ApplicationInfo arg1) {
+    public static void registerResourcePaths(String arg0, ApplicationInfo arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->registerResourcePaths(Ljava/lang/String;Landroid/content/pm/ApplicationInfo;)V");
     }
 
-    public void removeLoaders(android.content.res.loader.ResourcesLoader[] arg0) {
+    public void removeLoaders(ResourcesLoader[] arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->removeLoaders([Landroid/content/res/loader/ResourcesLoader;)V");
     }
 
-    public void updateConfiguration(android.content.res.Configuration arg0, android.util.DisplayMetrics arg1) {
+    public void updateConfiguration(Configuration arg0, DisplayMetrics arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->updateConfiguration(Landroid/content/res/Configuration;Landroid/util/DisplayMetrics;)V");
     }
 
@@ -342,11 +352,11 @@ import tartine.fw.SystemColors;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->applyStyle(IZ)V");
         }
 
-        public void dump(int arg0, java.lang.String arg1, java.lang.String arg2) {
+        public void dump(int arg0, String arg1, String arg2) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->dump(ILjava/lang/String;Ljava/lang/String;)V");
         }
 
-        public boolean equals(java.lang.Object arg0) {
+        public boolean equals(Object arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->equals(Ljava/lang/Object;)Z");
         }
 
@@ -358,15 +368,15 @@ import tartine.fw.SystemColors;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->getChangingConfigurations()I");
         }
 
-        public android.graphics.drawable.Drawable getDrawable(int arg0) {
+        public Drawable getDrawable(int arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->getDrawable(I)Landroid/graphics/drawable/Drawable;");
         }
 
-        public int getExplicitStyle(android.util.AttributeSet arg0) {
+        public int getExplicitStyle(AttributeSet arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->getExplicitStyle(Landroid/util/AttributeSet;)I");
         }
 
-        public android.content.res.Resources getResources() {
+        public Resources getResources() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->getResources()Landroid/content/res/Resources;");
         }
 
@@ -374,15 +384,15 @@ import tartine.fw.SystemColors;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->hashCode()I");
         }
 
-        public android.content.res.TypedArray obtainStyledAttributes(android.util.AttributeSet arg0, int[] arg1, int arg2, int arg3) {
+        public TypedArray obtainStyledAttributes(AttributeSet arg0, int[] arg1, int arg2, int arg3) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->obtainStyledAttributes(Landroid/util/AttributeSet;[III)Landroid/content/res/TypedArray;");
         }
 
-        public android.content.res.TypedArray obtainStyledAttributes(int arg0, int[] arg1) {
+        public TypedArray obtainStyledAttributes(int arg0, int[] arg1) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->obtainStyledAttributes(I[I)Landroid/content/res/TypedArray;");
         }
 
-        public android.content.res.TypedArray obtainStyledAttributes(int[] arg0) {
+        public TypedArray obtainStyledAttributes(int[] arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->obtainStyledAttributes([I)Landroid/content/res/TypedArray;");
         }
 
@@ -390,15 +400,15 @@ import tartine.fw.SystemColors;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->rebase()V");
         }
 
-        public boolean resolveAttribute(int arg0, android.util.TypedValue arg1, boolean arg2) {
+        public boolean resolveAttribute(int arg0, TypedValue arg1, boolean arg2) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->resolveAttribute(ILandroid/util/TypedValue;Z)Z");
         }
 
-        public void setTo(android.content.res.Resources.Theme arg0) {
+        public void setTo(Resources.Theme arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->setTo(Landroid/content/res/Resources$Theme;)V");
         }
 
-        public java.lang.String toString() {
+        public String toString() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->toString()Ljava/lang/String;");
         }
 

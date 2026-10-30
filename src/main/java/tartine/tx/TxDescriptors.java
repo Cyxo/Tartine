@@ -1,5 +1,6 @@
 package tartine.tx;
 
+import org.objectweb.asm.Opcodes;
 import tartine.dex.Descriptors;
 
 /** DEX/JVM descriptor helpers shared by the translator. */
@@ -40,14 +41,14 @@ final class TxDescriptors {
      */
     static int newarrayBase(String elementDesc) {
         switch (elementDesc) {
-            case "I": return org.objectweb.asm.Opcodes.T_INT;
-            case "J": return org.objectweb.asm.Opcodes.T_LONG;
-            case "F": return org.objectweb.asm.Opcodes.T_FLOAT;
-            case "D": return org.objectweb.asm.Opcodes.T_DOUBLE;
-            case "Z": return org.objectweb.asm.Opcodes.T_BOOLEAN;
-            case "B": return org.objectweb.asm.Opcodes.T_BYTE;
-            case "C": return org.objectweb.asm.Opcodes.T_CHAR;
-            case "S": return org.objectweb.asm.Opcodes.T_SHORT;
+            case "I": return Opcodes.T_INT;
+            case "J": return Opcodes.T_LONG;
+            case "F": return Opcodes.T_FLOAT;
+            case "D": return Opcodes.T_DOUBLE;
+            case "Z": return Opcodes.T_BOOLEAN;
+            case "B": return Opcodes.T_BYTE;
+            case "C": return Opcodes.T_CHAR;
+            case "S": return Opcodes.T_SHORT;
             default: return -1;
         }
     }

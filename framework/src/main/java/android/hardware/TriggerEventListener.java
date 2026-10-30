@@ -6,7 +6,7 @@ package android.hardware;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/TriggerEventListener;-><init>()V");
     }
 
-    public void onTrigger(android.hardware.TriggerEvent arg0) {
+    public void onTrigger(TriggerEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/hardware/TriggerEventListener;->onTrigger(Landroid/hardware/TriggerEvent;)V");
     }
     }

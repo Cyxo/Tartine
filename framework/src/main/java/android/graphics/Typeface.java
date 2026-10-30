@@ -1,5 +1,8 @@
 package android.graphics;
 
+import android.content.res.AssetManager;
+import java.io.File;
+
 public class Typeface {
     public static final int BOLD = 1;
     public static final int BOLD_ITALIC = 3;
@@ -34,11 +37,11 @@ public class Typeface {
         return new Typeface(style, 400);
     }
 
-    public static Typeface createFromAsset(android.content.res.AssetManager mgr, String path) {
+    public static Typeface createFromAsset(AssetManager mgr, String path) {
         return DEFAULT;
     }
 
-    public static Typeface createFromFile(java.io.File file) { return DEFAULT; }
+    public static Typeface createFromFile(File file) { return DEFAULT; }
 
     public static Typeface createFromFile(String path) { return DEFAULT; }
 

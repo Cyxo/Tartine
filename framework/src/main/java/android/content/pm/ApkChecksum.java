@@ -1,22 +1,26 @@
 package android.content.pm;
 
-    public class ApkChecksum implements android.os.Parcelable {
+import android.os.Parcel;
+import android.os.Parcelable;
+import java.security.cert.Certificate;
 
-    public static android.os.Parcelable.Creator CREATOR;
+    public class ApkChecksum implements Parcelable {
+
+    public static Parcelable.Creator CREATOR;
 
     public int describeContents() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApkChecksum;->describeContents()I");
     }
 
-    public java.security.cert.Certificate getInstallerCertificate() {
+    public Certificate getInstallerCertificate() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApkChecksum;->getInstallerCertificate()Ljava/security/cert/Certificate;");
     }
 
-    public java.lang.String getInstallerPackageName() {
+    public String getInstallerPackageName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApkChecksum;->getInstallerPackageName()Ljava/lang/String;");
     }
 
-    public java.lang.String getSplitName() {
+    public String getSplitName() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApkChecksum;->getSplitName()Ljava/lang/String;");
     }
 
@@ -28,11 +32,11 @@ package android.content.pm;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApkChecksum;->getValue()[B");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApkChecksum;->toString()Ljava/lang/String;");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApkChecksum;->writeToParcel(Landroid/os/Parcel;I)V");
     }
     }

@@ -2,10 +2,12 @@ package tartine.tx;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.function.Function;
+import tartine.dex.Dex;
 import tartine.dex.DexClass;
 import tartine.dex.DexSet;
 
@@ -24,8 +26,8 @@ public final class TranslatedLoader extends ClassLoader {
         super(parent);
         this.dex = dex;
         List<DexClass> all = new ArrayList<>();
-        Set<String> ifaces = new java.util.HashSet<>();
-        for (tartine.dex.Dex d : dex.dexes()) {
+        Set<String> ifaces = new HashSet<>();
+        for (Dex d : dex.dexes()) {
             all.addAll(d.classes());
             for (DexClass c : d.classes()) {
                 if ((c.accessFlags & TxTranslator.ACC_INTERFACE) != 0) {
@@ -99,7 +101,7 @@ public final class TranslatedLoader extends ClassLoader {
     }
 
     /** Dex model lookup by descriptor (probe harness seam). */
-    public java.util.function.Function<String, DexClass> dexLookup() {
+    public Function<String, DexClass> dexLookup() {
         return d -> dex.findClass(d);
     }
 

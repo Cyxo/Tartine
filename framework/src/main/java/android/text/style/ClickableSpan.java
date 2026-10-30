@@ -1,20 +1,23 @@
 package android.text.style;
 
-    public class ClickableSpan extends android.text.style.CharacterStyle implements android.text.style.UpdateAppearance {
+import android.text.TextPaint;
+import android.view.View;
+
+    public class ClickableSpan extends CharacterStyle implements UpdateAppearance {
 
     public ClickableSpan() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/style/ClickableSpan;-><init>()V");
     }
 
-    public void onClick(android.view.View arg0) {
+    public void onClick(View arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/style/ClickableSpan;->onClick(Landroid/view/View;)V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/style/ClickableSpan;->toString()Ljava/lang/String;");
     }
 
-    public void updateDrawState(android.text.TextPaint arg0) {
+    public void updateDrawState(TextPaint arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/text/style/ClickableSpan;->updateDrawState(Landroid/text/TextPaint;)V");
     }
     }

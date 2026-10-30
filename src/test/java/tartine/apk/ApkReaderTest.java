@@ -11,11 +11,9 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
 import tartine.dex.DexMagic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

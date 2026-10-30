@@ -27,12 +27,12 @@ public class Choreographer {
     }
 
     /** AOSP Choreographer.java:361-363. */
-    public static android.view.Choreographer getInstance() {
+    public static Choreographer getInstance() {
         return sThreadInstance.get();
     }
 
     /** AOSP Choreographer.java:662-664. */
-    public void postFrameCallback(android.view.Choreographer.FrameCallback arg0) {
+    public void postFrameCallback(Choreographer.FrameCallback arg0) {
         postFrameCallbackDelayed(arg0, 0);
     }
 
@@ -43,26 +43,26 @@ public class Choreographer {
      * frame, then is removed. Without a native VSync the delay is honored by
      * {@link #pumpFrameCallbacks(long)}'s clock.
      */
-    public void postFrameCallbackDelayed(android.view.Choreographer.FrameCallback arg0, long arg1) {
+    public void postFrameCallbackDelayed(Choreographer.FrameCallback arg0, long arg1) {
         if (arg0 == null) {
             throw new IllegalArgumentException("callback must not be null");
         }
         mFrameCallbacks.add(arg0);
     }
 
-    public void postVsyncCallback(android.view.Choreographer.VsyncCallback arg0) {
+    public void postVsyncCallback(Choreographer.VsyncCallback arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Choreographer;->postVsyncCallback(Landroid/view/Choreographer$VsyncCallback;)V");
     }
 
     /** AOSP Choreographer.java:695-701 (removeCallbacksInternal on CALLBACK_ANIMATION). */
-    public void removeFrameCallback(android.view.Choreographer.FrameCallback arg0) {
+    public void removeFrameCallback(Choreographer.FrameCallback arg0) {
         if (arg0 == null) {
             throw new IllegalArgumentException("callback must not be null");
         }
         mFrameCallbacks.remove(arg0);
     }
 
-    public void removeVsyncCallback(android.view.Choreographer.VsyncCallback arg0) {
+    public void removeVsyncCallback(Choreographer.VsyncCallback arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Choreographer;->removeVsyncCallback(Landroid/view/Choreographer$VsyncCallback;)V");
     }
 
@@ -98,11 +98,11 @@ public class Choreographer {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Choreographer$FrameData;->getFrameTimeNanos()J");
         }
 
-        public android.view.Choreographer.FrameTimeline[] getFrameTimelines() {
+        public Choreographer.FrameTimeline[] getFrameTimelines() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Choreographer$FrameData;->getFrameTimelines()[Landroid/view/Choreographer$FrameTimeline;");
         }
 
-        public android.view.Choreographer.FrameTimeline getPreferredFrameTimeline() {
+        public Choreographer.FrameTimeline getPreferredFrameTimeline() {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/Choreographer$FrameData;->getPreferredFrameTimeline()Landroid/view/Choreographer$FrameTimeline;");
         }
         }
@@ -122,6 +122,6 @@ public class Choreographer {
         }
         public static interface VsyncCallback {
 
-        public abstract void onVsync(android.view.Choreographer.FrameData arg0);
+        public abstract void onVsync(Choreographer.FrameData arg0);
         }
     }

@@ -1,5 +1,7 @@
 package android.view.animation;
 
+import android.graphics.Matrix;
+
     public class Transformation {
 
     public static final int TYPE_ALPHA = 1;
@@ -7,7 +9,7 @@ package android.view.animation;
     public static final int TYPE_IDENTITY = 0;
     public static final int TYPE_MATRIX = 2;
     protected float mAlpha;
-    protected android.graphics.Matrix mMatrix;
+    protected Matrix mMatrix;
     protected int mTransformationType;
 
     public Transformation() {
@@ -18,7 +20,7 @@ package android.view.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Transformation;->clear()V");
     }
 
-    public void compose(android.view.animation.Transformation arg0) {
+    public void compose(Transformation arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Transformation;->compose(Landroid/view/animation/Transformation;)V");
     }
 
@@ -26,7 +28,7 @@ package android.view.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Transformation;->getAlpha()F");
     }
 
-    public android.graphics.Matrix getMatrix() {
+    public Matrix getMatrix() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Transformation;->getMatrix()Landroid/graphics/Matrix;");
     }
 
@@ -34,7 +36,7 @@ package android.view.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Transformation;->getTransformationType()I");
     }
 
-    public void set(android.view.animation.Transformation arg0) {
+    public void set(Transformation arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Transformation;->set(Landroid/view/animation/Transformation;)V");
     }
 
@@ -46,11 +48,11 @@ package android.view.animation;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Transformation;->setTransformationType(I)V");
     }
 
-    public java.lang.String toShortString() {
+    public String toShortString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Transformation;->toShortString()Ljava/lang/String;");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/animation/Transformation;->toString()Ljava/lang/String;");
     }
     }

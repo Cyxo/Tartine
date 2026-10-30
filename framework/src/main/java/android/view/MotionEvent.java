@@ -1,6 +1,10 @@
 package android.view;
 
-    public class MotionEvent extends android.view.InputEvent implements android.os.Parcelable {
+import android.graphics.Matrix;
+import android.os.Parcel;
+import android.os.Parcelable;
+
+    public class MotionEvent extends InputEvent implements Parcelable {
 
     public static final int ACTION_BUTTON_PRESS = 11;
     public static final int ACTION_BUTTON_RELEASE = 12;
@@ -88,7 +92,7 @@ package android.view;
     public static final int CLASSIFICATION_NONE = 0;
     public static final int CLASSIFICATION_PINCH = 5;
     public static final int CLASSIFICATION_TWO_FINGER_SWIPE = 3;
-    public static android.os.Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR;
     public static final int EDGE_BOTTOM = 2;
     public static final int EDGE_LEFT = 4;
     public static final int EDGE_RIGHT = 8;
@@ -103,11 +107,11 @@ package android.view;
     public static final int TOOL_TYPE_STYLUS = 2;
     public static final int TOOL_TYPE_UNKNOWN = 0;
 
-    public static java.lang.String actionToString(int arg0) {
+    public static String actionToString(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->actionToString(I)Ljava/lang/String;");
     }
 
-    public void addBatch(long arg0, android.view.MotionEvent.PointerCoords[] arg1, int arg2) {
+    public void addBatch(long arg0, MotionEvent.PointerCoords[] arg1, int arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->addBatch(J[Landroid/view/MotionEvent$PointerCoords;I)V");
     }
 
@@ -115,11 +119,11 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->addBatch(JFFFFI)V");
     }
 
-    public static int axisFromString(java.lang.String arg0) {
+    public static int axisFromString(String arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->axisFromString(Ljava/lang/String;)I");
     }
 
-    public static java.lang.String axisToString(int arg0) {
+    public static String axisToString(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->axisToString(I)Ljava/lang/String;");
     }
 
@@ -211,7 +215,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalOrientation(II)F");
     }
 
-    public void getHistoricalPointerCoords(int arg0, int arg1, android.view.MotionEvent.PointerCoords arg2) {
+    public void getHistoricalPointerCoords(int arg0, int arg1, MotionEvent.PointerCoords arg2) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalPointerCoords(IILandroid/view/MotionEvent$PointerCoords;)V");
     }
 
@@ -295,7 +299,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getOrientation(I)F");
     }
 
-    public void getPointerCoords(int arg0, android.view.MotionEvent.PointerCoords arg1) {
+    public void getPointerCoords(int arg0, MotionEvent.PointerCoords arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getPointerCoords(ILandroid/view/MotionEvent$PointerCoords;)V");
     }
 
@@ -307,7 +311,7 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getPointerId(I)I");
     }
 
-    public void getPointerProperties(int arg0, android.view.MotionEvent.PointerProperties arg1) {
+    public void getPointerProperties(int arg0, MotionEvent.PointerProperties arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getPointerProperties(ILandroid/view/MotionEvent$PointerProperties;)V");
     }
 
@@ -411,35 +415,35 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->isButtonPressed(I)Z");
     }
 
-    public static android.view.MotionEvent obtain(android.view.MotionEvent arg0) {
+    public static MotionEvent obtain(MotionEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(Landroid/view/MotionEvent;)Landroid/view/MotionEvent;");
     }
 
-    public static android.view.MotionEvent obtain(long arg0, long arg1, int arg2, float arg3, float arg4, float arg5, float arg6, int arg7, float arg8, float arg9, int arg10, int arg11) {
+    public static MotionEvent obtain(long arg0, long arg1, int arg2, float arg3, float arg4, float arg5, float arg6, int arg7, float arg8, float arg9, int arg10, int arg11) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(JJIFFFFIFFII)Landroid/view/MotionEvent;");
     }
 
-    public static android.view.MotionEvent obtain(long arg0, long arg1, int arg2, float arg3, float arg4, int arg5) {
+    public static MotionEvent obtain(long arg0, long arg1, int arg2, float arg3, float arg4, int arg5) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(JJIFFI)Landroid/view/MotionEvent;");
     }
 
-    public static android.view.MotionEvent obtain(long arg0, long arg1, int arg2, int arg3, android.view.MotionEvent.PointerProperties[] arg4, android.view.MotionEvent.PointerCoords[] arg5, int arg6, int arg7, float arg8, float arg9, int arg10, int arg11, int arg12, int arg13) {
+    public static MotionEvent obtain(long arg0, long arg1, int arg2, int arg3, MotionEvent.PointerProperties[] arg4, MotionEvent.PointerCoords[] arg5, int arg6, int arg7, float arg8, float arg9, int arg10, int arg11, int arg12, int arg13) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(JJII[Landroid/view/MotionEvent$PointerProperties;[Landroid/view/MotionEvent$PointerCoords;IIFFIIII)Landroid/view/MotionEvent;");
     }
 
-    public static android.view.MotionEvent obtain(long arg0, long arg1, int arg2, int arg3, android.view.MotionEvent.PointerProperties[] arg4, android.view.MotionEvent.PointerCoords[] arg5, int arg6, int arg7, float arg8, float arg9, int arg10, int arg11, int arg12, int arg13, int arg14, int arg15) {
+    public static MotionEvent obtain(long arg0, long arg1, int arg2, int arg3, MotionEvent.PointerProperties[] arg4, MotionEvent.PointerCoords[] arg5, int arg6, int arg7, float arg8, float arg9, int arg10, int arg11, int arg12, int arg13, int arg14, int arg15) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(JJII[Landroid/view/MotionEvent$PointerProperties;[Landroid/view/MotionEvent$PointerCoords;IIFFIIIIII)Landroid/view/MotionEvent;");
     }
 
-    public static android.view.MotionEvent obtain(long arg0, long arg1, int arg2, int arg3, float arg4, float arg5, float arg6, float arg7, int arg8, float arg9, float arg10, int arg11, int arg12) {
+    public static MotionEvent obtain(long arg0, long arg1, int arg2, int arg3, float arg4, float arg5, float arg6, float arg7, int arg8, float arg9, float arg10, int arg11, int arg12) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(JJIIFFFFIFFII)Landroid/view/MotionEvent;");
     }
 
-    public static android.view.MotionEvent obtain(long arg0, long arg1, int arg2, int arg3, int[] arg4, android.view.MotionEvent.PointerCoords[] arg5, int arg6, float arg7, float arg8, int arg9, int arg10, int arg11, int arg12) {
+    public static MotionEvent obtain(long arg0, long arg1, int arg2, int arg3, int[] arg4, MotionEvent.PointerCoords[] arg5, int arg6, float arg7, float arg8, int arg9, int arg10, int arg11, int arg12) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(JJII[I[Landroid/view/MotionEvent$PointerCoords;IFFIIII)Landroid/view/MotionEvent;");
     }
 
-    public static android.view.MotionEvent obtainNoHistory(android.view.MotionEvent arg0) {
+    public static MotionEvent obtainNoHistory(MotionEvent arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtainNoHistory(Landroid/view/MotionEvent;)Landroid/view/MotionEvent;");
     }
 
@@ -467,15 +471,15 @@ package android.view;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->setSource(I)V");
     }
 
-    public java.lang.String toString() {
+    public String toString() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->toString()Ljava/lang/String;");
     }
 
-    public void transform(android.graphics.Matrix arg0) {
+    public void transform(Matrix arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->transform(Landroid/graphics/Matrix;)V");
     }
 
-    public void writeToParcel(android.os.Parcel arg0, int arg1) {
+    public void writeToParcel(Parcel arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->writeToParcel(Landroid/os/Parcel;I)V");
     }
         public static class PointerCoords {
@@ -494,7 +498,7 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerCoords;-><init>()V");
         }
 
-        public PointerCoords(android.view.MotionEvent.PointerCoords arg0) {
+        public PointerCoords(MotionEvent.PointerCoords arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerCoords;-><init>(Landroid/view/MotionEvent$PointerCoords;)V");
         }
 
@@ -502,7 +506,7 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerCoords;->clear()V");
         }
 
-        public void copyFrom(android.view.MotionEvent.PointerCoords arg0) {
+        public void copyFrom(MotionEvent.PointerCoords arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerCoords;->copyFrom(Landroid/view/MotionEvent$PointerCoords;)V");
         }
 
@@ -527,7 +531,7 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerProperties;-><init>()V");
         }
 
-        public PointerProperties(android.view.MotionEvent.PointerProperties arg0) {
+        public PointerProperties(MotionEvent.PointerProperties arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerProperties;-><init>(Landroid/view/MotionEvent$PointerProperties;)V");
         }
 
@@ -535,11 +539,11 @@ package android.view;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerProperties;->clear()V");
         }
 
-        public void copyFrom(android.view.MotionEvent.PointerProperties arg0) {
+        public void copyFrom(MotionEvent.PointerProperties arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerProperties;->copyFrom(Landroid/view/MotionEvent$PointerProperties;)V");
         }
 
-        public boolean equals(java.lang.Object arg0) {
+        public boolean equals(Object arg0) {
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerProperties;->equals(Ljava/lang/Object;)Z");
         }
 
