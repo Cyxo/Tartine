@@ -1,6 +1,6 @@
 // Framework module: real Java implementations of the android.* API surface.
 // Skeletons are generated from the LOCAL SDK android.jar (exact signatures,
-// see tartine.fw.SkeletonGen and the mise task fw-gen); behavior is written
+// see tartine.sdk.SkeletonGen and the mise task fw-gen); behavior is written
 // into those skeletons. Every unimplemented body throws
 // UnsupportedOperationException("Tartine: not implemented: <signature>") so
 // the gap-driven loop survives (AGENTS.md "Framework in Java").

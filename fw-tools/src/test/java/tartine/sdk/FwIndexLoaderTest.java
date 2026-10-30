@@ -1,4 +1,4 @@
-package tartine.fw;
+package tartine.sdk;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -24,7 +24,7 @@ import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import tartine.fw.FwIndex.FwClass;
+import tartine.sdk.FwIndex.FwClass;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

@@ -35,7 +35,7 @@ tasks.named('test', Test) {
 tasks.register('fwGen', JavaExec) {
     group = 'framework'
     description = 'Emit framework skeletons (UOE bodies) into framework/src/main/java'
-    mainClass = 'tartine.fw.SkeletonGen'
+    mainClass = 'tartine.sdk.SkeletonGen'
     classpath = sourceSets.main.runtimeClasspath
     args = [rootProject.file('framework/src/main/java').path]
     environment 'ANDROID_HOME': (System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT') ?: '')

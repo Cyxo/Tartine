@@ -212,8 +212,9 @@ Carried from the 2026-10 audits; do later:
   clash-aware import manager + one-time shorten pass).
 - Move generator (`SkeletonGen`, `Sdk`, `FwIndex`, `FwIndexLoader`) out of the
   runtime source set into a tools module (done 2026-10-29: `fw-tools`).
-- Split `tartine.fw` across modules: resolved — SDK index tooling lives in
-  `fw-tools`; the `framework` module owns `android.*`.
+- Split `tartine.fw` across modules (done 2026-10-30): the runtime
+  `tartine.fw` (system color/resource tables) lives only in `framework`;
+  the dev-time SDK tooling moved to `tartine.sdk` in `fw-tools`.
 - Add tests inside `framework/` (done 2026-10-29: 86 native-free tests in
   `framework/src/test/java/`; root `test` depends on `:framework:test`).
 - Split `Interpreter.java` and move to a pre-resolved IR: moot — the
