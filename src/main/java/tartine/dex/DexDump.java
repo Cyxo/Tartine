@@ -23,7 +23,7 @@ public final class DexDump {
                     out.append(", #").append(insn.literal);
                 }
                 if (insn.reference != null) {
-                    out.append(", ").append(insn.reference);
+                    out.append(", ").append(insn.reference.text());
                 }
                 if (insn.branchOffset != null) {
                     out.append(", +").append(insn.branchOffset);

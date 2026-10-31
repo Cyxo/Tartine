@@ -75,18 +75,14 @@ public final class TxTranslator implements Opcodes {
                     if (!stat && !inst) {
                         continue;
                     }
-                    int arrow = in.reference.indexOf("->");
-                    if (arrow <= 0) {
+                    if (!(in.reference instanceof Insn.FieldRef ref)) {
                         continue;
                     }
-                    String owner = in.reference.substring(0, arrow);
+                    String owner = ref.owner();
                     if (!declared.containsKey(owner)) {
                         continue; // not a guest type; resolves elsewhere
                     }
-                    String rest = in.reference.substring(arrow + 2);
-                    int colon = rest.indexOf(':');
-                    String key = rest.substring(0, colon) + ":"
-                            + rest.substring(colon + 1);
+                    String key = ref.name() + ":" + ref.type();
                     if (declared.get(owner).contains(key)) {
                         continue;
                     }
@@ -114,8 +110,8 @@ public final class TxTranslator implements Opcodes {
                     }
                     out.computeIfAbsent(owner, k -> new LinkedHashMap<>())
                             .putIfAbsent(key, new DexClass.DexField(
-                                    rest.substring(0, colon),
-                                    rest.substring(colon + 1),
+                                    ref.name(),
+                                    ref.type(),
                                     ACC_PUBLIC | ACC_VOLATILE
                                             | (stat ? ACC_STATIC : 0),
                                     null)); // synthesized: no dex initial value
@@ -188,6 +184,17 @@ public final class TxTranslator implements Opcodes {
             Set<String> guestInterfaces,
             Function<String, DexClass> dexLookup,
             ClassLoader hostLoader) {
+        return translate(cls, synthsByOwner, guestInterfaces, dexLookup, hostLoader,
+                new ReferenceResolver(dexLookup, synthsByOwner, guestInterfaces, hostLoader));
+    }
+
+    /** {@code resolver}: the caller's shared resolution/census instance. */
+    public static byte[] translate(DexClass cls,
+            Map<String, List<DexClass.DexField>> synthsByOwner,
+            Set<String> guestInterfaces,
+            Function<String, DexClass> dexLookup,
+            ClassLoader hostLoader,
+            ReferenceResolver resolver) {
         // Class-level flags come from the dex class_def_item (interfaces are
         // emitted ACC_INTERFACE: implementers fail at defineClass time
         // otherwise). ACC_SUPER only applies to class files.
@@ -275,8 +282,8 @@ public final class TxTranslator implements Opcodes {
             try {
                 FrameWriter probe = new FrameWriter(dexLookup, hostLoader);
                 probe.visit(Opcodes.V1_8, access, name, null, parent, ifaces);
-                new TxMethodWriter(probe, method, guestInterfaces,
-                        staticSeeds, dexLookup).emit();
+                new TxMethodWriter(probe, method, staticSeeds,
+                        resolver).emit();
                 byte[] probeBytes = probe.toByteArray();
                 // COMPUTE_FRAMES writes per-path frames and does not reject
                 // an int/reference conflict at a merge (d8 reuses registers
@@ -293,8 +300,8 @@ public final class TxTranslator implements Opcodes {
                         : "writer crash: " + x;
             }
             if (ok) {
-                new TxMethodWriter(cw, method, guestInterfaces,
-                        staticSeeds, dexLookup).emit();
+                new TxMethodWriter(cw, method, staticSeeds,
+                        resolver).emit();
             } else {
                 emitGapStub(cw, method, base, msg);
             }
@@ -465,6 +472,8 @@ public final class TxTranslator implements Opcodes {
                 .toArray(String[]::new);
         FrameWriter probe = new FrameWriter(dexLookup, hostLoader);
         probe.visit(Opcodes.V1_8, access, name, null, parent, ifaces);
+        ReferenceResolver resolver = new ReferenceResolver(dexLookup,
+                synthsByOwner, guestInterfaces, hostLoader);
         for (DexMethod method : cls.methods) {
             String want = methodFilter;
             String descFilter = null;
@@ -478,8 +487,8 @@ public final class TxTranslator implements Opcodes {
                         && !TxTranslator.asmDesc(method).equals(descFilter))) {
                 continue;
             }
-            new TxMethodWriter(probe, method, guestInterfaces,
-                    List.of(), dexLookup).emit();
+            new TxMethodWriter(probe, method,
+                    List.of(), resolver).emit();
         }
         probe.visitEnd();
         return probe.toByteArray();

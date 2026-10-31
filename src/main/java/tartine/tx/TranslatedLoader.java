@@ -21,6 +21,9 @@ public final class TranslatedLoader extends ClassLoader {
     private final Map<String, List<DexClass.DexField>> fieldSynths;
     /** DEX interfaces, for invoke-virtual-on-interface-owner rewriting. */
     private final Set<String> guestInterfaces;
+    /** All dex classes, in dex order (reference census source). */
+    private final List<DexClass> allClasses;
+    private final ReferenceResolver resolver;
 
     public TranslatedLoader(ClassLoader parent, DexSet dex) {
         super(parent);
@@ -35,8 +38,11 @@ public final class TranslatedLoader extends ClassLoader {
                 }
             }
         }
+        this.allClasses = List.copyOf(all);
         this.guestInterfaces = ifaces;
         this.fieldSynths = TxTranslator.fieldSynths(all);
+        this.resolver = new ReferenceResolver(d -> dex.findClass(d),
+                fieldSynths, guestInterfaces, parent);
     }
 
     @Override
@@ -60,7 +66,8 @@ public final class TranslatedLoader extends ClassLoader {
             final byte[] bytes;
             try {
                 bytes = TxTranslator.translate(cls, fieldSynths,
-                        guestInterfaces, d -> dex.findClass(d), getParent());
+                        guestInterfaces, d -> dex.findClass(d), getParent(),
+                        resolver);
             } catch (RuntimeException e) {
                 throw new IllegalStateException(
                         "translate " + cls.type + " failed", e);
@@ -103,6 +110,20 @@ public final class TranslatedLoader extends ClassLoader {
     /** Dex model lookup by descriptor (probe harness seam). */
     public Function<String, DexClass> dexLookup() {
         return d -> dex.findClass(d);
+    }
+
+    /** Shared translation-time resolver (probe harness seam). */
+    public ReferenceResolver resolver() {
+        return resolver;
+    }
+
+    /**
+     * Unresolved references across the whole dex set, sorted and
+     * deduplicated. Translation itself stays per-method and lazy; this is
+     * the up-front census behind the {@code refs} command.
+     */
+    public List<ReferenceResolver.Problem> referenceProblems() {
+        return resolver.problems(allClasses);
     }
 
     /** Translates eagerly, creating an ISE on the first TxGap. */

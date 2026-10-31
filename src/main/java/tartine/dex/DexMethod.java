@@ -9,7 +9,9 @@ import com.android.tools.smali.dexlib2.iface.TryBlock;
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /** One method in our own model. */
 public final class DexMethod {
@@ -88,6 +90,7 @@ public final class DexMethod {
                 instructions.add(Insn.from(instruction, offset));
                 offset += instruction.getCodeUnits();
             }
+            resolvePayloads(instructions);
             for (TryBlock<?> tryBlock
                     : (List<TryBlock<?>>) (List<?>) impl.getTryBlocks()) {
                 List<Handler> handlers = new ArrayList<>();
@@ -105,5 +108,29 @@ public final class DexMethod {
         return new DexMethod(method.getName(), params, method.getReturnType(),
                 method.getAccessFlags(), classDef.getType(), impl != null, registerCount,
                 instructions, tries);
+    }
+
+    /** Links payload users (switch/fill-array) to their decoded payload. */
+    private static void resolvePayloads(List<Insn> instructions) {
+        Map<Integer, Integer> indexAt = new HashMap<>();
+        for (int i = 0; i < instructions.size(); i++) {
+            indexAt.putIfAbsent(instructions.get(i).codeOffset, i);
+        }
+        for (int i = 0; i < instructions.size(); i++) {
+            Insn in = instructions.get(i);
+            if (!usesPayload(in.opcode) || in.branchOffset == null) {
+                continue;
+            }
+            Integer target = indexAt.get(in.codeOffset + in.branchOffset);
+            if (target == null || !instructions.get(target).opcode.contains("payload")) {
+                continue;
+            }
+            instructions.set(i, in.withPayloadIndex(target));
+        }
+    }
+
+    private static boolean usesPayload(String opcode) {
+        return opcode.equals("packed-switch") || opcode.equals("sparse-switch")
+                || opcode.equals("fill-array-data");
     }
 }

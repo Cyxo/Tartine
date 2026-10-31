@@ -8,13 +8,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import tartine.dex.Descriptors;
 import tartine.dex.DexClass;
 import tartine.dex.DexMethod;
 import tartine.dex.Insn;
@@ -84,11 +82,8 @@ final class TxMethodWriter implements Opcodes {
      *  both an int and the null reference at each use site). */
     private final boolean[] regZero;
 
-    /** Dex model lookup for guest field-owner resolution (null in the
-     *  single-class probe path: the raw ref owner is used verbatim). */
-    private final Function<String, DexClass> dexLookup;
-    /** Memo of ref-owner to declaring-class rewrites (see fieldDeclaring). */
-    private final Map<String, String> declaringMemo = new HashMap<>();
+    /** Translation-time reference resolution (guest dex, then host). */
+    private final ReferenceResolver resolver;
 
     /** One crossing's flow state, snapshot at its jump site. */
     private static final class JoinPred {
@@ -118,8 +113,6 @@ final class TxMethodWriter implements Opcodes {
     private String pendingArray;
     /** Instruction currently emitted (context for load-side gap messages). */
     private Insn currentInsn;
-    /** DEX-owned interface type descriptors, for virtual-on-interface refs. */
-    private final Set<String> guestInterfaces;
     /**
      * Non-final static fields carrying dex static_values initial values.
      * The JVM ConstantValue cannot seed those (JVMS §4.7.3 restricts it to
@@ -140,12 +133,10 @@ final class TxMethodWriter implements Opcodes {
     private Map<Integer, Set<Integer>> loopWritten;
 
     TxMethodWriter(ClassWriter cw, DexMethod method,
-            Set<String> guestInterfaces,
             List<DexClass.DexField> staticSeeds,
-            Function<String, DexClass> dexLookup) {
+            ReferenceResolver resolver) {
         this.method = method;
-        this.guestInterfaces = guestInterfaces;
-        this.dexLookup = dexLookup;
+        this.resolver = resolver;
         this.staticSeeds = staticSeeds == null ? List.of() : staticSeeds;
         this.insns = method.instructions;
         int regCount = Math.max(method.registerCount, paramRegs());
@@ -327,7 +318,7 @@ final class TxMethodWriter implements Opcodes {
             } else if (op.equals("packed-switch")
                     || op.equals("sparse-switch")) {
                 labelAt(fallthroughOf(i));
-                Insn payload = payloadAt(in.codeOffset + in.branchOffset);
+                Insn payload = payloadOf(in);
                 for (int target : payload.payloadTargets) {
                     labelAt(in.codeOffset + target);
                 }
@@ -357,7 +348,7 @@ final class TxMethodWriter implements Opcodes {
             } else if (op.equals("packed-switch") || op.equals("sparse-switch")) {
                 arcs.computeIfAbsent(fallthroughOf(i),
                         x -> new ArrayList<>()).add(in.codeOffset);
-                Insn payload = payloadAt(in.codeOffset + in.branchOffset);
+                Insn payload = payloadOf(in);
                 if (payload != null) {
                     for (int target : payload.payloadTargets) {
                         arcs.computeIfAbsent(in.codeOffset + target,
@@ -1023,7 +1014,7 @@ final class TxMethodWriter implements Opcodes {
                 if (pos == 1) {
                     return OBJ;
                 }
-                char k = kindOf(fieldRefType(in.reference));
+                char k = kindOf(fieldRef(in).type());
                 if (wide) {
                     return (k == LONG || k == DOUBLE) ? k : LONG;
                 }
@@ -1171,7 +1162,7 @@ final class TxMethodWriter implements Opcodes {
      *  is not the parameter index (ColorSpaces.<clinit>'s 5th double sat at
      *  position 9 and indexOf-based lookup read the marker parameter). */
     private char kindOfArg(Insn in, int regPos, boolean wide) {
-        List<String> ps = paramsOf(in.reference);
+        List<String> ps = methodRef(in).parameterTypes();
         int r = isInvokeStatic(in) ? 0 : 1;
         for (String p : ps) {
             int width = TxDescriptors.isWide(p) ? 2 : 1;
@@ -1191,17 +1182,33 @@ final class TxMethodWriter implements Opcodes {
         return in.opcode.startsWith("invoke-static");
     }
 
-    /** Parameter descriptors of a method reference text (shared helper). */
-    private List<String> paramsOf(String ref) {
-        int open = ref.indexOf('(');
-        int close = ref.indexOf(')', open);
-        return Descriptors.splitTypes(ref.substring(open + 1, close));
+    /** Typed accessors: a raw (unmodelled) reference is a named gap. */
+    private Insn.MethodRef methodRef(Insn in) {
+        if (in.reference instanceof Insn.MethodRef ref) {
+            return ref;
+        }
+        throw gap("not a method reference", in);
     }
 
-    /** Type descriptor of a field reference text. */
-    private String fieldRefType(String reference) {
-        int colon = reference.indexOf(':', reference.indexOf("->") + 2);
-        return reference.substring(colon + 1);
+    private Insn.FieldRef fieldRef(Insn in) {
+        if (in.reference instanceof Insn.FieldRef ref) {
+            return ref;
+        }
+        throw gap("not a field reference", in);
+    }
+
+    private Insn.TypeRef typeRef(Insn in) {
+        if (in.reference instanceof Insn.TypeRef ref) {
+            return ref;
+        }
+        throw gap("not a type reference", in);
+    }
+
+    private Insn.StringRef stringRef(Insn in) {
+        if (in.reference instanceof Insn.StringRef ref) {
+            return ref;
+        }
+        throw gap("not a string reference", in);
     }
 
     // ---------------------------------------------------------------------
@@ -1562,14 +1569,14 @@ final class TxMethodWriter implements Opcodes {
         }
         if (op.startsWith("const-string")) {
             int dst = in.registers.get(0);
-            mv.visitLdcInsn(stripStringRef(in.reference));
+            mv.visitLdcInsn(stringRef(in).value());
             store(dst, OBJ);
             regArray[dst] = null;
             return;
         }
         if (op.equals("const-class")) {
             int dst = in.registers.get(0);
-            mv.visitLdcInsn(Type.getType(in.reference));
+            mv.visitLdcInsn(Type.getType(typeRef(in).descriptor()));
             store(dst, OBJ);
             regArray[dst] = null;
             return;
@@ -1619,7 +1626,7 @@ final class TxMethodWriter implements Opcodes {
         }
         if (op.equals("new-instance")) {
             int dst = in.registers.get(0);
-            mv.visitTypeInsn(NEW, TxDescriptors.internal(in.reference));
+            mv.visitTypeInsn(NEW, TxDescriptors.internal(typeRef(in).descriptor()));
             store(dst, OBJ);
             regArray[dst] = null;
             regUninit[dst] = true;
@@ -1636,7 +1643,8 @@ final class TxMethodWriter implements Opcodes {
             int dst = in.registers.get(0);
             int size = in.registers.get(1);
             load(size, INT);
-            String elem = TxDescriptors.arrayElement(in.reference);
+            String arrDesc = typeRef(in).descriptor();
+            String elem = TxDescriptors.arrayElement(arrDesc);
             int base = TxDescriptors.newarrayBase(elem);
             if (base >= 0) {
                 mv.visitIntInsn(NEWARRAY, base);
@@ -1644,12 +1652,12 @@ final class TxMethodWriter implements Opcodes {
                 mv.visitTypeInsn(ANEWARRAY, TxDescriptors.internal(elem));
             }
             store(dst, OBJ);
-            regArray[dst] = in.reference;
+            regArray[dst] = arrDesc;
             return;
         }
         if (op.startsWith("filled-new-array")) {
             emitFilledNewArray(in);
-            pended(in.reference, i);
+            pended(typeRef(in).descriptor(), i);
             return;
         }
         if (op.equals("fill-array-data")) {
@@ -1682,8 +1690,9 @@ final class TxMethodWriter implements Opcodes {
         }
         if (op.equals("check-cast")) {
             int dst = in.registers.get(0);
+            String type = typeRef(in).descriptor();
             load(dst, OBJ);
-            if (in.reference.equals("Ljava/util/Set;")) {
+            if (type.equals("Ljava/util/Set;")) {
                 Label isSet = new Label();
                 Label done = new Label();
                 mv.visitInsn(DUP);
@@ -1696,30 +1705,30 @@ final class TxMethodWriter implements Opcodes {
                 mv.visitTypeInsn(CHECKCAST, "java/util/Set");
                 mv.visitLabel(done);
                 store(dst, OBJ);
-                regArray[dst] = in.reference.startsWith("[") ? in.reference : null;
+                regArray[dst] = type.startsWith("[") ? type : null;
                 return;
             }
-            if (in.reference.startsWith("[")) {
+            if (type.startsWith("[")) {
                 // In-place value replacement: ALOAD x; LDC desc; coerce pops
                 // (desc, x) and pushes the coerced array — no residue. A DUP
                 // here once left a phantom reference on the eval stack across
                 // every array check-cast; StateFlowImpl.updateState's joins
                 // then disagreed on stack height and COMPUTE_FRAMES died in
                 // Frame.merge with a zero-length input stack.
-                mv.visitLdcInsn(in.reference);
+                mv.visitLdcInsn(type);
                 mv.visitMethodInsn(INVOKESTATIC, "tartine/tx/ArrayCoerce", "coerce",
                         "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;", false);
             }
-            mv.visitTypeInsn(CHECKCAST, TxDescriptors.internal(in.reference));
+            mv.visitTypeInsn(CHECKCAST, TxDescriptors.internal(type));
             store(dst, OBJ);
-            regArray[dst] = in.reference.startsWith("[") ? in.reference : null;
+            regArray[dst] = type.startsWith("[") ? type : null;
             return;
         }
         if (op.equals("instance-of")) {
             int dst = in.registers.get(0);
             int src = in.registers.get(1);
             load(src, OBJ);
-            mv.visitTypeInsn(INSTANCEOF, TxDescriptors.internal(in.reference));
+            mv.visitTypeInsn(INSTANCEOF, TxDescriptors.internal(typeRef(in).descriptor()));
             store(dst, INT);
             regArray[dst] = null;
             return;
@@ -1775,7 +1784,7 @@ final class TxMethodWriter implements Opcodes {
     }
 
     private TxTranslator.TxGap gap(String why, Insn in) {
-        String ref = in.reference == null ? "" : " ref=" + in.reference;
+        String ref = in.reference == null ? "" : " ref=" + in.reference.text();
         return new TxTranslator.TxGap(method.owner + "->" + method.signature()
                 + " @" + in.codeOffset + " " + in.opcode + ref + " : " + why);
     }
@@ -1786,14 +1795,8 @@ final class TxMethodWriter implements Opcodes {
             return "";
         }
         String ref = currentInsn.reference == null ? ""
-                : " ref=" + currentInsn.reference;
+                : " ref=" + currentInsn.reference.text();
         return " @" + currentInsn.codeOffset + " " + currentInsn.opcode + ref;
-    }
-
-    /** Const-string reference text carries quotes: `Ljava/lang/String; ...`. */
-    private String stripStringRef(String reference) {
-        // const-string reference text is the raw string contents.
-        return reference;
     }
 
     private void moveObject(Insn in) {
@@ -1982,8 +1985,7 @@ final class TxMethodWriter implements Opcodes {
     private void emitSwitch(int i, Insn in) {
         int base = in.codeOffset;
         int reg = in.registers.get(0);
-        int payloadOff = in.codeOffset + in.branchOffset;
-        Insn payload = payloadAt(payloadOff);
+        Insn payload = payloadOf(in);
         Label dflt = labelAt(fallthroughOf(i));
         // Every switch arm is a join pred, default included.
         snapshotJoin(fallthroughOf(i));
@@ -2016,14 +2018,12 @@ final class TxMethodWriter implements Opcodes {
         mv.visitLookupSwitchInsn(dflt, keys, targets);
     }
 
-    /** Finds a payload instruction by its code offset. */
-    private Insn payloadAt(int off) {
-        for (Insn p : insns) {
-            if (p.codeOffset == off && p.opcode.contains("payload")) {
-                return p;
-            }
+    /** Payload instruction linked by {@link DexMethod} decoding. */
+    private Insn payloadOf(Insn in) {
+        if (in.payloadIndex >= 0 && in.payloadIndex < insns.size()) {
+            return insns.get(in.payloadIndex);
         }
-        throw new TxTranslator.TxGap("no payload at " + off);
+        throw gap("no payload at " + (in.codeOffset + in.branchOffset), in);
     }
 
     private int fallthroughOf(int i) {
@@ -2037,13 +2037,10 @@ final class TxMethodWriter implements Opcodes {
 
     private void emitInvoke(int i, Insn in) {
         String op = in.opcode;
-        String ref = in.reference;
-        int arrow = ref.indexOf("->");
-        String owner = ref.substring(0, arrow);
-        int open = ref.indexOf('(');
-        String name = ref.substring(arrow + 2, open);
-        int close = ref.indexOf(')', open);
-        String desc = ref.substring(open, close + 1) + ref.substring(close + 1);
+        Insn.MethodRef ref = methodRef(in);
+        String owner = ref.owner();
+        String name = ref.name();
+        String desc = ref.descriptor();
         boolean isStatic = op.startsWith("invoke-static");
         int opcode;
         switch (op) {
@@ -2098,7 +2095,7 @@ final class TxMethodWriter implements Opcodes {
         // not by parameter index. /range forms were already expanded into
         // this list by the frontend.
         int r = isStatic ? 0 : 1;
-        List<String> ps = paramsOf(ref);
+        List<String> ps = ref.parameterTypes();
         for (int p = 0; p < ps.size(); p++) {
             String type = ps.get(p);
             if (r >= in.registers.size()) {
@@ -2139,20 +2136,20 @@ final class TxMethodWriter implements Opcodes {
             return;
         }
         boolean itf = opcode == INVOKEINTERFACE;
-        if (opcode == INVOKEVIRTUAL && isInterface(owner)) {
+        if (opcode == INVOKEVIRTUAL && resolver.isInterface(owner)) {
             // DEX allows interface methodrefs in invoke-virtual (the receiver
             // is the impl instance). The JVM needs invokeinterface there.
             itf = true;
             opcode = INVOKEINTERFACE;
         }
-        if (opcode == INVOKESPECIAL && isInterface(owner)) {
+        if (opcode == INVOKESPECIAL && resolver.isInterface(owner)) {
             // DEX invoke-direct on an interface methodref (Kotlin default
             // helper / private default method). The JVM needs an
             // InterfaceMethodref constant; isInterface drives that tag, not
             // invoke's opcode.
             itf = true;
         }
-        if (opcode == INVOKESTATIC && isInterface(owner)) {
+        if (opcode == INVOKESTATIC && resolver.isInterface(owner)) {
             // Static call on an interface methodref: the JVM verifier wants
             // an InterfaceMethodref constant for interface owners, even
             // though the method is static (invokestatic ignores the receiver).
@@ -2170,35 +2167,7 @@ final class TxMethodWriter implements Opcodes {
         }
         mv.visitMethodInsn(opcode, TxDescriptors.internal(owner), name, desc,
                 itf);
-        pended(ref.substring(close + 1), i);
-    }
-
-    /** Whether the methodref owner is an interface (guest set, then host). */
-    private boolean isInterface(String owner) {
-        // DEX-shape interfaces (compose.mayby...) win first — the guest
-        // loader, not the host, is the source of truth. Class.forName only
-        // covers host types.
-        try {
-            DexClass dex = dexLookup == null ? null
-                    : dexLookup.apply(owner);
-            if (dex != null) {
-                return (dex.accessFlags & TxTranslator.ACC_INTERFACE) != 0;
-            }
-        } catch (Throwable ignored) {
-        }
-        if (guestInterfaces.contains(owner)) {
-            return true;
-        }
-        // Host types (java.util.Map on a LinkedHashMap receiver): ask the
-        // running JVM. Bounded: the owner name only, never guest classes.
-        try {
-            Class<?> c = Class.forName(
-                    TxDescriptors.internal(owner).replace('/', '.'), false,
-                    TxMethodWriter.class.getClassLoader());
-            return c.isInterface();
-        } catch (ClassNotFoundException | LinkageError e) {
-            return false;
-        }
+        pended(ref.returnType(), i);
     }
 
     // ---------------------------------------------------------------------
@@ -2341,7 +2310,7 @@ final class TxMethodWriter implements Opcodes {
 
     private void emitFilledNewArray(Insn in) {
         boolean range = in.opcode.equals("filled-new-array-range");
-        String arrDesc = in.reference; // e.g. [I or [Ljava/lang/String;
+        String arrDesc = typeRef(in).descriptor(); // e.g. [I or [Ljava/lang/String;
         String elem = TxDescriptors.arrayElement(arrDesc);
         int base = TxDescriptors.newarrayBase(elem);
         List<Integer> regs = range ? rangeRegs(in) : in.registers;
@@ -2391,8 +2360,7 @@ final class TxMethodWriter implements Opcodes {
 
     private void emitFillArray(Insn in) {
         int arr = in.registers.get(0);
-        int off = in.codeOffset + in.branchOffset;
-        Insn payload = payloadAt(off);
+        Insn payload = payloadOf(in);
         String arrDesc = regArray[arr];
         char elemKind;
         if (arrDesc != null) {
@@ -2442,16 +2410,14 @@ final class TxMethodWriter implements Opcodes {
     // ---------------------------------------------------------------------
 
     private void emitGetField(Insn in, boolean isStatic) {
-        String ref = in.reference;
-        int arrow = ref.indexOf("->");
-        String owner = ref.substring(0, arrow);
-        int colon = ref.indexOf(':', arrow);
-        String name = ref.substring(arrow + 2, colon);
-        String ftype = ref.substring(colon + 1);
+        Insn.FieldRef ref = fieldRef(in);
+        String owner = ref.owner();
+        String name = ref.name();
+        String ftype = ref.type();
         char k = kindOf(ftype);
         int dst = in.registers.get(0);
         String desc = ftype;
-        String declaring = fieldDeclaring(owner, name, ftype);
+        String declaring = resolver.fieldDeclaring(ref);
         String internal = TxDescriptors.internal(declaring);
         // The receiver cast follows the REF's owner, not the resolved
         // declaring class: protected-field verification (JVMS §4.10.1.9)
@@ -2486,12 +2452,10 @@ final class TxMethodWriter implements Opcodes {
     }
 
     private void emitPutField(Insn in, boolean isStatic) {
-        String ref = in.reference;
-        int arrow = ref.indexOf("->");
-        String owner = ref.substring(0, arrow);
-        int colon = ref.indexOf(':', arrow);
-        String name = ref.substring(arrow + 2, colon);
-        String ftype = ref.substring(colon + 1);
+        Insn.FieldRef ref = fieldRef(in);
+        String owner = ref.owner();
+        String name = ref.name();
+        String ftype = ref.type();
         char k = kindOf(ftype);
         int valueReg = in.registers.get(0);
         // Slot types widen through CFG merges ({obj,int}-unified slots
@@ -2499,7 +2463,7 @@ final class TxMethodWriter implements Opcodes {
         // Same narrowing as invoke args; idempotent, JIT elides. The cast
         // applies to the stack top (the value), after both loads.
         boolean refField = ftype.startsWith("L") || ftype.startsWith("[");
-        String declaring = fieldDeclaring(owner, name, ftype);
+        String declaring = resolver.fieldDeclaring(ref);
         String internal = TxDescriptors.internal(declaring);
         // Same receiver-cast rule as getfield: cast to the ref's owner
         // (protected access), walk only the FIELD instruction to the
@@ -2528,46 +2492,6 @@ final class TxMethodWriter implements Opcodes {
             }
             mv.visitFieldInsn(PUTFIELD, internal, name, ftype);
         }
-    }
-
-    /**
-     * DEX field refs carry the owner the compiler referenced, which can be
-     * a subclass of the declaring class when the superclass field is
-     * protected (MutableIntList.ensureCapacity reads IntList's content via
-     * the subclass owner). The JVM resolves fields per exact owner, so a
-     * subclass owner must retarget to the declaring class before emitting
-     * getfield/putfield — otherwise the class carries a shadow field that
-     * never receives the value (the ctor's super-side putfield wrote
-     * IntList.content while the read saw MutableIntList.content = null).
-     * Falls back to the raw owner when the chain leaves the dex universe
-     * or the writer runs without a dexLookup.
-     */
-    private String fieldDeclaring(String owner, String name, String ftype) {
-        String key = owner + "->" + name + ":" + ftype;
-        String cached = declaringMemo.get(key);
-        if (cached != null) {
-            return cached;
-        }
-        String declaring = owner;
-        if (dexLookup != null) {
-            String type = owner;
-            while (type != null) {
-                DexClass cls = dexLookup.apply(type);
-                if (cls == null) {
-                    break;
-                }
-                for (DexClass.DexField f : cls.fields) {
-                    if (f.name.equals(name) && f.type.equals(ftype)) {
-                        declaring = type;
-                        type = null;
-                        break;
-                    }
-                }
-                type = type == null ? null : cls.superclass;
-            }
-        }
-        declaringMemo.put(key, declaring);
-        return declaring;
     }
 
     /** Loads match the JVM's putfield contract: int for B/C/S/Z. */
