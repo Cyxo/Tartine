@@ -11,9 +11,15 @@
 `src/test/java/` (JUnit 5 suite), `settings.gradle`/`build.gradle` (+ committed Gradle wrapper — mise still pins the version; keep the two in sync), `build/` (ignored output). `tools/` (dev-time CLI oracles, gitignored — fetch with `mise run fetch-tools`), `apks/` (local fixtures — gitignored except the committed probe fixture `apks/app-debug.apk`, 23.5 MB, the one exception: fresh clones can probe without shipping their own; never re-ignore it), `THIRD-PARTY.md` (versions/licenses). Deps resolve from Maven Central + Google Maven (`google()` in `build.gradle`; smali-dexlib2 publishes only there) via Gradle; nothing vendored under `libs/`.
 - `android.jar` (local SDK, API 36 — the level Tartine models) is a build input for skeleton regeneration only (`fw-tools`); the runtime never reads it. See ADR-0008.
 - Verify: `sh scripts/verify.sh` (all platforms). Runs `mise install` (idempotent) then `gradle test`.
-- Prefer `mise run <task>` (`fetch-tools`/`test`/`build`/`apk`/`run`/`gui`/`dump`/`fw-gen`/`shorten`, see `mise tasks ls`): `apk`/`run`/`gui`/`dump` launch the last build via direct `java`, no recompile when unchanged. Run `mise trust` after editing `mise.toml` (edits revoke trust).
+- Prefer `mise run <task>` (`fetch-tools`/`test`/`build`/`apk`/`run`/`gui`/`dump`/`refs`/`fw-gen`/`shorten`, see `mise tasks ls`): `apk`/`run`/`gui`/`dump`/`refs` launch the last build via direct `java`, no recompile when unchanged. Run `mise trust` after editing `mise.toml` (edits revoke trust).
 - Single test: `mise exec -- gradle test --tests "tartine.apk.*"`.
 
+## Debugging probe walls
+- `mise run refs [apk]` is the first stop when `run`/`gui` stops at a named gap or before porting a framework family. It resolves every method/field/type reference and class-hierarchy edge guest-dex-first, then by host reflection, and prints each unresolved one as `kind reference: reason`.
+- Read a hit as missing linkage: `owner class not found` → add/port the framework class; `member not found` → add the method/field to the skeleton or behavior; `type not found` → a parameter/return/field/catch type is absent. No hit means the wall is behavior (the skeleton exists and throws) or a translator bug, not a missing symbol.
+- The census reports; it does not gate. Translation still lazily degrades an unresolved method body to its named `UnsupportedOperationException` gap on first use.
+- Real APKs produce a large census; redirect and grep the failing signature: `mise run refs apks/app-debug.apk > build/refs.txt`, then search for the `Landroid/...;` owner or method name.
+- `refs` uses the same `ReferenceResolver` as translation, so guest-dex-first lookup and field-declaring retargeting behave exactly as at runtime.
 
 ## Goal and design
 

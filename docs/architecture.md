@@ -44,7 +44,9 @@ GitLab `android_translation_layer/android_translation_layer`
   ancestors), classifies interface owners, accepts signature-polymorphic
   `MethodHandle`/`VarHandle` calls and array owners, and powers `mise run refs`
   — an up-front census of unresolved references. The census reports; it does
-  not gate lazy translation.
+  not gate lazy translation. During a probe wall, grep the census for the
+  failing signature: a hit names the missing class/member to port, a miss
+  points at behavior or translation rather than linkage.
 - `android.jar` bodies are all `throw new RuntimeException("Stub!")`
   (verified via `javap -c`): reuse it for hierarchy/signatures/constants
   only, never behavior. Devices have no `android.jar` — they ship
@@ -101,7 +103,9 @@ GitLab `android_translation_layer/android_translation_layer`
   blobless `--sparse` clones, `core.autocrlf=false`. The dir sits under the
   opencode temp root, so the OS may purge it — re-clone if missing.
 - Migration order follows the probe walls (measure → layout → draw): port
-  the class a wall needs instead of stubbing more of it.
+  the class a wall needs instead of stubbing more of it. Run `mise run refs`
+  first: a census hit names the missing linkage, a miss means the wall is
+  behavior (or translation) rather than a missing symbol.
 - Batch wall ports: when a wall's family has a clear shape (listener
   add/remove pairs, getters returning constants, service-name dispatch arms,
   no-op setters), port the WHOLE family from the AOSP source in one pass.

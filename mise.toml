@@ -46,7 +46,7 @@ run = "bash scripts/dump.sh"
 run_windows = "pwsh -File scripts/dump.ps1"
 
 [tasks.refs]
-description = "Reference census: unresolved method/field/type references before translation"
+description = "Reference census: unresolved refs to check during probe walls"
 depends = ["build"]
 usage = 'arg "[apk]" default="apks/app-debug.apk" help="APK file to inspect"'
 run = "bash scripts/refs.sh"

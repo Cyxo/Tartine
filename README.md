@@ -70,11 +70,28 @@ mise run refs [apks/app-debug.apk]             # unresolved-reference census (gu
 translation loader (`tartine.tx`), the only VM. `txrun`/`txgui`/`txdump`
 remain as aliases for `run`/`gui`/`dump`.
 
-`refs` resolves every method, field and type reference plus class-hierarchy
-edge before translation and prints the ones that resolve nowhere, with the
-reason (missing owner class, missing member, missing type). It is a census,
-not a gate: translation still degrades an unresolved method body to its named
-`UnsupportedOperationException` gap on first use.
+`refs` is the probe-wall companion: run it when `run`/`gui` stops at a
+`Tartine: not implemented` gap, or before porting a framework family. It
+resolves every method, field and type reference plus class-hierarchy edge
+before translation (guest dex first, then host reflection) and prints each
+unresolved one as `kind reference: reason`:
+
+- `owner class not found` — the class is absent from both the APK and the
+  framework; add/port it.
+- `member not found` — the owner exists but lacks the method/field; add it
+  to the skeleton or behavior.
+- `type not found` — a parameter, return, field or catch type is missing.
+
+Real APKs produce a large census; redirect it and grep the failing signature:
+
+```sh
+mise run refs apks/app-debug.apk > build/refs.txt
+```
+
+It is a census, not a gate: translation still degrades an unresolved method
+body to its named `UnsupportedOperationException` gap on first use. A
+signature absent from the census points at behavior (or a translator bug),
+not missing linkage.
 
 `mise tasks ls` lists everything; `mise run <task> --help` shows args.
 Launchers reuse the last `mise run build` output via direct `java`
