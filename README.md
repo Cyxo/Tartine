@@ -63,11 +63,18 @@ mise run apk [apks/app-debug.apk]              # manifest, code, and library sum
 mise run run [apks/app-debug.apk]              # translated headless probe: onCreate until the first gap
 mise run gui [apks/app-debug.apk] [timeout]    # translated GUI probe: show the activity window (first frame blits)
 mise run dump <file.dex>                       # instruction dump of one dex file
+mise run refs [apks/app-debug.apk]             # unresolved-reference census (guest dex, then host)
 ```
 
 `run` and `gui` execute the launcher as real JVM bytecode through the
 translation loader (`tartine.tx`), the only VM. `txrun`/`txgui`/`txdump`
 remain as aliases for `run`/`gui`/`dump`.
+
+`refs` resolves every method, field and type reference plus class-hierarchy
+edge before translation and prints the ones that resolve nowhere, with the
+reason (missing owner class, missing member, missing type). It is a census,
+not a gate: translation still degrades an unresolved method body to its named
+`UnsupportedOperationException` gap on first use.
 
 `mise tasks ls` lists everything; `mise run <task> --help` shows args.
 Launchers reuse the last `mise run build` output via direct `java`

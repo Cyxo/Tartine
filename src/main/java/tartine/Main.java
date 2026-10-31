@@ -33,6 +33,7 @@ import tartine.graphics.DesktopWindow;
 import tartine.graphics.RasterPresenter;
 import tartine.graphics.WindowIcon;
 import tartine.runtime.Vfs;
+import tartine.tx.ReferenceResolver;
 import tartine.tx.TranslatedLoader;
 import tartine.tx.TxTranslator;
 
@@ -49,6 +50,8 @@ import tartine.tx.TxTranslator;
  * as aliases.
  * <li>{@code dump <file.dex>} — prints our instruction dump of a dex file.
  * {@code txdump} is kept as an alias for the translated-class dump.
+ * <li>{@code refs <file.apk>} — unresolved-reference census over every dex
+ * class, before any translation.
  * </ul>
  */
 public final class Main {
@@ -111,6 +114,10 @@ public final class Main {
                     dumpDex(new File(args[1]),
                             args.length > 2 ? args[2] : null);
                     break;
+                case "refs":
+                    require(args, 2);
+                    printReferenceProblems(new File(args[1]));
+                    break;
                 default:
                     if (args[0].endsWith(".apk")) {
                         printApkSummary(new File(args[0]));
@@ -127,7 +134,7 @@ public final class Main {
     }
 
     private static void usage() {
-        System.out.println("Usage: tartine.Main (apk|run|gui|dump) <file>");
+        System.out.println("Usage: tartine.Main (apk|run|gui|dump|refs) <file>");
     }
 
     private static void require(String[] args, int count) {
@@ -178,6 +185,23 @@ public final class Main {
             System.out.println("native abis: " + (abis.isEmpty() ? "none" : abis)
                     + " (host picks " + Abi.pickBest(abis) + ")");
             System.out.println("resources: " + reader.hasResources());
+        }
+    }
+
+    /**
+     * Reference census ({@code refs}): resolves every method/field/type
+     * reference and every class hierarchy edge against guest dex first,
+     * then host reflection, printing what resolves nowhere.
+     */
+    private static void printReferenceProblems(File apk) throws Exception {
+        try (ApkReader reader = ApkReader.open(apk.toPath())) {
+            TranslatedLoader loader = new TranslatedLoader(
+                    Main.class.getClassLoader(), reader.dexSet());
+            List<ReferenceResolver.Problem> problems = loader.referenceProblems();
+            for (ReferenceResolver.Problem problem : problems) {
+                System.out.println(problem);
+            }
+            System.out.println("refs: " + problems.size() + " unresolved reference(s)");
         }
     }
 

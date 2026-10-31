@@ -36,6 +36,15 @@ GitLab `android_translation_layer/android_translation_layer`
   alongside. Unknown constructs surface as the framework skeleton's named gap
   (`UnsupportedOperationException("Tartine: not implemented: <signature>")`)
   — the gap-driven loop survives.
+- The instruction model is a pre-resolved IR: `Insn.reference` is typed
+  (`MethodRef`/`FieldRef`/`TypeRef`/`StringRef`) and payload users carry the
+  decoded payload's index, so translation never re-parses smali-like text.
+  `tartine.tx.ReferenceResolver` resolves those refs guest-dex-first, then by
+  host reflection: it finds a field's real declaring class (including host
+  ancestors), classifies interface owners, accepts signature-polymorphic
+  `MethodHandle`/`VarHandle` calls and array owners, and powers `mise run refs`
+  — an up-front census of unresolved references. The census reports; it does
+  not gate lazy translation.
 - `android.jar` bodies are all `throw new RuntimeException("Stub!")`
   (verified via `javap -c`): reuse it for hierarchy/signatures/constants
   only, never behavior. Devices have no `android.jar` — they ship
@@ -224,12 +233,15 @@ Carried from the 2026-10 audits; do later:
 - Split `Interpreter.java` and move to a pre-resolved IR: moot — the
   interpreter was removed 2026-10-29 (ADR-0008). Its successor work lives in
   the translation path (below).
-- Translation still has its own work: internal IR (still relevant, do soon);
-  resolving references at translation time (can report gaps up front);
-  lazy per-class translation (maybe, for very large multi-dex apps);
-  caching translated output (even more relevant — keyed by APK hash +
-  translator version + framework version; deferred until the installation
-  process).
+- Translation still has its own work: internal IR (done 2026-10-31: typed
+  `Insn.Ref` values — method/field/type/string — plus payload indices, so the
+  writer never re-parses reference text); resolving references at translation
+  time (done 2026-10-31: `ReferenceResolver` walks guest dex then host
+  reflection, retargets fields to their declaring class and feeds the `refs`
+  census that reports unresolved references up front); lazy per-class
+  translation (maybe, for very large multi-dex apps); caching translated
+  output (even more relevant — keyed by APK hash + translator version +
+  framework version; deferred until the installation process).
 - Split `AGENTS.md` into further ADRs as needed.
 - Move root `icon.png`/`icon.svg`/`logo.png` to `docs/assets/` (done 2026-10-30; see task 9).
 - Scheme: Theme sync (host light/dark → guest `Configuration.uiMode`).
