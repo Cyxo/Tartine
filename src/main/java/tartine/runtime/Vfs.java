@@ -88,6 +88,18 @@ public final class Vfs {
             }
             return hostPath.normalize().startsWith(sdcard.hostRoot().normalize());
         }
+
+        /**
+         * Guest spelling of a host path, or {@code null} when the host path
+         * is not inside any mount. Reverse mapping prefers the most specific
+         * host root and, on a tie, the shortest guest prefix, so app data
+         * answers {@code /data/data/...} rather than {@code /data/user/0/...}
+         * and the card answers {@code /sdcard} rather than
+         * {@code /storage/emulated/0}.
+         */
+        public String guestPath(Path hostPath) {
+            return Vfs.guestPath(hostPath, root, sdcard);
+        }
     }
 
     /** One guest prefix mapped onto a host directory. */
@@ -277,6 +289,55 @@ public final class Vfs {
                 return null;
             }
             result = result.resolve(seg);
+        }
+        return result;
+    }
+
+    /**
+     * Guest path for a host path, or {@code null} when it falls outside
+     * every mount. The answer round-trips through {@link #target} so a host
+     * spelling the forward mapper would reject (traversal, reserved device
+     * name, wrong case on a case-sensitive filesystem) never becomes a guest
+     * path.
+     */
+    static String guestPath(Path hostPath, Path root, Sdcard sdcard) {
+        if (hostPath == null) {
+            return null;
+        }
+        Path host = hostPath.normalize();
+        if (!host.isAbsolute()) {
+            return null;
+        }
+        Mount best = null;
+        Path bestRoot = null;
+        for (Mount mount : mounts(root, sdcard)) {
+            Path mountRoot = mount.hostRoot().normalize();
+            if (!host.startsWith(mountRoot)) {
+                continue;
+            }
+            if (best == null
+                    || mountRoot.getNameCount() > bestRoot.getNameCount()
+                    || (mountRoot.getNameCount() == bestRoot.getNameCount()
+                        && mount.guestPrefix().length()
+                            < best.guestPrefix().length())) {
+                best = mount;
+                bestRoot = mountRoot;
+            }
+        }
+        if (best == null) {
+            return null;
+        }
+        StringBuilder guest = new StringBuilder(best.guestPrefix());
+        for (Path segment : bestRoot.relativize(host)) {
+            String name = segment.toString().replace('\\', '/');
+            if (!name.isEmpty()) {
+                guest.append('/').append(name);
+            }
+        }
+        String result = guest.toString();
+        Path roundTrip = target(result, root, sdcard);
+        if (roundTrip == null || !roundTrip.normalize().equals(host)) {
+            return null;
         }
         return result;
     }

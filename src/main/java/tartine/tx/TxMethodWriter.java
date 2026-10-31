@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -132,7 +132,7 @@ final class TxMethodWriter implements Opcodes {
      */
     private Map<Integer, Set<Integer>> loopWritten;
 
-    TxMethodWriter(ClassWriter cw, DexMethod method,
+    TxMethodWriter(ClassVisitor cw, DexMethod method,
             List<DexClass.DexField> staticSeeds,
             ReferenceResolver resolver) {
         this.method = method;
@@ -1716,8 +1716,12 @@ final class TxMethodWriter implements Opcodes {
                 // then disagreed on stack height and COMPUTE_FRAMES died in
                 // Frame.merge with a zero-length input stack.
                 mv.visitLdcInsn(type);
-                mv.visitMethodInsn(INVOKESTATIC, "tartine/tx/ArrayCoerce", "coerce",
-                        "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;", false);
+                mv.visitLdcInsn(Type.getObjectType(
+                        TxDescriptors.internal(method.owner)));
+                mv.visitMethodInsn(INVOKESTATIC, "tartine/guest/GuestArrays",
+                        "coerce",
+                        "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Class;)"
+                        + "Ljava/lang/Object;", false);
             }
             mv.visitTypeInsn(CHECKCAST, TxDescriptors.internal(type));
             store(dst, OBJ);

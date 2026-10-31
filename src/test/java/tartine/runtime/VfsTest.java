@@ -137,6 +137,33 @@ class VfsTest {
     }
 
     @Test
+    void hostPathsReverseMapToTheCanonicalGuestSpelling() {
+        Vfs.Policy policy = new Vfs.Policy(root, card());
+        assertEquals("/data/data/com.example/files/f.txt",
+                policy.guestPath(root.resolve("data").resolve("com.example")
+                        .resolve("files").resolve("f.txt")));
+        assertEquals("/data/app/com.example/base.apk",
+                policy.guestPath(root.resolve("apps").resolve("com.example")
+                        .resolve("base.apk")));
+        assertEquals("/data/local/tmp/x",
+                policy.guestPath(root.resolve("tmp").resolve("x")));
+        assertEquals("/sdcard/Documents/a.txt",
+                policy.guestPath(root.resolve("sdcard").resolve("Documents")
+                        .resolve("a.txt")));
+        assertEquals("/sdcard", policy.guestPath(root.resolve("sdcard")));
+    }
+
+    @Test
+    void unmappedOrUnsafeHostPathsDoNotReverseMap() {
+        Vfs.Policy policy = new Vfs.Policy(root, card());
+        assertNull(policy.guestPath(root.resolve("elsewhere").resolve("x")));
+        assertNull(policy.guestPath(root.getParent()));
+        // The forward mapper rejects Windows device names; a host file with
+        // that name must not become a guest path either.
+        assertNull(policy.guestPath(root.resolve("sdcard").resolve("CON")));
+    }
+
+    @Test
     void acceptOverrideRefusesBadMounts() {
         // Missing, relative, root, and root-enclosing mounts are refused
         // (warning path), the static only kept once valid.

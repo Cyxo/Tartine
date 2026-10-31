@@ -6,8 +6,10 @@ import android.text.TextPaint;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import tartine.dex.DexSet;
 import tartine.dex.FixtureDex;
 import tartine.gfx.GfxBackend;
 import tartine.gfx.skija.SkijaBackend;
+import tartine.runtime.Vfs;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -47,6 +50,7 @@ final class TranslatedVmTest {
     Path temp;
 
     private TranslatedLoader loader;
+    private String home;
 
     @BeforeAll
     static void installBackend() {
@@ -61,10 +65,25 @@ final class TranslatedVmTest {
 
     @BeforeEach
     void loadFixture() throws Exception {
+        // File demos must stay inside the test temp root, never the user's
+        // real Tartine home.
+        home = System.getProperty("tartine.home");
+        System.setProperty("tartine.home", temp.toString());
+        Vfs.resetCard();
         Path dexFile = temp.resolve("fixture.dex");
         FixtureDex.writeHello(dexFile);
         DexSet dex = DexSet.of(Dex.load(dexFile.toFile()));
         loader = new TranslatedLoader(getClass().getClassLoader(), dex);
+    }
+
+    @AfterEach
+    void restoreHome() {
+        if (home == null) {
+            System.clearProperty("tartine.home");
+        } else {
+            System.setProperty("tartine.home", home);
+        }
+        Vfs.resetCard();
     }
 
     // ------------------------------------------------------------------
@@ -117,6 +136,15 @@ final class TranslatedVmTest {
 
     private static Object element(Object array, int index) {
         return Array.get(array, index);
+    }
+
+    /** The sandbox's named gap: denials surface, never silent answers. */
+    private void assertSandboxDenied(String demo) throws Exception {
+        UnsupportedOperationException denied = assertThrows(
+                UnsupportedOperationException.class, () -> call(demo), demo);
+        assertTrue(denied.getMessage() != null
+                && denied.getMessage().contains("sandbox denied"),
+                demo + ": " + denied.getMessage());
     }
 
     // ------------------------------------------------------------------
@@ -178,7 +206,7 @@ final class TranslatedVmTest {
         assertEquals(1, (int) (Integer) call("appendableCast"));
         assertEquals(3, (int) (Integer) call("enumValuesDemo"));
         assertEquals(1, (int) (Integer) call("ordinalDemo"));
-        assertEquals(0, (int) (Integer) call("annoDemo"));
+        assertSandboxDenied("annoDemo"); // Class.getMethod is denied
     }
 
     @Test
@@ -208,10 +236,26 @@ final class TranslatedVmTest {
         assertTrue(call("threadDemo") instanceof String);
         assertEquals(60_000_000_000L, (long) (Long) call("nanosDemo"));
         assertTrue((long) (Long) call("sysClock") >= 0L);
-        assertTrue((int) (Integer) call("stackDemo") >= 2);
-        assertTrue((long) (Long) call("runtimeDemo") > 0L);
-        assertTrue((int) (Integer) call("cpuDemo") > 0);
-        assertNull(call("propDemo"));
+        // Host stacks, runtime and system properties are sandbox-denied.
+        assertSandboxDenied("stackDemo");
+        assertSandboxDenied("runtimeDemo");
+        assertSandboxDenied("cpuDemo");
+        assertSandboxDenied("propDemo");
+    }
+
+    @Test
+    void sandboxFileBridgeAndForName() throws Exception {
+        // new File("/sdcard/Hello.txt").getAbsolutePath(): guest spelling.
+        assertEquals("/sdcard/Hello.txt", (String) call("fileDemo"));
+        // /proc is unmapped: exists() answers false, never a host path.
+        assertEquals(0, (int) (Integer) call("fileDenyDemo"));
+        // mkdirs under the card succeeds once, then reports already-present.
+        assertEquals(1, (int) (Integer) call("fileMkdirDemo"));
+        assertEquals(0, (int) (Integer) call("fileMkdirDemo"));
+        assertTrue(Files.isDirectory(
+                temp.resolve("sdcard").resolve("TartineProbeDir")));
+        // Class.forName("java.lang.Runtime") is denied at the guest loader.
+        assertEquals(0, (int) (Integer) call("forNameDenied"));
     }
 
     @Test
@@ -266,7 +310,9 @@ final class TranslatedVmTest {
     @Test
     void sdkLevelIsApi36() throws Exception {
         assertEquals(36, (int) (Integer) call("sdk"));
-        assertEquals(36, (int) (Integer) call("sdkIntDemo"));
+        // The reflective SDK_INT read (Class.getField + Field.getInt) is
+        // sandbox-denied; the direct field read stays available.
+        assertSandboxDenied("sdkIntDemo");
     }
 
     @Test
@@ -358,13 +404,14 @@ final class TranslatedVmTest {
 
     @Test
     void reflection() throws Exception {
-        assertEquals("base", (String) call("reflectPubDemo"));
-        assertThrows(NoSuchMethodException.class, () -> call("reflectMissDemo"));
+        assertSandboxDenied("reflectDemo");
+        assertSandboxDenied("reflectPubDemo");
+        assertSandboxDenied("reflectMissDemo");
     }
 
     @Test
     void serviceLookupFindsNoProviders() throws Exception {
-        assertFalse((boolean) (Boolean) call("serviceDemo"));
+        assertSandboxDenied("serviceDemo");
         assertFalse((boolean) (Boolean) call("traceDemo"));
     }
 

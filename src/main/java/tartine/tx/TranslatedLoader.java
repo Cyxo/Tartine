@@ -1,7 +1,11 @@
 package tartine.tx;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -10,11 +14,19 @@ import java.util.function.Function;
 import tartine.dex.Dex;
 import tartine.dex.DexClass;
 import tartine.dex.DexSet;
+import tartine.guest.SandboxDenied;
 
 /**
  * Classloader over translated DEX classes: guest types resolve by
- * translating the DEX class into JVM bytecode on first use; everything else
- * (java.*, framework android.*, host deps) resolves through the parent.
+ * translating the DEX class into JVM bytecode on first use. Host types
+ * resolve through the parent only when {@link SandboxPolicy} allows them;
+ * everything else fails with a named sandbox denial instead of reaching the
+ * host classpath.
+ *
+ * <p>Guest classes always win over host classes, so a dex-defined type can
+ * never be shadowed by the host; the inverse is refused: reserved names
+ * ({@code java.*}, {@code javax.*}, {@code android.*}, {@code tartine.*} and
+ * friends) can never be defined by the guest dex set either.
  */
 public final class TranslatedLoader extends ClassLoader {
     private final DexSet dex;
@@ -45,29 +57,75 @@ public final class TranslatedLoader extends ClassLoader {
                 fieldSynths, guestInterfaces, parent);
     }
 
+    /**
+     * Whether the dex set defines {@code internalName}; also the predicate
+     * the translation pass uses to tell guest classes from host classes.
+     */
+    public boolean isGuest(String internalName) {
+        return dex.findClass("L" + internalName + ";") != null;
+    }
+
+    /**
+     * Guest-first class resolution. Arrays are built from their component;
+     * dex classes go through translation unless they squat on a reserved
+     * name; host classes go through the sandbox allowlist.
+     */
+    @Override
+    protected Class<?> loadClass(String name, boolean resolve)
+            throws ClassNotFoundException {
+        synchronized (getClassLoadingLock(name)) {
+            Class<?> loaded = findLoadedClass(name);
+            if (loaded == null) {
+                if (name.startsWith("[")) {
+                    loaded = loadArray(name);
+                } else {
+                    String desc = "L" + name.replace('.', '/') + ";";
+                    if (dex.findClass(desc) != null) {
+                        loaded = findClass(name);
+                    } else {
+                        loaded = loadHost(name);
+                    }
+                }
+            }
+            if (resolve && !loaded.isArray()) {
+                resolveClass(loaded);
+            }
+            return loaded;
+        }
+    }
+
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        if (name.contains("StateFlowImpl")) {
-            try { return getParent().loadClass(name); } catch (ClassNotFoundException ignored) {}
+        if (SandboxPolicy.isReservedGuestName(name)) {
+            throw new ClassNotFoundException("Tartine: sandbox denied:"
+                    + " guest-defined " + name + " is not available");
         }
         String desc = "L" + name.replace('.', '/') + ";";
         DexClass cls = dex.findClass(desc);
         if (cls == null) {
-            throw new ClassNotFoundException(name);
+            throw new ClassNotFoundException("Tartine: no class " + name);
         }
-        // defineClass is reentrant here: defining a guest resolves its
-        // superclass (also a guest) through this very method, nested on the
-        // same thread. So translate happens lock-free and pure (it only
-        // reads the dex model), and the definition itself is serialized:
-        // ConcurrentHashMap.computeIfAbsent would abort that recursion with
-        // "Recursive update".
         Class<?> loaded = findLoadedClass(name);
         if (loaded == null) {
+            String denial = SandboxPolicy.guestMetadataDenial(cls, this::isGuest);
+            if (denial != null) {
+                throw new ClassNotFoundException(
+                        "Tartine: sandbox denied: " + denial);
+            }
+            // defineClass is reentrant here: defining a guest resolves its
+            // superclass (also a guest) through this very method, nested on the
+            // same thread. So translate happens lock-free and pure (it only
+            // reads the dex model), and the definition itself is serialized:
+            // ConcurrentHashMap.computeIfAbsent would abort that recursion with
+            // "Recursive update".
             final byte[] bytes;
             try {
                 bytes = TxTranslator.translate(cls, fieldSynths,
                         guestInterfaces, d -> dex.findClass(d), getParent(),
                         resolver);
+            } catch (SandboxDenied e) {
+                throw new ClassNotFoundException(
+                        "Tartine: sandbox denied: " + e.getMessage(), e);
             } catch (RuntimeException e) {
                 throw new IllegalStateException(
                         "translate " + cls.type + " failed", e);
@@ -82,14 +140,70 @@ public final class TranslatedLoader extends ClassLoader {
         return loaded;
     }
 
-    @Override
-    public Class<?> loadClass(String name) throws ClassNotFoundException {
-        try {
-            return super.loadClass(name, false);
-        } catch (RuntimeException e) {
-            // TxGap wrapped in ISE would shadow real errors: unwrap.
-            throw e;
+    /** Builds an array class from its descriptor-style JVM name. */
+    private Class<?> loadArray(String name) throws ClassNotFoundException {
+        String component = name.substring(1);
+        Class<?> componentClass;
+        if (component.startsWith("[")) {
+            componentClass = loadClass(component);
+        } else if (component.startsWith("L") && component.endsWith(";")) {
+            componentClass = loadClass(
+                    component.substring(1, component.length() - 1)
+                            .replace('/', '.'));
+        } else {
+            componentClass = switch (component.charAt(0)) {
+                case 'Z' -> boolean.class;
+                case 'B' -> byte.class;
+                case 'C' -> char.class;
+                case 'S' -> short.class;
+                case 'I' -> int.class;
+                case 'J' -> long.class;
+                case 'F' -> float.class;
+                case 'D' -> double.class;
+                default -> throw new ClassNotFoundException(
+                        "Tartine: bad array name " + name);
+            };
         }
+        return java.lang.reflect.Array.newInstance(componentClass, 0).getClass();
+    }
+
+    /** Host loading, gated by the sandbox allowlist. */
+    private Class<?> loadHost(String name) throws ClassNotFoundException {
+        String denial = SandboxPolicy.classDenial(name.replace('.', '/'),
+                guestName -> false);
+        if (denial != null) {
+            throw new ClassNotFoundException(
+                    "Tartine: sandbox denied: " + denial);
+        }
+        ClassLoader parent = getParent();
+        try {
+            return parent == null
+                    ? Class.forName(name, false, null)
+                    : parent.loadClass(name);
+        } catch (ClassNotFoundException e) {
+            throw new ClassNotFoundException("Tartine: no class " + name, e);
+        }
+    }
+
+    /**
+     * Resource lookup is part of the denied host surface: the loader
+     * answers "nothing" rather than exposing host classpath resources.
+     * Guest code cannot reach these without a loader reference, which the
+     * sandbox denies at the call site.
+     */
+    @Override
+    public URL getResource(String name) {
+        return null;
+    }
+
+    @Override
+    public Enumeration<URL> getResources(String name) {
+        return Collections.emptyEnumeration();
+    }
+
+    @Override
+    public InputStream getResourceAsStream(String name) {
+        return null;
     }
 
     @Override
@@ -126,16 +240,27 @@ public final class TranslatedLoader extends ClassLoader {
         return resolver.problems(allClasses);
     }
 
-    /** Translates eagerly, creating an ISE on the first TxGap. */
+    /** Translates eagerly, creating an IOException on the first gap. */
     public byte[] translateClass(String name) throws IOException {
         DexClass cls = dex.findClass("L" + name.replace('.', '/') + ";");
         if (cls == null) {
             throw new IOException("no class " + name + " index");
         }
+        if (SandboxPolicy.isReservedGuestName(name)) {
+            throw new IOException("sandbox denied: guest-defined " + name);
+        }
+        String denial = SandboxPolicy.guestMetadataDenial(cls, this::isGuest);
+        if (denial != null) {
+            throw new IOException("sandbox denied: " + denial);
+        }
         try {
-            return TxTranslator.translate(cls);
+            return TxTranslator.translate(cls, fieldSynths, guestInterfaces,
+                    d -> dex.findClass(d), getParent(), resolver);
         } catch (TxTranslator.TxGap e) {
             throw new IOException("translate " + cls.type + ": " + e.getMessage(), e);
+        } catch (SandboxDenied e) {
+            throw new IOException("translate " + cls.type + ": sandbox denied: "
+                    + e.getMessage(), e);
         }
     }
 }

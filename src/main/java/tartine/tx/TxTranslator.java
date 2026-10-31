@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -29,6 +31,7 @@ import org.objectweb.asm.tree.analysis.BasicVerifier;
 import tartine.dex.DexClass;
 import tartine.dex.DexMethod;
 import tartine.dex.Insn;
+import tartine.guest.SandboxDenied;
 
 /**
  * Spikes the translation one class at a time: DEX model -> JVM bytecode.
@@ -207,8 +210,10 @@ public final class TxTranslator implements Opcodes {
                 : TxDescriptors.internal(cls.superclass);
         String[] ifaces = cls.interfaces.stream().map(TxDescriptors::internal)
                 .toArray(String[]::new);
+        Predicate<String> isGuest = guestPredicate(name, dexLookup);
         FrameWriter cw = new FrameWriter(dexLookup, hostLoader);
-        cw.visit(Opcodes.V1_8, access, name, null, parent, ifaces);
+        ClassVisitor out = new SandboxPass(cw, isGuest);
+        out.visit(Opcodes.V1_8, access, name, null, parent, ifaces);
 
         // Synthesized members for undeclared referenced fields (see
         // fieldSynths). Declared fields always win.
@@ -224,7 +229,7 @@ public final class TxTranslator implements Opcodes {
                 continue;
             }
             declared.add(key); // a ref scanned twice with different flags
-            cw.visitField(asmAccess(field.accessFlags), field.name,
+            out.visitField(asmAccess(field.accessFlags), field.name,
                     field.type, null, null).visitEnd();
         }
         List<DexClass.DexField> staticSeeds = new ArrayList<>();
@@ -248,7 +253,7 @@ public final class TxTranslator implements Opcodes {
             // fields keep null — the guest <clinit> keeps setting those.
             boolean staticFinal = ((field.accessFlags
                     & (ACC_STATIC | ACC_FINAL)) == (ACC_STATIC | ACC_FINAL));
-            cw.visitField(asmAccess(field.accessFlags), field.name,
+            out.visitField(asmAccess(field.accessFlags), field.name,
                     field.type, null,
                     staticFinal ? field.initialValue : null).visitEnd();
         }
@@ -257,13 +262,13 @@ public final class TxTranslator implements Opcodes {
             int base = asmAccess(flags);
             if (!method.hasImplementation) {
                 // Abstract: signature only, no code.
-                cw.visitMethod(base | ACC_ABSTRACT, method.name,
+                out.visitMethod(base | ACC_ABSTRACT, method.name,
                         asmDesc(method), null, null).visitEnd();
                 continue;
             }
             if ((flags & ACC_NATIVE) != 0) {
                 // Native DEX bodies have nothing to translate; keep the gap loud.
-                cw.visitMethod(base | ACC_NATIVE, method.name,
+                out.visitMethod(base | ACC_NATIVE, method.name,
                         asmDesc(method), null, null).visitEnd();
                 continue;
             }
@@ -281,8 +286,9 @@ public final class TxTranslator implements Opcodes {
             }
             try {
                 FrameWriter probe = new FrameWriter(dexLookup, hostLoader);
-                probe.visit(Opcodes.V1_8, access, name, null, parent, ifaces);
-                new TxMethodWriter(probe, method, staticSeeds,
+                ClassVisitor probeOut = new SandboxPass(probe, isGuest);
+                probeOut.visit(Opcodes.V1_8, access, name, null, parent, ifaces);
+                new TxMethodWriter(probeOut, method, staticSeeds,
                         resolver).emit();
                 byte[] probeBytes = probe.toByteArray();
                 // COMPUTE_FRAMES writes per-path frames and does not reject
@@ -295,15 +301,19 @@ public final class TxTranslator implements Opcodes {
                         method.signature());
                 ok = true;
             } catch (RuntimeException | LinkageError x) {
-                msg = x instanceof TxTranslator.TxGap
-                        ? x.getMessage()
-                        : "writer crash: " + x;
+                if (x instanceof SandboxDenied denied) {
+                    msg = "sandbox denied: " + denied.getMessage();
+                } else if (x instanceof TxTranslator.TxGap) {
+                    msg = x.getMessage();
+                } else {
+                    msg = "writer crash: " + x;
+                }
             }
             if (ok) {
-                new TxMethodWriter(cw, method, staticSeeds,
+                new TxMethodWriter(out, method, staticSeeds,
                         resolver).emit();
             } else {
-                emitGapStub(cw, method, base, msg);
+                emitGapStub(out, method, base, msg);
             }
         }
         if (!staticSeeds.isEmpty() && !sawClinit) {
@@ -311,7 +321,7 @@ public final class TxTranslator implements Opcodes {
             // synthesize one that assigns the static_values (dex static field
             // initial values apply to any static field before <clinit>; the
             // JVM has no ConstantValue lane for non-final statics).
-            MethodVisitor mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V",
+            MethodVisitor mv = out.visitMethod(ACC_STATIC, "<clinit>", "()V",
                     null, null);
             mv.visitCode();
             for (DexClass.DexField f : staticSeeds) {
@@ -322,8 +332,21 @@ public final class TxTranslator implements Opcodes {
             mv.visitMaxs(0, 0);
             mv.visitEnd();
         }
-        cw.visitEnd();
+        out.visitEnd();
         return cw.toByteArray();
+    }
+
+    /**
+     * A class name is guest when the dex set defines it (or it is the class
+     * currently being translated, for the dexLookup-less forensics path).
+     * Host classes go through {@link SandboxPolicy}; guest classes are the
+     * sandbox's own contents.
+     */
+    static Predicate<String> guestPredicate(String self,
+            Function<String, DexClass> dexLookup) {
+        return internal -> internal.equals(self)
+                || (dexLookup != null
+                    && dexLookup.apply("L" + internal + ";") != null);
     }
 
     /**
@@ -471,7 +494,9 @@ public final class TxTranslator implements Opcodes {
         String[] ifaces = cls.interfaces.stream().map(TxDescriptors::internal)
                 .toArray(String[]::new);
         FrameWriter probe = new FrameWriter(dexLookup, hostLoader);
-        probe.visit(Opcodes.V1_8, access, name, null, parent, ifaces);
+        ClassVisitor probeOut = new SandboxPass(probe,
+                guestPredicate(name, dexLookup));
+        probeOut.visit(Opcodes.V1_8, access, name, null, parent, ifaces);
         ReferenceResolver resolver = new ReferenceResolver(dexLookup,
                 synthsByOwner, guestInterfaces, hostLoader);
         for (DexMethod method : cls.methods) {
@@ -487,10 +512,10 @@ public final class TxTranslator implements Opcodes {
                         && !TxTranslator.asmDesc(method).equals(descFilter))) {
                 continue;
             }
-            new TxMethodWriter(probe, method,
+            new TxMethodWriter(probeOut, method,
                     List.of(), resolver).emit();
         }
-        probe.visitEnd();
+        probeOut.visitEnd();
         return probe.toByteArray();
     }
 
@@ -555,7 +580,7 @@ public final class TxTranslator implements Opcodes {
      * first call, naming itself — the interpreter's VmException loop,
      * transposed onto translation.
      */
-    private static void emitGapStub(ClassWriter cw, DexMethod method, int base, String msg) {
+    private static void emitGapStub(ClassVisitor cw, DexMethod method, int base, String msg) {
         String sig = method.owner + "->" + method.signature();
         MethodVisitor mv = cw.visitMethod(base, method.name, asmDesc(method), null, null);
         mv.visitCode();
