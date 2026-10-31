@@ -170,15 +170,32 @@ Environment knobs:
 - `TARTINE_FONT_FAMILIES` - same family list as `font.families` (the
   config file wins).
 
-Guest files: apps only ever see Android paths. App-private dirs
+Every configuration knob documents here in the same commit that lands it
+(`AGENTS.md` commits rule).
+
+## Guest sandbox
+
+Apps only ever see Android paths. App-private dirs
 (`/data/data/<pkg>`, `/data/user/0/<pkg>`, `/data/local/tmp`) map under
 the Tartine root; `/sdcard` maps to the card tier above; device trees
 (`/system`, `/proc`, `/dev` and friends) do not exist. Every guest file
 operation goes through this mapping (`java.io.File`), unmapped paths
 answer as nonexistent, and read-only mounts deny writes - the guest
 never learns a host path. Raw `java.nio.file`/`java.io` stream classes
-stay inaccessible to guest code. Planned (decided in `AGENTS.md`, not
-wired yet): per-folder user maps (`/sdcard/Download` -> `~/Downloads`),
-file-picker grants, whole-home mounting as an explicit read-only option.
-Every configuration knob documents here in the same commit that lands
-it (`AGENTS.md` commits rule).
+stay inaccessible.
+
+Translated code runs behind a restricted classloader (ADR-0009). Host
+capabilities outside the file bridge are denied by name: network
+(`java.net.*`), processes (`Runtime`/`ProcessBuilder`), raw streams and
+`FileDescriptor`, `java.nio.file`/`java.nio.channels`, reflection
+operations (`Class.getDeclared*`, `Method.invoke`, `setAccessible`),
+`ClassLoader`, `Class.forName` with a host loader, host internals (ASM,
+Skija, `tartine.*`), environment/system properties, and process control
+(`System.exit`, `System.load`). Reflection metadata types (`Method`,
+`Field`, `Constructor`) stay loadable because app signatures mention
+them. Denied calls surface as named `UnsupportedOperationException` gaps
+at first use, never as silent success.
+
+Planned (decided in `AGENTS.md`, not wired yet): per-folder user maps
+(`/sdcard/Download` -> `~/Downloads`), file-picker grants, whole-home
+mounting as an explicit read-only option.

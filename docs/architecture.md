@@ -71,11 +71,14 @@ GitLab `android_translation_layer/android_translation_layer`
   objects allocate as interpreter placeholders with no-op `<init>`" model
   is gone with `tartine.vm`.
 - Translation resolves guest `android.*` against the `framework` module and
-  guest `java.*` against the host JDK by ordinary JVM linkage: there is no
-  runtime reflection seam anymore (deleted with the interpreter). The former
-  interpreter allowlist/deny-set sandbox is historical; host-JDK access from
-  guest code is currently unrestricted, and any future sandbox needs a
-  ClassLoader-level mechanism, not a dispatch table.
+  allowlisted host `java.*`/`javax.*` classes by ordinary JVM linkage: there
+  is no runtime reflection seam anymore (deleted with the interpreter). The
+  sandbox is ClassLoader-level (ADR-0009): `TranslatedLoader` is guest-first
+  and refuses every host name the allowlist does not carry with a named
+  `ClassNotFoundException`, and `SandboxPass` rewrites `java.io.File` through
+  the `Vfs` bridge while turning other denied host surfaces (network,
+  processes, raw streams, NIO paths/channels, reflection operations, host
+  internals) into the method's named gap.
 
 ## Framework in Java (2026-10 audit adoption, user-approved)
 
@@ -134,8 +137,12 @@ GitLab `android_translation_layer/android_translation_layer`
 ## Virtual filesystem (decided 2026-10)
 
 - Seam: `tartine.runtime.Vfs` maps guest absolute paths to host paths;
-  unmapped paths resolve to `null` and the future java.io/java.nio.file
-  guest bridge must fail closed (deny), never fall back to the host cwd.
+  unmapped paths resolve to `null` and the `java.io.File` bridge
+  (`tartine.guest.GuestFile`/`GuestFiles`) fails closed - reads answer
+  nonexistent, writes raise a named `SandboxDenied` - never falling back to
+  the host cwd. `Policy.guestPath(Path)` reverse-maps framework-returned
+  `File` objects with the canonical mount order (`/data/data` over
+  `/data/user/0`, `/sdcard` over `/storage/emulated/0`).
 - Root = app data, not config: Windows `%LOCALAPPDATA%\Tartine`, macOS
   `~/Library/Application Support/Tartine`, Linux
   `$XDG_DATA_HOME/tartine` (default `~/.local/share/tartine`);
