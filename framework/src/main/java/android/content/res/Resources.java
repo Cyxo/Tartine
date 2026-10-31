@@ -11,6 +11,7 @@ import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import java.io.InputStream;
 import tartine.fw.SystemColors;
+import tartine.fw.ThemeMode;
 
     public class Resources {
 
@@ -107,7 +108,8 @@ import tartine.fw.SystemColors;
      * AOSP Configuration.setToDefaults() (fontScale = 1) and fills the
      * display values a real device reports. 480x960 px at density 1.0 means
      * a 480x960 dp screen, close to a modern phone's dp size, so app layouts
-     * keep their phone proportions.
+     * keep their phone proportions. The night bit follows the host
+     * light/dark preference resolved at startup (see {@link ThemeMode}).
      */
     private static Configuration probeConfiguration() {
         Configuration config =
@@ -130,7 +132,9 @@ import tartine.fw.SystemColors;
         config.navigationHidden =
                 Configuration.NAVIGATIONHIDDEN_YES;
         config.uiMode = Configuration.UI_MODE_TYPE_NORMAL
-                | Configuration.UI_MODE_NIGHT_NO;
+                | (ThemeMode.isDark()
+                        ? Configuration.UI_MODE_NIGHT_YES
+                        : Configuration.UI_MODE_NIGHT_NO);
         return config;
     }
 

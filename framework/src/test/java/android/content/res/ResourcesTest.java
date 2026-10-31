@@ -2,6 +2,7 @@ package android.content.res;
 
 import android.util.DisplayMetrics;
 import org.junit.jupiter.api.Test;
+import tartine.fw.ThemeMode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -43,6 +44,18 @@ class ResourcesTest {
 
         // The Resources owns one stable configuration per instance.
         assertSame(config, resources.getConfiguration());
+    }
+
+    @Test
+    void nightModeFollowsTheHostThemeSeam() {
+        ThemeMode.setDark(true);
+        try {
+            assertEquals(Configuration.UI_MODE_TYPE_NORMAL
+                    | Configuration.UI_MODE_NIGHT_YES,
+                    new Resources().getConfiguration().uiMode);
+        } finally {
+            ThemeMode.setDark(false);
+        }
     }
 
     @Test

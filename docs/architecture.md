@@ -91,6 +91,11 @@ GitLab `android_translation_layer/android_translation_layer`
   overrides a framework method (its translated bytecode runs) or inherits the
   skeleton, which throws the named gap. Guest classes extending android.* are
   ordinary subclasses on the same classloader.
+- Host appearance: `theme.mode` (`auto`/`light`/`dark`) resolves once at
+  startup to `tartine.fw.ThemeMode`; `Resources` writes it into the guest
+  `Configuration.uiMode` night bit, so `isSystemInDarkTheme()` and app theme
+  selection see the desktop preference. Auto detection is best-effort
+  (Windows registry, macOS defaults, GNOME/KDE) and falls back to light.
 - New framework behavior is written in the framework module only.
 - Never port framework behavior from memory. Read the AOSP source first and
   cite the exact file + method in the porting comment (see
@@ -248,4 +253,7 @@ Carried from the 2026-10 audits; do later:
   framework version; deferred until the installation process).
 - Split `AGENTS.md` into further ADRs as needed.
 - Move root `icon.png`/`icon.svg`/`logo.png` to `docs/assets/` (done 2026-10-30; see task 9).
-- Scheme: Theme sync (host light/dark → guest `Configuration.uiMode`).
+- Scheme: Theme sync (host light/dark → guest `Configuration.uiMode`) (done
+  2026-10-31: `theme.mode=auto|light|dark`; `tartine.config.SystemTheme`
+  probes Windows/macOS/Linux and `tartine.fw.ThemeMode` carries the result
+  into `Resources`).

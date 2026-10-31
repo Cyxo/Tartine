@@ -8,9 +8,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
+import java.util.function.Supplier;
 import tartine.fw.SystemColors;
 import tartine.fw.SystemResourceNames;
+import tartine.fw.ThemeMode;
 import tartine.runtime.Vfs;
 
 /**
@@ -39,6 +42,11 @@ import tartine.runtime.Vfs;
  *       Read-only by default; {@code sdcard.mount.readonly=false}
  *       clears that. {@code TARTINE_SDCARD} env acts as the same
  *       override when the config key is absent (config wins).</li>
+ *   <li>{@code theme.mode} = {@code auto} (default), {@code light} or
+ *       {@code dark} — sets the guest {@code Configuration} night bit.
+ *       {@code auto} follows the desktop's light/dark setting when one can
+ *       be read (Windows registry, macOS defaults, GNOME/KDE on Linux),
+ *       falling back to light.</li>
  * </ul>
  *
  * <p>A missing or unreadable file loads defaults; values apply once at
@@ -57,7 +65,13 @@ public final class HostConfig {
     }
 
     static void loadFrom(Path file) {
+        loadFrom(file, SystemTheme::detect);
+    }
+
+    /** {@code detect}: host dark-mode probe seam (tests inject a value). */
+    static void loadFrom(Path file, Supplier<Boolean> detect) {
         if (!Files.isRegularFile(file)) {
+            applyTheme(new Properties(), detect);
             return;
         }
         Properties props = new Properties();
@@ -66,9 +80,10 @@ public final class HostConfig {
             props.load(reader);
         } catch (IOException e) {
             System.err.println("Tartine: config " + file + " unreadable: " + e);
+            applyTheme(props, detect);
             return;
         }
-        apply(props);
+        apply(props, detect);
         if (!props.containsKey("font.families")) {
             // Env fallback: TARTINE_FONT_FAMILIES = same family list.
             String env = System.getenv("TARTINE_FONT_FAMILIES");
@@ -82,6 +97,11 @@ public final class HostConfig {
 
     /** Applies parsed config keys (stderr + skip on any bad value). */
     static void apply(Properties props) {
+        apply(props, SystemTheme::detect);
+    }
+
+    /** {@code detect}: host dark-mode probe seam (tests inject a value). */
+    static void apply(Properties props, Supplier<Boolean> detect) {
         for (String name : props.stringPropertyNames()) {
             String value = props.getProperty(name);
             if (name.startsWith("color.")) {
@@ -96,6 +116,8 @@ public final class HostConfig {
                 }
                 Paint.tartineSetPreferredFamilies(
                         families.toArray(new String[0]));
+            } else if (name.equals("theme.mode")) {
+                // Handled once below (order-independent).
             } else if (name.equals("sdcard.mount") || name.equals("sdcard.mount.readonly")) {
                 // Handled once below (order-independent read: readonly may
                 // appear before the mount it qualifies).
@@ -104,7 +126,40 @@ public final class HostConfig {
                         + name + "'");
             }
         }
+        applyTheme(props, detect);
         applySdcard(props);
+    }
+
+    /**
+     * Host light/dark preference: explicit {@code light}/{@code dark} wins;
+     * {@code auto} (default, also used after an invalid value) asks the
+     * platform probe and falls back to light when no setting is readable.
+     */
+    private static void applyTheme(Properties props, Supplier<Boolean> detect) {
+        String raw = props.getProperty("theme.mode");
+        String mode = raw == null ? "auto" : raw.trim().toLowerCase(Locale.ROOT);
+        if (!mode.equals("auto") && !mode.equals("light") && !mode.equals("dark")) {
+            System.err.println("Tartine: config ignored: theme.mode=" + raw
+                    + " (need auto, light or dark)");
+            mode = "auto";
+        }
+        boolean dark;
+        if (mode.equals("dark")) {
+            dark = true;
+        } else if (mode.equals("light")) {
+            dark = false;
+        } else {
+            Boolean host = null;
+            if (detect != null) {
+                try {
+                    host = detect.get();
+                } catch (RuntimeException ignored) {
+                    // Best effort: an unavailable probe means light.
+                }
+            }
+            dark = Boolean.TRUE.equals(host);
+        }
+        ThemeMode.setDark(dark);
     }
 
     /**

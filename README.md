@@ -137,6 +137,12 @@ color.system_on_background_light = #E7EBEF
 # Liberation Sans, Helvetica Neue).
 font.families = Segoe UI, Roboto
 
+# Host light/dark theme. auto (default) follows the desktop setting when
+# it can be read: Windows AppsUseLightTheme, macOS AppleInterfaceStyle,
+# or GNOME/KDE on Linux. light/dark force the guest Configuration night
+# bit. Read once at startup, so restart after changing the OS setting.
+theme.mode = auto
+
 # Shared storage (the guest /sdcard tree). Default: a private virtual
 # card at <root>/sdcard, seeded with Download, Documents, Pictures,
 # DCIM, Music and Movies on first run - apps can read and write it, but

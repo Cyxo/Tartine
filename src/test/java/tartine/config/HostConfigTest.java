@@ -3,11 +3,13 @@ package tartine.config;
 import android.graphics.Paint;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Properties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tartine.fw.SystemColors;
+import tartine.fw.ThemeMode;
 import tartine.runtime.Vfs;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -29,6 +31,7 @@ class HostConfigTest {
     void resetSeams() {
         SystemColors.clearOverrides();
         Paint.tartineSetPreferredFamilies(null);
+        ThemeMode.setDark(false);
         Vfs.resetCard();
     }
 
@@ -36,6 +39,7 @@ class HostConfigTest {
     void restoreSeams() {
         SystemColors.clearOverrides();
         Paint.tartineSetPreferredFamilies(null);
+        ThemeMode.setDark(false);
         Vfs.resetCard();
     }
 
@@ -109,6 +113,45 @@ class HostConfigTest {
         config("font.families = , ,");
         assertEquals("Roboto",
                 Paint.tartinePreferredFamilies()[0]);
+    }
+
+    @Test
+    void explicitThemeModeWins() throws Exception {
+        config("theme.mode = dark");
+        assertTrue(ThemeMode.isDark());
+        config("theme.mode = light");
+        assertFalse(ThemeMode.isDark());
+    }
+
+    @Test
+    void autoThemeFollowsTheHostProbe() {
+        Properties props = new Properties();
+        HostConfig.apply(props, () -> Boolean.TRUE);
+        assertTrue(ThemeMode.isDark());
+        HostConfig.apply(props, () -> Boolean.FALSE);
+        assertFalse(ThemeMode.isDark());
+    }
+
+    @Test
+    void invalidThemeModeFallsBackToTheHostProbe() {
+        Properties props = new Properties();
+        props.setProperty("theme.mode", "purple");
+        HostConfig.apply(props, () -> Boolean.TRUE);
+        assertTrue(ThemeMode.isDark());
+    }
+
+    @Test
+    void unavailableThemeProbeFallsBackToLight() {
+        Properties props = new Properties();
+        HostConfig.apply(props, () -> null);
+        assertFalse(ThemeMode.isDark());
+    }
+
+    @Test
+    void missingFileStillResolvesAutoTheme() {
+        HostConfig.loadFrom(Path.of(temp.toString(), "absent.properties"),
+                () -> Boolean.TRUE);
+        assertTrue(ThemeMode.isDark());
     }
 
     @Test
