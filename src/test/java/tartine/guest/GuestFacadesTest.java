@@ -1,5 +1,6 @@
 package tartine.guest;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,15 +74,45 @@ class GuestFacadesTest {
                 "who");
         assertEquals("base", GuestReflect.invoke(inherited, instance));
 
-        // Host-declared members are denied at lookup...
+        // Declared-member lookups and explicit host receivers stay denied...
         assertThrows(SandboxDenied.class,
                 () -> GuestReflect.getDeclaredMethod(Object.class, "toString"));
         assertThrows(SandboxDenied.class,
                 () -> GuestReflect.getMethod(Object.class, "toString"));
-        // ...and again when a host member is reached through a guest class.
-        assertThrows(SandboxDenied.class,
+        // ...but an inherited host member reads as Java's "not found" on a
+        // guest receiver, keeping the guest universe consistent.
+        assertThrows(NoSuchMethodException.class,
                 () -> GuestReflect.getMethod(loader.loadClass("test.Sub"),
                         "toString"));
+    }
+
+    @Test
+    void inheritedHostMembersAreNotFoundAndHostAccessIsDenied()
+            throws Exception {
+        // test.SubSet extends java.util.TreeSet: contains() is host-declared,
+        // so the inheritance-aware lookup answers "not found"...
+        Class<?> subSet = loader.loadClass("test.SubSet");
+        assertThrows(NoSuchMethodException.class,
+                () -> GuestReflect.getMethod(subSet, "contains", Object.class));
+        // ...while the guest override is visible and plural lookups filter.
+        Method size = GuestReflect.getMethod(subSet, "size");
+        assertSame(subSet, size.getDeclaringClass());
+        for (Method method : GuestReflect.getMethods(subSet)) {
+            assertSame(loader, method.getDeclaringClass().getClassLoader(),
+                    method.getName());
+        }
+
+        // A host Method/Field obtained anywhere is refused at use.
+        Method hostMethod = Object.class.getMethod("toString");
+        assertThrows(SandboxDenied.class,
+                () -> GuestReflect.invoke(hostMethod, new Object()));
+        assertThrows(SandboxDenied.class,
+                () -> GuestReflect.setAccessible(hostMethod, true));
+        Field hostField = Integer.class.getField("MAX_VALUE");
+        assertThrows(SandboxDenied.class,
+                () -> GuestReflect.get(hostField, null));
+        assertThrows(SandboxDenied.class,
+                () -> GuestReflect.setAccessible(hostField, true));
     }
 
     @Test

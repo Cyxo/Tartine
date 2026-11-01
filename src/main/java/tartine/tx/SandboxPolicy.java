@@ -48,8 +48,10 @@ import tartine.dex.DexClass;
  *       {@code Method.invoke}, {@code Constructor.newInstance},
  *       {@code Field.get*}/{@code set*}, and
  *       {@code setAccessible}/{@code trySetAccessible}. A member is allowed
- *       only when its declaring class is guest-loaded; host-declared
- *       members are denied at lookup and again at invoke/access.</li>
+ *       only when its declaring class is guest-loaded: plural lookups filter
+ *       host members, the inheritance-aware singular lookups answer
+ *       {@code NoSuchMethodException}/{@code NoSuchFieldException}, and
+ *       member access re-checks with a named denial.</li>
  *   <li>{@code tartine.guest.GuestClassLoader} and
  *       {@code GuestSandbox.forName} - allowlist:
  *       {@code Class.getClassLoader}, {@code ClassLoader.loadClass},

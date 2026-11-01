@@ -420,6 +420,9 @@ final class TranslatedVmTest {
         assertSandboxDenied("reflectDemo");
         assertSandboxDenied("reflectMissDemo");
         assertEquals("base", (String) call("reflectPubDemo"));
+        // A host method inherited by a guest class reads as "not found"
+        // (NoSuchMethodException), not a sandbox denial.
+        assertEquals(2, (int) (Integer) call("reflectInheritDemo"));
         // One-argument Class.forName is caller-injected and resolves guest
         // classes through the sandboxed loader.
         assertNotNull(call("ctorDemo"));

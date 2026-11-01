@@ -277,7 +277,7 @@ public final class FixtureDex {
                         demos.get("forNameDenied"),
                         demos.get("cpuDemo"), demos.get("propDemo"), demos.get("windowDemo"), demos.get("parentLinkDemo"),
                         demos.get("attachLinkDemo"), demos.get("parentIfDemo"), demos.get("idDemo"), demos.get("viewHandlerDemo"),
-                        demos.get("detachedHandlerDemo"), demos.get("reflectDemo"), demos.get("reflectMissDemo"), demos.get("reflectPubDemo"),
+                        demos.get("detachedHandlerDemo"), demos.get("reflectDemo"), demos.get("reflectInheritDemo"), demos.get("reflectMissDemo"), demos.get("reflectPubDemo"),
                         demos.get("annoDemo"),
                         demos.get("longUpdaterDemo"), demos.get("intUpdaterDemo"), demos.get("cloneDemo"), demos.get("ordinalDemo"),
                         demos.get("switchDemo"), demos.get("switchDefaultDemo"), demos.get("copyDemo"), demos.get("loaderDemo"), demos.get("loadClassDemo"),
@@ -4331,6 +4331,46 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), reflectPubImpl);
         demos.put("reflectPubDemo", reflectPubDemo);
+
+        // reflectInheritDemo(): SubSet inherits contains() from TreeSet
+        // (host), so the guest universe answers NoSuchMethodException.
+        // Returns 2 when the lookup is "not found", 0 if it leaked a Method.
+        MutableMethodImplementation reflectInheritImpl =
+                new MutableMethodImplementation(5);
+        reflectInheritImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference("Ltest/SubSet;")));
+        reflectInheritImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("contains")));
+        reflectInheritImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 1));
+        reflectInheritImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 2, 2,
+                builder.internTypeReference("[Ljava/lang/Class;")));
+        reflectInheritImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 3,
+                builder.internTypeReference("Ljava/lang/Object;")));
+        reflectInheritImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 4, 0));
+        reflectInheritImpl.addInstruction(new BuilderInstruction23x(Opcode.APUT_OBJECT, 3, 2, 4));
+        reflectInheritImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 1, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "getMethod",
+                        Arrays.asList("Ljava/lang/String;", "[Ljava/lang/Class;"),
+                        "Ljava/lang/reflect/Method;"))));
+        reflectInheritImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        reflectInheritImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 0));
+        reflectInheritImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        reflectInheritImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_EXCEPTION, 0));
+        reflectInheritImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 2));
+        reflectInheritImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        // Try covers const-class + getMethod; the handler starts after the
+        // move-result (if the call throws, the result is never read).
+        Label inheritStart = reflectInheritImpl.newLabelForIndex(0);
+        Label inheritEnd = reflectInheritImpl.newLabelForIndex(9);
+        reflectInheritImpl.addCatch(inheritStart, inheritEnd,
+                reflectInheritImpl.newLabelForIndex(11));
+        BuilderMethod reflectInheritDemo = builder.internMethod(HELLO,
+                "reflectInheritDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), reflectInheritImpl);
+        demos.put("reflectInheritDemo", reflectInheritDemo);
 
         // annoDemo(): model methods carry no annotations.
         MutableMethodImplementation annoImpl = new MutableMethodImplementation(3);

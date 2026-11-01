@@ -163,8 +163,10 @@ GitLab `android_translation_layer/android_translation_layer`
   `getField(s)`, `getConstructor(s)`, `getClasses`, `newInstance`,
   `Method.invoke`, `Constructor.newInstance`, `Field.get*`/`set*`, and
   `setAccessible`/`trySetAccessible`. A member is allowed only when its
-  declaring class is guest-loaded; host-declared members are denied at
-  lookup and again at invoke/access.
+  declaring class is guest-loaded. Plural lookups filter host members and
+  the inheritance-aware singular lookups answer `NoSuchMethodException`/
+  `NoSuchFieldException` for them; member access re-checks and raises a
+  named denial.
 - `tartine.guest.GuestClassLoader` and `tartine.guest.GuestSandbox`:
   `Class.getClassLoader`, `ClassLoader.loadClass`, `ClassLoader.getResources`,
   `ClassLoader.getParent`, and the one-, two-, and three-argument

@@ -15,16 +15,19 @@ import tartine.tx.TranslatedLoader;
  * <p>The translator routes reflection lookups and member access here instead
  * of denying them outright. The bridge allows a member only when its
  * <em>declaring class</em> was loaded by the guest {@link TranslatedLoader};
- * host-declared members are refused with a named {@link SandboxDenied}. The
- * check runs both at lookup and again at invoke/access, because a guest class
- * can inherit a host member and a {@code Method} object can outlive the
- * lookup that produced it.
+ * host-declared members are outside the guest universe. Member access
+ * ({@code invoke}, {@code newInstance}, field get/set,
+ * {@code setAccessible}) refuses a host member with a named
+ * {@link SandboxDenied}, and the check runs again there because a
+ * {@code Method} object can outlive the lookup that produced it.
  *
  * <p>Receiver classes are checked for the declared-member lookups
  * ({@code getDeclared*}, {@code newInstance}) because those enumerate the
- * receiver's own members. Public lookup helpers ({@code getMethod},
- * {@code getField}, {@code getMethods}, {@code getFields}, {@code getClasses})
- * filter or reject host-declared results.
+ * receiver's own members. The plural public lookups ({@code getMethods},
+ * {@code getFields}, {@code getClasses}) filter host-declared results, and
+ * the inheritance-aware singular lookups ({@code getMethod}, {@code getField})
+ * answer Java's "not found" ({@code NoSuchMethodException}/
+ * {@code NoSuchFieldException}) instead of leaking a host member.
  */
 public final class GuestReflect {
     private GuestReflect() {
@@ -107,7 +110,14 @@ public final class GuestReflect {
             Class<?>... parameterTypes) throws NoSuchMethodException {
         requireGuestClass(type, "Class.getMethod");
         Method method = type.getMethod(name, parameterTypes);
-        requireGuestMember(method, "Class.getMethod");
+        // Host members are outside the guest universe, so the
+        // inheritance-aware lookup behaves like Java's "not found" rather
+        // than leaking a host Method that invoke would refuse anyway.
+        if (!isGuest(method.getDeclaringClass())) {
+            throw new NoSuchMethodException("host method "
+                    + method.getDeclaringClass().getName() + "." + name
+                    + " is not visible to guest reflection");
+        }
         return method;
     }
 
@@ -122,7 +132,11 @@ public final class GuestReflect {
             throws NoSuchFieldException {
         requireGuestClass(type, "Class.getField");
         Field field = type.getField(name);
-        requireGuestMember(field, "Class.getField");
+        if (!isGuest(field.getDeclaringClass())) {
+            throw new NoSuchFieldException("host field "
+                    + field.getDeclaringClass().getName() + "." + name
+                    + " is not visible to guest reflection");
+        }
         return field;
     }
 

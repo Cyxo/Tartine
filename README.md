@@ -196,9 +196,11 @@ value allowlist (unknown keys answer the caller's default), reflection over
 guest-declared members only, class lookup through a `GuestClassLoader` and
 gated `Class.forName`, and an empty `ServiceLoader` ("no providers").
 Reflection metadata types (`Method`, `Field`, `Constructor`) stay loadable
-because app signatures mention them; host-declared members are denied at
-lookup and again at invoke/access. Denied calls surface as named
-`UnsupportedOperationException` gaps at first use, never as silent success.
+because app signatures mention them; host-declared members are filtered
+from plural lookups, answer "not found" from `getMethod`/`getField`, and
+are refused with a named denial at invoke/access. Denied calls surface as
+named `UnsupportedOperationException` gaps at first use, never as silent
+success.
 
 Planned (decided in `AGENTS.md`, not wired yet): per-folder user maps
 (`/sdcard/Download` -> `~/Downloads`), file-picker grants, whole-home
