@@ -8,15 +8,61 @@ import tartine.dex.DexClass;
 /**
  * One source of truth for the guest sandbox boundary.
  *
- * <p>The loader applies {@link #classDenial(String)} when a host class is
- * requested; the translation pass applies the same policy to every
- * instruction and to class metadata. Keeping both on this table means a
- * class the loader refuses can never be reached through a translated call,
- * and a call the translator refuses cannot be smuggled past the loader.
+ * <p>The loader applies {@link #classDenial(String)} to every guest-reachable
+ * lookup ({@link TranslatedLoader#loadGuestClass}); plain JVM linkage may
+ * resolve a denied host type that appears only in a translated signature.
+ * The translation pass applies the same policy to every instruction and to
+ * class metadata. Keeping both on this table means a class the guest lookup
+ * refuses can never be reached through a translated call, and a call the
+ * translator refuses cannot be smuggled past the loader.
  *
  * <p>Denials are described, never silently dropped: callers turn the
  * description into a named gap (method) or a named
  * {@code ClassNotFoundException} (class).
+ *
+ * <p>Five guest facades widen the boundary without exposing the host, and
+ * {@link SandboxPass} rewrites their call sites before this table's type or
+ * member denials run:
+ *
+ * <ul>
+ *   <li>{@code tartine.guest.GuestRuntime} - allowlist:
+ *       {@code getRuntime}, {@code availableProcessors}, {@code totalMemory},
+ *       {@code freeMemory}, {@code maxMemory}, and a no-op {@code gc}.
+ *       {@code exec}, {@code exit}, {@code halt}, shutdown hooks, and
+ *       {@code load}/{@code loadLibrary} stay denied.</li>
+ *   <li>{@code tartine.guest.GuestSystem.getProperty} - allowlist:
+ *       {@code java.version}, {@code java.vendor}, {@code java.vm.name},
+ *       {@code java.vm.version}, {@code java.vm.vendor},
+ *       {@code java.specification.version/vendor/name},
+ *       {@code java.class.version}, {@code os.name/arch/version},
+ *       {@code file.separator}, {@code path.separator},
+ *       {@code line.separator}, {@code file.encoding},
+ *       {@code native.encoding}, {@code sun.jnu.encoding},
+ *       {@code user.language}, {@code user.country}, {@code user.variant},
+ *       {@code user.timezone}. Every other key returns the caller's default;
+ *       {@code setProperty}/{@code clearProperty}/{@code getenv} stay
+ *       denied.</li>
+ *   <li>{@code tartine.guest.GuestReflect} - allowlist:
+ *       {@code getDeclared*}, {@code getMethod(s)}, {@code getField(s)},
+ *       {@code getConstructor(s)}, {@code getClasses}, {@code newInstance},
+ *       {@code Method.invoke}, {@code Constructor.newInstance},
+ *       {@code Field.get*}/{@code set*}, and
+ *       {@code setAccessible}/{@code trySetAccessible}. A member is allowed
+ *       only when its declaring class is guest-loaded; host-declared
+ *       members are denied at lookup and again at invoke/access.</li>
+ *   <li>{@code tartine.guest.GuestClassLoader} and
+ *       {@code GuestSandbox.forName} - allowlist:
+ *       {@code Class.getClassLoader}, {@code ClassLoader.loadClass},
+ *       {@code ClassLoader.getResources}, {@code ClassLoader.getParent}, and
+ *       the one-, two-, and three-argument {@code Class.forName}. The loader
+ *       must be a {@code GuestClassLoader}; a host loader is refused.
+ *       Resource lookups are empty and the parent is {@code null}.</li>
+ *   <li>{@code tartine.guest.GuestServiceLoader} - allowlist:
+ *       {@code ServiceLoader.load}, {@code loadInstalled}, {@code iterator},
+ *       {@code stream}, {@code findFirst}, {@code findNext}, and
+ *       {@code reload}. Discovery always reports no providers and never
+ *       instantiates one.</li>
+ * </ul>
  */
 final class SandboxPolicy {
     private SandboxPolicy() {
@@ -185,6 +231,69 @@ final class SandboxPolicy {
             "setShort",
             "setAccessible",
             "trySetAccessible");
+
+    /** Reflection lookups the pass routes to {@code GuestReflect}. */
+    static final Set<String> CLASS_REFLECT_LOOKUPS = Set.of(
+            "getClasses",
+            "getConstructor",
+            "getConstructors",
+            "getDeclaredClasses",
+            "getDeclaredConstructor",
+            "getDeclaredConstructors",
+            "getDeclaredField",
+            "getDeclaredFields",
+            "getDeclaredMethod",
+            "getDeclaredMethods",
+            "getField",
+            "getFields",
+            "getMethod",
+            "getMethods",
+            "newInstance");
+
+    /** Field accessors the pass routes to {@code GuestReflect}. */
+    static final Set<String> FIELD_REFLECT_ACCESS = Set.of(
+            "get",
+            "getBoolean",
+            "getByte",
+            "getChar",
+            "getDouble",
+            "getFloat",
+            "getInt",
+            "getLong",
+            "getShort",
+            "set",
+            "setBoolean",
+            "setByte",
+            "setChar",
+            "setDouble",
+            "setFloat",
+            "setInt",
+            "setLong",
+            "setShort");
+
+    /** Runtime members the pass routes to {@code GuestRuntime}. */
+    static final Set<String> RUNTIME_ALLOWED = Set.of(
+            "availableProcessors",
+            "freeMemory",
+            "gc",
+            "maxMemory",
+            "totalMemory");
+
+    /** ClassLoader members the pass routes to {@code GuestClassLoader}. */
+    static final Set<String> CLASS_LOADER_ALLOWED = Set.of(
+            "getParent",
+            "getResources",
+            "loadClass");
+
+    /** ServiceLoader members the pass routes to {@code GuestServiceLoader}. */
+    static final Set<String> SERVICE_LOADER_ALLOWED = Set.of(
+            "findFirst",
+            "findNext",
+            "iterator",
+            "load",
+            "loadInstalled",
+            "reload",
+            "stream");
 
     /** Host loading policy for a class the dex set does not define. */
     static String classDenial(String internalName) {
@@ -421,10 +530,8 @@ final class SandboxPolicy {
             if (CLASS_DENIED.contains(name)) {
                 return "Class." + name + " is not available";
             }
-            if (name.equals("forName") && desc.equals(
-                    "(Ljava/lang/String;ZLjava/lang/ClassLoader;)"
-                    + "Ljava/lang/Class;")) {
-                return "Class.forName with a host loader is not available";
+            if (name.equals("forName")) {
+                return "Class.forName outside the guest loader is not available";
             }
         }
         if (owner.equals("java/lang/reflect/AccessibleObject")

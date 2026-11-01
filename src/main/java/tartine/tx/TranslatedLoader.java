@@ -18,10 +18,17 @@ import tartine.guest.SandboxDenied;
 
 /**
  * Classloader over translated DEX classes: guest types resolve by
- * translating the DEX class into JVM bytecode on first use. Host types
- * resolve through the parent only when {@link SandboxPolicy} allows them;
- * everything else fails with a named sandbox denial instead of reaching the
- * host classpath.
+ * translating the DEX class into JVM bytecode on first use.
+ *
+ * <p>The JVM resolves every type mentioned by a translated class through
+ * this loader, including types the guest may never use itself (for example
+ * {@code java.lang.ClassLoader} in a framework method signature). Linkage
+ * therefore resolves host types through the parent without the policy
+ * filter; guest-reachable lookups go through {@link #loadGuestClass}, which
+ * applies {@link SandboxPolicy} first. Guest code cannot reach this loader
+ * directly: {@code Class.getClassLoader} is rewritten to
+ * {@link tartine.guest.GuestReflect} and {@code tartine.*} is denied to the
+ * guest.
  *
  * <p>Guest classes always win over host classes, so a dex-defined type can
  * never be shadowed by the host; the inverse is refused: reserved names
@@ -167,14 +174,25 @@ public final class TranslatedLoader extends ClassLoader {
         return java.lang.reflect.Array.newInstance(componentClass, 0).getClass();
     }
 
-    /** Host loading, gated by the sandbox allowlist. */
-    private Class<?> loadHost(String name) throws ClassNotFoundException {
-        String denial = SandboxPolicy.classDenial(name.replace('.', '/'),
-                guestName -> false);
+    /**
+     * Guest-reachable lookup. Applies the sandbox allowlist before
+     * delegating to {@link #loadClass}; the guest loader facade and the
+     * {@code Class.forName} bridge are the only callers.
+     */
+    public Class<?> loadGuestClass(String name) throws ClassNotFoundException {
+        String internal = name.replace('.', '/');
+        String denial = name.startsWith("[")
+                ? SandboxPolicy.typeDenial(internal, this::isGuest)
+                : SandboxPolicy.classDenial(internal, this::isGuest);
         if (denial != null) {
             throw new ClassNotFoundException(
                     "Tartine: sandbox denied: " + denial);
         }
+        return loadClass(name);
+    }
+
+    /** Host loading for JVM linkage; guest lookups use {@link #loadGuestClass}. */
+    private Class<?> loadHost(String name) throws ClassNotFoundException {
         ClassLoader parent = getParent();
         try {
             return parent == null

@@ -66,10 +66,21 @@ class SandboxLoaderTest {
         for (String name : names) {
             ClassNotFoundException denied = assertThrows(
                     ClassNotFoundException.class,
-                    () -> loader.loadClass(name), name);
+                    () -> loader.loadGuestClass(name), name);
             assertTrue(denied.getMessage().contains("sandbox denied"),
                     name + ": " + denied.getMessage());
         }
+    }
+
+    @Test
+    void linkageResolvesDeniedHostTypesWithoutExposingThem() throws Exception {
+        // The JVM resolves every descriptor type of a translated class; a
+        // framework signature may mention a type the guest can never use.
+        assertSame(ClassLoader.class, loader.loadClass("java.lang.ClassLoader"));
+        assertSame(Runtime.class, loader.loadClass("java.lang.Runtime"));
+        // Guest-reachable lookups still fail closed.
+        assertThrows(ClassNotFoundException.class,
+                () -> loader.loadGuestClass("java.lang.ClassLoader"));
     }
 
     @Test

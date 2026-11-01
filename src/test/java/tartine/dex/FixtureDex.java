@@ -272,6 +272,8 @@ public final class FixtureDex {
                         demos.get("drawDemo"), demos.get("vtoLayoutDemo"), demos.get("vtoScrollDemo"), demos.get("vtoClusterDemo"),
                         demos.get("contentViewDemo"), demos.get("choreoDemo"), demos.get("handlerAsyncDemo"),
                         demos.get("high16Demo"), demos.get("wideHigh16Demo"), demos.get("fillDemo"), demos.get("runtimeDemo"),
+                        demos.get("runtimeExecDemo"), demos.get("runtimeExitDemo"), demos.get("runtimeHaltDemo"),
+                        demos.get("systemSetPropertyDemo"),
                         demos.get("forNameDenied"),
                         demos.get("cpuDemo"), demos.get("propDemo"), demos.get("windowDemo"), demos.get("parentLinkDemo"),
                         demos.get("attachLinkDemo"), demos.get("parentIfDemo"), demos.get("idDemo"), demos.get("viewHandlerDemo"),
@@ -3810,6 +3812,116 @@ public final class FixtureDex {
                 Collections.emptySet(), Collections.emptySet(), cpuImpl);
         demos.put("cpuDemo", cpuDemo);
 
+        // runtimeExecDemo(): process execution stays denied.
+        MutableMethodImplementation runtimeExecImpl =
+                new MutableMethodImplementation(2);
+        runtimeExecImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Runtime;", "getRuntime",
+                        Collections.<String>emptyList(), "Ljava/lang/Runtime;"))));
+        runtimeExecImpl.addInstruction(new BuilderInstruction11x(
+                Opcode.MOVE_RESULT_OBJECT, 0));
+        runtimeExecImpl.addInstruction(new BuilderInstruction21c(
+                Opcode.CONST_STRING, 1,
+                builder.internStringReference("echo")));
+        runtimeExecImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Runtime;", "exec",
+                        Collections.singletonList("Ljava/lang/String;"),
+                        "Ljava/lang/Process;"))));
+        runtimeExecImpl.addInstruction(new BuilderInstruction11x(
+                Opcode.MOVE_RESULT_OBJECT, 0));
+        runtimeExecImpl.addInstruction(new BuilderInstruction11x(
+                Opcode.RETURN_OBJECT, 0));
+        BuilderMethod runtimeExecDemo = builder.internMethod(HELLO,
+                "runtimeExecDemo", Collections.<ImmutableMethodParameter>emptyList(),
+                "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), runtimeExecImpl);
+        demos.put("runtimeExecDemo", runtimeExecDemo);
+
+        // runtimeExitDemo(): System exit stays denied.
+        MutableMethodImplementation runtimeExitImpl =
+                new MutableMethodImplementation(2);
+        runtimeExitImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Runtime;", "getRuntime",
+                        Collections.<String>emptyList(), "Ljava/lang/Runtime;"))));
+        runtimeExitImpl.addInstruction(new BuilderInstruction11x(
+                Opcode.MOVE_RESULT_OBJECT, 0));
+        runtimeExitImpl.addInstruction(new BuilderInstruction11n(
+                Opcode.CONST_4, 1, 0));
+        runtimeExitImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Runtime;", "exit",
+                        Collections.singletonList("I"), "V"))));
+        runtimeExitImpl.addInstruction(new BuilderInstruction10x(
+                Opcode.RETURN_VOID));
+        BuilderMethod runtimeExitDemo = builder.internMethod(HELLO,
+                "runtimeExitDemo", Collections.<ImmutableMethodParameter>emptyList(),
+                "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), runtimeExitImpl);
+        demos.put("runtimeExitDemo", runtimeExitDemo);
+
+        // runtimeHaltDemo(): forced halt stays denied.
+        MutableMethodImplementation runtimeHaltImpl =
+                new MutableMethodImplementation(2);
+        runtimeHaltImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Runtime;", "getRuntime",
+                        Collections.<String>emptyList(), "Ljava/lang/Runtime;"))));
+        runtimeHaltImpl.addInstruction(new BuilderInstruction11x(
+                Opcode.MOVE_RESULT_OBJECT, 0));
+        runtimeHaltImpl.addInstruction(new BuilderInstruction11n(
+                Opcode.CONST_4, 1, 0));
+        runtimeHaltImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Runtime;", "halt",
+                        Collections.singletonList("I"), "V"))));
+        runtimeHaltImpl.addInstruction(new BuilderInstruction10x(
+                Opcode.RETURN_VOID));
+        BuilderMethod runtimeHaltDemo = builder.internMethod(HELLO,
+                "runtimeHaltDemo", Collections.<ImmutableMethodParameter>emptyList(),
+                "V",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), runtimeHaltImpl);
+        demos.put("runtimeHaltDemo", runtimeHaltDemo);
+
+        // systemSetPropertyDemo(): host property mutation stays denied.
+        MutableMethodImplementation setPropImpl =
+                new MutableMethodImplementation(2);
+        setPropImpl.addInstruction(new BuilderInstruction21c(
+                Opcode.CONST_STRING, 0,
+                builder.internStringReference("tartine.probe")));
+        setPropImpl.addInstruction(new BuilderInstruction21c(
+                Opcode.CONST_STRING, 1,
+                builder.internStringReference("value")));
+        setPropImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_STATIC, 2, 0, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/System;", "setProperty",
+                        Arrays.asList("Ljava/lang/String;",
+                                "Ljava/lang/String;"),
+                        "Ljava/lang/String;"))));
+        setPropImpl.addInstruction(new BuilderInstruction11x(
+                Opcode.MOVE_RESULT_OBJECT, 0));
+        setPropImpl.addInstruction(new BuilderInstruction11x(
+                Opcode.RETURN_OBJECT, 0));
+        BuilderMethod systemSetPropertyDemo = builder.internMethod(HELLO,
+                "systemSetPropertyDemo",
+                Collections.<ImmutableMethodParameter>emptyList(),
+                "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), setPropImpl);
+        demos.put("systemSetPropertyDemo", systemSetPropertyDemo);
+
         // fileDemo(): new File("/sdcard/Hello.txt").getAbsolutePath()
         // answers the guest form: the bridge remaps paths through the Vfs
         // seam and reports no host layout.
@@ -4449,10 +4561,10 @@ public final class FixtureDex {
                 Collections.emptySet(), Collections.emptySet(), copyRangeImpl);
         demos.put("copyDemo", copyDemo);
 
-        // loaderDemo(): classes report the singleton loader.
+        // loaderDemo(): guest classes report the sandboxed guest loader.
         MutableMethodImplementation loaderImpl = new MutableMethodImplementation(1);
         loaderImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
-                builder.internTypeReference("Ljava/lang/Object;")));
+                builder.internTypeReference(HELLO)));
         loaderImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
                 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Ljava/lang/Class;", "getClassLoader",
@@ -4468,7 +4580,7 @@ public final class FixtureDex {
         // loadClassDemo(): loading resolves through the single universe.
         MutableMethodImplementation loadClassImpl = new MutableMethodImplementation(2);
         loadClassImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
-                builder.internTypeReference("Ljava/lang/Object;")));
+                builder.internTypeReference(HELLO)));
         loadClassImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
                 0, 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Ljava/lang/Class;", "getClassLoader",

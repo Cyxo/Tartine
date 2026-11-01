@@ -24,6 +24,8 @@ import tartine.guest.SandboxDenied;
  */
 final class SandboxPass extends ClassVisitor {
     private final Predicate<String> isGuest;
+    /** Internal name of the class being visited, for caller injection. */
+    private String className;
 
     SandboxPass(ClassVisitor delegate, Predicate<String> isGuest) {
         super(Opcodes.ASM9, delegate);
@@ -40,6 +42,7 @@ final class SandboxPass extends ClassVisitor {
     @Override
     public void visit(int version, int access, String name, String signature,
             String superName, String[] interfaces) {
+        this.className = name;
         if (superName != null) {
             if (superName.equals("java/io/File")) {
                 throw denied("guest subclasses of java.io.File are not available");
@@ -103,6 +106,33 @@ final class SandboxPass extends ClassVisitor {
                     super.visitTypeInsn(opcode, "tartine/guest/GuestFile");
                     return;
                 }
+                if (type.equals("java/lang/Runtime")) {
+                    if (opcode == Opcodes.NEW) {
+                        throw denied("Runtime: host runtime access is not"
+                                + " available");
+                    }
+                    super.visitTypeInsn(opcode, "tartine/guest/GuestRuntime");
+                    return;
+                }
+                if (type.equals("java/lang/ClassLoader")) {
+                    if (opcode == Opcodes.NEW) {
+                        throw denied("ClassLoader: host class loader access"
+                                + " is not available");
+                    }
+                    super.visitTypeInsn(opcode,
+                            "tartine/guest/GuestClassLoader");
+                    return;
+                }
+                if (type.equals("java/util/ServiceLoader")
+                        || type.startsWith("java/util/ServiceLoader$")) {
+                    if (opcode == Opcodes.NEW) {
+                        throw denied("ServiceLoader: service loading is not"
+                                + " available");
+                    }
+                    super.visitTypeInsn(opcode,
+                            "tartine/guest/GuestServiceLoader");
+                    return;
+                }
                 String denial = typeDenialFor(type);
                 if (denial != null) {
                     throw denied("type " + type + ": " + denial);
@@ -124,6 +154,108 @@ final class SandboxPass extends ClassVisitor {
                     String descriptor, boolean isInterface) {
                 if (owner.equals("java/io/File")) {
                     fileCall(delegate, name, descriptor);
+                    return;
+                }
+                if (owner.equals("java/lang/Class")) {
+                    if (name.equals("getClassLoader")
+                            && descriptor.equals("()Ljava/lang/ClassLoader;")) {
+                        staticCall(delegate, "tartine/guest/GuestReflect",
+                                "getClassLoader",
+                                "(Ljava/lang/Class;)Ltartine/guest/GuestClassLoader;");
+                        return;
+                    }
+                    if (name.equals("forName")
+                            && descriptor.equals(
+                                    "(Ljava/lang/String;)Ljava/lang/Class;")) {
+                        // Caller injection keeps Class.forName off the host
+                        // loader: the lookup is gated by the guest loader.
+                        delegate.visitLdcInsn(Type.getObjectType(className));
+                        staticCall(delegate, "tartine/guest/GuestSandbox",
+                                "forName",
+                                "(Ljava/lang/String;Ljava/lang/Class;)"
+                                + "Ljava/lang/Class;");
+                        return;
+                    }
+                    if (name.equals("forName")
+                            && descriptor.equals(
+                                    "(Ljava/lang/String;Z)Ljava/lang/Class;")) {
+                        delegate.visitLdcInsn(Type.getObjectType(className));
+                        staticCall(delegate, "tartine/guest/GuestSandbox",
+                                "forName",
+                                "(Ljava/lang/String;ZLjava/lang/Class;)"
+                                + "Ljava/lang/Class;");
+                        return;
+                    }
+                    if (name.equals("forName") && descriptor.equals(
+                            "(Ljava/lang/String;ZLjava/lang/ClassLoader;)"
+                            + "Ljava/lang/Class;")) {
+                        delegate.visitLdcInsn(Type.getObjectType(className));
+                        staticCall(delegate, "tartine/guest/GuestSandbox",
+                                "forName",
+                                "(Ljava/lang/String;ZLjava/lang/Object;"
+                                + "Ljava/lang/Class;)Ljava/lang/Class;");
+                        return;
+                    }
+                }
+                if (owner.equals("java/util/ServiceLoader")) {
+                    serviceLoaderCall(delegate, name, descriptor);
+                    return;
+                }
+                if (owner.equals("java/lang/ClassLoader")) {
+                    classLoaderCall(delegate, name, descriptor);
+                    return;
+                }
+                if (owner.equals("java/lang/Runtime")) {
+                    runtimeCall(delegate, name, descriptor);
+                    return;
+                }
+                if (owner.equals("java/lang/System")
+                        && name.equals("getProperty")) {
+                    systemPropertyCall(delegate, name, descriptor);
+                    return;
+                }
+                if (owner.equals("java/lang/Class")
+                        && SandboxPolicy.CLASS_REFLECT_LOOKUPS.contains(name)) {
+                    classLookupCall(delegate, name, descriptor);
+                    return;
+                }
+                if (owner.equals("java/lang/reflect/Method")) {
+                    if (name.equals("invoke")) {
+                        methodInvokeCall(delegate, descriptor);
+                        return;
+                    }
+                    if (name.equals("setAccessible")
+                            || name.equals("trySetAccessible")) {
+                        accessibleCall(delegate, name, descriptor);
+                        return;
+                    }
+                }
+                if (owner.equals("java/lang/reflect/Constructor")) {
+                    if (name.equals("newInstance")) {
+                        constructorNewInstanceCall(delegate, descriptor);
+                        return;
+                    }
+                    if (name.equals("setAccessible")
+                            || name.equals("trySetAccessible")) {
+                        accessibleCall(delegate, name, descriptor);
+                        return;
+                    }
+                }
+                if (owner.equals("java/lang/reflect/Field")) {
+                    if (SandboxPolicy.FIELD_REFLECT_ACCESS.contains(name)) {
+                        fieldAccessCall(delegate, name, descriptor);
+                        return;
+                    }
+                    if (name.equals("setAccessible")
+                            || name.equals("trySetAccessible")) {
+                        accessibleCall(delegate, name, descriptor);
+                        return;
+                    }
+                }
+                if (owner.equals("java/lang/reflect/AccessibleObject")
+                        && (name.equals("setAccessible")
+                            || name.equals("trySetAccessible"))) {
+                    accessibleCall(delegate, name, descriptor);
                     return;
                 }
                 String denial = SandboxPolicy.memberDenial(owner, name, descriptor,
@@ -200,6 +332,186 @@ final class SandboxPass extends ClassVisitor {
                 }
             }
         };
+    }
+
+    private static void staticCall(MethodVisitor mv, String owner, String name,
+            String descriptor) {
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, owner, name, descriptor, false);
+    }
+
+    /**
+     * Rewrites a {@code java.util.ServiceLoader} chain to the empty guest
+     * facade: service discovery never instantiates host or absent providers,
+     * so libraries see the documented "no providers" result.
+     */
+    private void serviceLoaderCall(MethodVisitor mv, String name,
+            String descriptor) {
+        if (!SandboxPolicy.SERVICE_LOADER_ALLOWED.contains(name)) {
+            throw denied("ServiceLoader." + name + descriptor
+                    + ": service loading is not available");
+        }
+        if (name.equals("load")
+                && descriptor.equals(
+                        "(Ljava/lang/Class;)Ljava/util/ServiceLoader;")) {
+            staticCall(mv, "tartine/guest/GuestServiceLoader", "load",
+                    "(Ljava/lang/Class;)Ltartine/guest/GuestServiceLoader;");
+            return;
+        }
+        if (name.equals("load")
+                && descriptor.equals("(Ljava/lang/Class;Ljava/lang/ClassLoader;)"
+                        + "Ljava/util/ServiceLoader;")) {
+            staticCall(mv, "tartine/guest/GuestServiceLoader", "load",
+                    "(Ljava/lang/Class;Ljava/lang/Object;)"
+                    + "Ltartine/guest/GuestServiceLoader;");
+            return;
+        }
+        if (name.equals("loadInstalled")
+                && descriptor.equals(
+                        "(Ljava/lang/Class;)Ljava/util/ServiceLoader;")) {
+            staticCall(mv, "tartine/guest/GuestServiceLoader", "loadInstalled",
+                    "(Ljava/lang/Class;)Ltartine/guest/GuestServiceLoader;");
+            return;
+        }
+        if (name.equals("iterator")
+                && descriptor.equals("()Ljava/util/Iterator;")) {
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                    "tartine/guest/GuestServiceLoader", "iterator",
+                    "()Ljava/util/Iterator;", false);
+            return;
+        }
+        if (name.equals("stream")
+                && descriptor.equals("()Ljava/util/stream/Stream;")) {
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                    "tartine/guest/GuestServiceLoader", "stream",
+                    "()Ljava/util/stream/Stream;", false);
+            return;
+        }
+        if ((name.equals("findFirst") || name.equals("findNext"))
+                && descriptor.equals("()Ljava/util/Optional;")) {
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                    "tartine/guest/GuestServiceLoader", name,
+                    "()Ljava/util/Optional;", false);
+            return;
+        }
+        if (name.equals("reload") && descriptor.equals("()V")) {
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                    "tartine/guest/GuestServiceLoader", "reload", "()V",
+                    false);
+            return;
+        }
+        throw denied("ServiceLoader." + name + descriptor
+                + ": service loading is not available");
+    }
+
+    /**
+     * Rewrites the safe {@code ClassLoader} surface to
+     * {@code GuestClassLoader}; everything else stays a named denial.
+     */
+    private void classLoaderCall(MethodVisitor mv, String name,
+            String descriptor) {
+        if (!SandboxPolicy.CLASS_LOADER_ALLOWED.contains(name)) {
+            throw denied("ClassLoader." + name + descriptor
+                    + ": host class loader access is not available");
+        }
+        if (name.equals("loadClass")
+                && descriptor.equals("(Ljava/lang/String;)Ljava/lang/Class;")) {
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                    "tartine/guest/GuestClassLoader", name, descriptor, false);
+            return;
+        }
+        if (name.equals("getResources") && descriptor.equals(
+                "(Ljava/lang/String;)Ljava/util/Enumeration;")) {
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                    "tartine/guest/GuestClassLoader", name, descriptor, false);
+            return;
+        }
+        if (name.equals("getParent")
+                && descriptor.equals("()Ljava/lang/ClassLoader;")) {
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                    "tartine/guest/GuestClassLoader", name, descriptor, false);
+            return;
+        }
+        throw denied("ClassLoader." + name + descriptor
+                + ": host class loader access is not available");
+    }
+
+    /**
+     * Rewrites a {@code java.lang.Runtime} call: {@code getRuntime()} returns
+     * the {@code GuestRuntime} singleton and the allowlisted queries become
+     * static calls on it. Everything else is a named denial.
+     */
+    private void runtimeCall(MethodVisitor mv, String name, String descriptor) {
+        if (name.equals("getRuntime")
+                && descriptor.equals("()Ljava/lang/Runtime;")) {
+            staticCall(mv, "tartine/guest/GuestRuntime", "getRuntime",
+                    "()Ltartine/guest/GuestRuntime;");
+            return;
+        }
+        if (SandboxPolicy.RUNTIME_ALLOWED.contains(name)
+                && descriptor.startsWith("()")) {
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                    "tartine/guest/GuestRuntime", name, descriptor, false);
+            return;
+        }
+        throw denied("Runtime." + name + descriptor
+                + ": host runtime access is not available");
+    }
+
+    /**
+     * Rewrites {@code System.getProperty} to the value allowlist facade. The
+     * descriptor is unchanged because the receiver was already a static call;
+     * {@code GuestSystem} takes the key as its first argument.
+     */
+    private void systemPropertyCall(MethodVisitor mv, String name,
+            String descriptor) {
+        if (descriptor.equals("(Ljava/lang/String;)Ljava/lang/String;")
+                || descriptor.equals(
+                        "(Ljava/lang/String;Ljava/lang/String;)"
+                        + "Ljava/lang/String;")) {
+            staticCall(mv, "tartine/guest/GuestSystem", "getProperty",
+                    descriptor);
+            return;
+        }
+        throw denied("System." + name + descriptor
+                + ": host property access is not available");
+    }
+
+    /** Rewrites a {@code Class} reflection lookup with the receiver first. */
+    private void classLookupCall(MethodVisitor mv, String name,
+            String descriptor) {
+        staticCall(mv, "tartine/guest/GuestReflect", name,
+                "(Ljava/lang/Class;" + descriptor.substring(1));
+    }
+
+    /** Rewrites {@code Method.invoke} to the declaring-class-checked bridge. */
+    private void methodInvokeCall(MethodVisitor mv, String descriptor) {
+        staticCall(mv, "tartine/guest/GuestReflect", "invoke",
+                "(Ljava/lang/reflect/Method;" + descriptor.substring(1));
+    }
+
+    /** Rewrites {@code Constructor.newInstance} to the checked bridge. */
+    private void constructorNewInstanceCall(MethodVisitor mv,
+            String descriptor) {
+        staticCall(mv, "tartine/guest/GuestReflect", "newInstance",
+                "(Ljava/lang/reflect/Constructor;" + descriptor.substring(1));
+    }
+
+    /** Rewrites one {@code Field} getter/setter to the checked bridge. */
+    private void fieldAccessCall(MethodVisitor mv, String name,
+            String descriptor) {
+        staticCall(mv, "tartine/guest/GuestReflect", name,
+                "(Ljava/lang/reflect/Field;" + descriptor.substring(1));
+    }
+
+    /**
+     * Rewrites {@code setAccessible}/{@code trySetAccessible} to the bridge,
+     * which checks the member's declaring class before granting access.
+     */
+    private void accessibleCall(MethodVisitor mv, String name,
+            String descriptor) {
+        staticCall(mv, "tartine/guest/GuestReflect", name,
+                "(Ljava/lang/reflect/AccessibleObject;"
+                + descriptor.substring(1));
     }
 
     /**

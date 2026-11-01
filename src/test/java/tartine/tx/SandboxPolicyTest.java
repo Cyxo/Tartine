@@ -110,8 +110,26 @@ class SandboxPolicyTest {
                 "getProperty", "(Ljava/lang/String;)Ljava/lang/String;", true));
         assertNotNull(SandboxPolicy.memberDenial("java/lang/System", "exit",
                 "(I)V", true));
+        assertNotNull(SandboxPolicy.memberDenial("java/lang/System",
+                "setProperty",
+                "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
+                true));
         assertNotNull(SandboxPolicy.memberDenial("java/lang/System", "getenv",
                 "(Ljava/lang/String;)Ljava/lang/String;", true));
+        assertNotNull(SandboxPolicy.memberDenial("java/lang/Runtime",
+                "getRuntime", "()Ljava/lang/Runtime;", true));
+        assertNotNull(SandboxPolicy.memberDenial("java/lang/Runtime", "exec",
+                "(Ljava/lang/String;)Ljava/lang/Process;", true));
+        assertNotNull(SandboxPolicy.memberDenial("java/lang/Runtime", "exit",
+                "(I)V", true));
+        assertNotNull(SandboxPolicy.memberDenial("java/lang/Runtime", "halt",
+                "(I)V", true));
+        assertNotNull(SandboxPolicy.memberDenial("java/lang/Runtime",
+                "addShutdownHook", "(Ljava/lang/Thread;)V", true));
+        assertNotNull(SandboxPolicy.memberDenial("java/lang/Runtime", "load",
+                "(Ljava/lang/String;)V", true));
+        assertNotNull(SandboxPolicy.memberDenial("java/lang/Runtime",
+                "loadLibrary", "(Ljava/lang/String;)V", true));
         assertNotNull(SandboxPolicy.memberDenial("java/lang/System", "in",
                 "Ljava/io/InputStream;", false));
         assertNull(SandboxPolicy.memberDenial("java/lang/System", "out",
@@ -146,6 +164,19 @@ class SandboxPolicyTest {
                 "()Ljava/lang/Thread;", true));
         assertNull(SandboxPolicy.memberDenial("java/lang/Thread", "sleep",
                 "(J)V", true));
+    }
+
+    @Test
+    void facadeAllowlistsAreNarrow() {
+        assertTrue(SandboxPolicy.RUNTIME_ALLOWED.contains("maxMemory"));
+        assertFalse(SandboxPolicy.RUNTIME_ALLOWED.contains("exec"));
+        assertFalse(SandboxPolicy.RUNTIME_ALLOWED.contains("exit"));
+        assertFalse(SandboxPolicy.RUNTIME_ALLOWED.contains("halt"));
+        assertTrue(SandboxPolicy.CLASS_LOADER_ALLOWED.contains("loadClass"));
+        assertFalse(SandboxPolicy.CLASS_LOADER_ALLOWED.contains(
+                "getSystemClassLoader"));
+        assertTrue(SandboxPolicy.SERVICE_LOADER_ALLOWED.contains("iterator"));
+        assertFalse(SandboxPolicy.SERVICE_LOADER_ALLOWED.contains("provider"));
     }
 
     @Test

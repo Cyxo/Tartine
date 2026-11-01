@@ -20,14 +20,19 @@ interpreter (ADR-0008), and `Vfs` existed without a guest bridge.
 Two enforcement points share one policy table (`tartine.tx.SandboxPolicy`):
 
 1. **`tartine.tx.TranslatedLoader`** is guest-first: a name the dex set
-   defines always resolves by translation; every other name goes through an
+   defines always resolves by translation; every guest-reachable lookup
+   (`loadGuestClass`, `GuestClassLoader`, `GuestSandbox`) goes through an
    allowlist (`java.*` subsets, `javax.*` crypto/cert/MIDP, framework
-   `android.*`, `org.xmlpull.*`, `tartine.guest.*`). Denied names raise a
-   named `ClassNotFoundException` (`Tartine: sandbox denied: …`). Guest dex
-   classes may never define reserved names (`java.*`, `javax.*`, `android.*`,
-   `tartine.*`, `org.xmlpull.*`, `dalvik.*`, `libcore.*`, `jdk.*`, `sun.*`),
-   and class-level metadata (superclass, interfaces, field descriptors,
-   guest `java.io.File` subclasses) is checked before define.
+   `android.*`, `org.xmlpull.*`, `tartine.guest.*`) and a denied name raises
+   a named `ClassNotFoundException` (`Tartine: sandbox denied: …`). Plain
+   `loadClass` is the JVM linkage path: it may resolve a denied host type
+   that appears only in a translated signature (for example `ClassLoader` in
+   a framework method), because the verifier needs it to link, but guest
+   code cannot obtain the loader or the type. Guest dex classes may never
+   define reserved names (`java.*`, `javax.*`, `android.*`, `tartine.*`,
+   `org.xmlpull.*`, `dalvik.*`, `libcore.*`, `jdk.*`, `sun.*`), and
+   class-level metadata (superclass, interfaces, field descriptors, guest
+   `java.io.File` subclasses) is checked before define.
 
 2. **`tartine.tx.SandboxPass`** sits between the method writer and the
    frame-computing `ClassWriter`, so rewrites are what `COMPUTE_FRAMES`
@@ -52,16 +57,28 @@ Supporting decisions:
   missed rewrite cannot expose the host working directory; `GuestFiles`
   reverse-maps framework-returned `File` objects through
   `Vfs.Policy.guestPath(Path)` and never shows a host path.
+- Guest facades widen the boundary without exposing the host:
+  `GuestRuntime` (read-only memory/CPU queries plus a no-op `gc`),
+  `GuestSystem.getProperty` (a value allowlist; unknown keys return the
+  caller's default), `GuestReflect` (reflection over guest-declared members
+  only), `GuestClassLoader`/`GuestSandbox` (guest class lookups and
+  `Class.forName`), and `GuestServiceLoader` (always "no providers").
+  `SandboxPolicy`'s javadoc and `docs/architecture.md` list each allowlist.
 - Reflection metadata types (`Method`, `Field`, `Constructor`, `Parameter`,
   `Modifier`, `Array`, `InvocationTargetException`) stay loadable because
-  guest signatures mention them; reflection operations
-  (`Class.getDeclared/…`, `Method.invoke`, `Field.get/set`,
-  `setAccessible`, `Proxy`) are denied. `Class.forName(String)` is rewritten
-  to `GuestSandbox.forName(String, callerClass)`, which only accepts a
-  `TranslatedLoader` caller.
+  guest signatures mention them. `GuestReflect` allows `getDeclared*`,
+  `getMethod(s)`, `getField(s)`, `getConstructor(s)`, `getClasses`,
+  `newInstance`, `Method.invoke`, `Constructor.newInstance`,
+  `Field.get*`/`set*`, and `setAccessible`/`trySetAccessible` only when the
+  member's declaring class is guest-loaded; host-declared members are denied
+  at lookup and again at invoke/access. The one-, two-, and three-argument
+  `Class.forName` forms are rewritten to `GuestSandbox`, which gates the
+  name through the guest loader and refuses a host loader.
 - `System.out`/`err` and `System.in` follow the same split: the fields stay
   typed, `System.in` and output redirection are denied; `System.exit`,
-  `getenv`, `getProperty`/`setProperty`, `load`/`loadLibrary` are denied.
+  `getenv`, `setProperty`, `clearProperty`, `load`/`loadLibrary` are denied,
+  and `getProperty` is the allowlisted `GuestSystem` facade. `Runtime.exec`,
+  `exit`, `halt`, shutdown hooks, and `load`/`loadLibrary` are denied.
 - The translator's own injected helper (`GuestArrays.coerce`) moved under
   `tartine.guest.*` and resolves component classes through the guest loader.
 

@@ -186,15 +186,19 @@ stay inaccessible.
 
 Translated code runs behind a restricted classloader (ADR-0009). Host
 capabilities outside the file bridge are denied by name: network
-(`java.net.*`), processes (`Runtime`/`ProcessBuilder`), raw streams and
-`FileDescriptor`, `java.nio.file`/`java.nio.channels`, reflection
-operations (`Class.getDeclared*`, `Method.invoke`, `setAccessible`),
-`ClassLoader`, `Class.forName` with a host loader, host internals (ASM,
-Skija, `tartine.*`), environment/system properties, and process control
-(`System.exit`, `System.load`). Reflection metadata types (`Method`,
-`Field`, `Constructor`) stay loadable because app signatures mention
-them. Denied calls surface as named `UnsupportedOperationException` gaps
-at first use, never as silent success.
+(`java.net.*`), process spawning (`Runtime.exec`/`ProcessBuilder`), raw
+streams and `FileDescriptor`, `java.nio.file`/`java.nio.channels`, host
+internals (ASM, Skija, `tartine.*`), environment variables, and process
+control (`Runtime.exit`/`halt`, shutdown hooks, `System.exit`,
+`System.load`). Narrow guest facades cover what libraries legitimately
+probe: read-only `Runtime` memory/CPU queries, `System.getProperty` with a
+value allowlist (unknown keys answer the caller's default), reflection over
+guest-declared members only, class lookup through a `GuestClassLoader` and
+gated `Class.forName`, and an empty `ServiceLoader` ("no providers").
+Reflection metadata types (`Method`, `Field`, `Constructor`) stay loadable
+because app signatures mention them; host-declared members are denied at
+lookup and again at invoke/access. Denied calls surface as named
+`UnsupportedOperationException` gaps at first use, never as silent success.
 
 Planned (decided in `AGENTS.md`, not wired yet): per-folder user maps
 (`/sdcard/Download` -> `~/Downloads`), file-picker grants, whole-home

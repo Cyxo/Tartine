@@ -74,11 +74,13 @@ GitLab `android_translation_layer/android_translation_layer`
   allowlisted host `java.*`/`javax.*` classes by ordinary JVM linkage: there
   is no runtime reflection seam anymore (deleted with the interpreter). The
   sandbox is ClassLoader-level (ADR-0009): `TranslatedLoader` is guest-first
-  and refuses every host name the allowlist does not carry with a named
-  `ClassNotFoundException`, and `SandboxPass` rewrites `java.io.File` through
-  the `Vfs` bridge while turning other denied host surfaces (network,
-  processes, raw streams, NIO paths/channels, reflection operations, host
-  internals) into the method's named gap.
+  and applies `SandboxPolicy` to every guest-reachable lookup, while plain
+  JVM linkage may resolve a denied host type that appears only in a
+  translated signature (for example `ClassLoader` in a framework method).
+  `SandboxPass` rewrites `java.io.File` through the `Vfs` bridge and turns
+  other denied host surfaces (network, processes, raw streams, NIO
+  paths/channels, reflection operations, host internals) into the method's
+  named gap. See "Sandbox" below for the facade allowlist.
 
 ## Framework in Java (2026-10 audit adoption, user-approved)
 
@@ -133,6 +135,45 @@ GitLab `android_translation_layer/android_translation_layer`
   translation exists.
 - References only, no runtime deps: Robolectric shadow patterns, AOSP
   layoutlib, Paparazzi as golden-frame oracle in a separate dev-time module.
+
+## Sandbox (ADR-0009)
+
+- Boundary: `TranslatedLoader` is guest-first. Guest-reachable lookups
+  (`loadGuestClass`, `GuestClassLoader`, `GuestSandbox`) apply
+  `SandboxPolicy`; plain `loadClass` is the JVM linkage path and may resolve
+  a denied host type that appears only in a translated signature, so
+  framework descriptors link without exposing the type to guest code.
+  `SandboxPass` checks class metadata and every instruction at translation
+  time; a denial becomes the method's named gap. `java.io.File` remains the
+  sole guest filesystem type: streams, NIO paths/channels, network,
+  processes, reflection internals, and host internals stay denied.
+- `tartine.guest.GuestRuntime`: `getRuntime`, `availableProcessors`,
+  `totalMemory`, `freeMemory`, `maxMemory`, and a no-op `gc`. `exec`,
+  `exit`, `halt`, shutdown hooks, and `load`/`loadLibrary` stay denied.
+- `tartine.guest.GuestSystem.getProperty`: value allowlist for runtime
+  identity (`java.version`, `java.vendor`, `java.vm.*`,
+  `java.specification.*`, `java.class.version`), OS
+  (`os.name`/`arch`/`version`), separators (`file.separator`,
+  `path.separator`, `line.separator`), encodings (`file.encoding`,
+  `native.encoding`, `sun.jnu.encoding`), and locale/timezone
+  (`user.language`, `user.country`, `user.variant`, `user.timezone`). Every
+  other key returns the caller's default; `setProperty`, `clearProperty`,
+  and `getenv` stay denied.
+- `tartine.guest.GuestReflect`: `getDeclared*`, `getMethod(s)`,
+  `getField(s)`, `getConstructor(s)`, `getClasses`, `newInstance`,
+  `Method.invoke`, `Constructor.newInstance`, `Field.get*`/`set*`, and
+  `setAccessible`/`trySetAccessible`. A member is allowed only when its
+  declaring class is guest-loaded; host-declared members are denied at
+  lookup and again at invoke/access.
+- `tartine.guest.GuestClassLoader` and `tartine.guest.GuestSandbox`:
+  `Class.getClassLoader`, `ClassLoader.loadClass`, `ClassLoader.getResources`,
+  `ClassLoader.getParent`, and the one-, two-, and three-argument
+  `Class.forName`. The loader must be a `GuestClassLoader`; a host loader is
+  refused. Resource lookups are empty and the parent is `null`.
+- `tartine.guest.GuestServiceLoader`: `ServiceLoader.load`,
+  `loadInstalled`, `iterator`, `stream`, `findFirst`, `findNext`, and
+  `reload`. Discovery always reports no providers and never instantiates
+  one.
 
 ## Virtual filesystem (decided 2026-10)
 

@@ -19,6 +19,7 @@ import tartine.dex.DexSet;
 import tartine.dex.FixtureDex;
 import tartine.gfx.GfxBackend;
 import tartine.gfx.skija.SkijaBackend;
+import tartine.guest.SandboxDenied;
 import tartine.runtime.Vfs;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -138,13 +139,18 @@ final class TranslatedVmTest {
         return Array.get(array, index);
     }
 
-    /** The sandbox's named gap: denials surface, never silent answers. */
+    /** The sandbox's named denial: a translation gap or a runtime bridge. */
     private void assertSandboxDenied(String demo) throws Exception {
-        UnsupportedOperationException denied = assertThrows(
-                UnsupportedOperationException.class, () -> call(demo), demo);
-        assertTrue(denied.getMessage() != null
-                && denied.getMessage().contains("sandbox denied"),
-                demo + ": " + denied.getMessage());
+        RuntimeException denied = assertThrows(RuntimeException.class,
+                () -> call(demo), demo);
+        assertTrue(denied instanceof UnsupportedOperationException
+                || denied instanceof SandboxDenied,
+                demo + ": " + denied);
+        String message = denied.getMessage();
+        assertTrue(message != null
+                && (message.contains("sandbox denied")
+                    || message.contains("is not available")),
+                demo + ": " + message);
     }
 
     // ------------------------------------------------------------------
@@ -206,7 +212,7 @@ final class TranslatedVmTest {
         assertEquals(1, (int) (Integer) call("appendableCast"));
         assertEquals(3, (int) (Integer) call("enumValuesDemo"));
         assertEquals(1, (int) (Integer) call("ordinalDemo"));
-        assertSandboxDenied("annoDemo"); // Class.getMethod is denied
+        assertSandboxDenied("annoDemo"); // Object.getMethod is host-declared
     }
 
     @Test
@@ -236,11 +242,15 @@ final class TranslatedVmTest {
         assertTrue(call("threadDemo") instanceof String);
         assertEquals(60_000_000_000L, (long) (Long) call("nanosDemo"));
         assertTrue((long) (Long) call("sysClock") >= 0L);
-        // Host stacks, runtime and system properties are sandbox-denied.
+        // GuestRuntime answers the harmless queries; host stacks stay denied.
+        assertTrue((long) (Long) call("runtimeDemo") > 0L);
+        assertTrue((int) (Integer) call("cpuDemo") > 0);
+        assertNull(call("propDemo"));
+        assertSandboxDenied("runtimeExecDemo");
+        assertSandboxDenied("runtimeExitDemo");
+        assertSandboxDenied("runtimeHaltDemo");
+        assertSandboxDenied("systemSetPropertyDemo");
         assertSandboxDenied("stackDemo");
-        assertSandboxDenied("runtimeDemo");
-        assertSandboxDenied("cpuDemo");
-        assertSandboxDenied("propDemo");
     }
 
     @Test
@@ -310,8 +320,9 @@ final class TranslatedVmTest {
     @Test
     void sdkLevelIsApi36() throws Exception {
         assertEquals(36, (int) (Integer) call("sdk"));
-        // The reflective SDK_INT read (Class.getField + Field.getInt) is
-        // sandbox-denied; the direct field read stays available.
+        // The reflective SDK_INT read targets a host framework class, so the
+        // declaring-class check denies it; the direct field read stays
+        // available.
         assertSandboxDenied("sdkIntDemo");
     }
 
@@ -404,15 +415,24 @@ final class TranslatedVmTest {
 
     @Test
     void reflection() throws Exception {
+        // Host/framework-declared members stay denied; a guest class's own
+        // inherited guest member is allowed at lookup and invoke.
         assertSandboxDenied("reflectDemo");
-        assertSandboxDenied("reflectPubDemo");
         assertSandboxDenied("reflectMissDemo");
+        assertEquals("base", (String) call("reflectPubDemo"));
+        // One-argument Class.forName is caller-injected and resolves guest
+        // classes through the sandboxed loader.
+        assertNotNull(call("ctorDemo"));
     }
 
     @Test
     void serviceLookupFindsNoProviders() throws Exception {
-        assertSandboxDenied("serviceDemo");
+        assertFalse((boolean) (Boolean) call("serviceDemo"));
         assertFalse((boolean) (Boolean) call("traceDemo"));
+        // Class.getClassLoader is wrapped; loadClass still goes through the
+        // guest loader and its sandbox.
+        assertNotNull(call("loaderDemo"));
+        assertEquals("test.Counter", (String) call("loadClassDemo"));
     }
 
     // Keep the field helper honest: some framework state is package-private.
