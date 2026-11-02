@@ -3,13 +3,16 @@ package tartine.graphics;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
-import tartine.gfx.GfxSurface;
 
 import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
 import static org.lwjgl.glfw.GLFW.GLFW_RESIZABLE;
@@ -67,88 +70,190 @@ import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * One Android Window on one desktop window (SurfaceFlinger-lite).
+ * GLFW implementation of {@link HostDisplay}: one Android Window on one
+ * desktop window (SurfaceFlinger-lite).
  *
- * <p>First bridge complete: the headless probe draws the
- * window's content view into a renderer surface
- * ({@link RasterPresenter#createSurfaceCanvas}) and this class composites it —
- * the surface is uploaded once as a GL texture and stretched into the
- * framebuffer in a letterboxed quad, VSync-paced by GLFW. Following the
- * AGENTS graphics decision, GL holds no responsibility for the content
- * itself: the texture upload is the whole BufferQueue step, and the
- * Choreographer-driven redraw path (plus the Looper-vs-GLFW threading
- * bridge) lands here later. Everything runs on the calling thread, so the
- * macOS {@code -XstartOnFirstThread} script flag covers it.
+ * <p>The GLFW loop owns the window, GL context, and texture upload, and only
+ * ever runs on the display thread chosen by {@link HostDisplays}. Frames
+ * arrive through {@link #postFrame} (the BufferQueue handoff) and are
+ * uploaded once; the newest frame wins if the guest outpaces VSync. The
+ * window stays hidden until the first frame, then shows and starts the
+ * timeout clock; it is letterboxed and presented with
+ * {@code glfwSwapInterval(1)}.
  *
  * <p>The frame is expected fully opaque: the seam readback is premultiplied
  * ARGB, which presents as-is, since premultiplication only differs from
  * straight colors where the canvas has partial alpha. Transparent-frame
  * windows will need the un-premultiply step when they exist.
  */
-public final class DesktopWindow {
+final class GlfwHostDisplay implements DisplayLoop {
     private static final int WIDTH = 480;
     private static final int HEIGHT = 960;
 
-    private DesktopWindow() {
+    private final String title;
+    private final long timeoutSecs;
+    private final List<WindowIcon> icons;
+    private final AtomicReference<HostDisplay.Frame> pendingFrame =
+            new AtomicReference<>();
+    private final AtomicBoolean closeRequested = new AtomicBoolean();
+    private final AtomicBoolean started = new AtomicBoolean();
+    private final CountDownLatch closed = new CountDownLatch(1);
+    private volatile Throwable failure;
+
+    GlfwHostDisplay(String title, long timeoutSecs, List<WindowIcon> icons) {
+        this.title = title;
+        this.timeoutSecs = timeoutSecs;
+        this.icons = icons == null ? List.of() : List.copyOf(icons);
     }
 
-    /**
-     * Shows the window until closed, or {@code timeoutSecs} elapses when
-     * positive (automated runs). {@code frame} may be null (draw never
-     * reached the surface): the window then shows the dark clear color.
-     */
-    public static void show(String title, long timeoutSecs, GfxSurface frame) {
-        show(title, timeoutSecs, frame, List.of());
+    /** macOS runs GLFW on the process main thread (`-XstartOnFirstThread`). */
+    static boolean requiresProcessMainThread() {
+        return System.getProperty("os.name", "").toLowerCase(Locale.ROOT)
+                .contains("mac");
     }
 
-    /**
-     * Same as {@link #show(String, long, GfxSurface)} with window icons (the
-     * app's launcher artwork, resolving through the APK). Empty means the
-     * platform default icon stands.
-     */
-    public static void show(String title, long timeoutSecs, GfxSurface frame,
-            List<WindowIcon> icons) {
-        GLFWErrorCallback.createPrint(System.err).set();
-        if (!glfwInit()) {
-            throw new IllegalStateException("glfwInit failed (no display?)");
+    @Override
+    public void postFrame(Frame frame) {
+        if (frame == null) {
+            throw new NullPointerException("frame");
         }
+        if (closed.getCount() != 0) {
+            pendingFrame.set(frame);
+        }
+    }
+
+    @Override
+    public void awaitClose() {
         try {
-            glfwDefaultWindowHints();
-            glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-            glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-            long window = glfwCreateWindow(WIDTH, HEIGHT, title, NULL, NULL);
-            if (window == NULL) {
-                throw new IllegalStateException("glfwCreateWindow failed");
+            closed.await();
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                    "interrupted waiting for the host display", interrupted);
+        }
+        Throwable problem = failure;
+        if (problem != null) {
+            throw new IllegalStateException("host display failed", problem);
+        }
+    }
+
+    @Override
+    public void close() {
+        closeRequested.set(true);
+    }
+
+    @Override
+    public void startDedicated() {
+        requireFirstStart();
+        Thread thread = new Thread(this::runLoop, "tartine-display");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    @Override
+    public void runOnCallingThread() {
+        requireFirstStart();
+        runLoop();
+    }
+
+    private void requireFirstStart() {
+        if (!started.compareAndSet(false, true)) {
+            throw new IllegalStateException("host display already started");
+        }
+    }
+
+    /** The whole GLFW lifetime; failures release {@link #closed}. */
+    private void runLoop() {
+        GLFWErrorCallback errors = GLFWErrorCallback.createPrint(System.err);
+        glfwSetErrorCallback(errors);
+        try {
+            if (!glfwInit()) {
+                throw new IllegalStateException("glfwInit failed (no display?)");
             }
             try {
-                setWindowIcon(window, icons);
-                glfwMakeContextCurrent(window);
-                glfwSwapInterval(1);
-                glfwShowWindow(window);
-                GL.createCapabilities();
-                int texture = frame == null ? 0 : uploadFrameTexture(frame);
-                int frameWidth = frame == null ? 0 : frame.getWidth();
-                int frameHeight = frame == null ? 0 : frame.getHeight();
-                long deadline = timeoutSecs <= 0 ? Long.MAX_VALUE
-                        : System.nanoTime() + timeoutSecs * 1_000_000_000L;
-                try {
-                    while (!glfwWindowShouldClose(window)
-                            && System.nanoTime() < deadline) {
-                        glfwPollEvents();
-                        compose(window, texture, frameWidth, frameHeight);
-                        glfwSwapBuffers(window);
-                    }
-                } finally {
-                    if (texture != 0) {
-                        glDeleteTextures(texture);
-                    }
+                if (!closeRequested.get()) {
+                    runWindow();
                 }
             } finally {
-                glfwDestroyWindow(window);
+                glfwTerminate();
+            }
+        } catch (Throwable problem) {
+            failure = problem;
+        } finally {
+            GLFWErrorCallback previous = glfwSetErrorCallback(null);
+            if (previous != null) {
+                previous.free();
+            }
+            closed.countDown();
+        }
+    }
+
+    /** One window: create, present until close/timeout, destroy. */
+    private void runWindow() {
+        glfwDefaultWindowHints();
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        long window = glfwCreateWindow(WIDTH, HEIGHT, title, NULL, NULL);
+        if (window == NULL) {
+            throw new IllegalStateException("glfwCreateWindow failed");
+        }
+        try {
+            setWindowIcon(window, icons);
+            glfwMakeContextCurrent(window);
+            glfwSwapInterval(1);
+            GL.createCapabilities();
+            int texture = 0;
+            int frameWidth = 0;
+            int frameHeight = 0;
+            boolean shown = false;
+            long deadline = Long.MAX_VALUE;
+            try {
+                while (!closeRequested.get()
+                        && !glfwWindowShouldClose(window)
+                        && System.nanoTime() < deadline) {
+                    glfwPollEvents();
+                    Frame frame = pendingFrame.getAndSet(null);
+                    if (frame != null) {
+                        if (texture != 0) {
+                            glDeleteTextures(texture);
+                        }
+                        texture = uploadFrameTexture(frame);
+                        frameWidth = frame.width();
+                        frameHeight = frame.height();
+                    }
+                    if (frame != null && !shown) {
+                        // Show with the first frame and start the timeout
+                        // there, matching the old show-after-draw behavior.
+                        glfwShowWindow(window);
+                        shown = true;
+                        if (timeoutSecs > 0) {
+                            deadline = System.nanoTime()
+                                    + timeoutSecs * 1_000_000_000L;
+                        }
+                        System.out.println("display: first frame presented ("
+                                + frameWidth + "x" + frameHeight + ")");
+                    }
+                    if (!shown) {
+                        // Hidden while the guest loads: don't compose or
+                        // spin at the vsync rate before the first frame.
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException interrupted) {
+                            Thread.currentThread().interrupt();
+                            return;
+                        }
+                        continue;
+                    }
+                    compose(window, texture, frameWidth, frameHeight);
+                    glfwSwapBuffers(window);
+                }
+            } finally {
+                if (texture != 0) {
+                    glDeleteTextures(texture);
+                }
             }
         } finally {
-            glfwTerminate();
-            glfwSetErrorCallback(null).free();
+            glfwDestroyWindow(window);
         }
     }
 
@@ -182,10 +287,10 @@ public final class DesktopWindow {
      * which {@code GL_BGRA} + {@code GL_UNSIGNED_BYTE} consume exactly, so
      * no per-pixel channel swap is needed.
      */
-    private static int uploadFrameTexture(GfxSurface frame) {
-        int width = frame.getWidth();
-        int height = frame.getHeight();
-        int[] argb = frame.readPixels();
+    private static int uploadFrameTexture(HostDisplay.Frame frame) {
+        int width = frame.width();
+        int height = frame.height();
+        int[] argb = frame.argb();
         ByteBuffer pixels = BufferUtils.createByteBuffer(width * height * 4);
         for (int pixel : argb) {
             pixels.put((byte) (pixel & 0xFF));          // blue

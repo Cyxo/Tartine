@@ -12,6 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -29,7 +30,8 @@ import tartine.dex.DexSet;
 import tartine.gfx.GfxBackend;
 import tartine.gfx.GfxSurface;
 import tartine.gfx.skija.SkijaBackend;
-import tartine.graphics.DesktopWindow;
+import tartine.graphics.HostDisplay;
+import tartine.graphics.HostDisplays;
 import tartine.graphics.RasterPresenter;
 import tartine.graphics.WindowIcon;
 import tartine.runtime.Vfs;
@@ -46,8 +48,10 @@ import tartine.tx.TxTranslator;
  * ({@code tartine.tx}: real JVM bytecode, framework module classes, host JDK),
  * executing the launcher activity's {@code onCreate} until the first gap.
  * <li>{@code gui <file.apk> [timeoutSecs]} — the same translated launch, then
- * shows the activity window on desktop. {@code txrun}/{@code txgui} are kept
- * as aliases.
+ * shows the activity window on desktop. Guest code runs on its main-looper
+ * thread and posts the finished raster through {@code HostDisplay} to the
+ * host UI thread that owns GLFW. {@code txrun}/{@code txgui} are kept as
+ * aliases.
  * <li>{@code dump <file.dex>} — prints our instruction dump of a dex file.
  * {@code txdump} is kept as an alias for the translated-class dump.
  * <li>{@code refs <file.apk>} — unresolved-reference census over every dex
@@ -58,13 +62,6 @@ public final class Main {
 
     private Main() {
     }
-
-    /**
-     * Frame drawn by the first-draw pass, handed to the desktop window in
-     * gui mode ({@code txGuiRun -> txMeasureLayoutDraw} writes it). Staging
-     * until Choreographer-driven redraws replace the one-shot handoff.
-     */
-    private static GfxSurface firstDrawFrame;
 
     public static void main(String[] args) {
         if (args.length == 0) {
@@ -92,7 +89,7 @@ public final class Main {
                     break;
                 case "gui":
                     require(args, 2);
-                    txGuiRun(new File(args[1]),
+                    gui(new File(args[1]),
                             args.length > 2 ? Long.parseLong(args[2]) : 0);
                     break;
                 // Backward-compatible aliases for the old translation task names.
@@ -102,7 +99,7 @@ public final class Main {
                     break;
                 case "txgui":
                     require(args, 2);
-                    txGuiRun(new File(args[1]),
+                    gui(new File(args[1]),
                             args.length > 2 ? Long.parseLong(args[2]) : 0);
                     break;
                 case "txdump":
@@ -343,15 +340,27 @@ public final class Main {
     }
 
     /**
+     * Desktop entry point for {@code gui}/{@code txgui}: start the host
+     * display seam (GLFW on the host UI thread), then run the translated
+     * guest pipeline on the guest main-looper thread. The window title and
+     * icons are resolved before the guest loads so the display thread is
+     * ready first.
+     */
+    private static void gui(File apk, long timeoutSecs) throws Exception {
+        HostDisplays.run(launcherTitle(apk), timeoutSecs, loadWindowIcons(apk),
+                display -> txGuiRun(apk, display));
+    }
+
+    /**
      * Translated GUI probe ({@code gui}): run the launcher through {@code
      * TranslatedLoader}, then drive the compose pipeline (createComposition,
      * setContent, attach owners, lifecycle to RESUMED) with plain reflection on
-     * the translated classes, and show the desktop window. Gaps print; a
-     * blocked draw still shows the partially composed surface like a first
-     * frame.
+     * the translated classes, and hand the first frame to the host display.
+     * Gaps print; a blocked draw still shows the partially composed surface
+     * like a first frame.
      */
-    private static void txGuiRun(File apk, long timeoutSecs) throws Exception {
-        firstDrawFrame = null;
+    private static void txGuiRun(File apk, HostDisplay display)
+            throws Exception {
         TxApp app = txLaunch(apk);
         try {
             if (app.activity() == null) {
@@ -433,15 +442,18 @@ public final class Main {
                     break;
                 }
             }
-            txMeasureLayoutDraw(owner);
+            HostDisplay.Frame frame = txMeasureLayoutDraw(owner);
             System.out.println("gui: window ready (frame: "
-                    + (firstDrawFrame != null ? "present" : "absent") + ")");
-            try {
-                DesktopWindow.show(activity.getClass().getName(), timeoutSecs,
-                        firstDrawFrame, loadWindowIcons(apk));
-            } finally {
-                closeFirstDrawFrame();
+                    + (frame != null ? "present" : "absent") + ")");
+            if (frame == null) {
+                // No surface at all: present the dark clear frame the
+                // single-threaded window showed, so timeout/close still work.
+                int[] blank = new int[480 * 960];
+                Arrays.fill(blank, 0xFF0D0D0D);
+                frame = new HostDisplay.Frame(480, 960, blank);
             }
+            display.postFrame(frame);
+            display.awaitClose();
             System.out.println("gui: window closed");
         } finally {
             app.reader().close();
@@ -450,24 +462,29 @@ public final class Main {
 
     /**
      * Measure, layout, then render the composed root into a headless
-     * surface (the first-traversal twin of the device's VSync pass). Painted
-     * counts are the first-draw evidence.
+     * surface (the first-traversal twin of the device's VSync pass), and
+     * snapshot it as a frame for the host display. Painted counts are the
+     * first-draw evidence.
      */
-    private static void txMeasureLayoutDraw(Object owner) {
+    private static HostDisplay.Frame txMeasureLayoutDraw(Object owner) {
+        GfxSurface surface = null;
         try {
             txInvoke(owner, "onMeasure", 480 | (1 << 30), 960 | (1 << 30));
             System.out.println("gui: onMeasure returned");
             txInvoke(owner, "onLayout", false, 0, 0, 480, 960);
             System.out.println("gui: onLayout returned");
-            GfxSurface surface = RasterPresenter.createSurface(480, 960);
+            surface = RasterPresenter.createSurface(480, 960);
             Canvas hostCanvas =
                     RasterPresenter.createSurfaceCanvas(surface);
-            // Frame handed to the desktop window; a blocked draw still
-            // shows the partially composed surface, like the first
-            // on-device frame.
-            firstDrawFrame = surface;
-            txInvoke(owner, "dispatchDraw", hostCanvas);
-            System.out.println("gui: dispatchDraw returned");
+            // A blocked draw still presents the partially composed surface,
+            // like the first on-device frame.
+            try {
+                txInvoke(owner, "dispatchDraw", hostCanvas);
+                System.out.println("gui: dispatchDraw returned");
+            } catch (RuntimeException blocked) {
+                System.out.println("gui: dispatchDraw blocked at: "
+                        + sanitize(blocked));
+            }
             int[] pixels = surface.readPixels();
             long painted = 0;
             for (int pixel : pixels) {
@@ -477,9 +494,15 @@ public final class Main {
             }
             System.out.println("gui: painted pixels " + painted + "/"
                     + pixels.length);
+            return new HostDisplay.Frame(480, 960, pixels);
         } catch (RuntimeException e) {
             System.out.println("gui: measure/draw blocked at: "
                     + sanitize(e));
+            return null;
+        } finally {
+            if (surface != null) {
+                surface.close();
+            }
         }
     }
 
@@ -610,14 +633,6 @@ public final class Main {
         return text.toString();
     }
 
-    /** Releases the first frame once the desktop window has consumed it. */
-    private static void closeFirstDrawFrame() {
-        if (firstDrawFrame != null) {
-            firstDrawFrame.close();
-            firstDrawFrame = null;
-        }
-    }
-
     /**
      * Resolves the app's launcher icon for the desktop window (a second
      * read of the APK; resolution never throws — an empty list keeps the
@@ -630,6 +645,25 @@ public final class Main {
             System.out.println("icon: cannot reopen apk ("
                     + error.getMessage() + ")");
             return List.of();
+        }
+    }
+
+    /**
+     * Window title before the guest class is loaded: the same launcher
+     * resolution {@code txLaunch} uses, so the display can open first.
+     */
+    private static String launcherTitle(File apk) {
+        try (ApkReader reader = ApkReader.open(apk.toPath())) {
+            BinaryXml.Element manifest = reader.manifest();
+            String activity = findLauncher(manifest);
+            if (activity == null) {
+                return apk.getName();
+            }
+            return qualify(manifest.attr("package"), activity);
+        } catch (IOException error) {
+            System.out.println("gui: launcher title unavailable ("
+                    + error.getMessage() + ")");
+            return apk.getName();
         }
     }
 

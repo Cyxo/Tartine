@@ -247,14 +247,20 @@ GitLab `android_translation_layer/android_translation_layer`
   and carries the platform natives. The host installs `SkijaBackend` once at
   boot and creates surfaces through `GfxBackend`, then blits the raster
   through LWJGL's GL context; no pure-GL drawing of UI content; LWJGL stays
-  windowing + GL + the future GLES path. Threading: a dedicated host UI thread
-  behind a `HostDisplay` interface (main thread on macOS via
-  `-XstartOnFirstThread`); guest code posts frame updates through
-  `HostDisplay`.
-- First bridge landed (`f4f113c`): `DesktopWindow` uploads the first-draw
-  raster (`GfxSurface.readPixels`) as a GL texture, letterboxes per
-  VSync-paced swap. `RasterPresenter` mints the surface and binds it to a
-  framework `Canvas`.
+  windowing + GL + the future GLES path. Threading: `HostDisplays` picks the
+  display thread policy behind the `HostDisplay` interface. GLFW runs on one
+  host UI thread — a dedicated `tartine-display` thread, or the process main
+  thread on macOS via `-XstartOnFirstThread` — while guest code runs on its
+  own main-looper thread (`tartine-guest` on macOS, the caller elsewhere) and
+  posts finished frames through `HostDisplay.postFrame`.
+- First bridge landed (`f4f113c`): the display uploads the first-draw raster
+  (`GfxSurface.readPixels`) as a GL texture, letterboxes per VSync-paced swap.
+  `RasterPresenter` mints the surface and binds it to a framework `Canvas`.
+  `GlfwHostDisplay` now owns that loop (replacing the single-threaded
+  `DesktopWindow`): the window stays hidden until the first posted frame,
+  then shows and starts its timeout; `Main` snapshots the drawn surface into
+  a `HostDisplay.Frame` on the guest thread and closes the surface after
+  readback.
 - Window icon landed: `tartine.apk.AppIcon` resolves
   `android:icon`/`roundIcon` through `ResourceTable` and renders 16/32/48
   RGBA buffers; `<adaptive-icon>`/`<vector>` convert to SVG via jsvg;
