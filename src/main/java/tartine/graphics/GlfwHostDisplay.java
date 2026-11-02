@@ -8,6 +8,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWImage;
@@ -25,7 +26,14 @@ import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
 import static org.lwjgl.glfw.GLFW.glfwInit;
 import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
+import static org.lwjgl.glfw.GLFW.glfwSetCharCallback;
+import static org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
+import static org.lwjgl.glfw.GLFW.glfwSetKeyCallback;
+import static org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback;
+import static org.lwjgl.glfw.GLFW.glfwSetScrollCallback;
+import static org.lwjgl.glfw.GLFW.glfwSetWindowFocusCallback;
+import static org.lwjgl.glfw.GLFW.glfwSetWindowSizeCallback;
 import static org.lwjgl.glfw.GLFW.glfwShowWindow;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
@@ -81,6 +89,13 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * timeout clock; it is letterboxed and presented with
  * {@code glfwSwapInterval(1)}.
  *
+ * <p>The reverse path is the event channel: GLFW input, resize and focus
+ * callbacks publish {@link HostDisplay.Event}s into a {@link HostEventChannel}
+ * that buffers until the guest registers a listener and replays then. The
+ * loop publishes {@link HostDisplay.Closed} exactly once before releasing
+ * {@link #awaitClose}, and {@link #postFrame} reports a closed window so a
+ * render loop can stop without polling.
+ *
  * <p>The frame is expected fully opaque: the seam readback is premultiplied
  * ARGB, which presents as-is, since premultiplication only differs from
  * straight colors where the canvas has partial alpha. Transparent-frame
@@ -96,8 +111,10 @@ final class GlfwHostDisplay implements DisplayLoop {
     private final AtomicReference<HostDisplay.Frame> pendingFrame =
             new AtomicReference<>();
     private final AtomicBoolean closeRequested = new AtomicBoolean();
+    private final AtomicBoolean closePublished = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
     private final CountDownLatch closed = new CountDownLatch(1);
+    private final HostEventChannel events = new HostEventChannel();
     private volatile Throwable failure;
 
     GlfwHostDisplay(String title, long timeoutSecs, List<WindowIcon> icons) {
@@ -113,13 +130,20 @@ final class GlfwHostDisplay implements DisplayLoop {
     }
 
     @Override
-    public void postFrame(Frame frame) {
+    public boolean postFrame(Frame frame) {
         if (frame == null) {
             throw new NullPointerException("frame");
         }
-        if (closed.getCount() != 0) {
-            pendingFrame.set(frame);
+        if (closeRequested.get()) {
+            return false;
         }
+        pendingFrame.set(frame);
+        return true;
+    }
+
+    @Override
+    public void setEventListener(EventListener listener) {
+        events.setListener(listener);
     }
 
     @Override
@@ -180,6 +204,10 @@ final class GlfwHostDisplay implements DisplayLoop {
         } catch (Throwable problem) {
             failure = problem;
         } finally {
+            closeRequested.set(true);
+            if (closePublished.compareAndSet(false, true)) {
+                events.publish(new HostDisplay.Closed());
+            }
             GLFWErrorCallback previous = glfwSetErrorCallback(null);
             if (previous != null) {
                 previous.free();
@@ -199,6 +227,7 @@ final class GlfwHostDisplay implements DisplayLoop {
         }
         try {
             setWindowIcon(window, icons);
+            installEventCallbacks(window);
             glfwMakeContextCurrent(window);
             glfwSwapInterval(1);
             GL.createCapabilities();
@@ -253,8 +282,44 @@ final class GlfwHostDisplay implements DisplayLoop {
                 }
             }
         } finally {
+            Callbacks.glfwFreeCallbacks(window);
             glfwDestroyWindow(window);
         }
+    }
+
+    /**
+     * Registers the window event sources. GLFW invokes callbacks from
+     * {@code glfwPollEvents}, so every publish happens on the display thread;
+     * {@link HostEventChannel} hands them to the guest.
+     */
+    private void installEventCallbacks(long window) {
+        glfwSetKeyCallback(window, (win, key, scancode, action, mods) ->
+                events.publish(new HostDisplay.Key(key, scancode,
+                        action(action), mods)));
+        glfwSetCharCallback(window, (win, codepoint) ->
+                events.publish(new HostDisplay.Text(codepoint)));
+        glfwSetCursorPosCallback(window, (win, x, y) ->
+                events.publish(new HostDisplay.CursorMoved(x, y)));
+        glfwSetMouseButtonCallback(window, (win, button, action, mods) ->
+                events.publish(new HostDisplay.Button(button, action(action),
+                        mods)));
+        glfwSetScrollCallback(window, (win, xOffset, yOffset) ->
+                events.publish(new HostDisplay.Scrolled(xOffset, yOffset)));
+        glfwSetWindowSizeCallback(window, (win, width, height) ->
+                events.publish(new HostDisplay.Resized(width, height)));
+        glfwSetWindowFocusCallback(window, (win, focused) ->
+                events.publish(new HostDisplay.FocusChanged(focused)));
+    }
+
+    /** Maps a GLFW press/release/repeat action to the seam action. */
+    private static HostDisplay.Action action(int glfwAction) {
+        return switch (glfwAction) {
+            case GLFW.GLFW_RELEASE -> HostDisplay.Action.RELEASE;
+            case GLFW.GLFW_PRESS -> HostDisplay.Action.PRESS;
+            case GLFW.GLFW_REPEAT -> HostDisplay.Action.REPEAT;
+            default -> throw new IllegalArgumentException(
+                    "unknown GLFW action " + glfwAction);
+        };
     }
 
     /**

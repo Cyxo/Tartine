@@ -367,6 +367,16 @@ public final class Main {
                 System.out.println("gui: launch failed; no window");
                 return;
             }
+            Looper looper = Looper.myLooper();
+            if (looper == null) {
+                System.out.println("gui: no guest looper; no event pump");
+                return;
+            }
+            // The display publishes events on its own thread; this listener
+            // only posts them to the guest queue, which looper.loop() runs
+            // on the guest main-looper thread.
+            display.setEventListener(
+                    event -> postHostEvent(looper, event));
             Object activity = app.activity();
             // Activity.setContentView delegates to the window (framework
             // Activity.java lines 3906-3911); the flattened decor keeps the
@@ -452,12 +462,31 @@ public final class Main {
                 Arrays.fill(blank, 0xFF0D0D0D);
                 frame = new HostDisplay.Frame(480, 960, blank);
             }
-            display.postFrame(frame);
-            display.awaitClose();
+            if (!display.postFrame(frame)) {
+                System.out.println("gui: window closed before first frame");
+            }
+            // Pump the guest queue instead of awaitClose(): the display
+            // posts a Closed event, this loop runs it and quits.
+            looper.loop();
             System.out.println("gui: window closed");
         } finally {
             app.reader().close();
         }
+    }
+
+    /**
+     * Posts one host event to the guest main-looper queue. Runs on the
+     * display thread, so it must only enqueue; close quits the guest loop.
+     */
+    private static void postHostEvent(Looper looper, HostDisplay.Event event) {
+        looper.getQueue().post(() -> {
+            if (event instanceof HostDisplay.Closed) {
+                System.out.println("gui: window close event");
+                looper.quit();
+                return;
+            }
+            System.out.println("gui: host event " + event);
+        });
     }
 
     /**

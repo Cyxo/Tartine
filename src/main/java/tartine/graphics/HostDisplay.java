@@ -10,6 +10,11 @@ package tartine.graphics;
  * read back on the guest thread, {@link #postFrame} the packed pixels, and
  * let the host UI thread upload/present them at VSync. The guest never calls
  * GLFW.
+ *
+ * <p>The reverse path carries window events: input, resize, focus and close
+ * are published by the display thread and delivered through an
+ * {@link EventListener}, which the guest normally implements by posting the
+ * event to its {@code Looper} queue.
  */
 public interface HostDisplay extends AutoCloseable {
 
@@ -32,11 +37,81 @@ public interface HostDisplay extends AutoCloseable {
     }
 
     /**
+     * A window event. Events are serial values so listeners can switch on
+     * them without a GLFW dependency. Input values stay in desktop/GLFW
+     * space until the framework maps them to Android key and motion codes.
+     */
+    sealed interface Event permits Closed, Resized, FocusChanged, Key,
+            Text, CursorMoved, Button, Scrolled {
+    }
+
+    /** The window is gone; no further frames or events will arrive. */
+    record Closed() implements Event {
+    }
+
+    /** The drawable window size changed. */
+    record Resized(int width, int height) implements Event {
+        public Resized {
+            if (width <= 0 || height <= 0) {
+                throw new IllegalArgumentException("window size must be "
+                        + "positive: " + width + "x" + height);
+            }
+        }
+    }
+
+    /** The window gained ({@code true}) or lost keyboard focus. */
+    record FocusChanged(boolean focused) implements Event {
+    }
+
+    /** A desktop key transition; key/scancode/modifiers are GLFW values. */
+    record Key(int key, int scancode, Action action, int mods)
+            implements Event {
+    }
+
+    /** A Unicode code point typed into the window. */
+    record Text(int codepoint) implements Event {
+    }
+
+    /** Cursor position in window coordinates. */
+    record CursorMoved(double x, double y) implements Event {
+    }
+
+    /** A mouse button transition; button/modifiers are GLFW values. */
+    record Button(int button, Action action, int mods) implements Event {
+    }
+
+    /** Scroll wheel delta. */
+    record Scrolled(double xOffset, double yOffset) implements Event {
+    }
+
+    /** GLFW release/press/repeat actions, independent of its constants. */
+    enum Action {
+        RELEASE, PRESS, REPEAT
+    }
+
+    /** Receives window events; must not block the display thread. */
+    @FunctionalInterface
+    interface EventListener {
+        void onEvent(Event event);
+    }
+
+    /**
      * Hands a finished frame to the host UI thread. Callable from the guest
      * main-looper thread (or any other); the newest frame wins when
      * presentation is behind.
+     *
+     * @return {@code false} when the window is already closed and the frame
+     *         was dropped
      */
-    void postFrame(Frame frame);
+    boolean postFrame(Frame frame);
+
+    /**
+     * Registers the event listener and replays events that arrived before
+     * registration. The listener is called on the display thread for live
+     * events and on the registering thread while replaying; it must be
+     * thread-safe and should only enqueue work.
+     */
+    void setEventListener(EventListener listener);
 
     /** Waits until the window closes, by user request or timeout. */
     void awaitClose();

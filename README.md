@@ -26,7 +26,7 @@ Tartine can currently parse **pure-Kotlin/Java APKs** (no XML layouts or images)
 
 It finds the main activity in the XML manifest, and also extracts the icon from the resources.
 
-For now, there is no render loop, no events handling and no inter-process communication (such as intents).
+For now there is no continuous render loop and no input dispatch into the view tree: window input, resize, focus and close reach the guest's Looper queue, but GLFW-to-Android key/motion mapping and ViewRootImpl-style delivery are still gaps. There is no inter-process communication (such as intents) either.
 
 ## Prerequisites
 

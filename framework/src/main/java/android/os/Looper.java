@@ -12,13 +12,13 @@ import android.util.Printer;
  *       {@code Looper.class} ("Only one Looper may be created per thread",
  *       "The main Looper has already been prepared.").</li>
  *   <li>The AOSP constructor pins the owning thread and builds the
- *       MessageQueue; the desktop keeps the thread pin (AOSP ctor line
- *       {@code mThread = Thread.currentThread()}) but leaves the queue null:
- *       message delivery here is pumped by the desktop frame clock
- *       (Choreographer seam) once it lands, not by Linux epoll middleware.
- *       Queue accessors therefore throw the named gap.</li>
- *   <li>{@code loop()}/{@code quit()}/{@code quitSafely()}/{@code dump} stay
- *       named gaps for the same reason.</li>
+ *       MessageQueue; the desktop does the same. The queue is the host
+ *       driver's action channel: the display thread posts input/close
+ *       actions, {@link #loop()} runs them on the looper thread, and
+ *       {@link MessageQueue#quit()} asks the loop to return. This is the
+ *       desktop stand-in for Linux epoll middleware, not a frame clock.</li>
+ *   <li>{@code dump} stays a named gap; {@code setMessageLogging} remains
+ *       one too (no Printer sink yet).</li>
  * </ul>
  */
 public class Looper {
@@ -29,15 +29,16 @@ public class Looper {
     /** AOSP line 83: main looper, guarded by Looper.class. */
     private static Looper sMainLooper;
 
-    /** AOSP ctor delivers this; the desktop pump replaces its delivery. */
-    private MessageQueue mQueue;
+    /** AOSP ctor line 432: the queue the looper thread pumps. */
+    private final MessageQueue mQueue;
 
     /** AOSP ctor line 433. */
     private final Thread mThread;
 
-    /** AOSP line 432 (minus the MessageQueue construction, see header). */
+    /** AOSP line 432: pin the thread and build its queue. */
     private Looper() {
         mThread = Thread.currentThread();
+        mQueue = new MessageQueue();
     }
 
     /** AOSP prepare(true). */
@@ -78,12 +79,12 @@ public class Looper {
         return sThreadLocal.get();
     }
 
-    /** AOSP myQueue(): myLooper().mQueue — the queue is a named gap. */
+    /** AOSP myQueue(): myLooper().mQueue. */
     public static MessageQueue myQueue() {
         Looper me = myLooper();
         if (me == null) {
-            throw new UnsupportedOperationException(
-                    "Tartine: not implemented: Landroid/os/Looper;->myQueue()Landroid/os/MessageQueue;");
+            throw new NullPointerException(
+                    "myQueue() called without a prepared Looper");
         }
         return me.mQueue;
     }
@@ -105,16 +106,43 @@ public class Looper {
         return Thread.currentThread() == mThread;
     }
 
+    /**
+     * AOSP loop(): run the thread's queue until {@link #quit()}. The
+     * desktop queue holds host actions (input, close), so this is the
+     * guest-side pump for {@code HostDisplay} events.
+     */
     public static void loop() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Looper;->loop()V");
+        Looper me = myLooper();
+        if (me == null) {
+            throw new RuntimeException("No Looper; Looper.prepare() wasn't "
+                    + "called on this thread.");
+        }
+        MessageQueue queue = me.mQueue;
+        while (true) {
+            Runnable action = queue.take();
+            if (action == null) {
+                return;
+            }
+            action.run();
+        }
     }
 
+    /**
+     * AOSP quit(): drop pending actions and make {@link #loop()} return.
+     * AOSP refuses to quit the main looper; the desktop allows it because a
+     * closed window is the process-exit stand-in until activity finish
+     * exists.
+     */
     public void quit() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Looper;->quit()V");
+        mQueue.quit();
     }
 
+    /**
+     * AOSP quitSafely(): the desktop queue holds plain actions, so this
+     * folds into {@link #quit()}.
+     */
     public void quitSafely() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Looper;->quitSafely()V");
+        quit();
     }
 
     public void setMessageLogging(Printer arg0) {

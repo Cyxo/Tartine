@@ -253,6 +253,14 @@ GitLab `android_translation_layer/android_translation_layer`
   thread on macOS via `-XstartOnFirstThread` — while guest code runs on its
   own main-looper thread (`tartine-guest` on macOS, the caller elsewhere) and
   posts finished frames through `HostDisplay.postFrame`.
+- Events flow the other way: GLFW input, resize and focus callbacks publish
+  `HostDisplay.Event`s on the display thread; `HostEventChannel` buffers
+  until the guest registers a listener (so a close that races startup is not
+  lost). The guest listener posts each event to its Looper `MessageQueue` and
+  `Looper.loop()` runs it on the looper thread; `Closed` quits the loop.
+  Input values stay in GLFW space until Android key/motion mapping and
+  ViewRootImpl-style dispatch land. `postFrame` returns `false` once the
+  window is closed.
 - First bridge landed (`f4f113c`): the display uploads the first-draw raster
   (`GfxSurface.readPixels`) as a GL texture, letterboxes per VSync-paced swap.
   `RasterPresenter` mints the surface and binds it to a framework `Canvas`.
@@ -260,7 +268,8 @@ GitLab `android_translation_layer/android_translation_layer`
   `DesktopWindow`): the window stays hidden until the first posted frame,
   then shows and starts its timeout; `Main` snapshots the drawn surface into
   a `HostDisplay.Frame` on the guest thread and closes the surface after
-  readback.
+  readback. When the window closes while the guest is still running, the
+  macOS path signals close before joining the guest and bounds the join.
 - Window icon landed: `tartine.apk.AppIcon` resolves
   `android:icon`/`roundIcon` through `ResourceTable` and renders 16/32/48
   RGBA buffers; `<adaptive-icon>`/`<vector>` convert to SVG via jsvg;

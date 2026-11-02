@@ -12,12 +12,15 @@ import android.util.Printer;
  *       reports the same {@code "Can't create handler inside thread ..."}
  *       failure when no Looper was prepared (Handler.java:228-236,
  *       :287-291, :305-312).</li>
- *   <li>The probe has no Looper pump yet, so posted work runs inline at the
- *       post site — the delivery contract is "runs inline". AOSP's
- *       {@code post} -> {@code sendMessageDelayed} -> {@code enqueueMessage}
- *       chain (Handler.java:438-440, :646-648, :680-690) lands unchanged
- *       once the desktop message pump exists; until then delays cannot be
- *       observed and asynchronous ordering has no effect.</li>
+ *   <li>Handler's own post chain still runs inline at the post site — the
+ *       delivery contract is "runs inline". The desktop Looper pump
+ *       ({@code Looper.loop} plus {@code MessageQueue.post}) exists for
+ *       host-dispatched window events, not SDK {@code Message} delivery
+ *       yet. AOSP's {@code post} -> {@code sendMessageDelayed} ->
+ *       {@code enqueueMessage} chain (Handler.java:438-440, :646-648,
+ *       :680-690) lands unchanged once {@code Message} delivery is ported;
+ *       until then delays cannot be observed and asynchronous ordering has
+ *       no effect.</li>
  *   <li>{@code removeCallbacks}/{@code removeMessages}/{@code hasMessages}
  *       therefore find nothing to remove/report.</li>
  * </ul>
