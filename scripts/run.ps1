@@ -17,7 +17,7 @@ if (-not $target) { $target = "apks/app-debug.apk" }
 # JVM flags (mise-pinned JDK, needs >= 23 for the last one): grant LWJGL native
 # access (JEP 472); steer LWJGL to its jdk.internal.misc memory backend instead
 # of the deprecated sun.misc.Unsafe legacy default on JDK 25+ (LWJGL
-# Configuration.MEMORY_BACKEND); let our interpreter's sun.misc.Unsafe
+# Configuration.MEMORY_BACKEND); let LWJGL's sun.misc.Unsafe
 # allocateInstance failover run without JEP 498 terminal-deprecation warnings.
 $jvm = @(
     "--enable-native-access=ALL-UNNAMED"

@@ -203,8 +203,8 @@ public final class Vfs {
 
     /**
      * Validates and accepts a configured sdcard override mount, or
-     * explains why it was refused (stderr + null). Rules (AGENTS VFS
-     * seam): must be an absolute path naming an existing directory, must
+     * explains why it was refused (stderr + null). Rules (ADR-0005): must
+     * be an absolute path naming an existing directory, must
      * not be a filesystem root or a junction/symlink indirection, and
      * must not contain the Tartine root inside it.
      */

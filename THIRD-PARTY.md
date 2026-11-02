@@ -58,7 +58,7 @@ Files land in `tools/` which is gitignored. Size is verified on download.
 | `baksmali-2.5.2.jar` | 2.5.2 | Golden disassembly oracle | Maven Central `org/smali/baksmali/2.5.2/` | BSD 3-Clause |
 | `util-2.5.2.jar` | 2.5.2 | baksmali runtime dep | Maven Central `org/smali/util/2.5.2/` | BSD 3-Clause |
 | `jcommander-1.64.jar` | 1.64 | baksmali runtime dep (CLI parsing) | Maven Central `com/beust/jcommander/1.64/` | Apache-2.0 |
-| `apktool_3.0.3.jar` | 3.0.3 | Manifest/resource decode oracle (Step 1 cross-check) | `https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_3.0.3.jar` (no published checksum; size 15 478 013 bytes matched, `version` + fixture decode smoke-tested) | Apache-2.0 |
+| `apktool_3.0.3.jar` | 3.0.3 | Manifest/resource decode oracle | `https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_3.0.3.jar` (no published checksum; size 15 478 013 bytes matched, `version` + fixture decode smoke-tested) | Apache-2.0 |
 
 Example (Windows; `out/` is gitignored scratch):
 
@@ -73,9 +73,10 @@ java -cp "tools/baksmali-2.5.2.jar;tools/util-2.5.2.jar;tools/jcommander-1.64.ja
   stable 8.13.2 as of 2026-10-17) — APK signature verification (v2/v3,
   v1 fallback) for the future install/daemon flow.
 - **dex2jar** (Apache-2.0) / **Enjarify** (Apache-2.0, pure Python 3,
-  archived; successor `Storyyeller/enjarify`) — translation oracles.
-  Both translated the Step 3 fixture cleanly (fetch on demand, scratch-only;
-  not included).
+  archived; successor `Storyyeller/enjarify`) - translation oracles that
+  convert DEX into JVM bytecode / Java source (dex2jar) or native Java
+  decompilation output (Enjarify) for cross-checking translated code.
+  Fetch on demand, scratch-only; not included.
 forge private classes. Analysis narrowly looks at request components.
 - **AOSP ART** — reference only, nothing to embed. Skia's Java route is now
   embedded **via Skija** (`io.github.humbleui:skija-shared` +

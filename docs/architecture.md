@@ -71,8 +71,10 @@ GitLab `android_translation_layer/android_translation_layer`
   objects allocate as interpreter placeholders with no-op `<init>`" model
   is gone with `tartine.vm`.
 - Translation resolves guest `android.*` against the `framework` module and
-  allowlisted host `java.*`/`javax.*` classes by ordinary JVM linkage: there
-  is no runtime reflection seam anymore (deleted with the interpreter). The
+  allowlisted host `java.*`/`javax.*` classes by ordinary JVM linkage: the
+  interpreter's per-instruction dispatch seam is gone with `tartine.vm`;
+  reflection reaches only guest-declared members through the `GuestReflect`
+  facade, and host-declared ones stay filtered/denied.
   sandbox is ClassLoader-level (ADR-0009): `TranslatedLoader` is guest-first
   and applies `SandboxPolicy` to every guest-reachable lookup, while plain
   JVM linkage may resolve a denied host type that appears only in a

@@ -170,8 +170,7 @@ Environment knobs:
 - `TARTINE_FONT_FAMILIES` - same family list as `font.families` (the
   config file wins).
 
-Every configuration knob documents here in the same commit that lands it
-(`AGENTS.md` commits rule).
+Every configuration knob is documented here in the same commit that lands it.
 
 ## Guest sandbox
 
@@ -207,6 +206,6 @@ are refused with a named denial at invoke/access. Denied calls surface as
 named `UnsupportedOperationException` gaps at first use, never as silent
 success.
 
-Planned (decided in `AGENTS.md`, not wired yet): per-folder user maps
+Planned (decided in ADR-0005, not wired yet): per-folder user maps
 (`/sdcard/Download` -> `~/Downloads`), file-picker grants, whole-home
 mounting as an explicit read-only option.
