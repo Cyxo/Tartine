@@ -20,7 +20,7 @@ import tartine.dex.DexClass;
  * description into a named gap (method) or a named
  * {@code ClassNotFoundException} (class).
  *
- * <p>Five guest facades widen the boundary without exposing the host, and
+ * <p>Guest facades widen the boundary without exposing the host, and
  * {@link SandboxPass} rewrites their call sites before this table's type or
  * member denials run:
  *
@@ -64,6 +64,16 @@ import tartine.dex.DexClass;
  *       {@code stream}, {@code findFirst}, {@code findNext}, and
  *       {@code reload}. Discovery always reports no providers and never
  *       instantiates one.</li>
+ *   <li>{@code tartine.guest.GuestFileStreams} with its
+ *       {@code GuestFileInputStream}, {@code GuestFileOutputStream},
+ *       {@code GuestFileReader}, {@code GuestFileWriter},
+ *       {@code GuestPrintStream}, and {@code GuestPrintWriter} subclasses -
+ *       allowlist: the file-backed constructors listed by
+ *       {@link #streamCtorSupported}. The pass rewrites {@code NEW} and the
+ *       constructor call so the stream opens the Vfs-mapped host path and
+ *       honors the read-only mount flag. Unlisted constructors,
+ *       {@code Scanner(File)} and {@code Formatter(File/String)} stay
+ *       denied.</li>
  * </ul>
  */
 final class SandboxPolicy {
@@ -90,7 +100,11 @@ final class SandboxPolicy {
             "java.io.Externalizable",
             "java.io.File",
             "java.io.FileFilter",
+            "java.io.FileInputStream",
             "java.io.FileNotFoundException",
+            "java.io.FileOutputStream",
+            "java.io.FileReader",
+            "java.io.FileWriter",
             "java.io.FilenameFilter",
             "java.io.FilterInputStream",
             "java.io.FilterOutputStream",
@@ -297,6 +311,77 @@ final class SandboxPolicy {
             "reload",
             "stream");
 
+    /** File-backed stream/writer classes rerouted to {@code GuestFile*}. */
+    static final Set<String> FILE_STREAM_CLASSES = Set.of(
+            "java/io/FileInputStream",
+            "java/io/FileOutputStream",
+            "java/io/FileReader",
+            "java/io/FileWriter",
+            "java/io/PrintStream",
+            "java/io/PrintWriter");
+
+    /**
+     * Whether this file-backed constructor is rewritten by the pass to the
+     * matching {@code GuestFile*} subclass. Unlisted descriptors (and the
+     * final {@code Scanner}/{@code Formatter}) stay named denials.
+     */
+    static boolean streamCtorSupported(String owner, String desc) {
+        return switch (owner) {
+            case "java/io/FileInputStream" -> desc.equals("(Ljava/io/File;)V")
+                    || desc.equals("(Ljava/lang/String;)V");
+            case "java/io/FileOutputStream" -> desc.equals("(Ljava/io/File;)V")
+                    || desc.equals("(Ljava/io/File;Z)V")
+                    || desc.equals("(Ljava/lang/String;)V")
+                    || desc.equals("(Ljava/lang/String;Z)V");
+            case "java/io/FileReader" -> desc.equals("(Ljava/io/File;)V")
+                    || desc.equals("(Ljava/io/File;Ljava/nio/charset/Charset;)V")
+                    || desc.equals("(Ljava/lang/String;)V")
+                    || desc.equals("(Ljava/lang/String;Ljava/nio/charset/Charset;)V");
+            case "java/io/FileWriter" -> desc.equals("(Ljava/io/File;)V")
+                    || desc.equals("(Ljava/io/File;Z)V")
+                    || desc.equals("(Ljava/io/File;Ljava/nio/charset/Charset;)V")
+                    || desc.equals("(Ljava/io/File;Ljava/nio/charset/Charset;Z)V")
+                    || desc.equals("(Ljava/lang/String;)V")
+                    || desc.equals("(Ljava/lang/String;Z)V")
+                    || desc.equals("(Ljava/lang/String;Ljava/nio/charset/Charset;)V")
+                    || desc.equals("(Ljava/lang/String;Ljava/nio/charset/Charset;Z)V");
+            case "java/io/PrintStream" -> desc.equals("(Ljava/io/File;)V")
+                    || desc.equals("(Ljava/io/File;Ljava/lang/String;)V")
+                    || desc.equals("(Ljava/io/File;Ljava/nio/charset/Charset;)V")
+                    || desc.equals("(Ljava/lang/String;)V")
+                    || desc.equals("(Ljava/lang/String;Ljava/lang/String;)V")
+                    || desc.equals("(Ljava/lang/String;Ljava/nio/charset/Charset;)V");
+            case "java/io/PrintWriter" -> desc.equals("(Ljava/io/File;)V")
+                    || desc.equals("(Ljava/io/File;Ljava/lang/String;)V")
+                    || desc.equals("(Ljava/io/File;Ljava/nio/charset/Charset;)V")
+                    || desc.equals("(Ljava/lang/String;)V")
+                    || desc.equals("(Ljava/lang/String;Ljava/lang/String;)V")
+                    || desc.equals("(Ljava/lang/String;Ljava/nio/charset/Charset;)V");
+            default -> false;
+        };
+    }
+
+    /**
+     * Non-file constructors the pass also reroutes to the Guest subclass.
+     * {@code PrintStream}/{@code PrintWriter} wrap an existing stream or
+     * writer as well as a file, and {@code NEW} is class-wide, so the
+     * subclass must carry pass-through constructors for those.
+     */
+    static boolean streamCtorPassthrough(String owner, String desc) {
+        return switch (owner) {
+            case "java/io/PrintStream" -> desc.equals("(Ljava/io/OutputStream;)V")
+                    || desc.equals("(Ljava/io/OutputStream;Z)V")
+                    || desc.equals("(Ljava/io/OutputStream;ZLjava/lang/String;)V")
+                    || desc.equals("(Ljava/io/OutputStream;ZLjava/nio/charset/Charset;)V");
+            case "java/io/PrintWriter" -> desc.equals("(Ljava/io/Writer;)V")
+                    || desc.equals("(Ljava/io/Writer;Z)V")
+                    || desc.equals("(Ljava/io/OutputStream;)V")
+                    || desc.equals("(Ljava/io/OutputStream;Z)V")
+                    || desc.equals("(Ljava/io/OutputStream;ZLjava/nio/charset/Charset;)V");
+            default -> false;
+        };
+    }
+
     /** Host loading policy for a class the dex set does not define. */
     static String classDenial(String internalName) {
         if (internalName == null) {
@@ -439,6 +524,16 @@ final class SandboxPolicy {
             if (cls.superclass.equals("Ljava/io/File;")) {
                 return "guest subclasses of java.io.File are not available";
             }
+            if (cls.superclass.startsWith("Ljava/io/")
+                    && cls.superclass.endsWith(";")) {
+                String superInternal = cls.superclass.substring(1,
+                        cls.superclass.length() - 1);
+                if (FILE_STREAM_CLASSES.contains(superInternal)) {
+                    return "guest subclasses of "
+                            + superInternal.replace('/', '.')
+                            + " are not available";
+                }
+            }
             String denial = typeDenial(cls.superclass, isGuest);
             if (denial != null) {
                 return "superclass " + denial;
@@ -501,9 +596,15 @@ final class SandboxPolicy {
         if (owner.equals("java/io/File")) {
             return fileMethodDenial(name, desc);
         }
-        if (owner.equals("java/io/PrintStream")
-                || owner.equals("java/io/PrintWriter")) {
-            if (name.equals("<init>") && fileConstructor(desc)) {
+        if (FILE_STREAM_CLASSES.contains(owner) && name.equals("<init>")) {
+            // The pass rewrites the supported file-backed constructors to
+            // the tartine.guest.GuestFile* subclasses before this table
+            // runs; anything reaching here (unsupported descriptor, method
+            // handle, missed rewrite) is a named denial.
+            boolean fileBacked = !owner.equals("java/io/PrintStream")
+                    && !owner.equals("java/io/PrintWriter")
+                    || fileConstructor(desc);
+            if (fileBacked) {
                 return "file-backed " + owner.replace('/', '.')
                         + " construction is not available";
             }

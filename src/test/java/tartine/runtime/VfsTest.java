@@ -5,11 +5,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tartine.TestLinks;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /** Behavioral pins for the guest-path seam (tartine.runtime.Vfs). */
 class VfsTest {
@@ -161,6 +163,83 @@ class VfsTest {
         // The forward mapper rejects Windows device names; a host file with
         // that name must not become a guest path either.
         assertNull(policy.guestPath(root.resolve("sdcard").resolve("CON")));
+    }
+
+    @Test
+    void secureTargetAllowsLazilyCreatedMounts() {
+        Vfs.Policy policy = new Vfs.Policy(root, card());
+        // The card and per-app directories are created on first write.
+        assertEquals(root.resolve("sdcard").resolve("new").resolve("a.txt"),
+                policy.secureTarget("/sdcard/new/a.txt", true));
+        assertEquals(root.resolve("data").resolve("pkg").resolve("files")
+                        .resolve("a.txt"),
+                policy.secureTarget("/data/data/pkg/files/a.txt", true));
+        assertEquals(root.resolve("tmp").resolve("x"),
+                policy.secureTarget("/data/local/tmp/x", true));
+    }
+
+    @Test
+    void secureTargetRejectsDirectoryLinkEscapes() throws Exception {
+        Path card = root.resolve("sdcard");
+        Files.createDirectories(card);
+        Path outside = root.resolve("outside");
+        Files.createDirectories(outside);
+        Files.writeString(outside.resolve("secret.txt"), "secret");
+        Path escape = card.resolve("escape");
+        assumeTrue(TestLinks.create(escape, outside),
+                "symlink/junction creation unavailable");
+
+        Vfs.Policy policy = new Vfs.Policy(root, card());
+        assertNull(policy.secureTarget("/sdcard/escape/secret.txt", false));
+        assertNull(policy.secureTarget("/sdcard/escape/new.txt", true));
+        assertNull(policy.secureTarget("/sdcard/escape", false));
+    }
+
+    @Test
+    void secureTargetAllowsLinksInsideTheMount() throws Exception {
+        Path card = root.resolve("sdcard");
+        Path real = card.resolve("real");
+        Files.createDirectories(real);
+        Path good = card.resolve("good");
+        assumeTrue(TestLinks.create(good, real),
+                "symlink/junction creation unavailable");
+
+        Vfs.Policy policy = new Vfs.Policy(root, card());
+        assertEquals(card.resolve("good").resolve("a.txt"),
+                policy.secureTarget("/sdcard/good/a.txt", true));
+        assertEquals(card.resolve("good").resolve("b.txt"),
+                policy.secureTarget("/sdcard/good/b.txt", false));
+    }
+
+    @Test
+    void secureTargetRejectsFileLinkEscapes() throws Exception {
+        Path card = root.resolve("sdcard");
+        Files.createDirectories(card);
+        Path outside = root.resolve("outside.txt");
+        Files.writeString(outside, "secret");
+        Path link = card.resolve("secret.txt");
+        assumeTrue(TestLinks.create(link, outside),
+                "file symlink creation unavailable");
+
+        Vfs.Policy policy = new Vfs.Policy(root, card());
+        assertNull(policy.secureTarget("/sdcard/secret.txt", false));
+        assertNull(policy.secureTarget("/sdcard/secret.txt", true));
+    }
+
+    @Test
+    void secureTargetRejectsDanglingLinkWrites() throws Exception {
+        Path card = root.resolve("sdcard");
+        Files.createDirectories(card);
+        Path missing = root.resolve("missing.txt");
+        Path link = card.resolve("dangling.txt");
+        assumeTrue(TestLinks.create(link, missing),
+                "dangling symlink creation unavailable");
+
+        Vfs.Policy policy = new Vfs.Policy(root, card());
+        // A write through the dangling link must not create the host-side
+        // target; a read answers nonexistent.
+        assertNull(policy.secureTarget("/sdcard/dangling.txt", true));
+        assertNull(policy.secureTarget("/sdcard/dangling.txt", false));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package tartine.tx;
 
+import java.util.Map;
 import java.util.function.Predicate;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ConstantDynamic;
@@ -23,6 +24,15 @@ import tartine.guest.SandboxDenied;
  * named gap stub.
  */
 final class SandboxPass extends ClassVisitor {
+    /** File-backed constructors rewritten to their GuestFile* subclass. */
+    private static final Map<String, String> FILE_STREAM_OWNERS = Map.of(
+            "java/io/FileInputStream", "tartine/guest/GuestFileInputStream",
+            "java/io/FileOutputStream", "tartine/guest/GuestFileOutputStream",
+            "java/io/FileReader", "tartine/guest/GuestFileReader",
+            "java/io/FileWriter", "tartine/guest/GuestFileWriter",
+            "java/io/PrintStream", "tartine/guest/GuestPrintStream",
+            "java/io/PrintWriter", "tartine/guest/GuestPrintWriter");
+
     private final Predicate<String> isGuest;
     /** Internal name of the class being visited, for caller injection. */
     private String className;
@@ -106,6 +116,14 @@ final class SandboxPass extends ClassVisitor {
                     super.visitTypeInsn(opcode, "tartine/guest/GuestFile");
                     return;
                 }
+                if (opcode == Opcodes.NEW
+                        && FILE_STREAM_OWNERS.containsKey(type)) {
+                    // NEW goes to the GuestFile* subclass; the matching
+                    // constructor call is rewritten below, so the object
+                    // still carries the host stream type for the verifier.
+                    super.visitTypeInsn(opcode, FILE_STREAM_OWNERS.get(type));
+                    return;
+                }
                 if (type.equals("java/lang/Runtime")) {
                     if (opcode == Opcodes.NEW) {
                         throw denied("Runtime: host runtime access is not"
@@ -152,6 +170,20 @@ final class SandboxPass extends ClassVisitor {
             @Override
             public void visitMethodInsn(int opcode, String owner, String name,
                     String descriptor, boolean isInterface) {
+                if (name.equals("<init>")
+                        && FILE_STREAM_OWNERS.containsKey(owner)) {
+                    if (!SandboxPolicy.streamCtorSupported(owner, descriptor)
+                            && !SandboxPolicy.streamCtorPassthrough(owner,
+                                    descriptor)) {
+                        throw denied("file-backed "
+                                + owner.replace('/', '.')
+                                + " construction is not available");
+                    }
+                    delegate.visitMethodInsn(Opcodes.INVOKESPECIAL,
+                            FILE_STREAM_OWNERS.get(owner), name, descriptor,
+                            false);
+                    return;
+                }
                 if (owner.equals("java/io/File")) {
                     fileCall(delegate, name, descriptor);
                     return;

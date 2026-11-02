@@ -145,7 +145,8 @@ GitLab `android_translation_layer/android_translation_layer`
   framework descriptors link without exposing the type to guest code.
   `SandboxPass` checks class metadata and every instruction at translation
   time; a denial becomes the method's named gap. `java.io.File` remains the
-  sole guest filesystem type: streams, NIO paths/channels, network,
+  sole guest path type; the file-backed `java.io` stream/writer constructors
+  are rerouted through the same Vfs bridge, while NIO paths/channels, network,
   processes, reflection internals, and host internals stay denied.
 - `tartine.guest.GuestRuntime`: `getRuntime`, `availableProcessors`,
   `totalMemory`, `freeMemory`, `maxMemory`, and a no-op `gc`. `exec`,
@@ -176,6 +177,13 @@ GitLab `android_translation_layer/android_translation_layer`
   `loadInstalled`, `iterator`, `stream`, `findFirst`, `findNext`, and
   `reload`. Discovery always reports no providers and never instantiates
   one.
+- `tartine.guest.GuestFileStreams` with its `GuestFileInputStream`,
+  `GuestFileOutputStream`, `GuestFileReader`, `GuestFileWriter`,
+  `GuestPrintStream`, and `GuestPrintWriter` subclasses: the listed
+  file-backed constructors are rewritten to the subclass, which opens the
+  Vfs-mapped host path and refuses writes on a read-only mount before the
+  host stream opens. Wrapping constructors pass through; `Scanner` and
+  `Formatter` file constructors stay denied.
 
 ## Virtual filesystem (decided 2026-10)
 
@@ -186,6 +194,13 @@ GitLab `android_translation_layer/android_translation_layer`
   the host cwd. `Policy.guestPath(Path)` reverse-maps framework-returned
   `File` objects with the canonical mount order (`/data/data` over
   `/data/user/0`, `/sdcard` over `/storage/emulated/0`).
+- Real-path check: every bridge access calls `Policy.secureTarget`, which
+  resolves the deepest existing component (and a final symlink, including a
+  dangling one on writes) and requires it inside the mount's real root.
+  A symlink/junction planted in a mounted folder therefore cannot escape;
+  `..` filtering alone is not enough. The file-backed stream facade uses the
+  same check, so `FileInputStream`/`FileOutputStream` cannot follow an
+  escaping link either.
 - Root = app data, not config: Windows `%LOCALAPPDATA%\Tartine`, macOS
   `~/Library/Application Support/Tartine`, Linux
   `$XDG_DATA_HOME/tartine` (default `~/.local/share/tartine`);

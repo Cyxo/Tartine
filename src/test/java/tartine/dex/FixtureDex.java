@@ -299,7 +299,8 @@ public final class FixtureDex {
                         demos.get("importantDemo"), demos.get("captureDemo"), demos.get("clipboardDemo"), demos.get("treeDemo"), demos.get("viewConfigDemo"),
                         demos.get("appCtxDemo"),
                         demos.get("ctorDemo"), demos.get("fileDemo"),
-                        demos.get("fileDenyDemo"), demos.get("fileMkdirDemo")));
+                        demos.get("fileDenyDemo"), demos.get("fileMkdirDemo"),
+                        demos.get("fileStreamDemo")));
         builder.writeTo(new FileDataStore(dexFile.toFile()));
     }
 
@@ -3993,6 +3994,68 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), fileMkdirImpl);
         demos.put("fileMkdirDemo", fileMkdirDemo);
+
+        // fileStreamDemo(): write 7 through the FileOutputStream facade and
+        // read it back through FileInputStream (both Vfs-routed).
+        MutableMethodImplementation fileStreamImpl =
+                new MutableMethodImplementation(4);
+        fileStreamImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("/data/data/com.example/files/s.bin")));
+        fileStreamImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 1,
+                builder.internTypeReference("Ljava/io/File;")));
+        fileStreamImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+        fileStreamImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/File;", "<init>",
+                        Collections.singletonList("Ljava/lang/String;"), "V"))));
+        fileStreamImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 1, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/File;", "getParentFile",
+                        Collections.<String>emptyList(), "Ljava/io/File;"))));
+        fileStreamImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        fileStreamImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/File;", "mkdirs",
+                        Collections.<String>emptyList(), "Z"))));
+        fileStreamImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        fileStreamImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 3,
+                builder.internTypeReference("Ljava/io/FileOutputStream;")));
+        fileStreamImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 3));
+        fileStreamImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 3, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/FileOutputStream;", "<init>",
+                        Collections.singletonList("Ljava/io/File;"), "V"))));
+        fileStreamImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 7));
+        fileStreamImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 3, 2, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/FileOutputStream;", "write",
+                        Collections.singletonList("I"), "V"))));
+        fileStreamImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 3, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/FileOutputStream;", "close",
+                        Collections.<String>emptyList(), "V"))));
+        fileStreamImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 3,
+                builder.internTypeReference("Ljava/io/FileInputStream;")));
+        fileStreamImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 3));
+        fileStreamImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2, 3, 1, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/FileInputStream;", "<init>",
+                        Collections.singletonList("Ljava/io/File;"), "V"))));
+        fileStreamImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 3, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/FileInputStream;", "read",
+                        Collections.<String>emptyList(), "I"))));
+        fileStreamImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
+        fileStreamImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 3, 0, 0,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/io/FileInputStream;", "close",
+                        Collections.<String>emptyList(), "V"))));
+        fileStreamImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        BuilderMethod fileStreamDemo = builder.internMethod(HELLO, "fileStreamDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), fileStreamImpl);
+        demos.put("fileStreamDemo", fileStreamDemo);
 
         // forNameDenied(): Class.forName("java.lang.Runtime") stays
         // unresolvable — the audit's reflection-bypass probe. Class lookup

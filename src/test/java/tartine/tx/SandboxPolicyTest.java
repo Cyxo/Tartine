@@ -27,7 +27,10 @@ class SandboxPolicyTest {
     @Test
     void hostDenies() {
         assertNotNull(SandboxPolicy.classDenial("java/net/Socket"));
-        assertNotNull(SandboxPolicy.classDenial("java/io/FileInputStream"));
+        assertNull(SandboxPolicy.classDenial("java/io/FileInputStream"));
+        assertNull(SandboxPolicy.classDenial("java/io/FileOutputStream"));
+        assertNull(SandboxPolicy.classDenial("java/io/FileReader"));
+        assertNull(SandboxPolicy.classDenial("java/io/FileWriter"));
         assertNotNull(SandboxPolicy.classDenial("java/io/RandomAccessFile"));
         assertNotNull(SandboxPolicy.classDenial("java/io/FileDescriptor"));
         assertNotNull(SandboxPolicy.classDenial("java/nio/file/Path"));
@@ -177,6 +180,42 @@ class SandboxPolicyTest {
                 "getSystemClassLoader"));
         assertTrue(SandboxPolicy.SERVICE_LOADER_ALLOWED.contains("iterator"));
         assertFalse(SandboxPolicy.SERVICE_LOADER_ALLOWED.contains("provider"));
+    }
+
+    @Test
+    void fileStreamRewritesAreNarrow() {
+        // The pass reroutes only the listed file-backed constructors.
+        assertTrue(SandboxPolicy.streamCtorSupported("java/io/FileInputStream",
+                "(Ljava/io/File;)V"));
+        assertTrue(SandboxPolicy.streamCtorSupported("java/io/FileInputStream",
+                "(Ljava/lang/String;)V"));
+        assertFalse(SandboxPolicy.streamCtorSupported("java/io/FileInputStream",
+                "(Ljava/io/FileDescriptor;)V"));
+        assertTrue(SandboxPolicy.streamCtorSupported("java/io/FileOutputStream",
+                "(Ljava/io/File;Z)V"));
+        assertTrue(SandboxPolicy.streamCtorSupported("java/io/FileWriter",
+                "(Ljava/lang/String;Ljava/nio/charset/Charset;Z)V"));
+        assertTrue(SandboxPolicy.streamCtorSupported("java/io/PrintWriter",
+                "(Ljava/io/File;Ljava/nio/charset/Charset;)V"));
+        assertTrue(SandboxPolicy.streamCtorSupported("java/io/PrintStream",
+                "(Ljava/lang/String;)V"));
+        // PrintStream/PrintWriter also wrap an existing stream or writer.
+        assertTrue(SandboxPolicy.streamCtorPassthrough("java/io/PrintStream",
+                "(Ljava/io/OutputStream;Z)V"));
+        assertTrue(SandboxPolicy.streamCtorPassthrough("java/io/PrintWriter",
+                "(Ljava/io/Writer;)V"));
+        assertFalse(SandboxPolicy.streamCtorPassthrough("java/io/FileReader",
+                "(Ljava/io/File;)V"));
+        // A missed rewrite (method handle, unsupported descriptor) still
+        // fails closed at the policy table.
+        assertNotNull(SandboxPolicy.memberDenial("java/io/FileInputStream",
+                "<init>", "(Ljava/io/File;)V", true));
+        assertNotNull(SandboxPolicy.memberDenial("java/io/FileOutputStream",
+                "<init>", "(Ljava/io/FileDescriptor;)V", true));
+        assertNull(SandboxPolicy.memberDenial("java/io/FileInputStream",
+                "read", "()I", true));
+        assertNotNull(SandboxPolicy.memberDenial("java/io/FileInputStream",
+                "getFD", "()Ljava/io/FileDescriptor;", true));
     }
 
     @Test

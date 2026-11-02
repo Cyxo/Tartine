@@ -54,7 +54,7 @@ public final class GuestFiles {
 
     private static Path target(File file, Vfs.Policy policy) {
         String guest = guestPathOrNull(file, policy);
-        return guest == null ? null : policy.target(guest);
+        return guest == null ? null : policy.secureTarget(guest, false);
     }
 
     private static Path requireTarget(File file, boolean write) {
@@ -63,7 +63,9 @@ public final class GuestFiles {
         if (guest == null) {
             throw new SandboxDenied("path is outside the guest filesystem");
         }
-        Path host = policy.target(guest);
+        // secureTarget rechecks the real path, so a symlink/junction inside
+        // a mount cannot point the guest outside it.
+        Path host = policy.secureTarget(guest, write);
         if (host == null) {
             throw new SandboxDenied("path is outside the guest filesystem");
         }

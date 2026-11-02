@@ -9,6 +9,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tartine.TestLinks;
 import tartine.runtime.Vfs;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Behavioral pins for the File bridge: guest paths map through the VFS,
@@ -110,6 +112,11 @@ class GuestFilesTest {
         assertThrows(SandboxDenied.class, proc::toPath);
         assertThrows(SandboxDenied.class, proc::toURI);
         assertThrows(SandboxDenied.class, proc::toURL);
+        // Static File surfaces are hidden on GuestFile too, so a crafted
+        // guest naming the facade directly cannot create host temp files.
+        assertThrows(SandboxDenied.class,
+                () -> GuestFile.createTempFile("t", ".tmp"));
+        assertThrows(SandboxDenied.class, GuestFile::listRoots);
     }
 
     @Test
@@ -155,6 +162,27 @@ class GuestFilesTest {
         GuestFile data = new GuestFile("/data/data/com.example/files/x.txt");
         assertTrue(data.getParentFile().mkdirs());
         assertTrue(data.createNewFile());
+    }
+
+    @Test
+    void symlinkedEscapesStayInvisible() throws Exception {
+        Path card = root.resolve("sdcard");
+        Files.createDirectories(card);
+        Path outside = root.resolve("outside");
+        Files.createDirectories(outside);
+        Files.writeString(outside.resolve("secret.txt"), "secret");
+        assumeTrue(TestLinks.create(card.resolve("escape"), outside),
+                "symlink/junction creation unavailable");
+
+        GuestFile secret = new GuestFile("/sdcard/escape/secret.txt");
+        assertFalse(secret.exists());
+        assertFalse(secret.isFile());
+        assertEquals(0L, secret.length());
+        assertFalse(secret.canRead());
+        assertNull(new GuestFile("/sdcard/escape").list());
+        assertThrows(SandboxDenied.class,
+                () -> new GuestFile("/sdcard/escape/new.txt").createNewFile());
+        assertFalse(Files.exists(outside.resolve("new.txt")));
     }
 
     @Test

@@ -2,7 +2,7 @@
 
 - **Status**: Accepted
 - **Date**: 2026-10-31
-- **Updated**: 2026-11-01 (facades, declaring-class gate, linkage split)
+- **Updated**: 2026-11-02 (file-backed streams, per-access realpath check)
 
 ## Context
 
@@ -51,12 +51,27 @@ documented guest-safe answer:
   and three-argument `Class.forName`. Resources are empty, the parent is
   `null`, and a host loader is refused.
 - `GuestServiceLoader`: always reports no providers.
+- `GuestFileStreams` with `GuestFileInputStream`, `GuestFileOutputStream`,
+  `GuestFileReader`, `GuestFileWriter`, `GuestPrintStream`, and
+  `GuestPrintWriter`: the file-backed constructors the policy lists are
+  rerouted to the subclasses, which open the `Vfs`-mapped host path and
+  honor the read-only flag. Wrapping constructors (`PrintStream`/
+  `PrintWriter` over an existing stream or writer) pass through; `Scanner`
+  and `Formatter` file constructors stay denied.
 
-`java.io.File` remains the one guest filesystem type: `NEW java/io/File` and
-every instance call are rewritten to `GuestFile`/`GuestFiles` over `Vfs`;
-deeper path/handle surfaces (`toPath`, `toURI`, `toURL`, `deleteOnExit`,
-`createTempFile`, `listRoots`, stream/channel/`FileDescriptor` classes) stay
+`java.io.File` remains the one guest path type: `NEW java/io/File` and every
+instance call are rewritten to `GuestFile`/`GuestFiles` over `Vfs`. The
+file-backed `java.io` stream/writer constructors above are rerouted too, so
+Kotlin's `File.readText()`/`readBytes()` work. Deeper path/handle surfaces
+(`toPath`, `toURI`, `toURL`, `deleteOnExit`, `createTempFile`, `listRoots`,
+`FileDescriptor`, `RandomAccessFile`, channels, and `java.nio.file`) stay
 denied.
+
+Every access (File bridge and stream constructors) rechecks the real path
+against the mount's real root (`Policy.secureTarget`): a symlink or junction
+inside a mounted folder cannot point outside it, and a write also resolves a
+dangling final link before the host creates its target. `..` filtering alone
+is not enough.
 
 ### 2. The declaring-class gate for reflection
 
@@ -109,9 +124,10 @@ descriptors, guest `java.io.File` subclasses) is checked before define.
    defines always resolves by translation; other names follow decision 3.
 2. **`tartine.tx.SandboxPass`** sits between the method writer and the
    frame-computing `ClassWriter`, so rewrites are what `COMPUTE_FRAMES`
-   verifies. Denied instructions (network, processes, raw streams,
-   `java.nio.file`/`channels`, denied reflection operations, host internals,
-   method handles, dynamic constants, denied return types) raise
+   verifies. Denied instructions (network, processes, non-file streams,
+   `FileDescriptor`/channels, `java.nio.file`, denied reflection operations,
+   host internals, method handles, dynamic constants, denied return types)
+   raise
    `SandboxDenied`, which the two-pass translator turns into the method's
    named `UnsupportedOperationException` gap stub; class-level denials
    surface as a named `ClassNotFoundException`.

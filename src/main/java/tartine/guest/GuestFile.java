@@ -246,6 +246,25 @@ public final class GuestFile extends File {
         return GuestFiles.getUsableSpace(this);
     }
 
+    // Static File methods cannot be overridden, only hidden. A crafted guest
+    // that names GuestFile directly must hit the same denial as the
+    // translator's java.io.File rewrite.
+    public static File createTempFile(String prefix, String suffix) {
+        throw new SandboxDenied(
+                "File.createTempFile is not available in the guest sandbox");
+    }
+
+    public static File createTempFile(String prefix, String suffix,
+            File directory) {
+        throw new SandboxDenied(
+                "File.createTempFile is not available in the guest sandbox");
+    }
+
+    public static File[] listRoots() {
+        throw new SandboxDenied(
+                "File.listRoots is not available in the guest sandbox");
+    }
+
     @Override
     public Path toPath() {
         return GuestFiles.toPath(this);

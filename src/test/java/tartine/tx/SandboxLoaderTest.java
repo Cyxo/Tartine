@@ -2,6 +2,8 @@ package tartine.tx;
 
 import android.graphics.Paint;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +43,12 @@ class SandboxLoaderTest {
     @Test
     void allowedHostClassesLoadThroughTheParent() throws Exception {
         assertSame(File.class, loader.loadClass("java.io.File"));
+        // The file-backed stream types are loadable; construction is
+        // rerouted by SandboxPass to the GuestFile* subclasses.
+        assertSame(FileInputStream.class,
+                loader.loadGuestClass("java.io.FileInputStream"));
+        assertSame(FileOutputStream.class,
+                loader.loadGuestClass("java.io.FileOutputStream"));
         assertSame(String.class, loader.loadClass("java.lang.String"));
         assertSame(Method.class, loader.loadClass("java.lang.reflect.Method"));
         assertSame(Paint.class, loader.loadClass("android.graphics.Paint"));
@@ -51,7 +59,6 @@ class SandboxLoaderTest {
     void deniedHostClassesFailClosedWithAName() {
         String[] names = {
             "java.net.Socket",
-            "java.io.FileInputStream",
             "java.nio.file.Path",
             "java.nio.channels.FileChannel",
             "java.lang.Runtime",

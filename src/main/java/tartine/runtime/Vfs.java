@@ -15,9 +15,10 @@ import java.util.Locale;
  * guest-visible paths must never touch host disk unmediated.
  *
  * <p>{@linkplain #target} returns {@code null} for anything it would not
- * map; callers (the interpreter's File bridge) must treat {@code null}
- * as a sandbox denial (the path does not exist for the guest) and fail
- * closed, never fall back to the host working directory.
+ * map; guest-reachable access uses {@link Policy#secureTarget} (the same
+ * mapping plus the per-access real-path check) and treats {@code null} as a
+ * sandbox denial (the path does not exist for the guest), never falling
+ * back to the host working directory.
  *
  * <p>Root location (app data, not config: installed APKs, per-package
  * data dirs):
@@ -73,9 +74,24 @@ public final class Vfs {
      */
     public record Policy(Path root, Sdcard sdcard) {
 
-        /** Host path for a guest absolute path, or {@code null} (denied). */
+        /**
+         * Lexical host path for a guest absolute path, or {@code null}
+         * (denied). Guest-reachable access should use
+         * {@link #secureTarget} so a symlink cannot escape the mount.
+         */
         public Path target(String guestPath) {
             return Vfs.target(guestPath, root, sdcard);
+        }
+
+        /**
+         * Host path for a guest absolute path with the real-path check:
+         * symlinks and junctions inside a mount must resolve inside the
+         * mount's real root, so a link cannot escape the sandbox.
+         * {@code write} additionally covers a dangling link whose target
+         * does not exist yet. Answers {@code null} on any escape.
+         */
+        public Path secureTarget(String guestPath, boolean write) {
+            return Vfs.secureTarget(guestPath, root, sdcard, write);
         }
 
         /**
@@ -257,9 +273,9 @@ public final class Vfs {
     }
 
     /**
-     * Host path for {@code guestPath}, or {@code null} when the path does
-     * not map into the sandbox. No existence checks happen here; callers
-     * decide read/write behavior and create directories on demand.
+     * Lexical host path for {@code guestPath}, or {@code null} when the path
+     * does not map into the sandbox. No existence or real-path checks happen
+     * here; guest-reachable access must use {@link #secureTarget}.
      */
     static Path target(String guestPath, Path root, Sdcard sdcard) {
         String canon = guestPath.replace('\\', '/');
@@ -291,6 +307,140 @@ public final class Vfs {
             result = result.resolve(seg);
         }
         return result;
+    }
+
+    /**
+     * {@link #target} plus the per-access real-path check: every existing
+     * component (including the final one) must resolve inside the mount's
+     * real root, so a symlink or junction planted in a mounted folder cannot
+     * point the guest outside it. {@code write} additionally resolves a
+     * dangling link before the host creates its target. Answers {@code null}
+     * when the path escapes or cannot be resolved.
+     */
+    static Path secureTarget(String guestPath, Path root, Sdcard sdcard,
+            boolean write) {
+        Path host = target(guestPath, root, sdcard);
+        if (host == null || !resolvesInsideMount(host, root, sdcard, write)) {
+            return null;
+        }
+        return host;
+    }
+
+    /** Whether {@code host} (mount-relative) resolves inside its mount. */
+    private static boolean resolvesInsideMount(Path host, Path root,
+            Sdcard sdcard, boolean write) {
+        Mount mount = mountFor(host, root, sdcard);
+        if (mount == null) {
+            return false;
+        }
+        Path realRoot = realOf(mount.hostRoot());
+        if (Files.isSymbolicLink(host)) {
+            // exists() answers false for a dangling link, so resolve the
+            // link by hand; otherwise a write through it would create its
+            // target wherever the host points.
+            return (write || Files.exists(host))
+                    && resolvesLinkInside(host, realRoot, 0);
+        }
+        Path existing = host;
+        while (existing != null && !Files.exists(existing)) {
+            existing = existing.getParent();
+        }
+        return inside(existing, realRoot);
+    }
+
+    /**
+     * Whether {@code existing} resolves inside {@code realRoot}. When the
+     * mount root itself does not exist yet, the deepest existing ancestor is
+     * necessarily above it; that is still safe because the lexical tail
+     * starts with the mount root Tartine chose.
+     */
+    private static boolean inside(Path existing, Path realRoot) {
+        if (existing == null) {
+            return false;
+        }
+        try {
+            Path realExisting = existing.toRealPath();
+            return realExisting.startsWith(realRoot)
+                    || realRoot.startsWith(realExisting);
+        } catch (IOException | SecurityException e) {
+            return false;
+        }
+    }
+
+    /** Follows a symlink chain (bounded) and checks the final real path. */
+    private static boolean resolvesLinkInside(Path link, Path realRoot,
+            int depth) {
+        if (depth > 8) {
+            return false;
+        }
+        try {
+            Path target = Files.readSymbolicLink(link);
+            Path resolved = (target.isAbsolute() ? target
+                    : link.getParent().resolve(target)).normalize();
+            if (Files.isSymbolicLink(resolved)) {
+                return resolvesLinkInside(resolved, realRoot, depth + 1);
+            }
+            Path existing = resolved;
+            while (existing != null && !Files.exists(existing)) {
+                existing = existing.getParent();
+            }
+            // A link target must land inside the mount; unlike a lexical
+            // path, "above the mount root" is an escape (the host would
+            // create the target there on the next write).
+            return strictlyInside(existing, realRoot);
+        } catch (IOException | SecurityException e) {
+            return false;
+        }
+    }
+
+    /** Whether {@code existing} resolves strictly inside {@code realRoot}. */
+    private static boolean strictlyInside(Path existing, Path realRoot) {
+        if (existing == null) {
+            return false;
+        }
+        try {
+            return existing.toRealPath().startsWith(realRoot);
+        } catch (IOException | SecurityException e) {
+            return false;
+        }
+    }
+
+    /** Mount whose host root is the longest prefix of {@code host}. */
+    private static Mount mountFor(Path host, Path root, Sdcard sdcard) {
+        Path normalized = host.normalize();
+        Mount best = null;
+        for (Mount mount : mounts(root, sdcard)) {
+            Path mountRoot = mount.hostRoot().normalize();
+            if (!normalized.startsWith(mountRoot)) {
+                continue;
+            }
+            if (best == null || mountRoot.getNameCount()
+                    > best.hostRoot().normalize().getNameCount()) {
+                best = mount;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Real path of {@code p}, resolving the deepest existing ancestor and
+     * keeping the not-yet-created tail lexical (mount roots and app dirs are
+     * created lazily).
+     */
+    private static Path realOf(Path p) {
+        Path existing = p;
+        while (existing != null && !Files.exists(existing)) {
+            existing = existing.getParent();
+        }
+        if (existing == null) {
+            return p.normalize();
+        }
+        try {
+            return existing.toRealPath().resolve(existing.relativize(p))
+                    .normalize();
+        } catch (IOException | SecurityException e) {
+            return p.normalize();
+        }
     }
 
     /**

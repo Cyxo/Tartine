@@ -179,22 +179,27 @@ Apps only ever see Android paths. App-private dirs
 (`/data/data/<pkg>`, `/data/user/0/<pkg>`, `/data/local/tmp`) map under
 the Tartine root; `/sdcard` maps to the card tier above; device trees
 (`/system`, `/proc`, `/dev` and friends) do not exist. Every guest file
-operation goes through this mapping (`java.io.File`), unmapped paths
-answer as nonexistent, and read-only mounts deny writes - the guest
-never learns a host path. Raw `java.nio.file`/`java.io` stream classes
+operation goes through this mapping (`java.io.File` and the file-backed
+`FileInputStream`/`FileOutputStream`/`FileReader`/`FileWriter`/
+`PrintStream`/`PrintWriter` constructors), unmapped paths answer as
+nonexistent, and read-only mounts deny writes - the guest never learns a
+host path. Every access rechecks the real path, so a symlink or junction
+inside a mount cannot point outside it. `java.nio.file` and `FileDescriptor`
 stay inaccessible.
 
 Translated code runs behind a restricted classloader (ADR-0009). Host
 capabilities outside the file bridge are denied by name: network
-(`java.net.*`), process spawning (`Runtime.exec`/`ProcessBuilder`), raw
-streams and `FileDescriptor`, `java.nio.file`/`java.nio.channels`, host
-internals (ASM, Skija, `tartine.*`), environment variables, and process
-control (`Runtime.exit`/`halt`, shutdown hooks, `System.exit`,
-`System.load`). Narrow guest facades cover what libraries legitimately
-probe: read-only `Runtime` memory/CPU queries, `System.getProperty` with a
-value allowlist (unknown keys answer the caller's default), reflection over
-guest-declared members only, class lookup through a `GuestClassLoader` and
-gated `Class.forName`, and an empty `ServiceLoader` ("no providers").
+(`java.net.*`), process spawning (`Runtime.exec`/`ProcessBuilder`),
+`FileDescriptor` and non-file stream classes, `java.nio.file`/
+`java.nio.channels`, host internals (ASM, Skija, `tartine.*`), environment
+variables, and process control (`Runtime.exit`/`halt`, shutdown hooks,
+`System.exit`, `System.load`). Narrow guest facades cover what libraries
+legitimately probe: read-only `Runtime` memory/CPU queries,
+`System.getProperty` with a value allowlist (unknown keys answer the
+caller's default), reflection over guest-declared members only, class
+lookup through a `GuestClassLoader` and gated `Class.forName`, an empty
+`ServiceLoader` ("no providers"), and Vfs-routed file streams (so Kotlin's
+`File.readText()`/`readBytes()` work).
 Reflection metadata types (`Method`, `Field`, `Constructor`) stay loadable
 because app signatures mention them; host-declared members are filtered
 from plural lookups, answer "not found" from `getMethod`/`getField`, and

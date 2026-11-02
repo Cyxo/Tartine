@@ -22,6 +22,7 @@ import tartine.gfx.skija.SkijaBackend;
 import tartine.guest.SandboxDenied;
 import tartine.runtime.Vfs;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -264,6 +265,12 @@ final class TranslatedVmTest {
         assertEquals(0, (int) (Integer) call("fileMkdirDemo"));
         assertTrue(Files.isDirectory(
                 temp.resolve("sdcard").resolve("TartineProbeDir")));
+        // FileOutputStream/FileInputStream open the Vfs-mapped host path:
+        // the demo writes 7 and reads it back through the stream facade.
+        assertEquals(7, (int) (Integer) call("fileStreamDemo"));
+        assertArrayEquals(new byte[] {7}, Files.readAllBytes(
+                temp.resolve("data").resolve("com.example").resolve("files")
+                        .resolve("s.bin")));
         // Class.forName("java.lang.Runtime") is denied at the guest loader.
         assertEquals(0, (int) (Integer) call("forNameDenied"));
     }
