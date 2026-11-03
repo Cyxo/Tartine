@@ -2,11 +2,17 @@
 java = "corretto-27.0.0.35.1"
 gradle = "9.8.1"
 powershell = { version = "7.6.6", os = ["windows"] }
+python = "3.14"
 
 [tasks.fetch-tools]
 description = "Download dev-time oracle JARs into tools/ (idempotent)"
 run = "bash scripts/fetch-tools.sh"
 run_windows = "pwsh -File scripts/fetch-tools.ps1"
+
+[tasks.coverage]
+description = "Estimate framework method coverage: methods carrying logic vs auto-generated stubs"
+run = "python scripts/coverage.py"
+run_windows = "python scripts/coverage.py"
 
 [tasks.build]
 description = "Incremental compile + refresh launch classpath + framework jar"

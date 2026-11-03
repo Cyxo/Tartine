@@ -13,7 +13,7 @@
 - Theme sync: `HostConfig` resolves `theme.mode` (`auto`/`light`/`dark`) at startup — `auto` probes the Windows registry, macOS `defaults`, or GNOME/KDE — and writes `tartine.fw.ThemeMode`; `Resources` maps it to the guest `Configuration.uiMode` night bit. Probe seam for tests: `HostConfig.apply(Properties, Supplier<Boolean>)`.
 - Frame pacing: `HostConfig` resolves `display.refresh_hz` (default 60, fractional allowed, 1–1000) and exposes `framePeriodNanos()`; `Main.renderLoop` paces its guest tick by it while the window still presents at desktop VSync. Tests reset it with `HostConfig.resetFrameRate()`.
 - Verify: `sh scripts/verify.sh` (all platforms). Runs `mise install` (idempotent) then `gradle test`.
-- Prefer `mise run <task>` (`fetch-tools`/`test`/`build`/`apk`/`run`/`gui`/`dump`/`refs`/`fw-gen`/`shorten`, see `mise tasks ls`): `apk`/`run`/`gui`/`dump`/`refs` launch the last build via direct `java`, no recompile when unchanged. Run `mise trust` after editing `mise.toml` (edits revoke trust).
+- Prefer `mise run <task>` (`fetch-tools`/`test`/`build`/`apk`/`run`/`gui`/`dump`/`refs`/`coverage`/`fw-gen`/`shorten`, see `mise tasks ls`): `apk`/`run`/`gui`/`dump`/`refs` launch the last build via direct `java`, no recompile when unchanged. Run `mise trust` after editing `mise.toml` (edits revoke trust).
 - Single test: `mise exec -- gradle test --tests "tartine.apk.*"`.
 
 ## Debugging probe walls

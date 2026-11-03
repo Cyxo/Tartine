@@ -89,6 +89,7 @@ mise exec -- gradle test --tests "tartine.apk.*"
 mise run apk [apks/app-debug.apk]              # manifest, code, and library summary
 mise run run [apks/app-debug.apk]              # translated headless probe: onCreate until the first gap
 mise run gui [apks/app-debug.apk] [timeout]    # translated GUI probe: show the activity window (Compose frames animate)
+mise run coverage                               # estimate framework method coverage (logic vs. auto-generated stubs)
 mise run dump <file.dex>                       # instruction dump of one dex file
 mise run refs [apks/app-debug.apk]             # unresolved-reference census (guest dex, then host)
 ```
