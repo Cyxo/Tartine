@@ -21,7 +21,7 @@ When running `mise run gui [file.apk]`, the APK file is parsed and the DEX bytec
 
 The Android Framework (that exists as a DEX bytecode JAR file on Android devices) has been recreated in the `framework` module here, and re-implements Android features with desktop APIs from the Java Virtual Machine.
 
-The native window, events and rendering pipeline are handled by GLFW, and requires a UI adapter. The current UI adapter provided in the `gfx-skija` relies on Skija (Java bindings library for Skia), but the Tartine GUI has been designed to be modular, so any Java module implementing `gfx-api` could be used to render UI in Tartine.
+The native window, events and rendering pipeline are handled by GLFW, and require a UI adapter. The current UI adapter provided in the `gfx-skija` module relies on Skija (Java bindings library for Skia), but the Tartine GUI has been designed to be modular, so any Java module implementing `gfx-api` could be used to render UI in Tartine.
 
 ## Features
 
@@ -31,6 +31,10 @@ Tartine can currently parse **pure-Kotlin/Java APKs** (no XML layouts or images)
   <img src="./docs/assets/current.gif" />
   <i>On the left, the app run by Tartine. On the right, the same app running on a real Android device, mirrored with scrcpy.</i>
 </p>
+
+> Current Android Framework coverage: ~11.6%
+> 
+> ![](https://api.barbuilder.dev/percentage/11.6?style=pill&color=44cc11&label=11.6%&width=400)
 
 Here's a list of currently working features:
 - **Pure-DEX apps (Java/Kotlin/Compose, no XML layouts, no native code) run end-to-end** - manifest parsing, DEX -> JVM translation (the only VM), lifecycle/composition, and a continuous measure/layout/draw loop; framework behavior is added wall-by-wall via named `UnsupportedOperationException` gaps surfaced by `mise run run`/`refs`. *Limitation: `mise run run` halts at the first named gap on headless runs until the family is ported.*
