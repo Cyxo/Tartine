@@ -13,11 +13,11 @@ Tartine is a tool to run Android apps on Desktop OSes natively, in a similar fas
 ## Scope
 
 - **Supported target: pure-DEX apps.** Java/Kotlin/Compose apps whose APK ships no native code. Apps bundling ARM `.so` libraries (Flutter, most games) are out of reach for now: a desktop JVM cannot load Bionic-built ARM binaries.
-- **Status:** the headless pipeline drives a real Compose APK through manifest → DEX → VM into lifecycle, composition, and the first measure pass. The first rendered frame now blits into a real desktop window (Skia raster through the LWJGL GL context — `mise run gui`), and the window carries the app's launcher icon: the manifest `android:icon`/`roundIcon` reference resolves through `resources.arsc`; bitmap sources decode through the renderer backend and vector/adaptive icons (incl. aapt2 inline gradients and group transforms) convert to SVG and render through jsvg at 16/32/48 px. Unsupported sources log an `icon:` gap line and fall back to the platform default icon. The translation pipeline (DEX → JVM bytecode, `tartine.tx`) is the only VM; framework behavior grows per probe wall. Design decisions and roadmap live in `docs/architecture.md`.
+- **Status:** the headless pipeline drives a real Compose APK through manifest → DEX → VM into lifecycle, composition, and a continuous 60 Hz measure/layout/draw loop. Frames blit into a real desktop window (Skia raster through the LWJGL GL context — `mise run gui`), and the window carries the app's launcher icon: the manifest `android:icon`/`roundIcon` reference resolves through `resources.arsc`; bitmap sources decode through the renderer backend and vector/adaptive icons (incl. aapt2 inline gradients and group transforms) convert to SVG and render through jsvg at 16/32/48 px. Unsupported sources log an `icon:` gap line and fall back to the platform default icon. The translation pipeline (DEX → JVM bytecode, `tartine.tx`) is the only VM; framework behavior grows per probe wall. Design decisions and roadmap live in `docs/architecture.md`.
 
 ## What currently works
 
-Tartine can currently parse **pure-Kotlin/Java APKs** (no XML layouts or images) and render their first frame.
+Tartine can currently parse **pure-Kotlin/Java APKs** (no XML layouts or images) and run their Compose UI at 60 Hz.
 
 <p align="center">
   <img src="./assets/current.png" />
@@ -26,7 +26,7 @@ Tartine can currently parse **pure-Kotlin/Java APKs** (no XML layouts or images)
 
 It finds the main activity in the XML manifest, and also extracts the icon from the resources.
 
-For now there is no continuous render loop and no input dispatch into the view tree: window input, resize, focus and close reach the guest's Looper queue, but GLFW-to-Android key/motion mapping and ViewRootImpl-style delivery are still gaps. There is no inter-process communication (such as intents) either.
+For now input dispatch into the view tree is still missing: window input, resize, focus and close reach the guest's Looper queue, but GLFW-to-Android key/motion mapping and ViewRootImpl-style delivery are still gaps. There is no inter-process communication (such as intents) either.
 
 ## Prerequisites
 
@@ -61,7 +61,7 @@ mise exec -- gradle test --tests "tartine.apk.*"
 ```sh
 mise run apk [apks/app-debug.apk]              # manifest, code, and library summary
 mise run run [apks/app-debug.apk]              # translated headless probe: onCreate until the first gap
-mise run gui [apks/app-debug.apk] [timeout]    # translated GUI probe: show the activity window (first frame blits)
+mise run gui [apks/app-debug.apk] [timeout]    # translated GUI probe: show the activity window (Compose frames at 60 Hz)
 mise run dump <file.dex>                       # instruction dump of one dex file
 mise run refs [apks/app-debug.apk]             # unresolved-reference census (guest dex, then host)
 ```

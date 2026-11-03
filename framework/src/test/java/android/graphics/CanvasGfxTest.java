@@ -74,15 +74,36 @@ class CanvasGfxTest {
     void saveRestoreTracksTheSaveCountAndForwards() {
         Canvas canvas = canvas(100, 100);
 
+        // AOSP/Skia: the base state is save count 1 and save() returns the
+        // count *before* the save.
+        assertEquals(1, canvas.getSaveCount());
         assertEquals(1, canvas.save());
+        assertEquals(2, canvas.getSaveCount());
         assertEquals(2, canvas.save());
+        assertEquals(3, canvas.getSaveCount());
+        canvas.restore();
+        assertEquals(2, canvas.getSaveCount());
         canvas.restore();
         assertEquals(1, canvas.getSaveCount());
         canvas.restore();
-        assertEquals(0, canvas.getSaveCount());
+        assertEquals(1, canvas.getSaveCount());
 
         assertTrue(backend.calls.contains("save"));
         assertTrue(backend.calls.contains("restore"));
+    }
+
+    @Test
+    void restoreToCountPopsBalancedSaves() {
+        Canvas canvas = canvas(100, 100);
+        canvas.clipRect(0, 0, 100, 100);
+
+        int restoreTo = canvas.save();
+        canvas.clipRect(0, 0, 0, 0);
+        assertTrue(canvas.getClipBounds().isEmpty());
+
+        canvas.restoreToCount(restoreTo);
+        assertEquals(1, canvas.getSaveCount());
+        assertEquals(new Rect(0, 0, 100, 100), canvas.getClipBounds());
     }
 
     @Test
@@ -201,7 +222,7 @@ class CanvasGfxTest {
         assertEquals(1, canvas.save());
         canvas.translate(1, 2);
         canvas.restore();
-        assertEquals(0, canvas.getSaveCount());
+        assertEquals(1, canvas.getSaveCount());
         assertTrue(canvas.clipRect(0, 0, 10, 10));
     }
 }

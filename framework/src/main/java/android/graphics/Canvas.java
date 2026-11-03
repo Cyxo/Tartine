@@ -46,8 +46,9 @@ import tartine.gfx.GfxRect;
 
     // Local save-count. Tracks the same save() increments the backend would;
     // keeps semantics identical whether or not a target is attached yet
-    // (deviation note at the ctor).
-    int saveStack;
+    // (deviation note at the ctor). AOSP/Skia number save levels from 1 (the
+    // unsaved base state), not 0.
+    int saveStack = 1;
 
     /**
      * Construct an empty raster canvas. Use setBitmap() to specify a bitmap to
@@ -526,7 +527,8 @@ import tartine.gfx.GfxRect;
     }
 
     public int getSaveCount() {
-        // AOSP Canvas.getSaveCount(): the number of save() calls recorded.
+        // AOSP Canvas.getSaveCount(): the current save level, 1 at the base
+        // state and one more per unmatched save().
         return saveStack;
     }
 
@@ -579,22 +581,22 @@ import tartine.gfx.GfxRect;
     }
 
     public void restore() {
-        // AOSP Canvas.restore(): pop one save level off the stack.
-        if (saveStack > 0 && gfx != null) {
+        // AOSP Canvas.restore(): pop one save level off the stack. The base
+        // level is never popped: extra restore() calls are no-ops.
+        if (gfx != null && saveStack > 1) {
             gfx.restore();
         }
-        saveStack = Math.max(0, saveStack - 1);
+        if (saveStack > 1) {
+            saveStack--;
+        }
     }
 
     public void restoreToCount(int arg0) {
         // AOSP Canvas.restoreToCount(int): pop down to the given level.
-        while (saveStack > arg0) {
+        // Counts below the base clamp to it (the initial state).
+        int target = Math.max(1, arg0);
+        while (saveStack > target) {
             restore();
-        }
-        while (saveStack < arg0) {
-            // AOSP: counts below the initial state are treated as the base
-            // state; clamp to it rather than growing saves.
-            break;
         }
     }
 
@@ -614,11 +616,13 @@ import tartine.gfx.GfxRect;
     }
 
     public int save() {
-        // AOSP Canvas.save(): push a save level, return the new count.
+        // AOSP Canvas.save(): push a save level and return the *previous*
+        // count (SkCanvas::save), so restoreToCount(canvas.save()) is a
+        // balanced pair.
         if (gfx != null) {
             gfx.save();
         }
-        return ++saveStack;
+        return saveStack++;
     }
 
     public int saveLayer(RectF arg0, Paint arg1) {

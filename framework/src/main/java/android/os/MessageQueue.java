@@ -8,7 +8,8 @@ import java.util.Deque;
  * Desktop mapping (Tartine). The device queue is epoll-backed and delivers
  * {@code Message}s; the desktop keeps only the thread-safe action queue the
  * host driver needs: {@link #post(Runnable)} from any thread, {@link #take()}
- * on the looper thread. {@link Looper#loop()} drains it, and {@link #quit()}
+ * on the looper thread (or {@link #poll()} from a render loop).
+ * {@link Looper#loop()} drains it, and {@link #quit()}
  * discards pending work and wakes the pump.
  *
  * <p>The idle-handler and file-descriptor-listener APIs stay named gaps:
@@ -33,6 +34,19 @@ public class MessageQueue {
             }
             mActions.add(action);
             notifyAll();
+        }
+    }
+
+    /**
+     * Host-driver seam (no SDK counterpart): non-blocking {@link #take()},
+     * for a render loop that drains host events between frames.
+     */
+    public Runnable poll() {
+        synchronized (this) {
+            if (mQuitting) {
+                return null;
+            }
+            return mActions.poll();
         }
     }
 

@@ -1,5 +1,6 @@
 package tartine.gfx.testing;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import tartine.gfx.GfxBackend;
@@ -156,6 +157,7 @@ public final class RecordingBackend implements GfxBackend {
         private final int height;
         private final List<String> calls;
         private final List<String> ops = new ArrayList<>();
+        private final ArrayDeque<GfxRect> clipStack = new ArrayDeque<>();
         private GfxRect clip;
         private int saveDepth;
 
@@ -178,6 +180,7 @@ public final class RecordingBackend implements GfxBackend {
 
         @Override
         public void save() {
+            clipStack.push(clip);
             saveDepth++;
             record("save");
         }
@@ -186,6 +189,7 @@ public final class RecordingBackend implements GfxBackend {
         public void restore() {
             if (saveDepth > 0) {
                 saveDepth--;
+                clip = clipStack.pop();
             }
             record("restore");
         }

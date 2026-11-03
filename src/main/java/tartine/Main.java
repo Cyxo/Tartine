@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.os.Bundle;
 import android.os.Looper;
 import android.view.Choreographer;
+import android.view.View;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -16,6 +17,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 import tartine.apk.Abi;
@@ -59,6 +62,9 @@ import tartine.tx.TxTranslator;
  * </ul>
  */
 public final class Main {
+
+    /** 60 Hz desktop frame period (16.67 ms). */
+    private static final long FRAME_NANOS = 16_666_667L;
 
     private Main() {
     }
@@ -373,10 +379,11 @@ public final class Main {
                 return;
             }
             // The display publishes events on its own thread; this listener
-            // only posts them to the guest queue, which looper.loop() runs
-            // on the guest main-looper thread.
+            // only posts them to the guest queue, which the render loop
+            // drains on the guest main-looper thread.
+            AtomicBoolean windowClosed = new AtomicBoolean();
             display.setEventListener(
-                    event -> postHostEvent(looper, event));
+                    event -> postHostEvent(looper, windowClosed, event));
             Object activity = app.activity();
             // Activity.setContentView delegates to the window (framework
             // Activity.java lines 3906-3911); the flattened decor keeps the
@@ -440,34 +447,7 @@ public final class Main {
             // content to the inner composition.
             txInvoke(composition, "setContent", lambda);
             System.out.println("gui: post-attach setContent returned");
-            // Frame pump: fire the posted Choreographer callbacks (the
-            // driver's VSync), repeating while callbacks re-post (bounded to
-            // 10 rounds).
-            for (int round = 0; round < 10; round++) {
-                int fired = Choreographer.pumpFrameCallbacks(
-                        System.nanoTime());
-                System.out.println("gui: frame callbacks round " + round
-                        + ": " + fired);
-                if (fired == 0) {
-                    break;
-                }
-            }
-            HostDisplay.Frame frame = txMeasureLayoutDraw(owner);
-            System.out.println("gui: window ready (frame: "
-                    + (frame != null ? "present" : "absent") + ")");
-            if (frame == null) {
-                // No surface at all: present the dark clear frame the
-                // single-threaded window showed, so timeout/close still work.
-                int[] blank = new int[480 * 960];
-                Arrays.fill(blank, 0xFF0D0D0D);
-                frame = new HostDisplay.Frame(480, 960, blank);
-            }
-            if (!display.postFrame(frame)) {
-                System.out.println("gui: window closed before first frame");
-            }
-            // Pump the guest queue instead of awaitClose(): the display
-            // posts a Closed event, this loop runs it and quits.
-            looper.loop();
+            renderLoop(looper, display, owner, windowClosed);
             System.out.println("gui: window closed");
         } finally {
             app.reader().close();
@@ -478,10 +458,12 @@ public final class Main {
      * Posts one host event to the guest main-looper queue. Runs on the
      * display thread, so it must only enqueue; close quits the guest loop.
      */
-    private static void postHostEvent(Looper looper, HostDisplay.Event event) {
+    private static void postHostEvent(Looper looper, AtomicBoolean windowClosed,
+            HostDisplay.Event event) {
         looper.getQueue().post(() -> {
             if (event instanceof HostDisplay.Closed) {
                 System.out.println("gui: window close event");
+                windowClosed.set(true);
                 looper.quit();
                 return;
             }
@@ -490,49 +472,110 @@ public final class Main {
     }
 
     /**
-     * Measure, layout, then render the composed root into a headless
-     * surface (the first-traversal twin of the device's VSync pass), and
-     * snapshot it as a frame for the host display. Painted counts are the
-     * first-draw evidence.
+     * The desktop VSync pass: each frame drains host events, fires the
+     * Choreographer callbacks (which resume Compose's withFrameNanos loops and
+     * the Recomposer), measures/layouts/draws the composed root into one
+     * reused surface, and posts the raster to the host display. Stops when the
+     * window closes or the display drops a frame.
      */
-    private static HostDisplay.Frame txMeasureLayoutDraw(Object owner) {
-        GfxSurface surface = null;
+    private static void renderLoop(Looper looper, HostDisplay display,
+            Object owner, AtomicBoolean windowClosed) {
+        GfxSurface surface = RasterPresenter.createSurface(480, 960);
+        Canvas canvas = RasterPresenter.createSurfaceCanvas(surface);
+        long nextFrame = System.nanoTime();
+        int frames = 0;
+        int changes = 0;
+        int lastHash = 0;
+        boolean blocked = false;
         try {
-            txInvoke(owner, "onMeasure", 480 | (1 << 30), 960 | (1 << 30));
-            System.out.println("gui: onMeasure returned");
-            txInvoke(owner, "onLayout", false, 0, 0, 480, 960);
-            System.out.println("gui: onLayout returned");
-            surface = RasterPresenter.createSurface(480, 960);
-            Canvas hostCanvas =
-                    RasterPresenter.createSurfaceCanvas(surface);
-            // A blocked draw still presents the partially composed surface,
-            // like the first on-device frame.
-            try {
-                txInvoke(owner, "dispatchDraw", hostCanvas);
-                System.out.println("gui: dispatchDraw returned");
-            } catch (RuntimeException blocked) {
-                System.out.println("gui: dispatchDraw blocked at: "
-                        + sanitize(blocked));
-            }
-            int[] pixels = surface.readPixels();
-            long painted = 0;
-            for (int pixel : pixels) {
-                if ((pixel >>> 24) != 0) {
-                    painted++;
+            while (!windowClosed.get()) {
+                drainGuestQueue(looper);
+                if (windowClosed.get()) {
+                    break;
+                }
+                long now = System.nanoTime();
+                if (now < nextFrame) {
+                    LockSupport.parkNanos(nextFrame - now);
+                    continue;
+                }
+                nextFrame = now + FRAME_NANOS;
+                int callbacks = Choreographer.pumpFrameCallbacks(now);
+                drainGuestQueue(looper);
+                if (windowClosed.get()) {
+                    break;
+                }
+                boolean dirty = owner instanceof View view
+                        && view.tartineConsumeDirty();
+                if (frames > 0 && callbacks == 0 && !dirty) {
+                    continue;
+                }
+                int[] pixels;
+                try {
+                    pixels = txDrawFrame(owner, surface, canvas);
+                } catch (RuntimeException failure) {
+                    if (!blocked) {
+                        System.out.println("gui: draw blocked at: "
+                                + sanitize(failure));
+                        blocked = true;
+                    }
+                    pixels = surface.readPixels();
+                }
+                int hash = Arrays.hashCode(pixels);
+                if (hash != lastHash) {
+                    changes++;
+                    lastHash = hash;
+                }
+                int painted = countPainted(pixels);
+                if (frames == 0 || frames % 30 == 0) {
+                    System.out.println("gui: frame " + frames + " callbacks "
+                            + callbacks + " painted " + painted + "/"
+                            + pixels.length + " hash "
+                            + Integer.toHexString(hash));
+                }
+                frames++;
+                if (!display.postFrame(new HostDisplay.Frame(480, 960,
+                        pixels))) {
+                    System.out.println("gui: display closed; render loop "
+                            + "stopped");
+                    break;
                 }
             }
-            System.out.println("gui: painted pixels " + painted + "/"
-                    + pixels.length);
-            return new HostDisplay.Frame(480, 960, pixels);
-        } catch (RuntimeException e) {
-            System.out.println("gui: measure/draw blocked at: "
-                    + sanitize(e));
-            return null;
         } finally {
-            if (surface != null) {
-                surface.close();
+            surface.close();
+        }
+        System.out.println("gui: render loop drew " + frames + " frames ("
+                + changes + " pixel changes)");
+    }
+
+    /** Runs queued guest actions (input, close) between frames. */
+    private static void drainGuestQueue(Looper looper) {
+        Runnable action;
+        while ((action = looper.getQueue().poll()) != null) {
+            action.run();
+        }
+    }
+
+    /**
+     * Measure, layout, then render the composed root into the reused surface
+     * (the desktop twin of the device's VSync traversal).
+     */
+    private static int[] txDrawFrame(Object owner, GfxSurface surface,
+            Canvas canvas) {
+        txInvoke(owner, "onMeasure", 480 | (1 << 30), 960 | (1 << 30));
+        txInvoke(owner, "onLayout", false, 0, 0, 480, 960);
+        canvas.drawColor(0xFF000000);
+        txInvoke(owner, "dispatchDraw", canvas);
+        return surface.readPixels();
+    }
+
+    private static int countPainted(int[] pixels) {
+        int painted = 0;
+        for (int pixel : pixels) {
+            if ((pixel >>> 24) != 0) {
+                painted++;
             }
         }
+        return painted;
     }
 
     /** Reads a private field walking the receiver's runtime class chain. */

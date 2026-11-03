@@ -2028,6 +2028,17 @@ import java.util.function.Consumer;
         return mDirty;
     }
 
+    /**
+     * Host-driver seam (no SDK counterpart): reads and clears the dirty
+     * surrogate, the way ViewRootImpl clears PFLAG_DIRTY at the start of a
+     * traversal. A render loop calls this once per frame.
+     */
+    public boolean tartineConsumeDirty() {
+        boolean dirty = mDirty;
+        mDirty = false;
+        return dirty;
+    }
+
     public boolean isDrawingCacheEnabled() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isDrawingCacheEnabled()Z");
     }
@@ -2300,12 +2311,33 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->mergeDrawableStates([I[I)[I");
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/View.java (offsetLeftAndRight): shift the
+     * position both on the node and in the view's own bounds, then dirty the
+     * view. Deviations: the AOSP attach-info visibility bookkeeping and the
+     * background/foreground bounds sync (no Drawable bounds port) collapse
+     * into invalidate() on an attached view.
+     */
     public void offsetLeftAndRight(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->offsetLeftAndRight(I)V");
+        if (arg0 == 0) {
+            return;
+        }
+        mLeft += arg0;
+        mRight += arg0;
+        mRenderNode.offsetLeftAndRight(arg0);
+        invalidate();
     }
 
+    /** Ported from the same file (offsetTopAndBottom); see the left twin. */
     public void offsetTopAndBottom(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->offsetTopAndBottom(I)V");
+        if (arg0 == 0) {
+            return;
+        }
+        mTop += arg0;
+        mBottom += arg0;
+        mRenderNode.offsetTopAndBottom(arg0);
+        invalidate();
     }
 
     protected void onAnimationEnd() {
@@ -2905,8 +2937,19 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBackgroundTintMode(Landroid/graphics/PorterDuff$Mode;)V");
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/View.java (setBottom): move the bottom edge,
+     * report a size change, and mirror the new bounds onto the node.
+     */
     public final void setBottom(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBottom(I)V");
+        if (arg0 != mBottom) {
+            int oldHeight = mBottom - mTop;
+            mBottom = arg0;
+            int newHeight = mBottom - mTop;
+            sizeChange(mRight - mLeft, newHeight, mRight - mLeft, oldHeight);
+            mRenderNode.setLeftTopRightBottom(mLeft, mTop, mRight, mBottom);
+        }
     }
 
     public void setCameraDistance(float arg0) {
@@ -3177,8 +3220,19 @@ import java.util.function.Consumer;
         mLayoutParams = arg0;
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/View.java (setLeft): move the left edge, report
+     * a size change, and mirror the new bounds onto the node.
+     */
     public final void setLeft(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setLeft(I)V");
+        if (arg0 != mLeft) {
+            int oldWidth = mRight - mLeft;
+            mLeft = arg0;
+            int newWidth = mRight - mLeft;
+            sizeChange(newWidth, mBottom - mTop, oldWidth, mBottom - mTop);
+            mRenderNode.setLeftTopRightBottom(mLeft, mTop, mRight, mBottom);
+        }
     }
 
     /** Ported from the same file (setLeftTopRightBottom): setFrame. */
@@ -3367,8 +3421,19 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setRevealOnFocusHint(Z)V");
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/View.java (setRight): move the right edge,
+     * report a size change, and mirror the new bounds onto the node.
+     */
     public final void setRight(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setRight(I)V");
+        if (arg0 != mRight) {
+            int oldWidth = mRight - mLeft;
+            mRight = arg0;
+            int newWidth = mRight - mLeft;
+            sizeChange(newWidth, mBottom - mTop, oldWidth, mBottom - mTop);
+            mRenderNode.setLeftTopRightBottom(mLeft, mTop, mRight, mBottom);
+        }
     }
 
     /**
@@ -3545,8 +3610,19 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTooltipText(Ljava/lang/CharSequence;)V");
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/View.java (setTop): move the top edge, report a
+     * size change, and mirror the new bounds onto the node.
+     */
     public final void setTop(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTop(I)V");
+        if (arg0 != mTop) {
+            int oldHeight = mBottom - mTop;
+            mTop = arg0;
+            int newHeight = mBottom - mTop;
+            sizeChange(mRight - mLeft, newHeight, mRight - mLeft, oldHeight);
+            mRenderNode.setLeftTopRightBottom(mLeft, mTop, mRight, mBottom);
+        }
     }
 
     public void setTouchDelegate(TouchDelegate arg0) {

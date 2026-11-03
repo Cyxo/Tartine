@@ -1,7 +1,7 @@
 # ADR-0004: Graphics backend - Skia (Skija) on LWJGL
 
 - **Status**: Accepted (draw chain decided 2026-10-18; threading and the
-  event channel landed 2026-11-02)
+  event channel landed 2026-11-02; continuous frame loop 2026-11-03)
 - **Date**: decided 2026-10-18
 
 ## Context
@@ -30,13 +30,19 @@ Threading and events are part of the seam, not deferred work:
   draws and reads back on its thread, the display thread uploads the newest
   frame as a GL texture and presents it at VSync. `postFrame` reports a
   closed window so a render loop can stop without polling.
+- The guest thread runs a host-driven render loop at 60 Hz: each tick drains
+  queued host events, fires the due `Choreographer` frame callbacks (the
+  clock Compose's `withFrameNanos` suspends on), measures/layouts/draws the
+  composed root when a callback ran or a view is dirty, and posts the raster.
+  Idle ticks skip the redraw and repost nothing, so a static screen costs one
+  blit, not a draw per VSync.
 - Events flow display to guest through `HostDisplay.Event`: GLFW input,
   resize and focus callbacks publish on the display thread, a buffering
   channel replays anything that arrives before registration, and the guest's
-  listener posts each event to its `Looper` `MessageQueue`. `Looper.loop()`
-  runs them on the looper thread; `Closed` is a normal event that quits the
-  loop. Input values stay in GLFW space until the framework maps them to
-  Android `KeyEvent`/`MotionEvent`.
+  listener posts each event to its `Looper` `MessageQueue`; the render loop
+  drains that queue at the top of each tick. `Closed` is a normal event that
+  marks the loop done. Input values stay in GLFW space until the framework
+  maps them to Android `KeyEvent`/`MotionEvent`.
 - When the window goes away while guest work is still running, the macOS
   path signals `close()` and bounds the `guest.join()` so a guest that
   ignores the close event cannot hang the caller.

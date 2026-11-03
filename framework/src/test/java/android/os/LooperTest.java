@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Queue and loop pins for the desktop Looper event channel. */
@@ -66,5 +67,29 @@ class LooperTest {
         queue.post(() -> ran.set(true));
         assertTrue(queue.isIdle());
         assertFalse(ran.get());
+    }
+
+    @Test
+    void pollDrainsQueuedActionsWithoutBlocking() {
+        MessageQueue queue = new MessageQueue();
+        AtomicBoolean first = new AtomicBoolean();
+        AtomicBoolean second = new AtomicBoolean();
+        queue.post(() -> first.set(true));
+        queue.post(() -> second.set(true));
+
+        Runnable action;
+        while ((action = queue.poll()) != null) {
+            action.run();
+        }
+
+        assertTrue(first.get());
+        assertTrue(second.get());
+        assertNull(queue.poll());
+        assertTrue(queue.isIdle());
+
+        queue.post(() -> first.set(false));
+        queue.quit();
+        assertNull(queue.poll());
+        assertTrue(first.get());
     }
 }

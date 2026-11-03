@@ -290,12 +290,24 @@ import tartine.gfx.GfxPicture;
         return mPivotExplicitlySet;
     }
 
+    /**
+     * Ported from AOSP {@code RenderNode#offsetLeftAndRight} /
+     * {@code #offsetTopAndBottom}: native-backed there (nOffset...), a plain
+     * shift of the stored bounds here; the boolean reports whether the
+     * position moved.
+     */
     public boolean offsetLeftAndRight(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->offsetLeftAndRight(I)Z");
+        boolean changed = arg0 != 0;
+        mLeft += arg0;
+        mRight += arg0;
+        return changed;
     }
 
     public boolean offsetTopAndBottom(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->offsetTopAndBottom(I)Z");
+        boolean changed = arg0 != 0;
+        mTop += arg0;
+        mBottom += arg0;
+        return changed;
     }
 
     public boolean resetPivot() {
