@@ -13,11 +13,11 @@ Tartine is a tool to run Android apps on Desktop OSes natively, in a similar fas
 ## Scope
 
 - **Supported target: pure-DEX apps.** Java/Kotlin/Compose apps whose APK ships no native code. Apps bundling ARM `.so` libraries (Flutter, most games) are out of reach for now: a desktop JVM cannot load Bionic-built ARM binaries.
-- **Status:** the headless pipeline drives a real Compose APK through manifest → DEX → VM into lifecycle, composition, and a continuous 60 Hz measure/layout/draw loop. Frames blit into a real desktop window (Skia raster through the LWJGL GL context — `mise run gui`), and the window carries the app's launcher icon: the manifest `android:icon`/`roundIcon` reference resolves through `resources.arsc`; bitmap sources decode through the renderer backend and vector/adaptive icons (incl. aapt2 inline gradients and group transforms) convert to SVG and render through jsvg at 16/32/48 px. Unsupported sources log an `icon:` gap line and fall back to the platform default icon. The translation pipeline (DEX → JVM bytecode, `tartine.tx`) is the only VM; framework behavior grows per probe wall. Design decisions and roadmap live in `docs/architecture.md`.
+- **Status:** the headless pipeline drives a real Compose APK through manifest → DEX → VM into lifecycle, composition, and a continuous measure/layout/draw loop (60 Hz by default; `display.refresh_hz`). Frames blit into a real desktop window (Skia raster through the LWJGL GL context — `mise run gui`), and the window carries the app's launcher icon: the manifest `android:icon`/`roundIcon` reference resolves through `resources.arsc`; bitmap sources decode through the renderer backend and vector/adaptive icons (incl. aapt2 inline gradients and group transforms) convert to SVG and render through jsvg at 16/32/48 px. Unsupported sources log an `icon:` gap line and fall back to the platform default icon. The translation pipeline (DEX → JVM bytecode, `tartine.tx`) is the only VM; framework behavior grows per probe wall. Design decisions and roadmap live in `docs/architecture.md`.
 
 ## What currently works
 
-Tartine can currently parse **pure-Kotlin/Java APKs** (no XML layouts or images) and run their Compose UI at 60 Hz.
+Tartine can currently parse **pure-Kotlin/Java APKs** (no XML layouts or images) and keep their Compose UI animating in a live render loop.
 
 <p align="center">
   <img src="./assets/current.png" />
@@ -61,7 +61,7 @@ mise exec -- gradle test --tests "tartine.apk.*"
 ```sh
 mise run apk [apks/app-debug.apk]              # manifest, code, and library summary
 mise run run [apks/app-debug.apk]              # translated headless probe: onCreate until the first gap
-mise run gui [apks/app-debug.apk] [timeout]    # translated GUI probe: show the activity window (Compose frames at 60 Hz)
+mise run gui [apks/app-debug.apk] [timeout]    # translated GUI probe: show the activity window (Compose frames animate)
 mise run dump <file.dex>                       # instruction dump of one dex file
 mise run refs [apks/app-debug.apk]             # unresolved-reference census (guest dex, then host)
 ```
@@ -136,6 +136,12 @@ color.system_on_background_light = #E7EBEF
 # > built-in list (Roboto, Segoe UI, Noto Sans, DejaVu Sans,
 # Liberation Sans, Helvetica Neue).
 font.families = Segoe UI, Roboto
+
+# Render-loop refresh rate in frames per second. Default 60; fractional
+# values (59.94, 119.88) work too. The guest frame clock (Compose's
+# withFrameNanos) ticks at this rate; the desktop window still presents
+# at the monitor's own VSync. Accepted range: 1-1000.
+display.refresh_hz = 60
 
 # Host light/dark theme. auto (default) follows the desktop setting when
 # it can be read: Windows AppsUseLightTheme, macOS AppleInterfaceStyle,

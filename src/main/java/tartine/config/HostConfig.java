@@ -32,6 +32,9 @@ import tartine.runtime.Vfs;
  *       one android-system color resource for this run, keyed by the
  *       canonical {@code android.R$color} constant name (e.g.
  *       {@code color.system_accent1_10}) or a decimal/0x numeric id.</li>
+ *   <li>{@code display.refresh_hz} = the render loop's refresh rate in
+ *       frames per second (default 60; fractions allowed; 1 to 1000).
+ *       Sets the guest frame period the VSync pass paces itself by.</li>
  *   <li>{@code font.families} = comma-separated preferred desktop font
  *       families (config wins over a {@code TARTINE_FONT_FAMILIES} env
  *       value; the built-in list is last).</li>
@@ -56,7 +59,29 @@ import tartine.runtime.Vfs;
 public final class HostConfig {
     static final String FILE_NAME = "config.properties";
 
+    /** Default refresh rate when {@code display.refresh_hz} is absent. */
+    static final double DEFAULT_REFRESH_HZ = 60.0;
+
+    private static final double MIN_REFRESH_HZ = 1.0;
+    private static final double MAX_REFRESH_HZ = 1000.0;
+
+    /** Render-loop tick period; {@link #apply} rewrites it from config. */
+    private static long framePeriodNanos = periodNanos(DEFAULT_REFRESH_HZ);
+
     private HostConfig() {
+    }
+
+    /**
+     * The render loop's frame period in nanoseconds, resolved from
+     * {@code display.refresh_hz} (default 60 Hz). Read once by the loop.
+     */
+    public static long framePeriodNanos() {
+        return framePeriodNanos;
+    }
+
+    /** Test seam: restores the default 60 Hz period. */
+    static void resetFrameRate() {
+        framePeriodNanos = periodNanos(DEFAULT_REFRESH_HZ);
     }
 
     /** Loads {@code <root>/config.properties} (defaults when absent). */
@@ -106,6 +131,8 @@ public final class HostConfig {
             String value = props.getProperty(name);
             if (name.startsWith("color.")) {
                 applyColor(name, value);
+            } else if (name.equals("display.refresh_hz")) {
+                // Handled once below (order-independent).
             } else if (name.equals("font.families")) {
                 List<String> families = parseFamilies(value);
                 if (families.isEmpty()) {
@@ -127,7 +154,39 @@ public final class HostConfig {
             }
         }
         applyTheme(props, detect);
+        applyRefreshRate(props);
         applySdcard(props);
+    }
+
+    /**
+     * Render-loop refresh rate: {@code display.refresh_hz} frames per second
+     * (default 60). Fractional rates are accepted (59.94, 119.88); values
+     * outside 1-1000 are warned and skipped, keeping the default.
+     */
+    private static void applyRefreshRate(Properties props) {
+        String raw = props.getProperty("display.refresh_hz");
+        if (raw == null) {
+            return;
+        }
+        double hz = Double.NaN;
+        try {
+            hz = Double.parseDouble(raw.trim());
+        } catch (NumberFormatException ignored) {
+            // Reported by the range check below.
+        }
+        if (!(hz >= MIN_REFRESH_HZ && hz <= MAX_REFRESH_HZ)) {
+            System.err.println("Tartine: config ignored: display.refresh_hz="
+                    + raw + " (need frames per second between "
+                    + (int) MIN_REFRESH_HZ + " and " + (int) MAX_REFRESH_HZ
+                    + ")");
+            return;
+        }
+        framePeriodNanos = periodNanos(hz);
+    }
+
+    /** Nanoseconds per frame, rounded, never zero. */
+    private static long periodNanos(double hz) {
+        return Math.max(1L, Math.round(1_000_000_000.0 / hz));
     }
 
     /**

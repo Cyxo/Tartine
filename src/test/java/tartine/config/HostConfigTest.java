@@ -32,6 +32,7 @@ class HostConfigTest {
         SystemColors.clearOverrides();
         Paint.tartineSetPreferredFamilies(null);
         ThemeMode.setDark(false);
+        HostConfig.resetFrameRate();
         Vfs.resetCard();
     }
 
@@ -40,6 +41,7 @@ class HostConfigTest {
         SystemColors.clearOverrides();
         Paint.tartineSetPreferredFamilies(null);
         ThemeMode.setDark(false);
+        HostConfig.resetFrameRate();
         Vfs.resetCard();
     }
 
@@ -160,6 +162,35 @@ class HostConfigTest {
         // Default behavior: no overrides at all (real id 999 absent from
         // the baseline table).
         assertNull(SystemColors.get(999));
+    }
+
+    @Test
+    void refreshRateDefaultsToSixtyHertz() {
+        HostConfig.loadFrom(Path.of(temp.toString(), "absent.properties"));
+        assertEquals(16_666_667L, HostConfig.framePeriodNanos());
+    }
+
+    @Test
+    void refreshRateSetsTheLoopPeriod() throws Exception {
+        config("display.refresh_hz = 120");
+        assertEquals(8_333_333L, HostConfig.framePeriodNanos());
+    }
+
+    @Test
+    void fractionalRefreshRateAccepted() throws Exception {
+        // NTSC-style 59.94 carries a fractional period without truncation.
+        config("display.refresh_hz = 59.94");
+        assertEquals(16_683_350L, HostConfig.framePeriodNanos());
+    }
+
+    @Test
+    void badRefreshRateKeepsDefault() throws Exception {
+        config("display.refresh_hz = fast");
+        assertEquals(16_666_667L, HostConfig.framePeriodNanos());
+        config("display.refresh_hz = 0");
+        assertEquals(16_666_667L, HostConfig.framePeriodNanos());
+        config("display.refresh_hz = 1000.1");
+        assertEquals(16_666_667L, HostConfig.framePeriodNanos());
     }
 
     @Test

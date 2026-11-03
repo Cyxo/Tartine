@@ -63,9 +63,6 @@ import tartine.tx.TxTranslator;
  */
 public final class Main {
 
-    /** 60 Hz desktop frame period (16.67 ms). */
-    private static final long FRAME_NANOS = 16_666_667L;
-
     private Main() {
     }
 
@@ -472,16 +469,18 @@ public final class Main {
     }
 
     /**
-     * The desktop VSync pass: each frame drains host events, fires the
-     * Choreographer callbacks (which resume Compose's withFrameNanos loops and
-     * the Recomposer), measures/layouts/draws the composed root into one
-     * reused surface, and posts the raster to the host display. Stops when the
-     * window closes or the display drops a frame.
+     * The desktop VSync pass at the configured refresh rate
+     * ({@code display.refresh_hz}, 60 Hz by default): each tick drains host
+     * events, fires the Choreographer callbacks (which resume Compose's
+     * withFrameNanos loops and the Recomposer), measures/layouts/draws the
+     * composed root into one reused surface, and posts the raster to the host
+     * display. Stops when the window closes or the display drops a frame.
      */
     private static void renderLoop(Looper looper, HostDisplay display,
             Object owner, AtomicBoolean windowClosed) {
         GfxSurface surface = RasterPresenter.createSurface(480, 960);
         Canvas canvas = RasterPresenter.createSurfaceCanvas(surface);
+        long frameNanos = HostConfig.framePeriodNanos();
         long nextFrame = System.nanoTime();
         int frames = 0;
         int changes = 0;
@@ -498,7 +497,7 @@ public final class Main {
                     LockSupport.parkNanos(nextFrame - now);
                     continue;
                 }
-                nextFrame = now + FRAME_NANOS;
+                nextFrame = now + frameNanos;
                 int callbacks = Choreographer.pumpFrameCallbacks(now);
                 drainGuestQueue(looper);
                 if (windowClosed.get()) {

@@ -30,7 +30,8 @@ Threading and events are part of the seam, not deferred work:
   draws and reads back on its thread, the display thread uploads the newest
   frame as a GL texture and presents it at VSync. `postFrame` reports a
   closed window so a render loop can stop without polling.
-- The guest thread runs a host-driven render loop at 60 Hz: each tick drains
+- The guest thread runs a host-driven render loop at the configured refresh
+  rate (`display.refresh_hz`, 60 Hz by default): each tick drains
   queued host events, fires the due `Choreographer` frame callbacks (the
   clock Compose's `withFrameNanos` suspends on), measures/layouts/draws the
   composed root when a callback ran or a view is dirty, and posts the raster.

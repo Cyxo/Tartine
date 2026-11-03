@@ -257,7 +257,7 @@ GitLab `android_translation_layer/android_translation_layer`
   `HostDisplay.Event`s on the display thread; `HostEventChannel` buffers
   until the guest registers a listener (so a close that races startup is not
   lost). The guest listener posts each event to its Looper `MessageQueue` and
-  `Looper.loop()` runs it on the looper thread; `Closed` quits the loop.
+  the render loop drains it on the looper thread; `Closed` ends the loop.
   Input values stay in GLFW space until Android key/motion mapping and
   ViewRootImpl-style dispatch land. `postFrame` returns `false` once the
   window is closed.
@@ -266,7 +266,8 @@ GitLab `android_translation_layer/android_translation_layer`
   `RasterPresenter` mints the surface and binds it to a framework `Canvas`.
   `GlfwHostDisplay` now owns that loop (replacing the single-threaded
   `DesktopWindow`): the window stays hidden until the first posted frame,
-  then shows and starts its timeout; `Main` snapshots the drawn surface into
+  then shows and starts its timeout; the guest render loop ticks from
+  `display.refresh_hz` (60 Hz by default), snapshots the drawn surface into
   a `HostDisplay.Frame` on the guest thread and closes the surface after
   readback. When the window closes while the guest is still running, the
   macOS path signals close before joining the guest and bounds the join.
