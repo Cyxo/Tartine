@@ -13,20 +13,47 @@ Tartine is a tool to run Android apps on Desktop OSes natively, in a similar fas
 ## Scope
 
 - **Supported target: pure-DEX apps.** Java/Kotlin/Compose apps whose APK ships no native code. Apps bundling ARM `.so` libraries (Flutter, most games) are out of reach for now: a desktop JVM cannot load Bionic-built ARM binaries.
-- **Status:** the headless pipeline drives a real Compose APK through manifest → DEX → VM into lifecycle, composition, and a continuous measure/layout/draw loop (60 Hz by default; `display.refresh_hz`). Frames blit into a real desktop window (Skia raster through the LWJGL GL context — `mise run gui`), and the window carries the app's launcher icon: the manifest `android:icon`/`roundIcon` reference resolves through `resources.arsc`; bitmap sources decode through the renderer backend and vector/adaptive icons (incl. aapt2 inline gradients and group transforms) convert to SVG and render through jsvg at 16/32/48 px. Unsupported sources log an `icon:` gap line and fall back to the platform default icon. The translation pipeline (DEX → JVM bytecode, `tartine.tx`) is the only VM; framework behavior grows per probe wall. Design decisions and roadmap live in `docs/architecture.md`.
+- **Status:** the headless pipeline drives a real Compose APK through manifest -> DEX -> VM into lifecycle, composition, and a continuous measure/layout/draw loop (60 Hz by default; `display.refresh_hz`). Frames blit into a real desktop window (Skia raster through the LWJGL GL context - `mise run gui`), and the window carries the app's launcher icon: the manifest `android:icon`/`roundIcon` reference resolves through `resources.arsc`; bitmap sources decode through the renderer backend and vector/adaptive icons (incl. aapt2 inline gradients and group transforms) convert to SVG and render through jsvg at 16/32/48 px. Unsupported sources log an `icon:` gap line and fall back to the platform default icon. The translation pipeline (DEX -> JVM bytecode, `tartine.tx`) is the only VM; framework behavior grows per probe wall. Design decisions and roadmap live in `docs/architecture.md`.
 
-## What currently works
+## How it works
+
+When running `mise run gui [file.apk]`, the APK file is parsed and the DEX bytecode is translated to JVM bytecode in real time.
+
+The Android Framework (that exists as a DEX bytecode JAR file on Android devices) has been recreated in the `framework` module here, and re-implements Android features with desktop APIs from the Java Virtual Machine.
+
+The native window, events and rendering pipeline are handled by GLFW, and requires a UI adapter. The current UI adapter provided in the `gfx-skija` relies on Skija (Java bindings library for Skia), but the Tartine GUI has been designed to be modular, so any Java module implementing `gfx-api` could be used to render UI in Tartine.
+
+## Features
 
 Tartine can currently parse **pure-Kotlin/Java APKs** (no XML layouts or images) and keep their Compose UI animating in a live render loop.
 
 <p align="center">
-  <img src="./assets/current.png" />
+  <img src="./docs/assets/current.gif" />
   <i>On the left, the app run by Tartine. On the right, the same app running on a real Android device, mirrored with scrcpy.</i>
 </p>
 
-It finds the main activity in the XML manifest, and also extracts the icon from the resources.
+Here's a list of currently working features:
+- **Pure-DEX apps (Java/Kotlin/Compose, no XML layouts, no native code) run end-to-end** - manifest parsing, DEX -> JVM translation (the only VM), lifecycle/composition, and a continuous measure/layout/draw loop; framework behavior is added wall-by-wall via named `UnsupportedOperationException` gaps surfaced by `mise run run`/`refs`. *Limitation: `mise run run` halts at the first named gap on headless runs until the family is ported.*
+- **Full 60 Hz render loop for pure-Compose apps, configurable via `display.refresh_hz` (1–1000, fractional OK)** - tick drains host events, pumps `Choreographer`, recreates the draw only when a callback ran or a view is dirty, and presents the newest frame through `HostDisplay`; idle screens cost a blit. *Limitation: pacing is the guest render loop only; the window still presents at the desktop monitor's VSync (`glfwSwapInterval(1)`); if a frame's draw+readback costs more than the period, the effective rate is capped by draw speed.*
+- **Real desktop window rendering via Skia on LWJGL** - `Canvas` ops rasterized with Skija, read back as ARGB, uploaded as a GL texture and letterboxed per frame; window stays hidden until the first posted frame, then timeout starts. *Limitation: software raster path only; no GLES/Vulkan-native UI or `ANativeWindow` path yet (architectural seam exists, not wired).*
+- **App icon extraction** - manifest `android:icon`/`roundIcon` resolves through `resources.arsc`; bitmaps decode through the renderer; adaptive/vector icons convert to SVG (aapt2 inline gradients and group transforms) rendered at 16/32/48 px; unconverted sources log an `icon:` gap and fall back to the OS default.
+- **Host display threading + event channel** - one host UI thread owns GLFW/GL and a separate guest looper thread; input/resize/focus/close events publish on the display thread, buffer until registration, replay, and post to the guest `Looper` `MessageQueue`; `postFrame` returns `false` on close.
+- **Virtual filesystem** - guest paths (`/data/data/<pkg>`, `/sdcard`) map under the Tartine root; default private card with seeded Download/Documents/Pictures/DCIM/Music/Movies; optional shared host mount (`sdcard.mount`, read-only by default, validated for safety); `TARTINE_SDCARD` env fallback.
+- **Guest sandbox** - restricted classloader + SDK-free runtime; a ported File bridge and `Class.forName` helper; translation-time gating of blocked members; sandbox policy surfaced as `tartine.tx.SandboxPolicy`.
+- **Host configuration** (`config.properties`): per-color overrides, font families, `theme.mode` (`auto`/`light`/`dark`), sdcard mount + read-only flag, `display.refresh_hz`; host theme auto-probes the Windows registry, macOS `defaults`, GNOME/KDE.
 
-For now input dispatch into the view tree is still missing: window input, resize, focus and close reach the guest's Looper queue, but GLFW-to-Android key/motion mapping and ViewRootImpl-style delivery are still gaps. There is no inter-process communication (such as intents) either.
+*Global limits: no XML layouts or non-icon images; no ARM `.so` native libraries; no IPC/intents; no input dispatch into the view tree (events reach the queue, but GLFW->Android key/motion mapping and ViewRootImpl-style delivery are gaps); graphics are software-raster only for now.*
+
+### Upcoming features
+
+- **Input dispatch into the view tree** - GLFW-to-Android `KeyEvent`/`MotionEvent` mapping and ViewRootImpl-style focus/key/motion delivery.
+- **Hardware/GLES path** - future `GLES`/`ANativeWindow`/`Surface` use alongside Skia, atop the livewired `gfx-api`/`gfx-skija` seam (only software raster UI today).
+- **Surface/Window layers** - `SurfaceView` own layer and `TextureView` inside-app GLES compositing semantics at the host level.
+- **Shared-storage / IPC layer** - intents and inter-app communication (design notes only today).
+- **Installation, daemon, packaging** - per-user unprivileged daemon, signature verification + install/unpack, AppCDS, Unix-domain IPC (design notes in `architecture.md`).
+- **Framework family ports** - ongoing per-probe gap filling (`View`, measure, nested touch, accessibility, etc.) driven by `refs`; `KeyboardNavigationCluster`, `Autofill`, etc. remain named gaps.
+- **Guest-facing VSync Choreographer equivalence beyond animation** - callbacks driven by `pumpFrameCallbacks` today, not a native VSync receiver.
+- **`SurfaceFlinger`-grade behaviors** - z-order, transforms, HWC (window management beyond one window + timeout).
 
 ## Prerequisites
 
@@ -76,11 +103,11 @@ resolves every method, field and type reference plus class-hierarchy edge
 before translation (guest dex first, then host reflection) and prints each
 unresolved one as `kind reference: reason`:
 
-- `owner class not found` — the class is absent from both the APK and the
+- `owner class not found` - the class is absent from both the APK and the
   framework; add/port it.
-- `member not found` — the owner exists but lacks the method/field; add it
+- `member not found` - the owner exists but lacks the method/field; add it
   to the skeleton or behavior.
-- `type not found` — a parameter, return, field or catch type is missing.
+- `type not found` - a parameter, return, field or catch type is missing.
 
 Real APKs produce a large census; redirect it and grep the failing signature:
 
