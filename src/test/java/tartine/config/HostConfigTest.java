@@ -33,6 +33,7 @@ class HostConfigTest {
         Paint.tartineSetPreferredFamilies(null);
         ThemeMode.setDark(false);
         HostConfig.resetFrameRate();
+        HostConfig.resetDebugFrames();
         Vfs.resetCard();
     }
 
@@ -42,6 +43,7 @@ class HostConfigTest {
         Paint.tartineSetPreferredFamilies(null);
         ThemeMode.setDark(false);
         HostConfig.resetFrameRate();
+        HostConfig.resetDebugFrames();
         Vfs.resetCard();
     }
 
@@ -191,6 +193,26 @@ class HostConfigTest {
         assertEquals(16_666_667L, HostConfig.framePeriodNanos());
         config("display.refresh_hz = 1000.1");
         assertEquals(16_666_667L, HostConfig.framePeriodNanos());
+    }
+
+    @Test
+    void frameDiagnosticsDefaultOff() {
+        HostConfig.loadFrom(Path.of(temp.toString(), "absent.properties"));
+        assertFalse(HostConfig.debugFrames());
+    }
+
+    @Test
+    void frameDiagnosticsConfigToggles() throws Exception {
+        config("display.debug_frames = true");
+        assertTrue(HostConfig.debugFrames());
+        config("display.debug_frames = false");
+        assertFalse(HostConfig.debugFrames());
+    }
+
+    @Test
+    void badFrameDiagnosticsValueKeepsDefault() throws Exception {
+        config("display.debug_frames = sure");
+        assertFalse(HostConfig.debugFrames());
     }
 
     @Test

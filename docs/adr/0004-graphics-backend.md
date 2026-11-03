@@ -31,12 +31,24 @@ Threading and events are part of the seam, not deferred work:
   frame as a GL texture and presents it at VSync. `postFrame` reports a
   closed window so a render loop can stop without polling.
 - The guest thread runs a host-driven render loop at the configured refresh
-  rate (`display.refresh_hz`, 60 Hz by default): each tick drains
-  queued host events, fires the due `Choreographer` frame callbacks (the
-  clock Compose's `withFrameNanos` suspends on), measures/layouts/draws the
-  composed root when a callback ran or a view is dirty, and posts the raster.
-  Idle ticks skip the redraw and repost nothing, so a static screen costs one
+  rate (`display.refresh_hz`, 60 Hz by default). `tartine.graphics.RenderLoop`
+  owns that loop, driving a `FrameSource` (queue drain, `Choreographer` pump,
+  dirty check, measure/layout/draw) supplied by `Main`: each tick fires the
+  due frame callbacks (the clock Compose's `withFrameNanos` suspends on),
+  draws when a callback ran or a view is dirty, and posts the raster. Idle
+  ticks skip the redraw and repost nothing, so a static screen costs one
   blit, not a draw per VSync.
+- The loop reads back into one reused ARGB array
+  (`GfxSurface.readPixels(int[])`; the Skija readback bitmap is reused too)
+  instead of allocating per frame. Core `FrameSource` methods (`drain`,
+  `pumpCallbacks`, `needsRedraw`, `draw`, `isClosed`) keep the loop testable
+  with fakes and an injected clock. A draw failure is counted and logged
+  once per distinct message, then the partial surface is still presented.
+  Per-frame hash and painted-pixel statistics are opt-in via
+  `display.debug_frames` because each scans the whole raster.
+- The display copies each posted frame into display-owned pooled buffers
+  (BufferQueue-lite, newest frame wins); the guest may reuse its readback
+  array once `postFrame` returns.
 - Events flow display to guest through `HostDisplay.Event`: GLFW input,
   resize and focus callbacks publish on the display thread, a buffering
   channel replays anything that arrives before registration, and the guest's

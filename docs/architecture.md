@@ -266,10 +266,11 @@ GitLab `android_translation_layer/android_translation_layer`
   `RasterPresenter` mints the surface and binds it to a framework `Canvas`.
   `GlfwHostDisplay` now owns that loop (replacing the single-threaded
   `DesktopWindow`): the window stays hidden until the first posted frame,
-  then shows and starts its timeout; the guest render loop ticks from
-  `display.refresh_hz` (60 Hz by default), snapshots the drawn surface into
-  a `HostDisplay.Frame` on the guest thread and closes the surface after
-  readback. When the window closes while the guest is still running, the
+  then shows and starts its timeout; `tartine.graphics.RenderLoop` ticks the
+  guest side from `display.refresh_hz` (60 Hz by default), reads the drawn
+  surface into one reused ARGB buffer and posts it as a `HostDisplay.Frame`;
+  the display copies frames into pooled buffers, so the guest buffer is
+  reusable once `postFrame` returns. When the window closes while the guest is still running, the
   macOS path signals close before joining the guest and bounds the join.
 - Window icon landed: `tartine.apk.AppIcon` resolves
   `android:icon`/`roundIcon` through `ResourceTable` and renders 16/32/48

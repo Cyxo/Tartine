@@ -20,8 +20,8 @@ public interface HostDisplay extends AutoCloseable {
 
     /**
      * One finished frame: packed premultiplied ARGB ints, row-major.
-     * Ownership transfers to the display on {@link #postFrame}; callers must
-     * not mutate the array afterwards.
+     * The caller may reuse {@code argb} once {@link #postFrame} returns;
+     * displays that keep pixels beyond that call must copy them.
      */
     record Frame(int width, int height, int[] argb) {
         public Frame {

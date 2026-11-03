@@ -38,13 +38,13 @@ Tartine can currently parse **pure-Kotlin/Java APKs** (no XML layouts or images)
 
 Here's a list of currently working features:
 - **Pure-DEX apps (Java/Kotlin/Compose, no XML layouts, no native code) run end-to-end** - manifest parsing, DEX -> JVM translation (the only VM), lifecycle/composition, and a continuous measure/layout/draw loop; framework behavior is added wall-by-wall via named `UnsupportedOperationException` gaps surfaced by `mise run run`/`refs`. *Limitation: `mise run run` halts at the first named gap on headless runs until the family is ported.*
-- **Full 60 Hz render loop for pure-Compose apps, configurable via `display.refresh_hz` (1–1000, fractional OK)** - tick drains host events, pumps `Choreographer`, recreates the draw only when a callback ran or a view is dirty, and presents the newest frame through `HostDisplay`; idle screens cost a blit. *Limitation: pacing is the guest render loop only; the window still presents at the desktop monitor's VSync (`glfwSwapInterval(1)`); if a frame's draw+readback costs more than the period, the effective rate is capped by draw speed.*
+- **Full 60 Hz render loop for pure-Compose apps, configurable via `display.refresh_hz` (1–1000, fractional OK)** - `tartine.graphics.RenderLoop` drains host events, pumps `Choreographer`, redraws only when a callback ran or a view is dirty, reuses one readback buffer, and presents the newest frame through `HostDisplay`; idle screens cost a blit. Failure diagnostics are counted and logged once per distinct message; `display.debug_frames` adds per-frame hash/painted stats. *Limitation: pacing is the guest render loop only; the window still presents at the desktop monitor's VSync (`glfwSwapInterval(1)`); if a frame's draw+readback costs more than the period, the effective rate is capped by draw speed.*
 - **Real desktop window rendering via Skia on LWJGL** - `Canvas` ops rasterized with Skija, read back as ARGB, uploaded as a GL texture and letterboxed per frame; window stays hidden until the first posted frame, then timeout starts. *Limitation: software raster path only; no GLES/Vulkan-native UI or `ANativeWindow` path yet (architectural seam exists, not wired).*
 - **App icon extraction** - manifest `android:icon`/`roundIcon` resolves through `resources.arsc`; bitmaps decode through the renderer; adaptive/vector icons convert to SVG (aapt2 inline gradients and group transforms) rendered at 16/32/48 px; unconverted sources log an `icon:` gap and fall back to the OS default.
 - **Host display threading + event channel** - one host UI thread owns GLFW/GL and a separate guest looper thread; input/resize/focus/close events publish on the display thread, buffer until registration, replay, and post to the guest `Looper` `MessageQueue`; `postFrame` returns `false` on close.
 - **Virtual filesystem** - guest paths (`/data/data/<pkg>`, `/sdcard`) map under the Tartine root; default private card with seeded Download/Documents/Pictures/DCIM/Music/Movies; optional shared host mount (`sdcard.mount`, read-only by default, validated for safety); `TARTINE_SDCARD` env fallback.
 - **Guest sandbox** - restricted classloader + SDK-free runtime; a ported File bridge and `Class.forName` helper; translation-time gating of blocked members; sandbox policy surfaced as `tartine.tx.SandboxPolicy`.
-- **Host configuration** (`config.properties`): per-color overrides, font families, `theme.mode` (`auto`/`light`/`dark`), sdcard mount + read-only flag, `display.refresh_hz`; host theme auto-probes the Windows registry, macOS `defaults`, GNOME/KDE.
+- **Host configuration** (`config.properties`): per-color overrides, font families, `theme.mode` (`auto`/`light`/`dark`), sdcard mount + read-only flag, `display.refresh_hz`, `display.debug_frames`; host theme auto-probes the Windows registry, macOS `defaults`, GNOME/KDE.
 
 *Global limits: no XML layouts or non-icon images; no ARM `.so` native libraries; no IPC/intents; no input dispatch into the view tree (events reach the queue, but GLFW->Android key/motion mapping and ViewRootImpl-style delivery are gaps); graphics are software-raster only for now.*
 
@@ -174,6 +174,12 @@ font.families = Segoe UI, Roboto
 # withFrameNanos) ticks at this rate; the desktop window still presents
 # at the monitor's own VSync. Accepted range: 1-1000.
 display.refresh_hz = 60
+
+# Render-loop diagnostics. false (the default) keeps per-frame output
+# off; true logs callback counts, raster hashes and painted-pixel totals
+# while probing. The hash and count scan the whole frame, so leave it
+# off outside diagnostics.
+# display.debug_frames = false
 
 # Host light/dark theme. auto (default) follows the desktop setting when
 # it can be read: Windows AppsUseLightTheme, macOS AppleInterfaceStyle,

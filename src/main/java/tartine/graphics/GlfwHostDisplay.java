@@ -2,11 +2,12 @@ package tartine.graphics;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
@@ -108,8 +109,20 @@ final class GlfwHostDisplay implements DisplayLoop {
     private final String title;
     private final long timeoutSecs;
     private final List<WindowIcon> icons;
-    private final AtomicReference<HostDisplay.Frame> pendingFrame =
-            new AtomicReference<>();
+    /**
+     * BufferQueue-lite handoff. The guest reuses its readback array, so
+     * {@link #postFrame} copies into these display-owned buffers under a
+     * lock. Three buffers cover guest writes, the pending frame, and the
+     * frame being uploaded; the newest posted frame wins when presentation is
+     * behind.
+     */
+    private final Object frameLock = new Object();
+    private final Deque<int[]> freeFramePixels = new ArrayDeque<>();
+    private int[] pendingPixels;
+    private int pendingWidth;
+    private int pendingHeight;
+    /** Reused GL upload bytes; display thread only. */
+    private ByteBuffer uploadBuffer;
     private final AtomicBoolean closeRequested = new AtomicBoolean();
     private final AtomicBoolean closePublished = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
@@ -137,8 +150,40 @@ final class GlfwHostDisplay implements DisplayLoop {
         if (closeRequested.get()) {
             return false;
         }
-        pendingFrame.set(frame);
+        int[] source = frame.argb();
+        synchronized (frameLock) {
+            int[] copy = freeFramePixels.poll();
+            if (copy == null || copy.length != source.length) {
+                copy = new int[source.length];
+            }
+            System.arraycopy(source, 0, copy, 0, source.length);
+            if (pendingPixels != null) {
+                freeFramePixels.add(pendingPixels);
+            }
+            pendingPixels = copy;
+            pendingWidth = frame.width();
+            pendingHeight = frame.height();
+        }
         return true;
+    }
+
+    /** Takes the newest pending frame, or null; display thread only. */
+    private Frame takePendingFrame() {
+        synchronized (frameLock) {
+            if (pendingPixels == null) {
+                return null;
+            }
+            Frame frame = new Frame(pendingWidth, pendingHeight, pendingPixels);
+            pendingPixels = null;
+            return frame;
+        }
+    }
+
+    /** Returns an uploaded frame's pixels to the display-owned pool. */
+    private void releaseFrame(Frame frame) {
+        synchronized (frameLock) {
+            freeFramePixels.add(frame.argb());
+        }
     }
 
     @Override
@@ -241,12 +286,16 @@ final class GlfwHostDisplay implements DisplayLoop {
                         && !glfwWindowShouldClose(window)
                         && System.nanoTime() < deadline) {
                     glfwPollEvents();
-                    Frame frame = pendingFrame.getAndSet(null);
+                    Frame frame = takePendingFrame();
                     if (frame != null) {
-                        if (texture != 0) {
-                            glDeleteTextures(texture);
+                        try {
+                            if (texture != 0) {
+                                glDeleteTextures(texture);
+                            }
+                            texture = uploadFrameTexture(frame);
+                        } finally {
+                            releaseFrame(frame);
                         }
-                        texture = uploadFrameTexture(frame);
                         frameWidth = frame.width();
                         frameHeight = frame.height();
                     }
@@ -350,13 +399,19 @@ final class GlfwHostDisplay implements DisplayLoop {
      * Uploads the frame's pixels as one texture. The seam readback is packed
      * premultiplied ARGB ints; the GL upload packs them as B, G, R, A bytes,
      * which {@code GL_BGRA} + {@code GL_UNSIGNED_BYTE} consume exactly, so
-     * no per-pixel channel swap is needed.
+     * no per-pixel channel swap is needed. The upload buffer is reused across
+     * frames.
      */
-    private static int uploadFrameTexture(HostDisplay.Frame frame) {
+    private int uploadFrameTexture(HostDisplay.Frame frame) {
         int width = frame.width();
         int height = frame.height();
         int[] argb = frame.argb();
-        ByteBuffer pixels = BufferUtils.createByteBuffer(width * height * 4);
+        int bytes = width * height * 4;
+        if (uploadBuffer == null || uploadBuffer.capacity() < bytes) {
+            uploadBuffer = BufferUtils.createByteBuffer(bytes);
+        }
+        ByteBuffer pixels = uploadBuffer;
+        pixels.clear();
         for (int pixel : argb) {
             pixels.put((byte) (pixel & 0xFF));          // blue
             pixels.put((byte) ((pixel >>> 8) & 0xFF));  // green

@@ -13,12 +13,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.LockSupport;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 import tartine.apk.Abi;
@@ -36,6 +34,7 @@ import tartine.gfx.skija.SkijaBackend;
 import tartine.graphics.HostDisplay;
 import tartine.graphics.HostDisplays;
 import tartine.graphics.RasterPresenter;
+import tartine.graphics.RenderLoop;
 import tartine.graphics.WindowIcon;
 import tartine.runtime.Vfs;
 import tartine.tx.ReferenceResolver;
@@ -470,80 +469,45 @@ public final class Main {
 
     /**
      * The desktop VSync pass at the configured refresh rate
-     * ({@code display.refresh_hz}, 60 Hz by default): each tick drains host
-     * events, fires the Choreographer callbacks (which resume Compose's
-     * withFrameNanos loops and the Recomposer), measures/layouts/draws the
-     * composed root into one reused surface, and posts the raster to the host
-     * display. Stops when the window closes or the display drops a frame.
+     * ({@code display.refresh_hz}, 60 Hz by default), driven by
+     * {@link RenderLoop}: the loop owns draw-when-due pacing, stop rules and
+     * readback reuse; this method only supplies the guest-side source (queue
+     * drain, Choreographer pump, dirty check, measure/layout/draw).
      */
     private static void renderLoop(Looper looper, HostDisplay display,
             Object owner, AtomicBoolean windowClosed) {
         GfxSurface surface = RasterPresenter.createSurface(480, 960);
         Canvas canvas = RasterPresenter.createSurfaceCanvas(surface);
-        long frameNanos = HostConfig.framePeriodNanos();
-        long nextFrame = System.nanoTime();
-        int frames = 0;
-        int changes = 0;
-        int lastHash = 0;
-        boolean blocked = false;
-        try {
-            while (!windowClosed.get()) {
+        RenderLoop.FrameSource frames = new RenderLoop.FrameSource() {
+            @Override
+            public void drain() {
                 drainGuestQueue(looper);
-                if (windowClosed.get()) {
-                    break;
-                }
-                long now = System.nanoTime();
-                if (now < nextFrame) {
-                    LockSupport.parkNanos(nextFrame - now);
-                    continue;
-                }
-                nextFrame = now + frameNanos;
-                int callbacks = Choreographer.pumpFrameCallbacks(now);
-                drainGuestQueue(looper);
-                if (windowClosed.get()) {
-                    break;
-                }
-                boolean dirty = owner instanceof View view
-                        && view.tartineConsumeDirty();
-                if (frames > 0 && callbacks == 0 && !dirty) {
-                    continue;
-                }
-                int[] pixels;
-                try {
-                    pixels = txDrawFrame(owner, surface, canvas);
-                } catch (RuntimeException failure) {
-                    if (!blocked) {
-                        System.out.println("gui: draw blocked at: "
-                                + sanitize(failure));
-                        blocked = true;
-                    }
-                    pixels = surface.readPixels();
-                }
-                int hash = Arrays.hashCode(pixels);
-                if (hash != lastHash) {
-                    changes++;
-                    lastHash = hash;
-                }
-                int painted = countPainted(pixels);
-                if (frames == 0 || frames % 30 == 0) {
-                    System.out.println("gui: frame " + frames + " callbacks "
-                            + callbacks + " painted " + painted + "/"
-                            + pixels.length + " hash "
-                            + Integer.toHexString(hash));
-                }
-                frames++;
-                if (!display.postFrame(new HostDisplay.Frame(480, 960,
-                        pixels))) {
-                    System.out.println("gui: display closed; render loop "
-                            + "stopped");
-                    break;
-                }
             }
-        } finally {
-            surface.close();
-        }
-        System.out.println("gui: render loop drew " + frames + " frames ("
-                + changes + " pixel changes)");
+
+            @Override
+            public int pumpCallbacks(long frameTimeNanos) {
+                return Choreographer.pumpFrameCallbacks(frameTimeNanos);
+            }
+
+            @Override
+            public boolean needsRedraw() {
+                return owner instanceof View view
+                        && view.tartineConsumeDirty();
+            }
+
+            @Override
+            public void draw() {
+                txDrawFrame(owner, canvas);
+            }
+
+            @Override
+            public boolean isClosed() {
+                return windowClosed.get();
+            }
+        };
+        new RenderLoop(display, surface, frames,
+                HostConfig.framePeriodNanos(), HostConfig.debugFrames(),
+                System.out).run();
     }
 
     /** Runs queued guest actions (input, close) between frames. */
@@ -555,26 +519,15 @@ public final class Main {
     }
 
     /**
-     * Measure, layout, then render the composed root into the reused surface
-     * (the desktop twin of the device's VSync traversal).
+     * Measure, layout, then render the composed root into the surface (the
+     * desktop twin of the device's VSync traversal); the caller reads the
+     * surface back.
      */
-    private static int[] txDrawFrame(Object owner, GfxSurface surface,
-            Canvas canvas) {
+    private static void txDrawFrame(Object owner, Canvas canvas) {
         txInvoke(owner, "onMeasure", 480 | (1 << 30), 960 | (1 << 30));
         txInvoke(owner, "onLayout", false, 0, 0, 480, 960);
         canvas.drawColor(0xFF000000);
         txInvoke(owner, "dispatchDraw", canvas);
-        return surface.readPixels();
-    }
-
-    private static int countPainted(int[] pixels) {
-        int painted = 0;
-        for (int pixel : pixels) {
-            if ((pixel >>> 24) != 0) {
-                painted++;
-            }
-        }
-        return painted;
     }
 
     /** Reads a private field walking the receiver's runtime class chain. */

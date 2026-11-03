@@ -35,6 +35,10 @@ import tartine.runtime.Vfs;
  *   <li>{@code display.refresh_hz} = the render loop's refresh rate in
  *       frames per second (default 60; fractions allowed; 1 to 1000).
  *       Sets the guest frame period the VSync pass paces itself by.</li>
+ *   <li>{@code display.debug_frames} = {@code true}/{@code false} (default
+ *       false): log per-frame callback counts, raster hashes and
+ *       painted-pixel totals from the render loop. Off because the hash and
+ *       count scan the whole raster each frame.</li>
  *   <li>{@code font.families} = comma-separated preferred desktop font
  *       families (config wins over a {@code TARTINE_FONT_FAMILIES} env
  *       value; the built-in list is last).</li>
@@ -68,6 +72,9 @@ public final class HostConfig {
     /** Render-loop tick period; {@link #apply} rewrites it from config. */
     private static long framePeriodNanos = periodNanos(DEFAULT_REFRESH_HZ);
 
+    /** Render-loop diagnostics; {@link #apply} rewrites it from config. */
+    private static boolean debugFrames;
+
     private HostConfig() {
     }
 
@@ -79,9 +86,22 @@ public final class HostConfig {
         return framePeriodNanos;
     }
 
+    /**
+     * Whether the render loop logs per-frame hash and painted-pixel
+     * statistics ({@code display.debug_frames}, default false).
+     */
+    public static boolean debugFrames() {
+        return debugFrames;
+    }
+
     /** Test seam: restores the default 60 Hz period. */
     static void resetFrameRate() {
         framePeriodNanos = periodNanos(DEFAULT_REFRESH_HZ);
+    }
+
+    /** Test seam: restores the default diagnostics setting (off). */
+    static void resetDebugFrames() {
+        debugFrames = false;
     }
 
     /** Loads {@code <root>/config.properties} (defaults when absent). */
@@ -133,6 +153,11 @@ public final class HostConfig {
                 applyColor(name, value);
             } else if (name.equals("display.refresh_hz")) {
                 // Handled once below (order-independent).
+            } else if (name.equals("display.debug_frames")) {
+                Boolean enabled = parseBool(name, value);
+                if (enabled != null) {
+                    debugFrames = enabled;
+                }
             } else if (name.equals("font.families")) {
                 List<String> families = parseFamilies(value);
                 if (families.isEmpty()) {
@@ -232,7 +257,8 @@ public final class HostConfig {
      * the Tartine root).
      */
     private static void applySdcard(Properties props) {
-        Boolean readOnly = parseBool(props.getProperty("sdcard.mount.readonly"));
+        Boolean readOnly = parseBool("sdcard.mount.readonly",
+                props.getProperty("sdcard.mount.readonly"));
         String mountRaw = props.getProperty("sdcard.mount");
         boolean fromConfig = mountRaw != null;
         if (!fromConfig) {
@@ -265,7 +291,7 @@ public final class HostConfig {
     }
 
     /** {@code true}/{@code false} case-insensitive, else null with a warning. */
-    private static Boolean parseBool(String raw) {
+    private static Boolean parseBool(String name, String raw) {
         if (raw == null) {
             return null;
         }
@@ -273,7 +299,7 @@ public final class HostConfig {
         if (text.equalsIgnoreCase("true") || text.equalsIgnoreCase("false")) {
             return Boolean.parseBoolean(text);
         }
-        System.err.println("Tartine: config ignored: sdcard.mount.readonly="
+        System.err.println("Tartine: config ignored: " + name + "="
                 + text + " (need true or false)");
         return null;
     }

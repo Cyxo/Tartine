@@ -275,6 +275,21 @@ class GfxSeamTest {
     }
 
     @Test
+    void surfaceReadbackFillsACallerBuffer() {
+        backend.createSurface(4, 2);
+        FakeSurface surface = backend.lastSurface;
+        int[] out = new int[8];
+
+        surface.readPixels(out);
+
+        // The default overload fills the caller's reused array in place.
+        assertEquals(0xFF000000, out[0]);
+        assertEquals(0xFF000007, out[7]);
+        assertThrows(IllegalArgumentException.class,
+                () -> surface.readPixels(new int[7]));
+    }
+
+    @Test
     void decodeImageReturnsPixelsAndCloses() {
         backend.decodeImage(new byte[]{1, 2, 3});
         FakeImage image = backend.lastImage;
