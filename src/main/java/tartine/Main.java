@@ -358,8 +358,8 @@ public final class Main {
      * TranslatedLoader}, then drive the compose pipeline (createComposition,
      * setContent, attach owners, lifecycle to RESUMED) with plain reflection on
      * the translated classes, and hand the first frame to the host display.
-     * Gaps print; a blocked draw still shows the partially composed surface
-     * like a first frame.
+     * Gaps print; a failed draw is logged and stops the render loop instead of
+     * retrying a wedged traversal (the partial raster is not presented).
      */
     private static void txGuiRun(File apk, HostDisplay display)
             throws Exception {
@@ -459,7 +459,7 @@ public final class Main {
             txInvoke(composition, "setContent", lambda);
             System.out.println("gui: post-attach setContent returned");
             renderLoop(looper, display, owner, target, windowClosed);
-            System.out.println("gui: window closed");
+            System.out.println("gui: render loop stopped");
         } finally {
             // The render loop closes the target; close again for early
             // returns and setup failures (GuestSurface.close is idempotent).

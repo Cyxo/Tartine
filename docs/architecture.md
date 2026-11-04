@@ -270,7 +270,9 @@ GitLab `android_translation_layer/android_translation_layer`
   guest side from `display.refresh_hz` (60 Hz by default), reads the drawn
   surface into one reused ARGB buffer and posts it as a `HostDisplay.Frame`;
   the display copies frames into pooled buffers, so the guest buffer is
-  reusable once `postFrame` returns. When the window closes while the guest is still running, the
+  reusable once `postFrame` returns. A failed draw is logged and ends the
+  loop (no partial raster posted) rather than retrying the same wedged
+  traversal every VSync. When the window closes while the guest is still running, the
   macOS path signals close before joining the guest and bounds the join.
 - Window viewport and density (ADR-0010): `HostDisplay.awaitMetrics()` reports
   the framebuffer size in pixels and the GLFW content scale before guest code

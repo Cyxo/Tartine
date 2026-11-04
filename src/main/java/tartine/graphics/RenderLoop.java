@@ -2,8 +2,6 @@ package tartine.graphics;
 
 import java.io.PrintStream;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.concurrent.locks.LockSupport;
 import tartine.gfx.GfxSurface;
 
@@ -15,11 +13,12 @@ import tartine.gfx.GfxSurface;
  * or a dirty view asks for it. Idle ticks skip the redraw and post nothing,
  * so a static screen costs one blit, not a draw per VSync.
  *
- * <p>Stops when the frame source reports the window closed, or when the
- * display refuses a frame ({@code postFrame} returns {@code false}).
- * Failures inside a draw are counted and logged once per distinct message;
- * the partially drawn surface is still presented, matching how a blocked
- * device frame keeps whatever it managed to draw.
+ * <p>Stops when the frame source reports the window closed, when the display
+ * refuses a frame ({@code postFrame} returns {@code false}), or when a draw
+ * throws. A failed traversal usually leaves guest state wedged (Compose's
+ * "layout state is not idle" is the common one), so retrying every VSync only
+ * chains the same failure. The error is logged once and the failed frame is
+ * not presented; the last successfully posted frame remains on screen.
  *
  * <p>The loop reads back into one reused pixel array through
  * {@link GfxSurface#readPixels(int[])}; per-frame hash and painted-pixel
@@ -119,7 +118,10 @@ public final class RenderLoop {
         this.clock = clock;
     }
 
-    /** Runs until the window closes or the display drops a frame. */
+    /**
+     * Runs until the window closes, the display drops a frame, or a draw
+     * fails.
+     */
     public void run() {
         GfxSurface surface = target.surface();
         int width = surface.getWidth();
@@ -129,8 +131,7 @@ public final class RenderLoop {
         int frames = 0;
         int changes = 0;
         int lastHash = 0;
-        int drawFailures = 0;
-        Set<String> failureMessages = new LinkedHashSet<>();
+        boolean drawFailed = false;
         try {
             while (!source.isClosed()) {
                 source.drain();
@@ -170,11 +171,13 @@ public final class RenderLoop {
                 try {
                     source.draw();
                 } catch (RuntimeException failure) {
-                    drawFailures++;
-                    String message = describe(failure);
-                    if (failureMessages.add(message)) {
-                        out.println("render: draw blocked at: " + message);
-                    }
+                    // Fail fast: a wedged traversal keeps failing on every
+                    // VSync, and presenting the partial raster would leave a
+                    // torn frame on screen.
+                    out.println("render: draw failed at: " + describe(failure)
+                            + "; stopping");
+                    drawFailed = true;
+                    break;
                 }
                 surface.readPixels(pixels);
                 if (debug) {
@@ -202,11 +205,10 @@ public final class RenderLoop {
         }
         out.println("render: drew " + frames + " frames"
                 + (debug ? " (" + changes + " pixel changes)" : "")
-                + (drawFailures > 0 ? ", " + drawFailures + " draw failures ("
-                        + failureMessages.size() + " distinct)" : ""));
+                + (drawFailed ? ", stopped after a draw failure" : ""));
     }
 
-    /** One printable line for a draw failure, for distinct-message logging. */
+    /** One printable line for a draw failure. */
     private static String describe(RuntimeException failure) {
         StringBuilder text =
                 new StringBuilder(failure.getClass().getSimpleName());

@@ -19,10 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Pins the render loop's rules: draw when a frame is due (callback or dirty
- * view), skip idle ticks, stop on close and on a dropped frame, reuse one
- * readback buffer, rebuild it when a resize replaces the surface, and count
- * draw failures with one log per distinct message. A fake clock keeps every
- * test deterministic.
+ * view), skip idle ticks, stop on close, on a dropped frame and on a failed
+ * draw, reuse one readback buffer, and rebuild it when a resize replaces the
+ * surface. A fake clock keeps every test deterministic.
  */
 class RenderLoopTest {
 
@@ -97,26 +96,45 @@ class RenderLoopTest {
     }
 
     @Test
-    void drawFailuresAreCountedAndLoggedOncePerDistinctMessage() {
+    void aDrawFailureStopsTheLoopAndTheFailedFrameIsNotPresented() {
         Harness harness = new Harness();
         harness.source.failures = new RuntimeException[] {
-                new IllegalStateException("boom"),
-                new IllegalStateException("boom"),
-                new IllegalArgumentException("other"),
-                new IllegalStateException("boom"),
+                null,
+                new IllegalStateException("layout state is not idle"),
+                new IllegalArgumentException("must not be reached"),
         };
-        harness.source.closeAfterDraws = 4;
 
         harness.run();
 
-        // A failed draw still presents the partial surface.
-        assertEquals(4, harness.display.frames.size());
+        // The good frame was presented; the failed draw was not retried and
+        // its partial surface was not posted.
+        assertEquals(2, harness.source.draws);
+        assertEquals(1, harness.display.frames.size());
         String text = harness.output();
-        assertEquals(1, occurrences(text, "boom"));
-        assertEquals(1, occurrences(text, "other"));
-        assertTrue(text.contains("4 draw failures (2 distinct)"), text);
-        assertTrue(text.contains("render: draw blocked at: "
-                + "IllegalStateException: boom"), text);
+        assertEquals(1, occurrences(text, "layout state is not idle"), text);
+        assertFalse(text.contains("must not be reached"), text);
+        assertTrue(text.contains("render: draw failed at: IllegalStateException:"
+                + " layout state is not idle; stopping"), text);
+        assertTrue(text.contains("render: drew 1 frames,"
+                + " stopped after a draw failure"), text);
+        assertTrue(harness.target.closed);
+    }
+
+    @Test
+    void aFirstFrameFailurePostsNothing() {
+        Harness harness = new Harness();
+        harness.source.failures = new RuntimeException[] {
+                new IllegalStateException("boom"),
+        };
+
+        harness.run();
+
+        assertEquals(1, harness.source.draws);
+        assertEquals(1, harness.source.pumps);
+        assertEquals(0, harness.display.frames.size());
+        assertTrue(harness.output().contains(
+                "render: drew 0 frames, stopped after a draw failure"),
+                harness.output());
     }
 
     @Test

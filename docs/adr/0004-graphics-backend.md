@@ -43,9 +43,10 @@ Threading and events are part of the seam, not deferred work:
   (`GfxSurface.readPixels(int[])`; the Skija readback bitmap is reused too)
   instead of allocating per frame. Core `FrameSource` methods (`drain`,
   `pumpCallbacks`, `needsRedraw`, `draw`, `isClosed`) keep the loop testable
-  with fakes and an injected clock. A draw failure is counted and logged
-  once per distinct message, then the partial surface is still presented.
-  Per-frame hash and painted-pixel statistics are opt-in via
+  with fakes and an injected clock. A draw failure is logged once and ends
+  the loop: a wedged traversal (for example Compose's "layout state is not
+  idle") would otherwise fail on every VSync, and the partial raster is not
+  presented. Per-frame hash and painted-pixel statistics are opt-in via
   `display.debug_frames` because each scans the whole raster.
 - The display copies each posted frame into display-owned pooled buffers
   (BufferQueue-lite, newest frame wins); the guest may reuse its readback
