@@ -161,4 +161,57 @@ class ConfigurationTest {
         assertEquals(0, new Configuration().getLayoutDirection());
         assertEquals(0, populated().getLayoutDirection());
     }
+
+    @Test
+    void reduceScreenLayoutMatchesAospSizeAndLongThresholds() {
+        int claimed = Configuration.SCREENLAYOUT_LAYOUTDIR_LTR
+                | Configuration.SCREENLAYOUT_LONG_YES
+                | Configuration.SCREENLAYOUT_SIZE_XLARGE;
+
+        // longSizeDp < 470: small, not long, no compat bits.
+        int small = Configuration.reduceScreenLayout(claimed, 400, 320);
+        assertEquals(Configuration.SCREENLAYOUT_SIZE_SMALL,
+                small & Configuration.SCREENLAYOUT_SIZE_MASK);
+        assertEquals(Configuration.SCREENLAYOUT_LONG_NO,
+                small & Configuration.SCREENLAYOUT_LONG_MASK);
+        assertEquals(0, small & Configuration.SCREENLAYOUT_COMPAT_NEEDED);
+        assertEquals(Configuration.SCREENLAYOUT_LAYOUTDIR_LTR,
+                small & Configuration.SCREENLAYOUT_LAYOUTDIR_MASK);
+
+        // A 400x800 dp phone: normal size, long, wide enough for compat.
+        int phone = Configuration.reduceScreenLayout(claimed, 800, 400);
+        assertEquals(Configuration.SCREENLAYOUT_SIZE_NORMAL,
+                phone & Configuration.SCREENLAYOUT_SIZE_MASK);
+        assertEquals(Configuration.SCREENLAYOUT_LONG_YES,
+                phone & Configuration.SCREENLAYOUT_LONG_MASK);
+        assertEquals(Configuration.SCREENLAYOUT_COMPAT_NEEDED,
+                phone & Configuration.SCREENLAYOUT_COMPAT_NEEDED);
+
+        // 480x960 dp (the shell default): 640x480 dp or larger is large.
+        int large = Configuration.reduceScreenLayout(claimed, 960, 480);
+        assertEquals(Configuration.SCREENLAYOUT_SIZE_LARGE,
+                large & Configuration.SCREENLAYOUT_SIZE_MASK);
+        assertEquals(Configuration.SCREENLAYOUT_LONG_YES,
+                large & Configuration.SCREENLAYOUT_LONG_MASK);
+
+        // 1280x800 dp: xlarge size, but a 16:10 panel is not "long"
+        // (long needs a ratio wider than 5:3).
+        int xlarge = Configuration.reduceScreenLayout(claimed, 1280, 800);
+        assertEquals(Configuration.SCREENLAYOUT_SIZE_XLARGE,
+                xlarge & Configuration.SCREENLAYOUT_SIZE_MASK);
+        assertEquals(Configuration.SCREENLAYOUT_LONG_NO,
+                xlarge & Configuration.SCREENLAYOUT_LONG_MASK);
+
+        // 1280x720 dp: xlarge and long (16:9 is wider than 5:3).
+        int wide = Configuration.reduceScreenLayout(claimed, 1280, 720);
+        assertEquals(Configuration.SCREENLAYOUT_SIZE_XLARGE,
+                wide & Configuration.SCREENLAYOUT_SIZE_MASK);
+        assertEquals(Configuration.SCREENLAYOUT_LONG_YES,
+                wide & Configuration.SCREENLAYOUT_LONG_MASK);
+
+        // A 4:3 panel is not "long" even when its dp size is large.
+        int square = Configuration.reduceScreenLayout(claimed, 640, 480);
+        assertEquals(Configuration.SCREENLAYOUT_LONG_NO,
+                square & Configuration.SCREENLAYOUT_LONG_MASK);
+    }
 }

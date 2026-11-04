@@ -28,12 +28,12 @@ import tartine.dex.Dex;
 import tartine.dex.DexClass;
 import tartine.dex.DexDump;
 import tartine.dex.DexSet;
+import tartine.fw.DisplayConfig;
 import tartine.gfx.GfxBackend;
-import tartine.gfx.GfxSurface;
 import tartine.gfx.skija.SkijaBackend;
+import tartine.graphics.GuestSurface;
 import tartine.graphics.HostDisplay;
 import tartine.graphics.HostDisplays;
-import tartine.graphics.RasterPresenter;
 import tartine.graphics.RenderLoop;
 import tartine.graphics.WindowIcon;
 import tartine.runtime.Vfs;
@@ -363,7 +363,21 @@ public final class Main {
      */
     private static void txGuiRun(File apk, HostDisplay display)
             throws Exception {
+        // The window exists before guest code runs: its framebuffer is the
+        // guest pixel viewport, and its content scale is the guest density,
+        // so Resources (created lazily by the launched activity) sees the
+        // real display instead of the fixed 480x960 mdpi default.
+        HostDisplay.WindowMetrics metrics = display.awaitMetrics();
+        DisplayConfig.set(metrics.width(), metrics.height(),
+                metrics.contentScale());
+        System.out.println("gui: viewport " + metrics.width() + "x"
+                + metrics.height() + " px @ " + metrics.contentScale()
+                + "x scale (" + DisplayConfig.screenWidthDp() + "x"
+                + DisplayConfig.screenHeightDp() + " dp, "
+                + DisplayConfig.densityDpi() + " dpi)");
         TxApp app = txLaunch(apk);
+        GuestSurface target = new GuestSurface(metrics.width(),
+                metrics.height());
         try {
             if (app.activity() == null) {
                 System.out.println("gui: launch failed; no window");
@@ -379,7 +393,8 @@ public final class Main {
             // drains on the guest main-looper thread.
             AtomicBoolean windowClosed = new AtomicBoolean();
             display.setEventListener(
-                    event -> postHostEvent(looper, windowClosed, event));
+                    event -> postHostEvent(looper, windowClosed, target,
+                            event));
             Object activity = app.activity();
             // Activity.setContentView delegates to the window (framework
             // Activity.java lines 3906-3911); the flattened decor keeps the
@@ -443,24 +458,39 @@ public final class Main {
             // content to the inner composition.
             txInvoke(composition, "setContent", lambda);
             System.out.println("gui: post-attach setContent returned");
-            renderLoop(looper, display, owner, windowClosed);
+            renderLoop(looper, display, owner, target, windowClosed);
             System.out.println("gui: window closed");
         } finally {
+            // The render loop closes the target; close again for early
+            // returns and setup failures (GuestSurface.close is idempotent).
+            target.close();
             app.reader().close();
         }
     }
 
     /**
      * Posts one host event to the guest main-looper queue. Runs on the
-     * display thread, so it must only enqueue; close quits the guest loop.
+     * display thread, so it must only enqueue. The queued action runs on the
+     * guest thread: a resize replaces the raster target there (the render
+     * loop then notices the new pixel size and redraws), and close quits the
+     * guest loop.
      */
     private static void postHostEvent(Looper looper, AtomicBoolean windowClosed,
-            HostDisplay.Event event) {
+            GuestSurface target, HostDisplay.Event event) {
         looper.getQueue().post(() -> {
             if (event instanceof HostDisplay.Closed) {
                 System.out.println("gui: window close event");
                 windowClosed.set(true);
                 looper.quit();
+                return;
+            }
+            if (event instanceof HostDisplay.Resized resized) {
+                DisplayConfig.setSize(resized.width(), resized.height());
+                boolean changed = target.resize(resized.width(),
+                        resized.height());
+                System.out.println("gui: window resized to "
+                        + resized.width() + "x" + resized.height()
+                        + (changed ? "" : " (unchanged)"));
                 return;
             }
             System.out.println("gui: host event " + event);
@@ -475,9 +505,7 @@ public final class Main {
      * drain, Choreographer pump, dirty check, measure/layout/draw).
      */
     private static void renderLoop(Looper looper, HostDisplay display,
-            Object owner, AtomicBoolean windowClosed) {
-        GfxSurface surface = RasterPresenter.createSurface(480, 960);
-        Canvas canvas = RasterPresenter.createSurfaceCanvas(surface);
+            Object owner, GuestSurface target, AtomicBoolean windowClosed) {
         RenderLoop.FrameSource frames = new RenderLoop.FrameSource() {
             @Override
             public void drain() {
@@ -497,7 +525,7 @@ public final class Main {
 
             @Override
             public void draw() {
-                txDrawFrame(owner, canvas);
+                txDrawFrame(owner, target);
             }
 
             @Override
@@ -505,7 +533,7 @@ public final class Main {
                 return windowClosed.get();
             }
         };
-        new RenderLoop(display, surface, frames,
+        new RenderLoop(display, target, frames,
                 HostConfig.framePeriodNanos(), HostConfig.debugFrames(),
                 System.out).run();
     }
@@ -519,13 +547,18 @@ public final class Main {
     }
 
     /**
-     * Measure, layout, then render the composed root into the surface (the
-     * desktop twin of the device's VSync traversal); the caller reads the
-     * surface back.
+     * Measure, layout, then render the composed root into the target's
+     * current surface (the desktop twin of the device's VSync traversal);
+     * the caller reads the surface back. Dimensions come from the target
+     * every frame, so a resize is honored on the next draw.
      */
-    private static void txDrawFrame(Object owner, Canvas canvas) {
-        txInvoke(owner, "onMeasure", 480 | (1 << 30), 960 | (1 << 30));
-        txInvoke(owner, "onLayout", false, 0, 0, 480, 960);
+    private static void txDrawFrame(Object owner, GuestSurface target) {
+        int width = target.width();
+        int height = target.height();
+        txInvoke(owner, "onMeasure", width | (1 << 30),
+                height | (1 << 30));
+        txInvoke(owner, "onLayout", false, 0, 0, width, height);
+        Canvas canvas = target.canvas();
         canvas.drawColor(0xFF000000);
         txInvoke(owner, "dispatchDraw", canvas);
     }

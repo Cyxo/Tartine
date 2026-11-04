@@ -10,6 +10,7 @@ import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import java.io.InputStream;
+import tartine.fw.DisplayConfig;
 import tartine.fw.SystemColors;
 import tartine.fw.ThemeMode;
 
@@ -104,23 +105,38 @@ import tartine.fw.ThemeMode;
             probeConfiguration();
 
     /**
-     * Desktop device configuration for the 480x960 mdpi surface. Mirrors
-     * AOSP Configuration.setToDefaults() (fontScale = 1) and fills the
-     * display values a real device reports. 480x960 px at density 1.0 means
-     * a 480x960 dp screen, close to a modern phone's dp size, so app layouts
-     * keep their phone proportions. The night bit follows the host
-     * light/dark preference resolved at startup (see {@link ThemeMode}).
+     * Desktop device configuration built from the host window metrics.
+     * Mirrors AOSP Configuration.setToDefaults() (fontScale = 1) and fills
+     * the display values a real device reports: the framebuffer is the
+     * pixel viewport, and the host content scale becomes the density, so dp
+     * sizes stay stable across HiDPI windows. The screen-layout size/long
+     * bits come from AOSP's {@code reduceScreenLayout} thresholds, and the
+     * night bit follows the host light/dark preference resolved at startup
+     * (see {@link ThemeMode}).
      */
     private static Configuration probeConfiguration() {
         Configuration config =
                 new Configuration();
         config.setToDefaults();
-        config.densityDpi = 160;
-        config.screenWidthDp = 480;
-        config.screenHeightDp = 960;
-        config.smallestScreenWidthDp = 480;
-        config.orientation =
-                Configuration.ORIENTATION_PORTRAIT;
+        config.densityDpi = DisplayConfig.densityDpi();
+        config.screenWidthDp = DisplayConfig.screenWidthDp();
+        config.screenHeightDp = DisplayConfig.screenHeightDp();
+        config.smallestScreenWidthDp =
+                DisplayConfig.smallestScreenWidthDp();
+        config.orientation = config.screenWidthDp > config.screenHeightDp
+                ? Configuration.ORIENTATION_LANDSCAPE
+                : Configuration.ORIENTATION_PORTRAIT;
+        // The window's dp size is the display's dp size here, so the
+        // device's screen layout follows from it. Start from a fully
+        // claimed layout (LTR + long + xlarge) and let the AOSP reduction
+        // lower the size/long bits; that leaves both bits defined instead
+        // of the undefined value setToDefaults() installed.
+        config.screenLayout = Configuration.reduceScreenLayout(
+                Configuration.SCREENLAYOUT_LAYOUTDIR_LTR
+                        | Configuration.SCREENLAYOUT_LONG_YES
+                        | Configuration.SCREENLAYOUT_SIZE_XLARGE,
+                Math.max(config.screenWidthDp, config.screenHeightDp),
+                Math.min(config.screenWidthDp, config.screenHeightDp));
         config.touchscreen =
                 Configuration.TOUCHSCREEN_FINGER;
         config.keyboard = Configuration.KEYBOARD_NOKEYS;
@@ -141,8 +157,7 @@ import tartine.fw.ThemeMode;
     /**
      * AOSP Resources.getDisplayMetrics (Resources.java:2238-2240) returns the
      * ResourcesImpl metrics; the desktop shell has no ResourcesImpl, so the
-     * probe display's metrics are owned here. Values mirror the interpreter's
-     * display builtins (480x960 at density 1.0, 160 dpi).
+     * host window's metrics are owned here.
      */
     private final DisplayMetrics mMetrics =
             probeDisplayMetrics(mConfiguration.fontScale);
@@ -153,13 +168,13 @@ import tartine.fw.ThemeMode;
     private static DisplayMetrics probeDisplayMetrics(
             float fontScale) {
         DisplayMetrics metrics = new DisplayMetrics();
-        metrics.widthPixels = 480;
-        metrics.heightPixels = 960;
-        metrics.density = 1.0f;
-        metrics.densityDpi = 160;
-        metrics.scaledDensity = 1.0f * fontScale;
-        metrics.xdpi = 160.0f;
-        metrics.ydpi = 160.0f;
+        metrics.widthPixels = DisplayConfig.widthPixels();
+        metrics.heightPixels = DisplayConfig.heightPixels();
+        metrics.density = DisplayConfig.density();
+        metrics.densityDpi = DisplayConfig.densityDpi();
+        metrics.scaledDensity = metrics.density * fontScale;
+        metrics.xdpi = metrics.densityDpi;
+        metrics.ydpi = metrics.densityDpi;
         return metrics;
     }
 

@@ -24,7 +24,9 @@ import tartine.gfx.GfxSurface;
  * <p>The loop reads back into one reused pixel array through
  * {@link GfxSurface#readPixels(int[])}; per-frame hash and painted-pixel
  * statistics run only when {@code debug} is set, since each costs a full
- * raster scan.
+ * raster scan. A resize replaces the target's surface; the loop notices the
+ * new identity/size after draining the queue, reallocates the readback
+ * buffer and forces one redraw at the new pixel viewport.
  */
 public final class RenderLoop {
 
@@ -66,7 +68,7 @@ public final class RenderLoop {
     };
 
     private final HostDisplay display;
-    private final GfxSurface surface;
+    private final RenderTarget target;
     private final FrameSource source;
     private final long framePeriodNanos;
     private final boolean debug;
@@ -78,22 +80,22 @@ public final class RenderLoop {
      * {@code HostConfig.framePeriodNanos()}); {@code debug} adds per-frame
      * hash and painted-pixel statistics to {@code out}.
      */
-    public RenderLoop(HostDisplay display, GfxSurface surface,
+    public RenderLoop(HostDisplay display, RenderTarget target,
             FrameSource source, long framePeriodNanos, boolean debug,
             PrintStream out) {
-        this(display, surface, source, framePeriodNanos, debug, out,
+        this(display, target, source, framePeriodNanos, debug, out,
                 SYSTEM_CLOCK);
     }
 
     /** Test seam: same loop with an injected clock. */
-    RenderLoop(HostDisplay display, GfxSurface surface, FrameSource source,
+    RenderLoop(HostDisplay display, RenderTarget target, FrameSource source,
             long framePeriodNanos, boolean debug, PrintStream out,
             Clock clock) {
         if (display == null) {
             throw new NullPointerException("display");
         }
-        if (surface == null) {
-            throw new NullPointerException("surface");
+        if (target == null) {
+            throw new NullPointerException("target");
         }
         if (source == null) {
             throw new NullPointerException("source");
@@ -109,7 +111,7 @@ public final class RenderLoop {
                     + framePeriodNanos + "ns");
         }
         this.display = display;
-        this.surface = surface;
+        this.target = target;
         this.source = source;
         this.framePeriodNanos = framePeriodNanos;
         this.debug = debug;
@@ -119,6 +121,7 @@ public final class RenderLoop {
 
     /** Runs until the window closes or the display drops a frame. */
     public void run() {
+        GfxSurface surface = target.surface();
         int width = surface.getWidth();
         int height = surface.getHeight();
         int[] pixels = new int[width * height];
@@ -145,7 +148,23 @@ public final class RenderLoop {
                 if (source.isClosed()) {
                     break;
                 }
-                if (frames > 0 && callbacks == 0 && !source.needsRedraw()) {
+                // A queued Resized event may have replaced the target's
+                // surface (window framebuffer size is the viewport).
+                GfxSurface current = target.surface();
+                int currentWidth = current.getWidth();
+                int currentHeight = current.getHeight();
+                boolean targetChanged = current != surface
+                        || currentWidth != width || currentHeight != height;
+                if (targetChanged) {
+                    surface = current;
+                    width = currentWidth;
+                    height = currentHeight;
+                    if (pixels.length != width * height) {
+                        pixels = new int[width * height];
+                    }
+                }
+                if (frames > 0 && callbacks == 0 && !source.needsRedraw()
+                        && !targetChanged) {
                     continue;
                 }
                 try {
@@ -179,7 +198,7 @@ public final class RenderLoop {
                 }
             }
         } finally {
-            surface.close();
+            target.close();
         }
         out.println("render: drew " + frames + " frames"
                 + (debug ? " (" + changes + " pixel changes)" : "")

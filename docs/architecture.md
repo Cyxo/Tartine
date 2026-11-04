@@ -272,6 +272,16 @@ GitLab `android_translation_layer/android_translation_layer`
   the display copies frames into pooled buffers, so the guest buffer is
   reusable once `postFrame` returns. When the window closes while the guest is still running, the
   macOS path signals close before joining the guest and bounds the join.
+- Window viewport and density (ADR-0010): `HostDisplay.awaitMetrics()` reports
+  the framebuffer size in pixels and the GLFW content scale before guest code
+  launches (480x960 @ 1x when nothing is reported). `Main` writes them to
+  `tartine.fw.DisplayConfig`; `Resources` builds `Configuration`
+  (density/dp/orientation, `screenLayout` via AOSP's size thresholds) and
+  `DisplayMetrics` from it. `GuestSurface` owns the replaceable
+  surface+canvas pair, the guest looper queues `Resized`, and `RenderLoop`
+  reallocates its readback buffer and forces a redraw when the target's size
+  changes. Existing `Resources` snapshots keep their startup configuration;
+  qualifier resource-set selection awaits the general resource loader.
 - Window icon landed: `tartine.apk.AppIcon` resolves
   `android:icon`/`roundIcon` through `ResourceTable` and renders 16/32/48
   RGBA buffers; `<adaptive-icon>`/`<vector>` convert to SVG via jsvg;

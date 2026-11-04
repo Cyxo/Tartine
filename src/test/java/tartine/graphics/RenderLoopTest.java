@@ -12,6 +12,7 @@ import tartine.gfx.GfxSurface;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,8 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Pins the render loop's rules: draw when a frame is due (callback or dirty
  * view), skip idle ticks, stop on close and on a dropped frame, reuse one
- * readback buffer, and count draw failures with one log per distinct
- * message. A fake clock keeps every test deterministic.
+ * readback buffer, rebuild it when a resize replaces the surface, and count
+ * draw failures with one log per distinct message. A fake clock keeps every
+ * test deterministic.
  */
 class RenderLoopTest {
 
@@ -76,7 +78,7 @@ class RenderLoopTest {
         assertEquals(0, harness.source.pumps);
         assertEquals(0, harness.source.draws);
         assertEquals(0, harness.display.frames.size());
-        assertTrue(harness.surface.closed);
+        assertTrue(harness.target.closed);
     }
 
     @Test
@@ -91,7 +93,7 @@ class RenderLoopTest {
         assertEquals(0, harness.display.frames.size());
         assertTrue(harness.output().contains(
                 "render: display closed; stopping"));
-        assertTrue(harness.surface.closed);
+        assertTrue(harness.target.closed);
     }
 
     @Test
@@ -124,14 +126,42 @@ class RenderLoopTest {
 
         harness.run();
 
-        assertEquals(3, harness.surface.reads);
-        assertSame(harness.surface.readBuffers.get(0),
-                harness.surface.readBuffers.get(1));
-        assertSame(harness.surface.readBuffers.get(1),
-                harness.surface.readBuffers.get(2));
+        FakeSurface surface = harness.target.current;
+        assertEquals(3, surface.reads);
+        assertSame(surface.readBuffers.get(0),
+                surface.readBuffers.get(1));
+        assertSame(surface.readBuffers.get(1),
+                surface.readBuffers.get(2));
         for (HostDisplay.Frame frame : harness.display.frames) {
-            assertSame(harness.surface.readBuffers.get(0), frame.argb());
+            assertSame(surface.readBuffers.get(0), frame.argb());
         }
+    }
+
+    @Test
+    void resizeReplacesTheReadbackBufferAndForcesARedraw() {
+        Harness harness = new Harness();
+        harness.source.callbacks = 0;
+        harness.source.closeAfterDraws = 2;
+        harness.source.onDrain = () -> {
+            if (harness.source.draws == 1) {
+                harness.target.resize(8, 4);
+            }
+        };
+
+        harness.run();
+
+        // No callback and no dirty flag: the resize alone asks for the
+        // second draw, at the new pixel viewport.
+        assertEquals(2, harness.source.draws);
+        assertEquals(2, harness.display.frames.size());
+        HostDisplay.Frame first = harness.display.frames.get(0);
+        HostDisplay.Frame second = harness.display.frames.get(1);
+        assertEquals(4, first.width());
+        assertEquals(2, first.height());
+        assertEquals(8, second.width());
+        assertEquals(4, second.height());
+        assertEquals(32, second.argb().length);
+        assertNotSame(first.argb(), second.argb());
     }
 
     @Test
@@ -156,7 +186,7 @@ class RenderLoopTest {
     void rejectsANonPositiveFramePeriod() {
         Harness harness = new Harness();
         assertThrows(IllegalArgumentException.class,
-                () -> new RenderLoop(harness.display, harness.surface,
+                () -> new RenderLoop(harness.display, harness.target,
                         harness.source, 0L, false,
                         new PrintStream(new ByteArrayOutputStream()),
                         harness.clock));
@@ -171,17 +201,17 @@ class RenderLoopTest {
         return count;
     }
 
-    /** Fake clock, source, display and surface wired to one loop. */
+    /** Fake clock, source, display and render target wired to one loop. */
     private static final class Harness {
         final FakeClock clock = new FakeClock();
         final FakeSource source = new FakeSource(clock);
         final FakeDisplay display = new FakeDisplay();
-        final FakeSurface surface = new FakeSurface(4, 2);
+        final FakeTarget target = new FakeTarget(4, 2);
         final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         boolean debug;
 
         void run() {
-            new RenderLoop(display, surface, source, PERIOD, debug,
+            new RenderLoop(display, target, source, PERIOD, debug,
                     new PrintStream(bytes, true, StandardCharsets.UTF_8),
                     clock).run();
         }
@@ -221,6 +251,7 @@ class RenderLoopTest {
         int closeAfterPumps = Integer.MAX_VALUE;
         int closeAfterDraws = Integer.MAX_VALUE;
         RuntimeException[] failures = new RuntimeException[0];
+        Runnable onDrain;
         final List<Long> drawTimes = new ArrayList<>();
         boolean closed;
 
@@ -231,6 +262,9 @@ class RenderLoopTest {
         @Override
         public void drain() {
             drains++;
+            if (onDrain != null) {
+                onDrain.run();
+            }
             if (drains >= closeAfterDrains) {
                 closed = true;
             }
@@ -294,6 +328,36 @@ class RenderLoopTest {
         @Override
         public void close() {
             open = false;
+        }
+    }
+
+    /** Replaces its surface on resize, like the GLFW-backed guest target. */
+    private static final class FakeTarget implements RenderTarget {
+        FakeSurface current;
+        boolean closed;
+
+        FakeTarget(int width, int height) {
+            current = new FakeSurface(width, height);
+        }
+
+        @Override
+        public GfxSurface surface() {
+            return current;
+        }
+
+        void resize(int width, int height) {
+            if (current.getWidth() == width && current.getHeight() == height) {
+                return;
+            }
+            FakeSurface previous = current;
+            current = new FakeSurface(width, height);
+            previous.closed = true;
+        }
+
+        @Override
+        public void close() {
+            closed = true;
+            current.closed = true;
         }
     }
 

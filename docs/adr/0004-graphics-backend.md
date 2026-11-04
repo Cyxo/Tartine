@@ -1,7 +1,8 @@
 # ADR-0004: Graphics backend - Skia (Skija) on LWJGL
 
 - **Status**: Accepted (draw chain decided 2026-10-18; threading and the
-  event channel landed 2026-11-02; continuous frame loop 2026-11-03)
+  event channel landed 2026-11-02; continuous frame loop 2026-11-03;
+  window viewport/density 2026-11-04)
 - **Date**: decided 2026-10-18
 
 ## Context
@@ -49,6 +50,11 @@ Threading and events are part of the seam, not deferred work:
 - The display copies each posted frame into display-owned pooled buffers
   (BufferQueue-lite, newest frame wins); the guest may reuse its readback
   array once `postFrame` returns.
+- The window is the display device: the guest viewport is the window
+  framebuffer size in pixels and the guest density is the window content
+  scale, so HiDPI windows keep desktop-sized dp layouts. A live resize swaps
+  the guest surface/canvas, reallocates readback storage and redraws at the
+  new size (ADR-0010); the default window and fake display stay 480x960 @ 1x.
 - Events flow display to guest through `HostDisplay.Event`: GLFW input,
   resize and focus callbacks publish on the display thread, a buffering
   channel replays anything that arrives before registration, and the guest's

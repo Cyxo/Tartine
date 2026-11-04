@@ -11,3 +11,4 @@ Format: [Michael Nygard's ADR template](https://cognitect.com/blog/2011/11/15/do
 7. [ADR-0007 — Renderer seam: gfx-api, gfx-skija, host-installed backend](0007-gfx-backend-seam.md)
 8. [ADR-0008 — Remove the interpreter, keep translation as the only VM](0008-interpreter-removal.md)
 9. [ADR-0009 — Guest sandbox: restricted classloader plus translation-time File bridge](0009-guest-sandbox.md)
+10. [ADR-0010 — Host window viewport and guest density](0010-host-window-viewport.md)

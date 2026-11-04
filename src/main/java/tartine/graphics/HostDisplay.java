@@ -37,6 +37,30 @@ public interface HostDisplay extends AutoCloseable {
     }
 
     /**
+     * The host window's drawable metrics: framebuffer pixels plus the
+     * content scale that maps those pixels to desktop points. The guest
+     * viewport is the framebuffer size; the guest density is the content
+     * scale, so a HiDPI window keeps the same dp size as an mdpi one.
+     */
+    record WindowMetrics(int width, int height, float contentScale) {
+        public WindowMetrics {
+            if (width <= 0 || height <= 0) {
+                throw new IllegalArgumentException("window size must be "
+                        + "positive: " + width + "x" + height);
+            }
+            if (!(contentScale > 0) || !Float.isFinite(contentScale)) {
+                throw new IllegalArgumentException(
+                        "content scale must be positive and finite: "
+                                + contentScale);
+            }
+        }
+
+        /** The historical 480x960 mdpi surface, used by fakes and no-window runs. */
+        public static final WindowMetrics DEFAULT =
+                new WindowMetrics(480, 960, 1.0f);
+    }
+
+    /**
      * A window event. Events are serial values so listeners can switch on
      * them without a GLFW dependency. Input values stay in desktop/GLFW
      * space until the framework maps them to Android key and motion codes.
@@ -49,7 +73,11 @@ public interface HostDisplay extends AutoCloseable {
     record Closed() implements Event {
     }
 
-    /** The drawable window size changed. */
+    /**
+     * The drawable framebuffer size changed, in pixels (not GLFW window
+     * points), so the new width/height can become the guest pixel viewport
+     * directly.
+     */
     record Resized(int width, int height) implements Event {
         public Resized {
             if (width <= 0 || height <= 0) {
@@ -104,6 +132,16 @@ public interface HostDisplay extends AutoCloseable {
      *         was dropped
      */
     boolean postFrame(Frame frame);
+
+    /**
+     * Waits for the window to exist and returns its drawable metrics. The
+     * guest calls this once before launching app code, so framework display
+     * configuration starts from the real window instead of a fixed surface.
+     * Fake displays and headless runs keep the 480x960 mdpi default.
+     */
+    default WindowMetrics awaitMetrics() {
+        return WindowMetrics.DEFAULT;
+    }
 
     /**
      * Registers the event listener and replays events that arrived before

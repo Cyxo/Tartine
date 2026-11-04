@@ -1,6 +1,7 @@
 package tartine.graphics;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -24,17 +25,18 @@ import static org.lwjgl.glfw.GLFW.glfwCreateWindow;
 import static org.lwjgl.glfw.GLFW.glfwDefaultWindowHints;
 import static org.lwjgl.glfw.GLFW.glfwDestroyWindow;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
+import static org.lwjgl.glfw.GLFW.glfwGetWindowContentScale;
 import static org.lwjgl.glfw.GLFW.glfwInit;
 import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwSetCharCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
+import static org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetKeyCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetScrollCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetWindowFocusCallback;
-import static org.lwjgl.glfw.GLFW.glfwSetWindowSizeCallback;
 import static org.lwjgl.glfw.GLFW.glfwShowWindow;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
@@ -127,7 +129,9 @@ final class GlfwHostDisplay implements DisplayLoop {
     private final AtomicBoolean closePublished = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
     private final CountDownLatch closed = new CountDownLatch(1);
+    private final CountDownLatch metricsReady = new CountDownLatch(1);
     private final HostEventChannel events = new HostEventChannel();
+    private volatile HostDisplay.WindowMetrics metrics;
     private volatile Throwable failure;
 
     GlfwHostDisplay(String title, long timeoutSecs, List<WindowIcon> icons) {
@@ -184,6 +188,29 @@ final class GlfwHostDisplay implements DisplayLoop {
         synchronized (frameLock) {
             freeFramePixels.add(frame.argb());
         }
+    }
+
+    @Override
+    public WindowMetrics awaitMetrics() {
+        try {
+            metricsReady.await();
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                    "interrupted waiting for window metrics", interrupted);
+        }
+        WindowMetrics known = metrics;
+        if (known != null) {
+            return known;
+        }
+        Throwable problem = failure;
+        if (problem != null) {
+            throw new IllegalStateException(
+                    "host display failed before reporting window metrics",
+                    problem);
+        }
+        throw new IllegalStateException(
+                "host display closed before reporting window metrics");
     }
 
     @Override
@@ -253,6 +280,9 @@ final class GlfwHostDisplay implements DisplayLoop {
             if (closePublished.compareAndSet(false, true)) {
                 events.publish(new HostDisplay.Closed());
             }
+            // Release a guest blocked on awaitMetrics even when no window
+            // was created; the null metrics then surface the failure.
+            metricsReady.countDown();
             GLFWErrorCallback previous = glfwSetErrorCallback(null);
             if (previous != null) {
                 previous.free();
@@ -271,6 +301,12 @@ final class GlfwHostDisplay implements DisplayLoop {
             throw new IllegalStateException("glfwCreateWindow failed");
         }
         try {
+            WindowMetrics initial = windowMetrics(window);
+            metrics = initial;
+            metricsReady.countDown();
+            System.out.println("display: window " + initial.width() + "x"
+                    + initial.height() + " px @ "
+                    + initial.contentScale() + "x scale");
             setWindowIcon(window, icons);
             installEventCallbacks(window);
             glfwMakeContextCurrent(window);
@@ -354,10 +390,40 @@ final class GlfwHostDisplay implements DisplayLoop {
                         mods)));
         glfwSetScrollCallback(window, (win, xOffset, yOffset) ->
                 events.publish(new HostDisplay.Scrolled(xOffset, yOffset)));
-        glfwSetWindowSizeCallback(window, (win, width, height) ->
+        // Framebuffer, not window-size, callbacks: the guest viewport is
+        // already in pixels, so no point-to-pixel conversion is needed here.
+        glfwSetFramebufferSizeCallback(window, (win, width, height) ->
                 events.publish(new HostDisplay.Resized(width, height)));
         glfwSetWindowFocusCallback(window, (win, focused) ->
                 events.publish(new HostDisplay.FocusChanged(focused)));
+    }
+
+    /**
+     * Reads the drawable size in pixels and the monitor content scale. A
+     * not-yet-laid-out window can report a zero framebuffer on some
+     * platforms; the default surface size is used in that case, and a
+     * missing scale falls back to 1.0 (mdpi).
+     */
+    private static WindowMetrics windowMetrics(long window) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer width = stack.mallocInt(1);
+            IntBuffer height = stack.mallocInt(1);
+            FloatBuffer xScale = stack.mallocFloat(1);
+            FloatBuffer yScale = stack.mallocFloat(1);
+            glfwGetFramebufferSize(window, width, height);
+            glfwGetWindowContentScale(window, xScale, yScale);
+            float scale = Math.max(xScale.get(0), yScale.get(0));
+            if (!(scale > 0) || !Float.isFinite(scale)) {
+                scale = 1.0f;
+            }
+            int pixelsWide = width.get(0);
+            int pixelsHigh = height.get(0);
+            if (pixelsWide <= 0 || pixelsHigh <= 0) {
+                pixelsWide = WIDTH;
+                pixelsHigh = HEIGHT;
+            }
+            return new WindowMetrics(pixelsWide, pixelsHigh, scale);
+        }
     }
 
     /** Maps a GLFW press/release/repeat action to the seam action. */

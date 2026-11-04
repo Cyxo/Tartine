@@ -47,6 +47,7 @@ import java.util.Locale;
     public static final int ORIENTATION_PORTRAIT = 1;
     public static final int ORIENTATION_SQUARE = 3;
     public static final int ORIENTATION_UNDEFINED = 0;
+    public static final int SCREENLAYOUT_COMPAT_NEEDED = 0x10000000;
     public static final int SCREENLAYOUT_LAYOUTDIR_LTR = 64;
     public static final int SCREENLAYOUT_LAYOUTDIR_MASK = 192;
     public static final int SCREENLAYOUT_LAYOUTDIR_RTL = 128;
@@ -212,6 +213,55 @@ import java.util.Locale;
 
     public static boolean needNewResources(int arg0, int arg1) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->needNewResources(II)Z");
+    }
+
+    /**
+     * Ported from AOSP frameworks-base
+     * core/java/android/content/res/Configuration.java
+     * ({@code reduceScreenLayout}, @hide): lowers a claimed screen layout to
+     * the size, long, and compatibility bits implied by the display's dp
+     * size. The thresholds are compatibility guarantees ("DO NOT CHANGE"):
+     * {@code longSizeDp < 470} is small; 960x720 dp is xlarge; 640x480 dp is
+     * large; wider than 5:3 is long; anything wider than 321 dp or taller
+     * than 570 dp needs the legacy size-compat treatment.
+     *
+     * <p>The shell's device configuration starts from LTR plus the largest
+     * claim ({@code LONG_YES | SIZE_XLARGE}) and lets this method reduce it,
+     * so both the size and long bits end up defined from the host window.
+     */
+    static int reduceScreenLayout(int curLayout, int longSizeDp,
+            int shortSizeDp) {
+        int screenLayoutSize;
+        boolean screenLayoutLong;
+        boolean screenLayoutCompatNeeded;
+        if (longSizeDp < 470) {
+            screenLayoutSize = SCREENLAYOUT_SIZE_SMALL;
+            screenLayoutLong = false;
+            screenLayoutCompatNeeded = false;
+        } else {
+            if (longSizeDp >= 960 && shortSizeDp >= 720) {
+                screenLayoutSize = SCREENLAYOUT_SIZE_XLARGE;
+            } else if (longSizeDp >= 640 && shortSizeDp >= 480) {
+                screenLayoutSize = SCREENLAYOUT_SIZE_LARGE;
+            } else {
+                screenLayoutSize = SCREENLAYOUT_SIZE_NORMAL;
+            }
+            screenLayoutCompatNeeded = shortSizeDp > 321 || longSizeDp > 570;
+            screenLayoutLong = ((longSizeDp * 3) / 5) >= (shortSizeDp - 1);
+        }
+        if (!screenLayoutLong) {
+            curLayout = (curLayout & ~SCREENLAYOUT_LONG_MASK)
+                    | SCREENLAYOUT_LONG_NO;
+        }
+        if (screenLayoutCompatNeeded) {
+            curLayout |= SCREENLAYOUT_COMPAT_NEEDED;
+        }
+        int curSize = curLayout & SCREENLAYOUT_SIZE_MASK;
+        if (screenLayoutSize < curSize) {
+            curLayout = (curLayout & ~SCREENLAYOUT_SIZE_MASK)
+                    | screenLayoutSize;
+        }
+        return curLayout;
     }
 
     public void readFromParcel(Parcel arg0) {

@@ -39,6 +39,23 @@ class HostDisplayTest {
     }
 
     @Test
+    void windowMetricsValidateAndDefaultToTheHistoricalSurface() {
+        assertEquals(480, HostDisplay.WindowMetrics.DEFAULT.width());
+        assertEquals(960, HostDisplay.WindowMetrics.DEFAULT.height());
+        assertEquals(1.0f,
+                HostDisplay.WindowMetrics.DEFAULT.contentScale());
+        assertThrows(IllegalArgumentException.class,
+                () -> new HostDisplay.WindowMetrics(0, 960, 1.0f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new HostDisplay.WindowMetrics(480, 0, 1.0f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new HostDisplay.WindowMetrics(480, 960, 0.0f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new HostDisplay.WindowMetrics(480, 960,
+                        Float.NaN));
+    }
+
+    @Test
     void eventChannelBuffersAndReplaysUntilTheListenerArrives() {
         HostEventChannel channel = new HostEventChannel();
         List<HostDisplay.Event> seen = new ArrayList<>();
