@@ -1,5 +1,8 @@
 package tartine.gfx.skija;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import tartine.gfx.GfxFont;
 import tartine.gfx.GfxTypeface;
@@ -50,5 +53,23 @@ class SkijaBackendTest {
                 .getFamilyName());
         assertSame(((SkijaTypeface) forNull).typeface(),
                 ((SkijaTypeface) forEmpty).typeface());
+    }
+
+    @Test
+    void usingTheFallbackIsLogged() {
+        SkijaBackend backend = new SkijaBackend();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        PrintStream previous = System.out;
+        try (PrintStream captured = new PrintStream(bytes, true,
+                StandardCharsets.UTF_8)) {
+            System.setOut(captured);
+            backend.defaultTypeface(new String[] {"Tartine No Such Family"});
+        } finally {
+            System.setOut(previous);
+        }
+
+        assertTrue(bytes.toString(StandardCharsets.UTF_8)
+                .contains("font: using bundled Roboto fallback"),
+                bytes.toString(StandardCharsets.UTF_8));
     }
 }

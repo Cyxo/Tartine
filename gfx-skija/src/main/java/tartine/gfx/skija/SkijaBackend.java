@@ -62,7 +62,13 @@ public final class SkijaBackend implements GfxBackend {
                 }
             }
         }
-        return new SkijaTypeface(fallbackTypeface());
+        Typeface fallback = fallbackTypeface();
+        // Framework code caches the resolved typeface (Paint), so this is a
+        // rare line; it tells a probing user why their configured families
+        // did not take effect.
+        System.out.println("font: using bundled Roboto fallback"
+                + " (no requested host family installed)");
+        return new SkijaTypeface(fallback);
     }
 
     /** Loads the bundled Roboto face once; fails loudly if it is broken. */
