@@ -1,8 +1,10 @@
 package tartine.gfx.skija;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import org.junit.jupiter.api.Test;
 import tartine.gfx.GfxFont;
 import tartine.gfx.GfxTypeface;
@@ -57,19 +59,33 @@ class SkijaBackendTest {
 
     @Test
     void usingTheFallbackIsLogged() {
-        SkijaBackend backend = new SkijaBackend();
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        PrintStream previous = System.out;
-        try (PrintStream captured = new PrintStream(bytes, true,
-                StandardCharsets.UTF_8)) {
-            System.setOut(captured);
+        Logger skijaLogger = Logger.getLogger(SkijaBackend.class.getName());
+        List<LogRecord> records = new ArrayList<>();
+        Handler capture = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                records.add(record);
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        skijaLogger.addHandler(capture);
+        try {
+            SkijaBackend backend = new SkijaBackend();
             backend.defaultTypeface(new String[] {"Tartine No Such Family"});
         } finally {
-            System.setOut(previous);
+            skijaLogger.removeHandler(capture);
         }
 
-        assertTrue(bytes.toString(StandardCharsets.UTF_8)
-                .contains("font: using bundled Roboto fallback"),
-                bytes.toString(StandardCharsets.UTF_8));
+        boolean found = records.stream().anyMatch(record -> String
+                .valueOf(record.getMessage())
+                .contains("font: using bundled Roboto fallback"));
+        assertTrue(found, records.toString());
     }
 }

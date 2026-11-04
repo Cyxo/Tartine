@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 import tartine.apk.Abi;
@@ -61,16 +63,35 @@ import tartine.tx.TxTranslator;
  * </ul>
  */
 public final class Main {
+    private static final Logger log = Logger.getLogger(Main.class.getName());
 
     private Main() {
     }
 
     public static void main(String[] args) {
+        String cliLogLevel = parseLogLevelArg(args);
+        java.util.List<String> kept = new java.util.ArrayList<>();
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i];
+            if (arg.equals("--log-level") || arg.equals("-l")) {
+                i++; // skip the value already captured
+            } else if (arg.startsWith("--log-level=")) {
+                // value attached; already captured
+            } else {
+                kept.add(arg);
+            }
+        }
+        String[] parsed = kept.toArray(new String[0]);
+        args = parsed;
         if (args.length == 0) {
             usage();
             return;
         }
+        if (cliLogLevel != null) {
+            System.setProperty("tartine.log.level", cliLogLevel);
+        }
         HostConfig.load();
+        HostConfig.configureLogging(cliLogLevel);
         // Renderer backend: installed once at boot, before any framework
         // graphics call (text measurement included). The framework resolves
         // it through GfxBackend.get() and never imports Skija.
@@ -127,13 +148,28 @@ public final class Main {
                     break;
             }
         } catch (Exception e) {
-            System.err.println("tartine: " + e);
+            log.severe("tartine: " + e);
             System.exit(1);
         }
     }
 
+    /** Pulls {@code --log-level/-l} from argv before command dispatch. */
+    private static String parseLogLevelArg(String[] args) {
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i];
+            if (arg.equals("--log-level") || arg.equals("-l")) {
+                if (i + 1 < args.length) {
+                    return args[i + 1];
+                }
+            } else if (arg.startsWith("--log-level=")) {
+                return arg.substring("--log-level=".length());
+            }
+        }
+        return null;
+    }
+
     private static void usage() {
-        System.out.println("Usage: tartine.Main (apk|run|gui|dump|refs) <file>");
+        log.info("Usage: tartine.Main (apk|run|gui|dump|refs) <file>");
     }
 
     private static void require(String[] args, int count) {
@@ -148,7 +184,7 @@ public final class Main {
         for (Dex dex : dexes.dexes()) {
             for (DexClass cls : dex.classes()) {
                 if (fqnPrefix == null || cls.type.contains(fqnPrefix)) {
-                    System.out.print(DexDump.dump(cls));
+                    log.info(DexDump.dump(cls));
                 }
             }
         }
@@ -157,8 +193,8 @@ public final class Main {
     private static void printApkSummary(File apk) throws Exception {
         try (ApkReader reader = ApkReader.open(apk.toPath())) {
             BinaryXml.Element manifest = reader.manifest();
-            System.out.println("package: " + manifest.attr("package"));
-            System.out.println("version: " + manifest.attr("versionCode")
+            log.info("package: " + manifest.attr("package"));
+            log.info("version: " + manifest.attr("versionCode")
                     + " / " + manifest.attr("versionName"));
             List<String> activities = new ArrayList<>();
             int permissions = 0;
@@ -174,16 +210,16 @@ public final class Main {
                     }
                 }
             }
-            System.out.println("activities (" + activities.size() + "): " + activities);
-            System.out.println("permissions: " + permissions);
+            log.info("activities (" + activities.size() + "): " + activities);
+            log.info("permissions: " + permissions);
             DexSet dexes = reader.dexSet();
-            System.out.println("dex files: " + reader.dexEntries().size()
+            log.info("dex files: " + reader.dexEntries().size()
                     + ", classes: " + dexes.classCount()
                     + ", methods: " + dexes.methodCount());
             Set<String> abis = new TreeSet<>(reader.nativeAbis());
-            System.out.println("native abis: " + (abis.isEmpty() ? "none" : abis)
+            log.info("native abis: " + (abis.isEmpty() ? "none" : abis)
                     + " (host picks " + Abi.pickBest(abis) + ")");
-            System.out.println("resources: " + reader.hasResources());
+            log.info("resources: " + reader.hasResources());
         }
     }
 
@@ -198,9 +234,9 @@ public final class Main {
                     Main.class.getClassLoader(), reader.dexSet());
             List<ReferenceResolver.Problem> problems = loader.referenceProblems();
             for (ReferenceResolver.Problem problem : problems) {
-                System.out.println(problem);
+                log.info(String.valueOf(problem));
             }
-            System.out.println("refs: " + problems.size() + " unresolved reference(s)");
+            log.info("refs: " + problems.size() + " unresolved reference(s)");
         }
     }
 
@@ -263,13 +299,13 @@ public final class Main {
         String packageName = manifest.attr("package");
         String activity = findLauncher(manifest);
         if (activity == null) {
-            System.out.println("no launcher activity in manifest");
+            log.info("no launcher activity in manifest");
             return new TxApp(reader, null, null);
         }
         activity = qualify(packageName, activity);
-        System.out.println("launcher: " + activity);
+        log.info("launcher: " + activity);
         DexSet dexes = reader.dexSet();
-        System.out.println("dex classes: " + dexes.classCount());
+        log.info("dex classes: " + dexes.classCount());
         TranslatedLoader loader = new TranslatedLoader(
                 Main.class.getClassLoader(), dexes);
         Thread.currentThread().setContextClassLoader(loader);
@@ -277,11 +313,11 @@ public final class Main {
         try {
             task = loader.loadClass(activity);
         } catch (ClassNotFoundException | LinkageError | RuntimeException e) {
-            System.out.println("load " + activity + ": " + sanitize(e));
+            log.info("load " + activity + ": " + sanitize(e));
             printRootFrames(e);
             return new TxApp(reader, loader, null);
         }
-        System.out.println("loaded: " + task.getName());
+        log.info("loaded: " + task.getName());
         // Device parity with ActivityThread.main(): the guest's main
         // thread carries the main Looper before any Activity code runs.
         Looper.prepareMainLooper();
@@ -289,7 +325,7 @@ public final class Main {
         try {
             receiver = task.getDeclaredConstructor().newInstance();
         } catch (ReflectiveOperationException | LinkageError e) {
-            System.out.println("<init>: " + sanitize(e));
+            log.info("<init>: " + sanitize(e));
             printRootFrames(e);
             return new TxApp(reader, loader, null);
         }
@@ -312,15 +348,15 @@ public final class Main {
             }
             onCreate.setAccessible(true);
         } catch (ReflectiveOperationException e) {
-            System.out.println("no onCreate(Bundle): " + sanitize(e));
+            log.info("no onCreate(Bundle): " + sanitize(e));
             return new TxApp(reader, loader, null);
         }
         try {
             onCreate.invoke(receiver, new Object[] { null });
-            System.out.println("onCreate returned");
+            log.info("onCreate returned");
             return new TxApp(reader, loader, receiver);
         } catch (InvocationTargetException x) {
-            System.out.println("onCreate threw: " + sanitize(x));
+            log.info("onCreate threw: " + sanitize(x));
             printRootFrames(x);
             return new TxApp(reader, loader, null);
         }
@@ -334,7 +370,7 @@ public final class Main {
         }
         int frameDepth = 16;
         for (StackTraceElement frame : root.getStackTrace()) {
-            System.out.println("    at " + frame);
+            log.info("    at " + frame);
             if (--frameDepth <= 0) {
                 break;
             }
@@ -370,7 +406,7 @@ public final class Main {
         HostDisplay.WindowMetrics metrics = display.awaitMetrics();
         DisplayConfig.set(metrics.width(), metrics.height(),
                 metrics.contentScale());
-        System.out.println("gui: viewport " + metrics.width() + "x"
+        log.info("gui: viewport " + metrics.width() + "x"
                 + metrics.height() + " px @ " + metrics.contentScale()
                 + "x scale (" + DisplayConfig.screenWidthDp() + "x"
                 + DisplayConfig.screenHeightDp() + " dp, "
@@ -380,12 +416,12 @@ public final class Main {
                 metrics.height());
         try {
             if (app.activity() == null) {
-                System.out.println("gui: launch failed; no window");
+                log.info("gui: launch failed; no window");
                 return;
             }
             Looper looper = Looper.myLooper();
             if (looper == null) {
-                System.out.println("gui: no guest looper; no event pump");
+                log.info("gui: no guest looper; no event pump");
                 return;
             }
             // The display publishes events on its own thread; this listener
@@ -403,35 +439,35 @@ public final class Main {
             Object window = txField(activity, "mWindow");
             Object decor = txField(window, "mDecor");
             Object view = txInvoke(decor, "getChildAt", 0);
-            System.out.println("gui content view: " + describeTx(view));
+            log.info("gui content view: " + describeTx(view));
             Object deferred = txField(view,
                     "shouldCreateCompositionOnAttachedToWindow");
-            System.out.println("gui defer-composition flag: " + deferred);
+            log.info("gui defer-composition flag: " + deferred);
             boolean defer = Boolean.TRUE.equals(deferred)
                     || Integer.valueOf(1).equals(deferred);
             if (!defer) {
-                System.out.println(
+                log.info(
                         "gui: no deferred composition; nothing to drive");
                 return;
             }
-            System.out.println("gui parentContext: "
+            log.info("gui parentContext: "
                     + describeTx(txField(view, "parentContext")));
-            System.out.println("gui attached: "
+            log.info("gui attached: "
                     + txInvoke(view, "isAttachedToWindow"));
             // Attach parity: joinWindow marks the content view attached at
             // setContentView time; the host shell's ViewRootImpl-style attach
             // chain has not landed, so the driver stands in and sets the
             // AttachInfo ref the same way.
             txSetField(view, "mAttachInfo", new Object());
-            System.out.println("gui attached after mark: "
+            log.info("gui attached after mark: "
                     + txInvoke(view, "isAttachedToWindow"));
             txInvoke(view, "createComposition");
-            System.out.println("gui: createComposition returned");
+            log.info("gui: createComposition returned");
             Object lambda = txInvoke(txField(view, "content"), "getValue");
-            System.out.println("gui content lambda: " + describeTx(lambda));
+            log.info("gui content lambda: " + describeTx(lambda));
             Object composition = txField(view, "composition");
             txInvoke(composition, "setContent", lambda);
-            System.out.println("gui: setContent returned");
+            log.info("gui: setContent returned");
             Object owner = txInvoke(composition, "getOwner");
             // Attach parity: the activity is the view tree's lifecycle and
             // saved-state owner (what ComponentActivity does to the decor
@@ -444,7 +480,7 @@ public final class Main {
                     "androidx.savedstate.ViewTreeSavedStateRegistryOwner",
                     "set", view, activity);
             txInvoke(owner, "onAttachedToWindow");
-            System.out.println("gui: onAttachedToWindow returned");
+            log.info("gui: onAttachedToWindow returned");
             Object lifecycle = txInvoke(activity, "getLifecycle");
             Class<?> events = app.loader()
                     .loadClass("androidx.lifecycle.Lifecycle$Event");
@@ -453,13 +489,13 @@ public final class Main {
                 txInvoke(lifecycle, "handleLifecycleEvent",
                         events.getDeclaredField(event).get(null));
             }
-            System.out.println("gui: lifecycle resumed");
+            log.info("gui: lifecycle resumed");
             // Content again post-attach: the observer forwards the stored
             // content to the inner composition.
             txInvoke(composition, "setContent", lambda);
-            System.out.println("gui: post-attach setContent returned");
+            log.info("gui: post-attach setContent returned");
             renderLoop(looper, display, owner, target, windowClosed);
-            System.out.println("gui: render loop stopped");
+            log.info("gui: render loop stopped");
         } finally {
             // The render loop closes the target; close again for early
             // returns and setup failures (GuestSurface.close is idempotent).
@@ -479,7 +515,7 @@ public final class Main {
             GuestSurface target, HostDisplay.Event event) {
         looper.getQueue().post(() -> {
             if (event instanceof HostDisplay.Closed) {
-                System.out.println("gui: window close event");
+                log.info("gui: window close event");
                 windowClosed.set(true);
                 looper.quit();
                 return;
@@ -488,12 +524,14 @@ public final class Main {
                 DisplayConfig.setSize(resized.width(), resized.height());
                 boolean changed = target.resize(resized.width(),
                         resized.height());
-                System.out.println("gui: window resized to "
+                log.info("gui: window resized to "
                         + resized.width() + "x" + resized.height()
                         + (changed ? "" : " (unchanged)"));
                 return;
             }
-            System.out.println("gui: host event " + event);
+            // Cursor moves/focus edges are very chatty; keep them (and
+            // keyboard/mouse details) at debug so default INFO stays calm.
+            log.fine("gui: host event " + event);
         });
     }
 
@@ -624,7 +662,7 @@ public final class Main {
             if (e instanceof InvocationTargetException x) {
                 cause = x.getCause();
                 if (cause != null) {
-                    cause.printStackTrace(); // TEMP probe diagnostic
+                    log.log(Level.FINE, "tx invoke failed", cause);
                 }
             }
             throw new IllegalStateException("tx invoke " + name + ": "
@@ -699,7 +737,7 @@ public final class Main {
         try (ApkReader reader = ApkReader.open(apkFile.toPath())) {
             return AppIcon.load(reader, System.out::println);
         } catch (IOException error) {
-            System.out.println("icon: cannot reopen apk ("
+            log.info("icon: cannot reopen apk ("
                     + error.getMessage() + ")");
             return List.of();
         }
@@ -718,7 +756,7 @@ public final class Main {
             }
             return qualify(manifest.attr("package"), activity);
         } catch (IOException error) {
-            System.out.println("gui: launcher title unavailable ("
+            log.info("gui: launcher title unavailable ("
                     + error.getMessage() + ")");
             return apk.getName();
         }

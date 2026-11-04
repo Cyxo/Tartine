@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
@@ -105,6 +106,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * windows will need the un-premultiply step when they exist.
  */
 final class GlfwHostDisplay implements DisplayLoop {
+    private static final Logger log = Logger.getLogger(GlfwHostDisplay.class.getName());
     private static final int WIDTH = 480;
     private static final int HEIGHT = 960;
 
@@ -304,9 +306,9 @@ final class GlfwHostDisplay implements DisplayLoop {
             WindowMetrics initial = windowMetrics(window);
             metrics = initial;
             metricsReady.countDown();
-            System.out.println("display: window " + initial.width() + "x"
-                    + initial.height() + " px @ "
-                    + initial.contentScale() + "x scale");
+            log.info("display: window " + initial.width() + "x"
+                    + initial.height() + " px @ " + initial.contentScale()
+                    + "x scale");
             setWindowIcon(window, icons);
             installEventCallbacks(window);
             glfwMakeContextCurrent(window);
@@ -344,7 +346,7 @@ final class GlfwHostDisplay implements DisplayLoop {
                             deadline = System.nanoTime()
                                     + timeoutSecs * 1_000_000_000L;
                         }
-                        System.out.println("display: first frame presented ("
+                        log.fine("display: first frame presented ("
                                 + frameWidth + "x" + frameHeight + ")");
                     }
                     if (!shown) {
@@ -458,7 +460,7 @@ final class GlfwHostDisplay implements DisplayLoop {
         }
         List<String> sizes = icons.stream()
                 .map(icon -> icon.width() + "x" + icon.height()).toList();
-        System.out.println("window icon: " + String.join(", ", sizes));
+        log.fine("window icon: " + String.join(", ", sizes));
     }
 
     /**

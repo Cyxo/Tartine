@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Logger;
 
 /**
  * Maps Android guest filesystem paths onto host paths under a per-user
@@ -60,6 +61,7 @@ import java.util.Locale;
  * mid-run restructuring of the static does not affect live interpreters.
  */
 public final class Vfs {
+    private static final Logger log = Logger.getLogger(Vfs.class.getName());
     private Vfs() {
     }
 
@@ -197,7 +199,7 @@ public final class Vfs {
                 Files.createDirectories(card.resolve(folder));
             }
         } catch (IOException e) {
-            System.err.println("Tartine: sdcard seed failed: " + e);
+            log.warning("Tartine: sdcard seed failed: " + e);
         }
     }
 
@@ -214,38 +216,38 @@ public final class Vfs {
         }
         Path candidate = Paths.get(raw);
         if (!candidate.isAbsolute()) {
-            System.err.println("Tartine: sdcard mount refused: '" + raw
+            log.warning("Tartine: sdcard mount refused: '" + raw
                     + "' (relative path; use an absolute directory)");
             return null;
         }
         Path normalized = candidate.normalize();
         if (normalized.getNameCount() == 0) {
-            System.err.println("Tartine: sdcard mount refused: '" + raw
+            log.warning("Tartine: sdcard mount refused: '" + raw
                     + "' (never mount a filesystem root)");
             return null;
         }
         if (!Files.isDirectory(normalized)) {
-            System.err.println("Tartine: sdcard mount refused: '" + raw
+            log.warning("Tartine: sdcard mount refused: '" + raw
                     + "' (no such directory)");
             return null;
         }
         try {
             Path real = normalized.toRealPath();
             if (!real.equals(normalized)) {
-                System.err.println("Tartine: sdcard mount refused: '" + raw
+                log.warning("Tartine: sdcard mount refused: '" + raw
                         + "' (junction/symlink indirection; mount the real"
                         + " location instead)");
                 return null;
             }
         } catch (IOException e) {
-            System.err.println("Tartine: sdcard mount refused: '" + raw
+            log.warning("Tartine: sdcard mount refused: '" + raw
                     + "' (" + e + ")");
             return null;
         }
         Path root = root().normalize();
         for (Path walk = normalized; walk.getParent() != null; walk = walk.getParent()) {
             if (walk.equals(root)) {
-                System.err.println("Tartine: sdcard mount refused: '" + raw
+                log.warning("Tartine: sdcard mount refused: '" + raw
                         + "' (encloses the Tartine root)");
                 return null;
             }

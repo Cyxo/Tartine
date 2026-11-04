@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -47,6 +48,7 @@ import java.util.zip.ZipFile;
  * ({@code android.graphics.Paint.Style} becomes {@code Paint.Style}).
  */
 public final class Imports {
+    private static final Logger log = Logger.getLogger(Imports.class.getName());
     private Imports() {
     }
 
@@ -427,15 +429,15 @@ public final class Imports {
                 if (!shortened.equals(source)) {
                     changed++;
                     if (check) {
-                        System.out.println("would rewrite: " + file);
+                        log.fine("would rewrite: " + file);
                     } else {
                         Files.writeString(file, shortened, StandardCharsets.UTF_8);
-                        System.out.println("rewrote: " + file);
+                        log.fine("rewrote: " + file);
                     }
                 }
             }
         }
-        System.out.println((check ? "would rewrite " : "rewrote ") + changed
+        log.info((check ? "would rewrite " : "rewrote ") + changed
                 + " of " + files + " files");
         if (check && changed > 0) {
             System.exit(1);

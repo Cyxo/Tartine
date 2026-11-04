@@ -15,6 +15,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Dev-time generator for the {@code framework} module (AGENTS.md "Framework
@@ -49,6 +50,7 @@ import java.util.Set;
  * {@code SkeletonGen <outDir> [androidJarPath] [--force]}.
  */
 public final class SkeletonGen {
+    private static final Logger log = Logger.getLogger(SkeletonGen.class.getName());
     /**
      * Seed descriptors for the closure (grow as classes port). NOTE: heavy
      * seeds whose closure references nested types inside already-existing
@@ -110,16 +112,16 @@ public final class SkeletonGen {
         for (Map.Entry<String, List<FwIndex.FwClass>> file : files.entrySet()) {
             Path src = sourcePath(outDir, file.getKey());
             if (!force && Files.exists(src)) {
-                System.out.println("skip (exists): " + file.getKey());
+                log.fine("skip (exists): " + file.getKey());
                 continue;
             }
             Files.createDirectories(src.getParent());
             String source = emitFile(file.getKey(), file.getValue(), closure);
             source = Imports.shorten(source, simpleName(file.getKey()), universe);
             Files.writeString(src, source, StandardCharsets.UTF_8);
-            System.out.println("wrote: " + src);
+            log.fine("wrote: " + src);
         }
-        System.out.println("classes in closure: " + closure.size()
+        log.info("classes in closure: " + closure.size()
                 + "; files touched: " + files.size());
     }
 

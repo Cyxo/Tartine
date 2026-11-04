@@ -183,6 +183,13 @@ display.refresh_hz = 60
 # off outside diagnostics.
 # display.debug_frames = false
 
+# Log level for the host/runtime/guest logger (java.util.logging):
+# TRACE, DEBUG, INFO, WARN, ERROR or OFF. Default INFO. The command
+# line --log-level / -l takes precedence over this key (highest
+# priority first). Guest android.util.Log calls map onto the same
+# levels; the console prefixes each line with its caller class.
+# log.level = INFO
+
 # Host light/dark theme. auto (default) follows the desktop setting when
 # it can be read: Windows AppsUseLightTheme, macOS AppleInterfaceStyle,
 # or GNOME/KDE on Linux. light/dark force the guest Configuration night

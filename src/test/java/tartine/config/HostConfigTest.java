@@ -4,6 +4,7 @@ import android.graphics.Paint;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
+import java.util.logging.Level;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ class HostConfigTest {
         ThemeMode.setDark(false);
         HostConfig.resetFrameRate();
         HostConfig.resetDebugFrames();
+        HostConfig.resetLogLevel();
         Vfs.resetCard();
     }
 
@@ -44,6 +46,7 @@ class HostConfigTest {
         ThemeMode.setDark(false);
         HostConfig.resetFrameRate();
         HostConfig.resetDebugFrames();
+        HostConfig.resetLogLevel();
         Vfs.resetCard();
     }
 
@@ -267,5 +270,29 @@ class HostConfigTest {
         config("sdcard.mount.readonly = true",
                 "sdcard.mount = " + shared.toString().replace('\\', '/'));
         assertTrue(Vfs.policy().sdcard().readOnly());
+    }
+
+    @Test
+    void logLevelConfigParses() throws Exception {
+        config("log.level = debug");
+        assertEquals("DEBUG", HostConfig.logLevel());
+        config("log.level = TRACE");
+        assertEquals("TRACE", HostConfig.logLevel());
+    }
+
+    @Test
+    void badLogLevelKeepsDefault() throws Exception {
+        config("log.level = loud");
+        assertEquals("INFO", HostConfig.logLevel());
+    }
+
+    @Test
+    void logLevelNamesMapToJulLevels() {
+        assertEquals(Level.FINEST, HostConfig.toJulLevel("TRACE"));
+        assertEquals(Level.FINE, HostConfig.toJulLevel("DEBUG"));
+        assertEquals(Level.INFO, HostConfig.toJulLevel("INFO"));
+        assertEquals(Level.WARNING, HostConfig.toJulLevel("WARN"));
+        assertEquals(Level.SEVERE, HostConfig.toJulLevel("ERROR"));
+        assertEquals(Level.OFF, HostConfig.toJulLevel("OFF"));
     }
 }

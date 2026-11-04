@@ -3,6 +3,7 @@ package tartine.graphics;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 /**
  * Threading policy for {@link HostDisplay}.
@@ -22,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * guest that ignores the close event cannot hang the caller.
  */
 public final class HostDisplays {
+    private static final Logger log = Logger.getLogger(HostDisplays.class.getName());
 
     /** How long the macOS path waits for the guest after a close. */
     private static final long DEFAULT_GUEST_JOIN_MILLIS = 5_000;
@@ -118,8 +120,7 @@ public final class HostDisplays {
                 interrupted = true;
             }
             if (guest.isAlive()) {
-                System.err.println(
-                        "host display: guest thread did not stop after close");
+                log.warning("host display: guest thread did not stop after close");
             }
         }
         if (interrupted) {

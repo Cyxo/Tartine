@@ -2163,11 +2163,10 @@ final class TxMethodWriter implements Opcodes {
         if (isStatic && (owner.startsWith("Landroid/os/Looper;")
                 || owner.contains("arch/core/executor")
                 || owner.contains("LifecycleRegistry_androidKt"))) {
-            mv.visitFieldInsn(GETSTATIC, "java/lang/System", "err",
-                    "Ljava/io/PrintStream;");
-            mv.visitLdcInsn("tx: site " + owner + "->" + name);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream",
-                    "println", "(Ljava/lang/Object;)V", false);
+            mv.visitLdcInsn(owner);
+            mv.visitLdcInsn(name);
+            mv.visitMethodInsn(INVOKESTATIC, "tartine/guest/TxTrace",
+                    "site", "(Ljava/lang/String;Ljava/lang/String;)V", false);
         }
         mv.visitMethodInsn(opcode, TxDescriptors.internal(owner), name, desc,
                 itf);

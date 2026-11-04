@@ -8,6 +8,7 @@ import io.github.humbleui.skija.Surface;
 import io.github.humbleui.skija.Typeface;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Logger;
 import tartine.gfx.GfxBackend;
 import tartine.gfx.GfxFont;
 import tartine.gfx.GfxImage;
@@ -21,6 +22,7 @@ import tartine.gfx.GfxTypeface;
  * {@code io.github.humbleui} type.
  */
 public final class SkijaBackend implements GfxBackend {
+    private static final Logger log = Logger.getLogger(SkijaBackend.class.getName());
 
     /**
      * Bundled fallback face: Roboto 2.138 (Apache-2.0, see THIRD-PARTY.md),
@@ -66,8 +68,7 @@ public final class SkijaBackend implements GfxBackend {
         // Framework code caches the resolved typeface (Paint), so this is a
         // rare line; it tells a probing user why their configured families
         // did not take effect.
-        System.out.println("font: using bundled Roboto fallback"
-                + " (no requested host family installed)");
+        log.info("font: using bundled Roboto fallback (no requested host family installed)");
         return new SkijaTypeface(fallback);
     }
 

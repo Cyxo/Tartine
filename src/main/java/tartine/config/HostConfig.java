@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.function.Supplier;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.StreamHandler;
 import tartine.fw.SystemColors;
 import tartine.fw.SystemResourceNames;
 import tartine.fw.ThemeMode;
@@ -39,6 +43,10 @@ import tartine.runtime.Vfs;
  *       false): log per-frame callback counts, raster hashes and
  *       painted-pixel totals from the render loop. Off because the hash and
  *       count scan the whole raster each frame.</li>
+ *   <li>{@code log.level} = runtime logger level ({@code TRACE}, {@code
+ *       DEBUG}, {@code INFO}, {@code WARN}, {@code ERROR}; default
+ *       {@code INFO}). The CLI {@code --log-level}/{@code -l} wins when
+ *       present.</li>
  *   <li>{@code font.families} = comma-separated preferred desktop font
  *       families (config wins over a {@code TARTINE_FONT_FAMILIES} env
  *       value; the built-in list is last).</li>
@@ -61,6 +69,7 @@ import tartine.runtime.Vfs;
  * overrides never persist).
  */
 public final class HostConfig {
+    private static final Logger log = Logger.getLogger(HostConfig.class.getName());
     static final String FILE_NAME = "config.properties";
 
     /** Default refresh rate when {@code display.refresh_hz} is absent. */
@@ -74,6 +83,14 @@ public final class HostConfig {
 
     /** Render-loop diagnostics; {@link #apply} rewrites it from config. */
     private static boolean debugFrames;
+    /** Logger level name ({@code log.level}), derived ({@link #configureLogging}). */
+    private static String logLevel = "INFO";
+
+    static {
+        // Install the concise console format before any config warning is
+        // logged; the CLI may already have seeded tartine.log.level.
+        configureLogging(System.getProperty("tartine.log.level"));
+    }
 
     private HostConfig() {
     }
@@ -104,6 +121,76 @@ public final class HostConfig {
         debugFrames = false;
     }
 
+    /** Test seam: restores the default log level name. */
+    static void resetLogLevel() {
+        logLevel = "INFO";
+    }
+
+    /** Resolved log level name from config (CLI overrides at startup). */
+    public static String logLevel() {
+        return logLevel;
+    }
+
+    /**
+     * Applies {@code cliLevel} (non-null wins) or the config-level name to
+     * the {@link java.util.logging} root logger and installs the concise
+     * logcat-style console handler. Call after {@link #load}.
+     */
+    public static void configureLogging(String cliLevel) {
+        String levelName = (cliLevel != null && !cliLevel.isBlank())
+                ? cliLevel.trim() : logLevel;
+        String normalized = normalizeLogLevel(levelName);
+        if (normalized == null) {
+            normalized = "INFO";
+        }
+        logLevel = normalized;
+        System.setProperty("tartine.log.level", normalized);
+        Level level = toJulLevel(normalized);
+        Logger root = Logger.getLogger("");
+        root.setLevel(level);
+        for (Handler handler : root.getHandlers()) {
+            root.removeHandler(handler);
+        }
+        StreamHandler console = new StreamHandler(System.out,
+                new LogFormat());
+        console.setLevel(level);
+        root.addHandler(console);
+        // The JDK logs through JUL too (ProcessBuilder emits debug traces);
+        // keep its namespaces at INFO so DEBUG/TRACE only amplifies Tartine
+        // and guest logs. Android reserves java.*/javax.*/jdk.*/sun.* for
+        // the platform, so no guest class can land there.
+        for (String namespace : new String[] {"java", "javax", "jdk", "sun",
+                "com.sun"}) {
+            Logger.getLogger(namespace).setLevel(Level.INFO);
+        }
+    }
+
+    /** Maps a normalized config name to a {@code java.util.logging} level. */
+    static Level toJulLevel(String normalized) {
+        return switch (normalized) {
+            case "TRACE" -> Level.FINEST;
+            case "DEBUG" -> Level.FINE;
+            case "WARN" -> Level.WARNING;
+            case "ERROR" -> Level.SEVERE;
+            case "OFF" -> Level.OFF;
+            default -> Level.INFO;
+        };
+    }
+
+    private static String normalizeLogLevel(String name) {
+        if (name == null || name.isBlank()) {
+            return "INFO";
+        }
+        String upper = name.trim().toUpperCase(java.util.Locale.ROOT);
+        for (String valid : new String[]{"TRACE", "DEBUG", "INFO",
+                "WARN", "ERROR", "OFF"}) {
+            if (valid.equals(upper)) {
+                return upper;
+            }
+        }
+        return null;
+    }
+
     /** Loads {@code <root>/config.properties} (defaults when absent). */
     public static void load() {
         loadFrom(Vfs.root().resolve(FILE_NAME));
@@ -124,7 +211,7 @@ public final class HostConfig {
                 StandardCharsets.UTF_8)) {
             props.load(reader);
         } catch (IOException e) {
-            System.err.println("Tartine: config " + file + " unreadable: " + e);
+            log.warning("Tartine: config " + file + " unreadable: " + e);
             applyTheme(props, detect);
             return;
         }
@@ -161,9 +248,8 @@ public final class HostConfig {
             } else if (name.equals("font.families")) {
                 List<String> families = parseFamilies(value);
                 if (families.isEmpty()) {
-                    System.err.println("Tartine: config ignored: "
-                            + name + "=" + value
-                            + " (need a comma-separated family list)");
+                    log.warning("Tartine: config ignored: " + name + "="
+                            + value + " (need a comma-separated family list)");
                     continue;
                 }
                 Paint.tartineSetPreferredFamilies(
@@ -173,9 +259,16 @@ public final class HostConfig {
             } else if (name.equals("sdcard.mount") || name.equals("sdcard.mount.readonly")) {
                 // Handled once below (order-independent read: readonly may
                 // appear before the mount it qualifies).
+            } else if (name.equals("log.level")) {
+                String normalized = normalizeLogLevel(value.trim());
+                if (normalized == null) {
+                    log.warning("Tartine: config ignored: " + name + "="
+                            + value + " (need TRACE, DEBUG, INFO, WARN, ERROR or OFF)");
+                } else {
+                    logLevel = normalized;
+                }
             } else {
-                System.err.println("Tartine: config ignored: unknown key '"
-                        + name + "'");
+                log.warning("Tartine: config ignored: unknown key '" + name + "'");
             }
         }
         applyTheme(props, detect);
@@ -200,8 +293,8 @@ public final class HostConfig {
             // Reported by the range check below.
         }
         if (!(hz >= MIN_REFRESH_HZ && hz <= MAX_REFRESH_HZ)) {
-            System.err.println("Tartine: config ignored: display.refresh_hz="
-                    + raw + " (need frames per second between "
+            log.warning("Tartine: config ignored: display.refresh_hz=" + raw
+                    + " (need frames per second between "
                     + (int) MIN_REFRESH_HZ + " and " + (int) MAX_REFRESH_HZ
                     + ")");
             return;
@@ -223,7 +316,7 @@ public final class HostConfig {
         String raw = props.getProperty("theme.mode");
         String mode = raw == null ? "auto" : raw.trim().toLowerCase(Locale.ROOT);
         if (!mode.equals("auto") && !mode.equals("light") && !mode.equals("dark")) {
-            System.err.println("Tartine: config ignored: theme.mode=" + raw
+            log.warning("Tartine: config ignored: theme.mode=" + raw
                     + " (need auto, light or dark)");
             mode = "auto";
         }
@@ -265,7 +358,7 @@ public final class HostConfig {
             mountRaw = System.getenv("TARTINE_SDCARD");
             if (mountRaw == null || mountRaw.isBlank()) {
                 if (readOnly != null) {
-                    System.err.println("Tartine: config ignored: "
+                    log.warning("Tartine: config ignored: "
                             + "sdcard.mount.readonly=" + boolLiteral(readOnly)
                             + " (no sdcard.mount or TARTINE_SDCARD to qualify)");
                 }
@@ -277,7 +370,7 @@ public final class HostConfig {
             return; // acceptOverride explained the refusal
         }
         if (readOnly == null) {
-            System.err.println("Tartine: sdcard mount '" + mount
+            log.info("Tartine: sdcard mount '" + mount
                     + "' is read-only by default; set"
                     + " sdcard.mount.readonly=false for write access");
             readOnly = Boolean.TRUE;
@@ -299,7 +392,7 @@ public final class HostConfig {
         if (text.equalsIgnoreCase("true") || text.equalsIgnoreCase("false")) {
             return Boolean.parseBoolean(text);
         }
-        System.err.println("Tartine: config ignored: " + name + "="
+        log.warning("Tartine: config ignored: " + name + "="
                 + text + " (need true or false)");
         return null;
     }
@@ -308,7 +401,7 @@ public final class HostConfig {
         Integer id = namedColorId(name.substring("color.".length()));
         Integer argb = parseColor(value);
         if (id == null || argb == null) {
-            System.err.println("Tartine: config ignored: " + name + "=" + value
+            log.warning("Tartine: config ignored: " + name + "=" + value
                     + " (need a canonical android.R$color name like"
                     + " system_accent1_10, a decimal-or-0x color id, and a"
                     + " #RRGGBB (opaque) / #AARRGGBB / 0xAARRGGBB / decimal"

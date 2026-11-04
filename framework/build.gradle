@@ -17,7 +17,6 @@ dependencies {
     // supplies the implementation at runtime; tests use a recording backend
     // over gfx-api and stay native-free.
     api project(':gfx-api')
-
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
 }

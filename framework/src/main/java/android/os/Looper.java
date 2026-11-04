@@ -1,6 +1,7 @@
 package android.os;
 
 import android.util.Printer;
+import java.util.logging.Logger;
 
 /**
  * Desktop mapping (Tartine). Ported per-method from
@@ -22,6 +23,7 @@ import android.util.Printer;
  * </ul>
  */
 public class Looper {
+    private static final Logger log = Logger.getLogger(Looper.class.getName());
 
     /** AOSP line 80: per-thread looper table. */
     static final ThreadLocal<Looper> sThreadLocal = new ThreadLocal<>();
@@ -67,7 +69,7 @@ public class Looper {
 
     /** AOSP line 149ff. */
     public static Looper getMainLooper() {
-        System.err.println("tx: Looper.getMainLooper() -> " + sMainLooper
+        log.finest("tx: Looper.getMainLooper() -> " + sMainLooper
                 + " from=" + Thread.currentThread().getName());
         synchronized (Looper.class) {
             return sMainLooper;
@@ -95,7 +97,7 @@ public class Looper {
 
     /** AOSP getThread(): the looper's owning thread. */
     public Thread getThread() {
-        System.err.println("tx: Looper.getThread() mThread=" + mThread
+        log.finest("tx: Looper.getThread() mThread=" + mThread
                 + " current=" + Thread.currentThread()
                 + " same=" + (mThread == Thread.currentThread()));
         return mThread;
