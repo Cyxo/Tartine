@@ -349,8 +349,9 @@ import tartine.gfx.GfxTypeface;
      * Host-only renderer font for text draws (staging): the default host
      * typeface at the paint's text size. The Typeface state model
      * (paint.mTypeface) is still a placeholder until a Typeface module port
-     * lands; until then every text draw uses a desktop system face (Roboto
-     * first, mirroring the Android default).
+     * lands; until then every text draw uses a desktop system face (the
+     * configured/built-in families first, then the backend's bundled Roboto
+     * fallback, mirroring the Android default).
      *
      * <p>The backend resolves the face against the host font manager
      * explicitly: Skia's default-family conventions can answer a face with no
@@ -389,8 +390,9 @@ import tartine.gfx.GfxTypeface;
         if (found == null) {
             found = GfxBackend.get().defaultTypeface(tartinePreferredFamilies());
             if (found == null) {
-                // A text draw needs some real face; no-desktop-font hosts
-                // surface as the named gap instead of silent zero-extent
+                // Defensive: the Skija backend falls back to its bundled
+                // Roboto, but a backend that cannot resolve any face still
+                // surfaces as the named gap instead of silent zero-extent
                 // output.
                 throw new UnsupportedOperationException(
                         "Tartine: not implemented: host typeface lookup"

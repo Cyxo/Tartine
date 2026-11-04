@@ -166,7 +166,9 @@ color.system_on_background_light = #E7EBEF
 # Comma-separated desktop font families, tried in order when a Paint has
 # no explicit typeface. Precedence: this key > TARTINE_FONT_FAMILIES env
 # > built-in list (Roboto, Segoe UI, Noto Sans, DejaVu Sans,
-# Liberation Sans, Helvetica Neue).
+# Liberation Sans, Helvetica Neue). If none of the requested families is
+# installed, the renderer falls back to its bundled Roboto face, so text
+# still draws instead of failing the lookup.
 font.families = Segoe UI, Roboto
 
 # Render-loop refresh rate in frames per second. Default 60; fractional

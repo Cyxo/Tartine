@@ -30,6 +30,17 @@ migration). Fact-check history 2026-10-17 (correcting this file and the
 Maven, not Maven Central, where `org.smali:dexlib2` tops out at 2.5.2 (last
 update 2021).
 
+## Bundled assets
+
+| Asset | Version | Where it lands | Source | License |
+|---|---|---|---|---|
+| `Roboto-Regular.ttf` | 2.138 | `gfx-skija/src/main/resources/tartine/fonts/` — renderer fallback face when none of the requested host font families exists | [googlefonts/roboto `v2.138`](https://github.com/googlefonts/roboto/tree/v2.138/src/hinted) (fetched 2026-11-04; SHA-256 `56A45233D29F11B4DFB86D248E921939D115778F87325E7AE8CC108383D6664D`) | Apache-2.0 |
+
+The font is redistributed with its upstream `Roboto-LICENSE.txt` in the same
+folder (the repository's own `LICENSE.md` is LGPL-3.0 and does not cover it).
+It exists so a machine with none of the configured desktop fonts still draws
+text with a real face instead of failing the host typeface lookup.
+
 ## Generated / derived data
 
 | Source | Version | Where it lands | License |

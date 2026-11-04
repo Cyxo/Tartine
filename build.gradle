@@ -59,8 +59,10 @@ tasks.named('test', Test) {
     // `gradle test` is the repo-wide verification entry point; framework
     // tests live in their own module so they run without the runtime's
     // Skija platform natives, and the SDK-parsing tools live in fw-tools.
+    // The renderer module has its own tests (bundled font fallback).
     dependsOn ':framework:test'
     dependsOn ':fw-tools:test'
+    dependsOn ':gfx-skija:test'
 }
 
 application {

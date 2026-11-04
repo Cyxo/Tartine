@@ -74,9 +74,11 @@ public interface GfxBackend {
     GfxPictureRecorder newPictureRecorder();
 
     /**
-     * Resolves the first available family from {@code preferredFamilies}, or
-     * returns {@code null} when none is present. The framework turns that
-     * into its named "host typeface lookup" gap.
+     * Resolves the first available family from {@code preferredFamilies}.
+     * Implementations should fall back to a bundled face when none is
+     * present, so text can still draw; {@code null} is reserved for a backend
+     * that cannot resolve any face at all. The framework turns that null into
+     * its named "host typeface lookup" gap.
      */
     GfxTypeface defaultTypeface(String[] preferredFamilies);
 
