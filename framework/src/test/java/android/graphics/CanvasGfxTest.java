@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import tartine.gfx.GfxBackend;
 import tartine.gfx.testing.RecordingBackend;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -149,6 +151,39 @@ class CanvasGfxTest {
 
         // Measurement reused the draw's font instead of allocating another.
         assertEquals(1, backend.fonts.size());
+    }
+
+    @Test
+    void drawTextBreaksExplicitNewlinesAtFontSpacing() {
+        Canvas canvas = canvas(100, 100);
+        Paint paint = new Paint(0);
+        paint.setTextSize(14.0f);
+
+        canvas.drawText("a\nb", 0, 15, paint);
+
+        List<String> draws = backend.calls.stream()
+                .filter(call -> call.startsWith("drawText("))
+                .toList();
+        assertEquals(2, draws.size());
+        assertTrue(draws.get(0).startsWith("drawText(a,0.0,15.0,"));
+        // FakeFont metrics: descent - ascent + leading = 4 - (-15) = 19.
+        assertTrue(draws.get(1).startsWith("drawText(b,0.0,34.0,"));
+    }
+
+    @Test
+    void drawTextSkipsEmptyNewlineRunsButStillAdvances() {
+        Canvas canvas = canvas(100, 100);
+        Paint paint = new Paint(0);
+        paint.setTextSize(14.0f);
+
+        canvas.drawText("a\n\nb", 0, 0, paint);
+
+        List<String> draws = backend.calls.stream()
+                .filter(call -> call.startsWith("drawText("))
+                .toList();
+        assertEquals(2, draws.size());
+        assertTrue(draws.get(0).startsWith("drawText(a,0.0,0.0,"));
+        assertTrue(draws.get(1).startsWith("drawText(b,0.0,38.0,"));
     }
 
     @Test

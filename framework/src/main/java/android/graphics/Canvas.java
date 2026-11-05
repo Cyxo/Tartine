@@ -4,6 +4,8 @@ import android.graphics.fonts.Font;
 import android.graphics.text.MeasuredText;
 import tartine.gfx.GfxCanvas;
 import tartine.gfx.GfxClipMode;
+import tartine.gfx.GfxFont;
+import tartine.gfx.GfxFontMetrics;
 import tartine.gfx.GfxPaint;
 import tartine.gfx.GfxPaintStyle;
 import tartine.gfx.GfxPicture;
@@ -417,11 +419,43 @@ import tartine.gfx.GfxRect;
 
     /** Shared drawText body: backend drawString at the baseline (padding
      *  none). Rootless canvases skip (no device to draw onto). The font is
-     *  owned and cached by the Paint, so it is not closed here. */
+     *  owned and cached by the Paint, so it is not closed here.
+     *
+     *  <p>Explicit newlines advance to the next baseline instead of reaching
+     *  the backend as a glyph (Skia would draw the missing-glyph box). This
+     *  keeps direct {@code Canvas.drawText} calls consistent with the line
+     *  breaks the framework's Layout applies. */
     private void drawTextChars(String text, float x, float y, Paint paint) {
         if (text == null || text.isEmpty()) return;
         if (gfx == null || paint == null) return;
-        gfx.drawText(text, x, y, paint.tartineGfxFont(), paint.tartineGfx());
+        GfxFont font = paint.tartineGfxFont();
+        GfxPaint gfxPaint = paint.tartineGfx();
+        int newline = text.indexOf('\n');
+        if (newline < 0) {
+            gfx.drawText(text, x, y, font, gfxPaint);
+            return;
+        }
+        GfxFontMetrics metrics = font.getMetrics();
+        float lineHeight = metrics.descent - metrics.ascent + metrics.leading;
+        if (!(lineHeight > 0.0f)) {
+            lineHeight = paint.getTextSize() > 0.0f
+                    ? paint.getTextSize() : 14.0f;
+        }
+        float baseline = y;
+        int start = 0;
+        while (true) {
+            newline = text.indexOf('\n', start);
+            int end = newline < 0 ? text.length() : newline;
+            int textEnd = end > start && text.charAt(end - 1) == '\r'
+                    ? end - 1 : end;
+            if (textEnd > start) {
+                gfx.drawText(text.substring(start, textEnd), x, baseline,
+                        font, gfxPaint);
+            }
+            if (newline < 0) break;
+            baseline += lineHeight;
+            start = newline + 1;
+        }
     }
 
     public void drawTextOnPath(char[] arg0, int arg1, int arg2, Path arg3, float arg4, float arg5, Paint arg6) {

@@ -4,6 +4,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -246,5 +247,67 @@ class StaticLayoutTest {
         assertEquals(19, layout.mLineTops[1]);
         assertEquals(19, layout.mHeight);
         assertTrue(layout.mText.toString().equals("hi"));
+    }
+
+    @Test
+    void explicitNewlineStartsANewLine() {
+        StaticLayout layout = build("a\nb", 0, 3, false, 0.0f, 1.0f,
+                new FixedPaint());
+        assertEquals(2, layout.getLineCount());
+        assertEquals(38, layout.getHeight());
+        assertEquals(0, layout.getLineTop(0));
+        assertEquals(19, layout.getLineTop(1));
+        assertEquals(38, layout.getLineTop(2));
+        assertEquals(15, layout.getLineBaseline(0));
+        assertEquals(34, layout.getLineBaseline(1));
+        assertEquals(0, layout.getLineStart(0));
+        assertEquals(2, layout.getLineEnd(0));          // includes '\n'
+        assertEquals(1, layout.getLineVisibleEnd(0));   // excludes '\n'
+        assertEquals(2, layout.getLineStart(1));
+        assertEquals(3, layout.getLineEnd(1));
+        assertEquals(6.0f, layout.getLineMax(0));
+        assertEquals(6.0f, layout.getLineMax(1));
+        assertEquals(6.0f, layout.getLineWidth(1));
+        assertEquals(2, layout.mLineCount);
+        assertArrayEquals(new int[] {0, 2}, layout.mLineStarts);
+        assertArrayEquals(new int[] {2, 3}, layout.mLineEnds);
+        assertArrayEquals(new float[] {6.0f, 6.0f}, layout.mLineWidths);
+        assertArrayEquals(new int[] {0, 19, 38}, layout.mLineTops);
+        assertEquals(38, layout.mHeight);
+    }
+
+    @Test
+    void trailingNewlineAddsAnEmptyLastLine() {
+        StaticLayout layout = build("a\n", 0, 2, false, 0.0f, 1.0f,
+                new FixedPaint());
+        assertEquals(2, layout.getLineCount());
+        assertEquals(38, layout.getHeight());
+        assertEquals(2, layout.getLineStart(1));
+        assertEquals(2, layout.getLineEnd(1));
+        assertEquals(2, layout.getLineVisibleEnd(1));
+        assertEquals(0.0f, layout.getLineMax(1));
+        assertEquals(34, layout.getLineBaseline(1));
+    }
+
+    @Test
+    void carriageReturnBeforeNewlineIsNotDrawn() {
+        StaticLayout layout = build("a\r\nb", 0, 4, false, 0.0f, 1.0f,
+                new FixedPaint());
+        assertEquals(2, layout.getLineCount());
+        assertEquals(1, layout.getLineVisibleEnd(0));
+        assertEquals(3, layout.getLineEnd(0));          // includes CRLF
+        assertEquals(3, layout.getLineStart(1));
+        assertEquals(4, layout.getLineEnd(1));
+        assertEquals(6.0f, layout.getLineMax(0));
+    }
+
+    @Test
+    void consecutiveNewlinesProduceBlankLines() {
+        StaticLayout layout = build("a\n\nb", 0, 4, false, 0.0f, 1.0f,
+                new FixedPaint());
+        assertEquals(3, layout.getLineCount());
+        assertEquals(57, layout.getHeight());
+        assertEquals(0.0f, layout.getLineMax(1));
+        assertEquals(53, layout.getLineBaseline(2));
     }
 }

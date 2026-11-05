@@ -35,11 +35,16 @@ import java.util.List;
     protected float spacingMul = 1.0f;
     protected float spacingAdd = 0.0f;
     protected int height;
-    protected int lineAscent;
-    protected int lineDescent;
-    protected int lineTop;
-    protected int lineBaseline;
-    protected int lineExtra;
+    /** Line start offsets, including the character after an explicit '\n'. */
+    protected int[] lineStarts = new int[0];
+    /** Line text end offsets, excluding the terminating '\n'. */
+    protected int[] lineTextEnds = new int[0];
+    /** AOSP getLineEnd offsets, including the terminating '\n'. */
+    protected int[] lineEnds = new int[0];
+    /** Line tops plus the final bottom, so length is line count + 1. */
+    protected int[] lineTops = new int[0];
+    protected int[] lineDescents = new int[0];
+    protected int[] lineExtras = new int[0];
     /** AOSP StaticLayout.Builder.setIncludePad: when true the first line's
      *  top and the last line's bottom use the font's {@code top}/{@code bottom}
      *  (extra vertical padding) instead of {@code ascent}/{@code descent}. */
@@ -61,7 +66,8 @@ import java.util.List;
     }
 
     /**
-     * One-line line metrics, following AOSP's StaticLayout.generate
+     * Explicit line breaks ('\n') split the text into lines with the AOSP
+     * StaticLayout.generate line algebra
      * (frameworks-base core/java/android/text/StaticLayout.java:1153-1256):
      * {@code above}/{@code below} come from the font metrics (ascent/descent,
      * or top/bottom when includePad), line spacing adds
@@ -69,8 +75,10 @@ import java.util.List;
      * is {@code below + extra}. Layout.getLineBaseline is then
      * {@code getLineTop(line+1) - getLineDescent(line)} and Layout.getHeight
      * is {@code getLineTop(getLineCount())}
-     * (core/java/android/text/Layout.java:1233-1235 and :2820-2823), which
-     * makes the baseline independent of the added spacing.
+     * (core/java/android/text/Layout.java:1233-1235 and :2820-2823).
+     *
+     * <p>Only explicit newlines break here; width-based word wrapping is still
+     * outside this baseline.
      */
     protected void recomputeLineMetrics() {
         if (this.paint == null) this.paint = new TextPaint();
@@ -87,12 +95,53 @@ import java.util.List;
                 + this.spacingAdd;
         int extra = ex >= 0.0f
                 ? (int) (ex + 0.5f) : -(int) (-ex + 0.5f);
-        this.lineTop = 0;
-        this.lineExtra = extra;
-        this.lineDescent = intBelow + extra;
-        this.height = (intBelow - intAbove) + extra;
-        this.lineBaseline = this.height - this.lineDescent;
-        this.lineAscent = -this.lineBaseline;
+        int lineHeight = (intBelow - intAbove) + extra;
+
+        String body = this.text == null ? "" : this.text.toString();
+        if (body.isEmpty()) {
+            this.height = 0;
+            this.lineStarts = new int[0];
+            this.lineTextEnds = new int[0];
+            this.lineEnds = new int[0];
+            this.lineTops = new int[0];
+            this.lineDescents = new int[0];
+            this.lineExtras = new int[0];
+            return;
+        }
+
+        int lines = 1;
+        for (int i = 0; i < body.length(); i++) {
+            if (body.charAt(i) == '\n') lines++;
+        }
+        int[] starts = new int[lines];
+        int[] textEnds = new int[lines];
+        int[] ends = new int[lines];
+        int[] tops = new int[lines + 1];
+        int[] descents = new int[lines];
+        int[] extras = new int[lines];
+        int start = 0;
+        for (int line = 0; line < lines; line++) {
+            int newline = body.indexOf('\n', start);
+            int textEnd = newline < 0 ? body.length() : newline;
+            if (textEnd > start && body.charAt(textEnd - 1) == '\r') {
+                textEnd--;
+            }
+            starts[line] = start;
+            textEnds[line] = textEnd;
+            ends[line] = newline < 0 ? body.length() : newline + 1;
+            tops[line] = line * lineHeight;
+            descents[line] = intBelow + extra;
+            extras[line] = extra;
+            start = newline < 0 ? body.length() : newline + 1;
+        }
+        tops[lines] = lines * lineHeight;
+        this.height = tops[lines];
+        this.lineStarts = starts;
+        this.lineTextEnds = textEnds;
+        this.lineEnds = ends;
+        this.lineTops = tops;
+        this.lineDescents = descents;
+        this.lineExtras = extras;
     }
 
     public RectF computeDrawingBoundingBox() {
@@ -101,18 +150,26 @@ import java.util.List;
 
     /**
      * AOSP Layout.draw(Canvas) → draw(c, null, null, 0) → drawText/line loop;
-     * plain LTR unspanned text takes the direct drawText leg with
+     * plain LTR unspanned text draws one run per line with
      * {@code baseline = lbottom - getLineDescent(l)} where
      * {@code lbottom = getLineTop(l+1)} (core/java/android/text/Layout.java
-     * drawText(Canvas,int,int) and the builtin parity note). One line only
-     * here, so that is exactly {@link #getLineBaseline(int)}.
+     * drawText(Canvas,int,int) and the builtin parity note). The line table
+     * splits explicit '\n' breaks, so a newline never reaches the backend as
+     * a glyph.
      */
     public void draw(Canvas canvas) {
         if (canvas == null || text == null) return;
         String s = text.toString();
         if (s.isEmpty()) return;
         TextPaint pnt = (paint == null) ? new TextPaint() : paint;
-        canvas.drawText(s, 0.0f, (float) getLineBaseline(0), pnt);
+        for (int line = 0; line < getLineCount(); line++) {
+            int start = lineStarts[line];
+            int end = lineTextEnds[line];
+            if (end > start) {
+                canvas.drawText(s.substring(start, end), 0.0f,
+                        (float) getLineBaseline(line), pnt);
+            }
+        }
     }
 
     public void draw(Canvas arg0, Path arg1, Paint arg2, int arg3) {
@@ -236,18 +293,21 @@ import java.util.List;
     }
 
     public int getLineCount() {
-        return (text == null || text.length() == 0) ? 0 : 1;
+        return lineStarts.length;
     }
 
     public int getLineDescent(int arg0) {
         // AOSP StaticLayout.generate stores DESCENT = below + extra
         // (core/java/android/text/StaticLayout.java:1229-1236).
-        return lineDescent;
+        if (lineDescents.length == 0) return 0;
+        return lineDescents[Math.max(0,
+                Math.min(arg0, lineDescents.length - 1))];
     }
 
     /** @hide AOSP StaticLayout.getLineExtra: spacing folded into descent. */
     public int getLineExtra(int arg0) {
-        return lineExtra;
+        if (lineExtras.length == 0) return 0;
+        return lineExtras[Math.max(0, Math.min(arg0, lineExtras.length - 1))];
     }
 
     public Layout.Directions getLineDirections(int arg0) {
@@ -255,7 +315,9 @@ import java.util.List;
     }
 
     public final int getLineEnd(int arg0) {
-        return (text == null) ? 0 : text.length();
+        if (text == null) return 0;
+        if (lineEnds.length == 0) return text.length();
+        return lineEnds[Math.max(0, Math.min(arg0, lineEnds.length - 1))];
     }
 
     public int getLineForOffset(int arg0) {
@@ -275,8 +337,12 @@ import java.util.List;
     }
 
     public float getLineMax(int arg0) {
-        if (text == null) return 0.0f;
-        return paint == null ? 0.0f : paint.measureText(text.toString());
+        if (text == null || paint == null || lineTextEnds.length == 0) {
+            return 0.0f;
+        }
+        int line = Math.max(0, Math.min(arg0, lineTextEnds.length - 1));
+        return paint.measureText(text.subSequence(lineStarts[line],
+                lineTextEnds[line]).toString());
     }
 
     public float getLineRight(int arg0) {
@@ -292,20 +358,25 @@ import java.util.List;
     }
 
     public int getLineStart(int arg0) {
-        return 0;
+        if (lineStarts.length == 0) return 0;
+        return lineStarts[Math.max(0,
+                Math.min(arg0, lineStarts.length - 1))];
     }
 
     public int getLineTop(int arg0) {
-        // AOSP StaticLayout.getLineTop reads the TOP column; a one-line
-        // layout has TOP[0] = 0 and TOP[1] = height
-        // (core/java/android/text/StaticLayout.java:1436-1439 and
-        // generate()'s v += (below - above) + extra).
-        if (arg0 <= 0) return 0;
-        return height;
+        // AOSP StaticLayout.getLineTop reads the TOP column; the last entry
+        // is the layout bottom (core/java/android/text/StaticLayout.java:
+        // 1436-1439 and generate()'s v += (below - above) + extra).
+        if (arg0 <= 0 || lineTops.length == 0) return 0;
+        if (arg0 >= lineTops.length) return lineTops[lineTops.length - 1];
+        return lineTops[arg0];
     }
 
     public int getLineVisibleEnd(int arg0) {
-        return (text == null) ? 0 : text.length();
+        if (text == null) return 0;
+        if (lineTextEnds.length == 0) return text.length();
+        return lineTextEnds[Math.max(0,
+                Math.min(arg0, lineTextEnds.length - 1))];
     }
 
     public float getLineWidth(int arg0) {

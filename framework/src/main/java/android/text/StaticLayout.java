@@ -26,21 +26,27 @@ public class StaticLayout extends Layout {
         this.mText = (source == null ? "" : source);
         this.mPaint = (paint == null ? new TextPaint() : paint);
         this.mWidth = (width <= 0 ? 480 : width);
-        this.mLineCount = (mText.toString().isEmpty() ? 0 : 1);
         this.mFallbackLineSpacing = fallbackLineSpacing;
-        if (mLineCount <= 0) {
+        int lines = getLineCount();
+        this.mLineCount = lines;
+        if (lines <= 0) {
             mHeight = 0; mLineWidths = new float[0]; mLineStarts = new int[0];
             mLineEnds = new int[0]; mLineTops = new int[0];
             return;
         }
-        // Reflect the one-line metrics the Layout base computed (the static
-        // layout's public arrays mirror its line table; the guest reads the
+        // Mirror the backed line table the Layout base computed (the static
+        // layout's public arrays mirror its lines; the guest reads the
         // metrics through Layout.getLine*, not through these).
-        this.mLineStarts = new int[] {0};
-        this.mLineEnds = new int[] {mText.length()};
-        this.mLineWidths = new float[] {mPaint.measureText(mText.toString())};
-        this.mLineTops = new int[] {0, height};
-        this.mHeight = height;
+        this.mLineStarts = lineStarts.clone();
+        this.mLineEnds = lineEnds.clone();
+        this.mLineWidths = new float[lines];
+        this.mLineTops = new int[lines + 1];
+        for (int line = 0; line < lines; line++) {
+            this.mLineWidths[line] = getLineMax(line);
+            this.mLineTops[line] = getLineTop(line);
+        }
+        this.mLineTops[lines] = getLineTop(lines);
+        this.mHeight = getHeight();
     }
 
     public static class Builder {
