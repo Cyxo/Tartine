@@ -188,6 +188,7 @@ display.refresh_hz = 60
 # line --log-level / -l takes precedence over this key (highest
 # priority first). Guest android.util.Log calls map onto the same
 # levels; the console prefixes each line with its caller class.
+# Diagnostics go to stderr; command results stay on stdout.
 # log.level = INFO
 
 # Host light/dark theme. auto (default) follows the desktop setting when

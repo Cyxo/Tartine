@@ -169,7 +169,18 @@ public final class Main {
     }
 
     private static void usage() {
-        log.info("Usage: tartine.Main (apk|run|gui|dump|refs) <file>");
+        printResult("Usage: tartine.Main (apk|run|gui|dump|refs) <file>");
+    }
+
+    /**
+     * Command results go to stdout as plain text; diagnostics stay on the
+     * JUL logger (stderr), so a piped result is never filtered by log.level.
+     */
+    private static void printResult(String text) {
+        System.out.print(text);
+        if (!text.endsWith("\n")) {
+            System.out.println();
+        }
     }
 
     private static void require(String[] args, int count) {
@@ -184,7 +195,7 @@ public final class Main {
         for (Dex dex : dexes.dexes()) {
             for (DexClass cls : dex.classes()) {
                 if (fqnPrefix == null || cls.type.contains(fqnPrefix)) {
-                    log.info(DexDump.dump(cls));
+                    printResult(DexDump.dump(cls));
                 }
             }
         }
@@ -193,8 +204,8 @@ public final class Main {
     private static void printApkSummary(File apk) throws Exception {
         try (ApkReader reader = ApkReader.open(apk.toPath())) {
             BinaryXml.Element manifest = reader.manifest();
-            log.info("package: " + manifest.attr("package"));
-            log.info("version: " + manifest.attr("versionCode")
+            printResult("package: " + manifest.attr("package"));
+            printResult("version: " + manifest.attr("versionCode")
                     + " / " + manifest.attr("versionName"));
             List<String> activities = new ArrayList<>();
             int permissions = 0;
@@ -210,16 +221,16 @@ public final class Main {
                     }
                 }
             }
-            log.info("activities (" + activities.size() + "): " + activities);
-            log.info("permissions: " + permissions);
+            printResult("activities (" + activities.size() + "): " + activities);
+            printResult("permissions: " + permissions);
             DexSet dexes = reader.dexSet();
-            log.info("dex files: " + reader.dexEntries().size()
+            printResult("dex files: " + reader.dexEntries().size()
                     + ", classes: " + dexes.classCount()
                     + ", methods: " + dexes.methodCount());
             Set<String> abis = new TreeSet<>(reader.nativeAbis());
-            log.info("native abis: " + (abis.isEmpty() ? "none" : abis)
+            printResult("native abis: " + (abis.isEmpty() ? "none" : abis)
                     + " (host picks " + Abi.pickBest(abis) + ")");
-            log.info("resources: " + reader.hasResources());
+            printResult("resources: " + reader.hasResources());
         }
     }
 
@@ -234,9 +245,9 @@ public final class Main {
                     Main.class.getClassLoader(), reader.dexSet());
             List<ReferenceResolver.Problem> problems = loader.referenceProblems();
             for (ReferenceResolver.Problem problem : problems) {
-                log.info(String.valueOf(problem));
+                printResult(String.valueOf(problem));
             }
-            log.info("refs: " + problems.size() + " unresolved reference(s)");
+            printResult("refs: " + problems.size() + " unresolved reference(s)");
         }
     }
 

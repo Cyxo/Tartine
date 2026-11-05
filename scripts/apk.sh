@@ -13,6 +13,14 @@ if [ ! -d "$CLASSES" ] || [ ! -f "$CP_FILE" ]; then
     exit 1
 fi
 
+while IFS= read -r entry; do
+    if [ -n "$entry" ] && [ ! -f "$entry" ]; then
+        echo "Classpath entry missing: $entry" >&2
+        echo "Run 'mise run build' first." >&2
+        exit 1
+    fi
+done < "$CP_FILE"
+
 # Java on Windows (native exe) requires ';' as the classpath separator.
 case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*) SEP=";" ;;

@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.function.Supplier;
+import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.StreamHandler;
 import tartine.fw.SystemColors;
 import tartine.fw.SystemResourceNames;
 import tartine.fw.ThemeMode;
@@ -134,7 +134,9 @@ public final class HostConfig {
     /**
      * Applies {@code cliLevel} (non-null wins) or the config-level name to
      * the {@link java.util.logging} root logger and installs the concise
-     * logcat-style console handler. Call after {@link #load}.
+     * logcat-style {@link ConsoleHandler} on stderr. ConsoleHandler flushes
+     * after every record, so diagnostics stay ordered with command results
+     * on stdout. Call after {@link #load}.
      */
     public static void configureLogging(String cliLevel) {
         String levelName = (cliLevel != null && !cliLevel.isBlank())
@@ -151,9 +153,9 @@ public final class HostConfig {
         for (Handler handler : root.getHandlers()) {
             root.removeHandler(handler);
         }
-        StreamHandler console = new StreamHandler(System.out,
-                new LogFormat());
+        ConsoleHandler console = new ConsoleHandler();
         console.setLevel(level);
+        console.setFormatter(new LogFormat());
         root.addHandler(console);
         // The JDK logs through JUL too (ProcessBuilder emits debug traces);
         // keep its namespaces at INFO so DEBUG/TRACE only amplifies Tartine

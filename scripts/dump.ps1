@@ -9,6 +9,11 @@ $cpFile = Join-Path $root "build/runtime-classpath.txt"
 if (-not (Test-Path $classes) -or -not (Test-Path $cpFile)) {
     throw "Build output missing. Run 'mise run build' first."
 }
+foreach ($entry in Get-Content $cpFile) {
+    if ($entry -and -not (Test-Path -LiteralPath $entry -PathType Leaf)) {
+        throw "Classpath entry missing: $entry. Run 'mise run build' first."
+    }
+}
 $sep = [System.IO.Path]::PathSeparator
 $jars = (Get-Content $cpFile) -join $sep
 $target = $env:usage_dex
