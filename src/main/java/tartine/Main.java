@@ -8,6 +8,7 @@ import android.view.View;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -274,10 +275,12 @@ public final class Main {
             } else {
                 bytes = loader.translateClass(desc);
             }
-            TraceClassVisitor printer =
-                    new TraceClassVisitor(new PrintWriter(
-                            System.err));
+            StringWriter dump = new StringWriter();
+            PrintWriter writer = new PrintWriter(dump);
+            TraceClassVisitor printer = new TraceClassVisitor(writer);
             new ClassReader(bytes).accept(printer, 0);
+            writer.flush();
+            printResult(dump.toString());
         }
     }
 
@@ -584,7 +587,7 @@ public final class Main {
         };
         new RenderLoop(display, target, frames,
                 HostConfig.framePeriodNanos(), HostConfig.debugFrames(),
-                System.out).run();
+                System.err).run();
     }
 
     /** Runs queued guest actions (input, close) between frames. */
@@ -746,7 +749,7 @@ public final class Main {
      */
     private static List<WindowIcon> loadWindowIcons(File apkFile) {
         try (ApkReader reader = ApkReader.open(apkFile.toPath())) {
-            return AppIcon.load(reader, System.out::println);
+            return AppIcon.load(reader, line -> log.fine(line));
         } catch (IOException error) {
             log.info("icon: cannot reopen apk ("
                     + error.getMessage() + ")");

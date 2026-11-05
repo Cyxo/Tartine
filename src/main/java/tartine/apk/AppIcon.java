@@ -65,7 +65,7 @@ public final class AppIcon {
     private static final float[] RADIX_MULTS = {0.00390625F, 3.051758E-05F,
             1.1920929E-07F, 7.629395E-06F};
 
-    /** One-line resolution report (stdout for the CLI). */
+    /** One-line resolution report (the CLI routes it to the logger). */
     public interface Reporter {
         void say(String line);
     }

@@ -38,10 +38,11 @@ direct output. JDK-internal namespaces (`java`, `javax`, `jdk`, `sun`,
 `com.sun`) stay at INFO so DEBUG/TRACE only amplifies Tartine and guest logs.
 
 **Results and diagnostics are separate streams.** Command results are written
-to stdout through a plain print helper in `Main`: `apk`, `dump`, `refs`, and
-the usage line. Diagnostics stay on the JUL logger and therefore stderr.
-`txdump`'s ASM class trace also stays on stderr. Piping stdout now captures
-results regardless of `log.level`, and redirecting stderr captures
+to stdout through a plain print helper in `Main`: `apk`, `dump`, `refs`,
+`txdump`, and the usage line. Diagnostics stay on the JUL logger and therefore
+stderr; window-icon resolution status is logged at FINE, and the render
+loop's frame summary/draw failure text goes to stderr too. Piping stdout now
+captures results regardless of `log.level`, and redirecting stderr captures
 diagnostics without mixing them into the result text.
 
 **`android.util.Log` maps onto JUL.** The framework provides the full API-36
