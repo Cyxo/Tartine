@@ -15,8 +15,8 @@ run = "python scripts/coverage.py"
 run_windows = "python scripts/coverage.py"
 
 [tasks.build]
-description = "Incremental compile + refresh launch classpath + framework jar"
-run = "gradle compileTestJava :framework:jar writeClasspath"
+description = "Incremental compile + refresh launch classpath"
+run = "gradle compileTestJava writeClasspath"
 
 [tasks.test]
 description = "Run the JUnit suite"
