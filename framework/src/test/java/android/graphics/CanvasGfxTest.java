@@ -1,9 +1,12 @@
 package android.graphics;
 
+import android.text.StaticLayout;
+import android.text.TextPaint;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tartine.gfx.GfxBackend;
+import tartine.gfx.GfxFontMetrics;
 import tartine.gfx.testing.RecordingBackend;
 
 import java.util.List;
@@ -166,8 +169,86 @@ class CanvasGfxTest {
                 .toList();
         assertEquals(2, draws.size());
         assertTrue(draws.get(0).startsWith("drawText(a,0.0,15.0,"));
-        // FakeFont metrics: descent - ascent + leading = 4 - (-15) = 19.
+        // FakeFont ascent/descent gives a 19px line box; leading is ignored.
         assertTrue(draws.get(1).startsWith("drawText(b,0.0,34.0,"));
+    }
+
+    @Test
+    void newlineAdvanceMatchesStaticLayoutWithNonZeroLeading() {
+        // A line gap that differs from the ascent/descent box: if Canvas
+        // added leading the second baseline would move by 26, not 19.
+        backend.metrics = new GfxFontMetrics(-18.0f, -15.0f, 4.0f, 6.0f, 7.0f);
+        Canvas canvas = canvas(100, 100);
+        TextPaint paint = new TextPaint();
+        paint.setTextSize(14.0f);
+        StaticLayout layout = StaticLayout.Builder
+                .obtain("a\nb", 0, 3, paint, 100)
+                .build();
+        assertEquals(19, layout.getLineTop(1));
+        float secondBaseline = 15.0f + layout.getLineTop(1);
+
+        canvas.drawText("a\nb", 0, 15, paint);
+
+        List<String> draws = backend.calls.stream()
+                .filter(call -> call.startsWith("drawText("))
+                .toList();
+        assertEquals(2, draws.size());
+        assertTrue(draws.get(1).startsWith(
+                "drawText(b,0.0," + secondBaseline + ","));
+    }
+
+    @Test
+    void measureTextFoldsNewlinesAndMeasuresTheWholeText() {
+        Paint paint = new Paint(0);
+        paint.setTextSize(14.0f);
+
+        // AOSP gives '\n' zero advance, so a multi-line string measures like
+        // the concatenation of its lines, not like its widest line.
+        assertEquals(6.0f, paint.measureText("a"));
+        assertEquals(12.0f, paint.measureText("a\nb"));
+        assertEquals(paint.measureText("ab"), paint.measureText("a\nb"));
+        assertEquals(24.0f, paint.measureText("abc\nd"));
+        assertEquals(18.0f, paint.measureText("a\nbc"));
+        assertEquals(12.0f, paint.measureText("a\r\nb"));
+        assertEquals(12.0f, paint.measureText("a\rb"));
+
+        // Every overload follows the same fold.
+        assertEquals(12.0f, paint.measureText("xab\nc", 1, 4));
+        assertEquals(12.0f, paint.measureText(
+                new char[] {'a', '\n', 'b'}, 0, 3));
+    }
+
+    @Test
+    void getTextBoundsFoldsNewlinesAndMeasuresTheWholeText() {
+        Paint paint = new Paint(0);
+        paint.setTextSize(14.0f);
+        Rect joined = new Rect();
+        paint.getTextBounds("ab", 0, 2, joined);
+        Rect multi = new Rect();
+        paint.getTextBounds("a\nb", 0, 3, multi);
+
+        assertEquals(joined.width(), multi.width());
+        assertEquals(joined.height(), multi.height());
+        assertEquals(12, multi.width());
+        assertEquals(19, multi.height());
+        assertEquals(joined.width(),
+                Math.round(paint.measureText("a\nb")));
+
+        // Unlike getDesiredWidth, Paint does not pick a widest line.
+        Rect longText = new Rect();
+        paint.getTextBounds("a\nbc", 0, 4, longText);
+        assertEquals(18, longText.width());
+        assertEquals(19, longText.height());
+
+        Rect crlf = new Rect();
+        paint.getTextBounds("a\r\nb", 0, 4, crlf);
+        assertEquals(joined.width(), crlf.width());
+        assertEquals(joined.height(), crlf.height());
+
+        Rect chars = new Rect();
+        paint.getTextBounds(new char[] {'a', '\n', 'b'}, 0, 3, chars);
+        assertEquals(joined.width(), chars.width());
+        assertEquals(joined.height(), chars.height());
     }
 
     @Test

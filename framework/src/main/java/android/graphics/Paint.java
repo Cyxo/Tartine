@@ -193,6 +193,25 @@ import tartine.gfx.GfxTypeface;
         return fm;
     }
 
+    /**
+     * Internal seam: baseline-to-baseline pitch for an embedded {@code '\n'}
+     * run. Mirrors Tartine's default no-pad line box in {@code Layout}
+     * (integer ascent/descent with the same zero-metric fallbacks), so
+     * {@link Canvas#drawText} breaks lines at exactly the pitch Tartine's
+     * StaticLayout uses. Leading is deliberately not added: AOSP's
+     * StaticLayout.generate builds the line box from ascent/descent (or
+     * top/bottom with includePad) plus spacing, not from the font leading.
+     */
+    float tartineLineHeight() {
+        Paint.FontMetrics fm = getFontMetrics();
+        float size = mTextSize > 0.0f ? mTextSize : 14.0f;
+        float above = fm.ascent;
+        float below = fm.descent;
+        if (above >= 0.0f) above = -size;
+        if (below <= 0.0f) below = size * 0.25f;
+        return (float) (Math.ceil(below) - Math.floor(above));
+    }
+
     public float getFontMetrics(Paint.FontMetrics arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getFontMetrics(Landroid/graphics/Paint$FontMetrics;)F");
     }
@@ -450,7 +469,11 @@ import tartine.gfx.GfxTypeface;
     }
 
     public void getTextBounds(char[] arg0, int arg1, int arg2, Rect arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getTextBounds([CIILandroid/graphics/Rect;)V");
+        if (arg0 == null) {
+            if (arg3 != null) arg3.set(0, 0, 0, 0);
+            return;
+        }
+        getTextBounds(new String(arg0, arg1, arg2), 0, arg2, arg3);
     }
 
     public void getTextBounds(CharSequence text, int start, int end, Rect bounds) {
@@ -461,7 +484,15 @@ import tartine.gfx.GfxTypeface;
         if (bounds == null) return;
         bounds.set(0,0,0,0);
         if (text == null || start >= end) return;
-        GfxRect r = tartineGfxFont().measureText(text.substring(start, end));
+        // AOSP's native getStringBounds shapes the whole string; '\n' and
+        // '\r' have zero advance, so a device reports getTextBounds("a\nb")
+        // exactly as getTextBounds("ab") (one line, no extra glyph). Skia
+        // would count a missing-glyph advance for those controls, so fold
+        // them out before measuring. This is the same observable result as
+        // AOSP, not a widest-line split.
+        String body = tartineFoldLineBreaks(text.substring(start, end));
+        if (body.isEmpty()) return;
+        GfxRect r = tartineGfxFont().measureText(body);
         bounds.set(0, 0, Math.round(r.width()), Math.round(r.height()));
     }
 
@@ -582,25 +613,54 @@ import tartine.gfx.GfxTypeface;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->isUnderlineText()Z");
     }
 
+    /**
+     * AOSP's native measureText shapes the whole string and gives newline
+     * characters zero advance, so a device reports measureText("a\nb") ==
+     * measureText("ab") and measureText("ab\nW") == measureText("ab") +
+     * measureText("W"). (Layout.getDesiredWidth is the API that splits on
+     * '\n' and takes the widest paragraph; Paint does not.) Skia would add a
+     * missing-glyph advance for the controls, so fold them out first. That
+     * gives the same width as AOSP and also folds CRLF as one break.
+     */
+    private static String tartineFoldLineBreaks(String text) {
+        StringBuilder folded = null;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '\n' || c == '\r') {
+                if (folded == null) {
+                    folded = new StringBuilder(text.length());
+                    folded.append(text, 0, i);
+                }
+            } else if (folded != null) {
+                folded.append(c);
+            }
+        }
+        return folded == null ? text : folded.toString();
+    }
+
+    private float tartineMeasureWholeText(String text) {
+        if (text == null || text.isEmpty()) return 0.0f;
+        return tartineGfxFont().measureTextWidth(tartineFoldLineBreaks(text));
+    }
+
     public float measureText(char[] text, int start, int count) {
         if (text == null || count <= 0) return 0.0f;
-        return tartineGfxFont().measureTextWidth(new String(text, start, count));
+        return tartineMeasureWholeText(new String(text, start, count));
     }
 
     public float measureText(CharSequence text, int start, int end) {
         if (text == null || start >= end) return 0.0f;
-        return tartineGfxFont()
-                .measureTextWidth(text.subSequence(start, end).toString());
+        return tartineMeasureWholeText(
+                text.subSequence(start, end).toString());
     }
 
     public float measureText(String text) {
-        if (text == null) return 0.0f;
-        return tartineGfxFont().measureTextWidth(text);
+        return tartineMeasureWholeText(text);
     }
 
     public float measureText(String text, int start, int end) {
         if (text == null || start >= end) return 0.0f;
-        return tartineGfxFont().measureTextWidth(text.substring(start, end));
+        return tartineMeasureWholeText(text.substring(start, end));
     }
 
     public void reset() {

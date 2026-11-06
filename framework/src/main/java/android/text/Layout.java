@@ -123,6 +123,9 @@ import java.util.List;
         for (int line = 0; line < lines; line++) {
             int newline = body.indexOf('\n', start);
             int textEnd = newline < 0 ? body.length() : newline;
+            // Deviation from AOSP: drop the '\r' of a CRLF break from the
+            // drawn line. Minikin gives it zero advance; Skia would draw a
+            // missing-glyph box, so it never reaches the backend.
             if (textEnd > start && body.charAt(textEnd - 1) == '\r') {
                 textEnd--;
             }
@@ -223,9 +226,13 @@ import java.util.List;
             int end = Math.max(start, Math.min(arg2, arg0.length()));
             body = arg0.subSequence(start, end);
         }
-        // Intrinsic width is the widest explicit line, not the width of the
-        // whole string with the newlines folded in: Compose asks for this
-        // through LayoutIntrinsics to size a Text node.
+        // AOSP Layout.getDesiredWidthWithLimit walks each '\n' paragraph and
+        // returns the widest measurePara width (core/java/android/text/
+        // Layout.java:271-296), which is also what Compose's LayoutIntrinsics
+        // asks for when sizing a Text node. Deviation: Trim '\r' from CRLF
+        // before measuring. AOSP includes it in the paragraph, but Minikin
+        // gives control characters zero advance; trimming also keeps the
+        // '\r' out of the width in this backend.
         String text = body.toString();
         float widest = 0.0f;
         int widestLength = 0;

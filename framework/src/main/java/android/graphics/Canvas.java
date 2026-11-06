@@ -5,7 +5,6 @@ import android.graphics.text.MeasuredText;
 import tartine.gfx.GfxCanvas;
 import tartine.gfx.GfxClipMode;
 import tartine.gfx.GfxFont;
-import tartine.gfx.GfxFontMetrics;
 import tartine.gfx.GfxPaint;
 import tartine.gfx.GfxPaintStyle;
 import tartine.gfx.GfxPicture;
@@ -423,8 +422,11 @@ import tartine.gfx.GfxRect;
      *
      *  <p>Explicit newlines advance to the next baseline instead of reaching
      *  the backend as a glyph (Skia would draw the missing-glyph box). This
-     *  keeps direct {@code Canvas.drawText} calls consistent with the line
-     *  breaks the framework's Layout applies. */
+     *  split is a Tartine extension: AOSP's Canvas.drawText shapes the whole
+     *  run and Minikin gives the controls zero advance. The advance comes
+     *  from {@link Paint#tartineLineHeight()}, Tartine StaticLayout's no-pad
+     *  line box, so the two paths cannot drift on fonts with a non-zero
+     *  leading. */
     private void drawTextChars(String text, float x, float y, Paint paint) {
         if (text == null || text.isEmpty()) return;
         if (gfx == null || paint == null) return;
@@ -435,12 +437,7 @@ import tartine.gfx.GfxRect;
             gfx.drawText(text, x, y, font, gfxPaint);
             return;
         }
-        GfxFontMetrics metrics = font.getMetrics();
-        float lineHeight = metrics.descent - metrics.ascent + metrics.leading;
-        if (!(lineHeight > 0.0f)) {
-            lineHeight = paint.getTextSize() > 0.0f
-                    ? paint.getTextSize() : 14.0f;
-        }
+        float lineHeight = paint.tartineLineHeight();
         float baseline = y;
         int start = 0;
         while (true) {

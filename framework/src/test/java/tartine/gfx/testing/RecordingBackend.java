@@ -26,9 +26,13 @@ import tartine.gfx.GfxTypeface;
  */
 public final class RecordingBackend implements GfxBackend {
 
-    /** Fixed metrics every {@link FakeFont} reports. */
+    /** Default metrics every {@link FakeFont} reports. */
     public static final GfxFontMetrics METRICS =
             new GfxFontMetrics(-17.0f, -15.0f, 4.0f, 5.0f, 0.0f);
+
+    /** Metrics new fonts report. Tests may replace this before creating a
+     *  Paint to exercise a non-zero leading or zero metrics. */
+    public GfxFontMetrics metrics = METRICS;
 
     /** Fixed advance per character reported by {@link FakeFont}. */
     public static final float GLYPH_WIDTH = 6.0f;
@@ -75,7 +79,7 @@ public final class RecordingBackend implements GfxBackend {
     @Override
     public GfxFont newFont(GfxTypeface typeface, float size) {
         calls.add("newFont(" + size + ")");
-        FakeFont font = new FakeFont(size, calls);
+        FakeFont font = new FakeFont(size, metrics, calls);
         fonts.add(font);
         lastFont = font;
         return font;
@@ -298,18 +302,24 @@ public final class RecordingBackend implements GfxBackend {
     /** Font with fixed metrics and per-character advance. */
     public static final class FakeFont implements GfxFont {
         private final float size;
+        private final GfxFontMetrics metrics;
         private final List<String> calls;
         private boolean closed;
 
         FakeFont(float size, List<String> calls) {
+            this(size, METRICS, calls);
+        }
+
+        FakeFont(float size, GfxFontMetrics metrics, List<String> calls) {
             this.size = size;
+            this.metrics = metrics;
             this.calls = calls;
         }
 
         @Override
         public GfxFontMetrics getMetrics() {
             calls.add("font.metrics");
-            return METRICS;
+            return metrics;
         }
 
         @Override
@@ -321,8 +331,8 @@ public final class RecordingBackend implements GfxBackend {
         @Override
         public GfxRect measureText(String text) {
             calls.add("font.measure(" + text + ")");
-            return new GfxRect(0.0f, METRICS.ascent,
-                    GLYPH_WIDTH * text.length(), METRICS.descent);
+            return new GfxRect(0.0f, metrics.ascent,
+                    GLYPH_WIDTH * text.length(), metrics.descent);
         }
 
         @Override
