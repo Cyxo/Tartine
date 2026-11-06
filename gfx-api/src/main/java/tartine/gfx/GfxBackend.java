@@ -85,8 +85,13 @@ public interface GfxBackend {
     /**
      * Creates a font for {@code typeface} at {@code size} pixels. The caller
      * owns and closes it.
+     *
+     * <p>{@code subpixel} mirrors {@code Paint.SUBPIXEL_TEXT_FLAG}: when it is
+     * off (the Android default) a backend rounds each glyph advance to an
+     * integer before reporting a width, matching Minikin's fixed-point
+     * advances. When it is on, the raw fractional advance is reported.
      */
-    GfxFont newFont(GfxTypeface typeface, float size);
+    GfxFont newFont(GfxTypeface typeface, float size, boolean subpixel);
 
     /**
      * Decodes encoded image bytes (PNG/JPEG/WebP), or returns {@code null}

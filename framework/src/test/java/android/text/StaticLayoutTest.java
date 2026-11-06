@@ -10,9 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * AOSP line algebra: StaticLayout.generate stores
- * {@code above}/{@code below} from the font metrics (ascent/descent, or
- * top/bottom with includePad), folds line spacing into the descent, and
- * Layout.getLineBaseline is {@code getLineTop(line+1) - getLineDescent(line)}.
+ * {@code above}/{@code below} from the integer {@link Paint.FontMetricsInt}
+ * (ascent/descent, or top/bottom on the first/last line when includePad),
+ * folds line spacing into the descent, and Layout.getLineBaseline is
+ * {@code getLineTop(line+1) - getLineDescent(line)}.
  * Source: aosp-mirror/platform_frameworks_base
  * core/java/android/text/StaticLayout.java (generate) and
  * core/java/android/text/Layout.java (getHeight/getLineBaseline).
@@ -339,5 +340,51 @@ class StaticLayoutTest {
         assertEquals(57, layout.getHeight());
         assertEquals(0.0f, layout.getLineMax(1));
         assertEquals(53, layout.getLineBaseline(2));
+    }
+
+    @Test
+    void builderDefaultsToIncludePadLikeAosp() {
+        StaticLayout layout = StaticLayout.Builder
+                .obtain("hi", 0, 2, new FixedPaint(), 100)
+                .build();
+        // No setIncludePad: AOSP defaults to true, so top/bottom pad the box.
+        assertEquals(22, layout.getHeight());          // bottom - top
+        assertEquals(17, layout.getLineBaseline(0));   // -top
+    }
+
+    @Test
+    void includePadPadsOnlyTheFirstAndLastLines() {
+        StaticLayout layout = build("a\nb", 0, 3, true, 0.0f, 1.0f,
+                new FixedPaint());
+        // AOSP StaticLayout.generate: first line above=top, last line
+        // below=bottom; interior lines keep ascent/descent.
+        assertEquals(41, layout.getHeight());          // 21 + 20
+        assertEquals(21, layout.getLineTop(1));
+        assertEquals(41, layout.getLineTop(2));
+        assertEquals(17, layout.getLineBaseline(0));   // 21 - descent(4)
+        assertEquals(36, layout.getLineBaseline(1));   // 41 - bottom(5)
+        assertEquals(4, layout.getLineDescent(0));
+        assertEquals(5, layout.getLineDescent(1));
+    }
+
+    @Test
+    void deviceFontMetricsIntFollowsTheAospLineAlgebra() {
+        // A Pixel-class device reports these FontMetricsInt at 48px.
+        TextPaint paint = new FixedPaint(48.0f, -45.0f, 12.0f, -51.0f, 14.0f);
+        Paint.FontMetricsInt fm = paint.getFontMetricsInt();
+        assertEquals(-51, fm.top);       // floor
+        assertEquals(-45, fm.ascent);    // round
+        assertEquals(12, fm.descent);    // round
+        assertEquals(14, fm.bottom);     // ceil
+        assertEquals(0, fm.leading);
+        assertEquals(57, paint.getFontMetricsInt(fm)); // descent-ascent+leading
+
+        // No pad: two lines of (descent - ascent).
+        assertEquals(114, build("a\nb", 0, 3, false, 0.0f, 1.0f, paint)
+                .getHeight());
+        // includePad: (descent - top) + (bottom - ascent), not two padded
+        // lines. This is the difference the device line height exposed.
+        assertEquals(122, build("a\nb", 0, 3, true, 0.0f, 1.0f, paint)
+                .getHeight());
     }
 }

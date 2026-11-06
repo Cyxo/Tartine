@@ -87,6 +87,7 @@ import tartine.gfx.GfxTypeface;
     private Cleaner.Cleanable tartineFontCleanable;
     private float tartineFontSize;
     private GfxTypeface tartineFontTypeface;
+    private boolean tartineFontSubpixel;
 
     public Paint() {
         // AOSP Paint.java:680-682: Paint() == Paint(ANTI_ALIAS_FLAG)
@@ -193,25 +194,6 @@ import tartine.gfx.GfxTypeface;
         return fm;
     }
 
-    /**
-     * Internal seam: baseline-to-baseline pitch for an embedded {@code '\n'}
-     * run. Mirrors Tartine's default no-pad line box in {@code Layout}
-     * (integer ascent/descent with the same zero-metric fallbacks), so
-     * {@link Canvas#drawText} breaks lines at exactly the pitch Tartine's
-     * StaticLayout uses. Leading is deliberately not added: AOSP's
-     * StaticLayout.generate builds the line box from ascent/descent (or
-     * top/bottom with includePad) plus spacing, not from the font leading.
-     */
-    float tartineLineHeight() {
-        Paint.FontMetrics fm = getFontMetrics();
-        float size = mTextSize > 0.0f ? mTextSize : 14.0f;
-        float above = fm.ascent;
-        float below = fm.descent;
-        if (above >= 0.0f) above = -size;
-        if (below <= 0.0f) below = size * 0.25f;
-        return (float) (Math.ceil(below) - Math.floor(above));
-    }
-
     public float getFontMetrics(Paint.FontMetrics arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getFontMetrics(Landroid/graphics/Paint$FontMetrics;)F");
     }
@@ -220,12 +202,23 @@ import tartine.gfx.GfxTypeface;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getFontMetricsForLocale(Landroid/graphics/Paint$FontMetrics;)V");
     }
 
+    /**
+     * AOSP Paint.java getFontMetricsInt(): the native metrics rounded the way
+     * {@code GraphicsJNI::set_metrics_int} does — top floor, ascent/descent
+     * round, bottom ceil, leading round.
+     */
     public Paint.FontMetricsInt getFontMetricsInt() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getFontMetricsInt()Landroid/graphics/Paint$FontMetricsInt;");
+        Paint.FontMetricsInt fm = new Paint.FontMetricsInt();
+        getFontMetricsInt(fm);
+        return fm;
     }
 
+    /** AOSP Paint.java getFontMetricsInt(FontMetricsInt): fills {@code arg0}
+     *  and returns {@code descent - ascent + leading}. */
     public int getFontMetricsInt(Paint.FontMetricsInt arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getFontMetricsInt(Landroid/graphics/Paint$FontMetricsInt;)I");
+        if (arg0 == null) return 0;
+        arg0.set(getFontMetrics());
+        return arg0.descent - arg0.ascent + arg0.leading;
     }
 
     public void getFontMetricsInt(char[] arg0, int arg1, int arg2, int arg3, int arg4, boolean arg5, Paint.FontMetricsInt arg6) {
@@ -443,13 +436,16 @@ import tartine.gfx.GfxTypeface;
     GfxFont tartineGfxFont() {
         float size = mTextSize > 0.0f ? mTextSize : 14.0f;
         GfxTypeface typeface = tartineDefaultTypeface();
+        boolean subpixel = (mFlags & SUBPIXEL_TEXT_FLAG) != 0;
         if (tartineFont == null || tartineFontSize != size
-                || tartineFontTypeface != typeface) {
+                || tartineFontTypeface != typeface
+                || tartineFontSubpixel != subpixel) {
             tartineReleaseFont();
-            GfxFont font = GfxBackend.get().newFont(typeface, size);
+            GfxFont font = GfxBackend.get().newFont(typeface, size, subpixel);
             tartineFont = font;
             tartineFontSize = size;
             tartineFontTypeface = typeface;
+            tartineFontSubpixel = subpixel;
             tartineFontCleanable = TARTINE_CLEANER.register(this, font::close);
         }
         return tartineFont;
@@ -492,8 +488,11 @@ import tartine.gfx.GfxTypeface;
         // AOSP, not a widest-line split.
         String body = tartineFoldLineBreaks(text.substring(start, end));
         if (body.isEmpty()) return;
+        // AOSP Paint.cpp doTextBounds: r.roundOut(&ir) — floor the left/top
+        // edge, ceil the right/bottom edge of the ink rectangle.
         GfxRect r = tartineGfxFont().measureText(body);
-        bounds.set(0, 0, Math.round(r.width()), Math.round(r.height()));
+        bounds.set((int) Math.floor(r.left), (int) Math.floor(r.top),
+                (int) Math.ceil(r.right), (int) Math.ceil(r.bottom));
     }
 
     public Locale getTextLocale() {
@@ -606,7 +605,8 @@ import tartine.gfx.GfxTypeface;
     }
 
     public final boolean isSubpixelText() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->isSubpixelText()Z");
+        // AOSP Paint.java:985-987.
+        return (mFlags & SUBPIXEL_TEXT_FLAG) != 0;
     }
 
     public final boolean isUnderlineText() {
@@ -622,7 +622,7 @@ import tartine.gfx.GfxTypeface;
      * missing-glyph advance for the controls, so fold them out first. That
      * gives the same width as AOSP and also folds CRLF as one break.
      */
-    private static String tartineFoldLineBreaks(String text) {
+    static String tartineFoldLineBreaks(String text) {
         StringBuilder folded = null;
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
@@ -820,7 +820,13 @@ import tartine.gfx.GfxTypeface;
     }
 
     public void setSubpixelText(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setSubpixelText(Z)V");
+        // AOSP Paint.java:995-997 / Paint.cpp setSubpixelText: set or clear
+        // the SUBPIXEL_TEXT_FLAG bit (it also drives the cached font).
+        if (arg0) {
+            setFlags(getFlags() | SUBPIXEL_TEXT_FLAG);
+        } else {
+            setFlags(getFlags() & ~SUBPIXEL_TEXT_FLAG);
+        }
     }
 
     public void setTextAlign(Paint.Align arg0) {

@@ -14,8 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Layout.draw must walk the line table, not hand the whole string to the
  * backend: Skia renders '\n' as a missing-glyph box. The recording backend's
- * fixed metrics (ascent -15, descent 4, leading 0) put line 0 at baseline 15
- * and line 1 at 34.
+ * fixed metrics (top -17, ascent -15, descent 4, bottom 5, leading 0) with the
+ * AOSP default includePad put line 0 at baseline 17 (top..descent) and line 1
+ * at 36 (ascent..bottom).
  */
 class LayoutDrawTest {
 
@@ -43,7 +44,7 @@ class LayoutDrawTest {
                 .filter(call -> call.startsWith("drawText("))
                 .toList();
         assertEquals(2, draws.size());
-        assertTrue(draws.get(0).startsWith("drawText(a,0.0,15.0,"));
-        assertTrue(draws.get(1).startsWith("drawText(b,0.0,34.0,"));
+        assertTrue(draws.get(0).startsWith("drawText(a,0.0,17.0,"));
+        assertTrue(draws.get(1).startsWith("drawText(b,0.0,36.0,"));
     }
 }

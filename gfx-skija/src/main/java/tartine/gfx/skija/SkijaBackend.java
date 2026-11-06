@@ -102,12 +102,13 @@ public final class SkijaBackend implements GfxBackend {
     }
 
     @Override
-    public GfxFont newFont(GfxTypeface typeface, float size) {
+    public GfxFont newFont(GfxTypeface typeface, float size, boolean subpixel) {
         if (!(typeface instanceof SkijaTypeface)) {
             throw new IllegalArgumentException(
                     "Tartine: SkijaBackend.newFont requires a SkijaTypeface");
         }
-        return new SkijaFont(((SkijaTypeface) typeface).typeface(), size);
+        return new SkijaFont(((SkijaTypeface) typeface).typeface(), size,
+                subpixel);
     }
 
     @Override

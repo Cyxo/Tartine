@@ -77,8 +77,8 @@ public final class RecordingBackend implements GfxBackend {
     }
 
     @Override
-    public GfxFont newFont(GfxTypeface typeface, float size) {
-        calls.add("newFont(" + size + ")");
+    public GfxFont newFont(GfxTypeface typeface, float size, boolean subpixel) {
+        calls.add("newFont(" + size + "," + subpixel + ")");
         FakeFont font = new FakeFont(size, metrics, calls);
         fonts.add(font);
         lastFont = font;

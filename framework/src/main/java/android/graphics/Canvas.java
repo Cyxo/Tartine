@@ -4,7 +4,6 @@ import android.graphics.fonts.Font;
 import android.graphics.text.MeasuredText;
 import tartine.gfx.GfxCanvas;
 import tartine.gfx.GfxClipMode;
-import tartine.gfx.GfxFont;
 import tartine.gfx.GfxPaint;
 import tartine.gfx.GfxPaintStyle;
 import tartine.gfx.GfxPicture;
@@ -420,39 +419,18 @@ import tartine.gfx.GfxRect;
      *  none). Rootless canvases skip (no device to draw onto). The font is
      *  owned and cached by the Paint, so it is not closed here.
      *
-     *  <p>Explicit newlines advance to the next baseline instead of reaching
-     *  the backend as a glyph (Skia would draw the missing-glyph box). This
-     *  split is a Tartine extension: AOSP's Canvas.drawText shapes the whole
-     *  run and Minikin gives the controls zero advance. The advance comes
-     *  from {@link Paint#tartineLineHeight()}, Tartine StaticLayout's no-pad
-     *  line box, so the two paths cannot drift on fonts with a non-zero
-     *  leading. */
+     *  <p>AOSP's Canvas.drawText shapes the whole run, and Minikin gives
+     *  {@code '\n'}/{@code '\r'} zero advance and no glyph: a device renders
+     *  {@code "a\nb"} as {@code "ab"} on one baseline. Fold the controls out
+     *  before handing the run to Skia, which would otherwise draw a
+     *  missing-glyph box for them. Because they carry zero advance, the
+     *  remaining glyphs stay in the same positions. */
     private void drawTextChars(String text, float x, float y, Paint paint) {
         if (text == null || text.isEmpty()) return;
         if (gfx == null || paint == null) return;
-        GfxFont font = paint.tartineGfxFont();
-        GfxPaint gfxPaint = paint.tartineGfx();
-        int newline = text.indexOf('\n');
-        if (newline < 0) {
-            gfx.drawText(text, x, y, font, gfxPaint);
-            return;
-        }
-        float lineHeight = paint.tartineLineHeight();
-        float baseline = y;
-        int start = 0;
-        while (true) {
-            newline = text.indexOf('\n', start);
-            int end = newline < 0 ? text.length() : newline;
-            int textEnd = end > start && text.charAt(end - 1) == '\r'
-                    ? end - 1 : end;
-            if (textEnd > start) {
-                gfx.drawText(text.substring(start, textEnd), x, baseline,
-                        font, gfxPaint);
-            }
-            if (newline < 0) break;
-            baseline += lineHeight;
-            start = newline + 1;
-        }
+        String body = Paint.tartineFoldLineBreaks(text);
+        if (body.isEmpty()) return;
+        gfx.drawText(body, x, y, paint.tartineGfxFont(), paint.tartineGfx());
     }
 
     public void drawTextOnPath(char[] arg0, int arg1, int arg2, Path arg3, float arg4, float arg5, Paint arg6) {

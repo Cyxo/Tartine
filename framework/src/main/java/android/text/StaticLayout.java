@@ -59,7 +59,9 @@ public class StaticLayout extends Layout {
         private float spacingMul = Layout.DEFAULT_LINESPACING_MULTIPLIER;
         private float spacingAdd = Layout.DEFAULT_LINESPACING_ADDITION;
         private int maxLines = Integer.MAX_VALUE;
-        private boolean includePad = false;
+        // AOSP StaticLayout.Builder defaults includePad to true, so a layout
+        // built without setIncludePad uses top/bottom on the outer edges.
+        private boolean includePad = true;
         private boolean fallbackLineSpacing = false;
 
         private Builder() { }

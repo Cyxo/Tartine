@@ -68,34 +68,45 @@ import java.util.List;
     /**
      * Explicit line breaks ('\n') split the text into lines with the AOSP
      * StaticLayout.generate line algebra
-     * (frameworks-base core/java/android/text/StaticLayout.java:1153-1256):
-     * {@code above}/{@code below} come from the font metrics (ascent/descent,
-     * or top/bottom when includePad), line spacing adds
+     * (frameworks-base core/java/android/text/StaticLayout.java:754-1281):
+     * the line box comes from the paint's integer {@code FontMetricsInt}
+     * (ascent/descent, or top/bottom when includePad), line spacing adds
      * {@code (below-above)*(spacingMul-1)+spacingAdd}, and the stored descent
-     * is {@code below + extra}. Layout.getLineBaseline is then
-     * {@code getLineTop(line+1) - getLineDescent(line)} and Layout.getHeight
-     * is {@code getLineTop(getLineCount())}
+     * is {@code below + extra}. {@code includePad} pads only the first line's
+     * top ({@code above = fm.top}) and the last line's bottom
+     * ({@code below = fm.bottom}); interior lines keep ascent/descent.
+     * Layout.getLineBaseline is {@code getLineTop(line+1) - getLineDescent(line)}
+     * and Layout.getHeight is {@code getLineTop(getLineCount())}
      * (core/java/android/text/Layout.java:1233-1235 and :2820-2823).
+     *
+     * <p>The line box follows the integer metrics (top floor, ascent/descent
+     * round, bottom ceil — {@code GraphicsJNI::set_metrics_int}), matching a
+     * device rather than the raw float ascent/descent Tartine used before.
+     *
+     * <p>Deviation kept from AOSP: spacing {@code extra} is applied to the
+     * last line too (AOSP skips it unless {@code addLastLineLineSpacing} is
+     * set).
      *
      * <p>Only explicit newlines break here; width-based word wrapping is still
      * outside this baseline.
      */
     protected void recomputeLineMetrics() {
         if (this.paint == null) this.paint = new TextPaint();
-        float size = this.paint.getTextSize() > 0.0f
-                ? this.paint.getTextSize() : 14.0f;
-        Paint.FontMetrics fm = this.paint.getFontMetrics();
-        float above = this.includePad ? fm.top : fm.ascent;
-        float below = this.includePad ? fm.bottom : fm.descent;
-        if (above >= 0.0f) above = -size;
-        if (below <= 0.0f) below = size * 0.25f;
-        int intAbove = (int) Math.floor(above);
-        int intBelow = (int) Math.ceil(below);
-        float ex = (intBelow - intAbove) * (this.spacingMul - 1.0f)
-                + this.spacingAdd;
-        int extra = ex >= 0.0f
-                ? (int) (ex + 0.5f) : -(int) (-ex + 0.5f);
-        int lineHeight = (intBelow - intAbove) + extra;
+        int size = Math.round(this.paint.getTextSize() > 0.0f
+                ? this.paint.getTextSize() : 14.0f);
+        // AOSP StaticLayout.generate reads Paint.getFontMetricsInt(); a
+        // zero-metric face (no installed font) falls back to the text size so
+        // the layout still has a usable box. AOSP's real fonts are never
+        // all-zero.
+        Paint.FontMetricsInt fm = this.paint.getFontMetricsInt();
+        int ascent = fm.ascent;
+        int descent = fm.descent;
+        int top = fm.top;
+        int bottom = fm.bottom;
+        if (ascent >= 0) ascent = -size;
+        if (descent <= 0) descent = size / 4;
+        if (top >= 0) top = -size;
+        if (bottom <= 0) bottom = size / 4;
 
         String body = this.text == null ? "" : this.text.toString();
         if (body.isEmpty()) {
@@ -120,6 +131,7 @@ import java.util.List;
         int[] descents = new int[lines];
         int[] extras = new int[lines];
         int start = 0;
+        int v = 0;
         for (int line = 0; line < lines; line++) {
             int newline = body.indexOf('\n', start);
             int textEnd = newline < 0 ? body.length() : newline;
@@ -129,16 +141,28 @@ import java.util.List;
             if (textEnd > start && body.charAt(textEnd - 1) == '\r') {
                 textEnd--;
             }
+            // AOSP StaticLayout.generate: includePad only replaces the first
+            // line's above (top) and the last line's below (bottom).
+            int above = ascent;
+            int below = descent;
+            if (this.includePad && line == 0) above = top;
+            if (this.includePad && line == lines - 1) below = bottom;
+            double ex = (below - above) * (this.spacingMul - 1.0f)
+                    + this.spacingAdd;
+            int extra = ex >= 0.0
+                    ? (int) (ex + 0.5) : -(int) (-ex + 0.5);
+
             starts[line] = start;
             textEnds[line] = textEnd;
             ends[line] = newline < 0 ? body.length() : newline + 1;
-            tops[line] = line * lineHeight;
-            descents[line] = intBelow + extra;
+            tops[line] = v;
+            descents[line] = below + extra;
             extras[line] = extra;
+            v += (below - above) + extra;
             start = newline < 0 ? body.length() : newline + 1;
         }
-        tops[lines] = lines * lineHeight;
-        this.height = tops[lines];
+        tops[lines] = v;
+        this.height = v;
         this.lineStarts = starts;
         this.lineTextEnds = textEnds;
         this.lineEnds = ends;
@@ -535,12 +559,7 @@ import java.util.List;
     public Paint.FontMetricsInt getLineFontMetrics(int arg0) {
         Paint.FontMetricsInt fm = new Paint.FontMetricsInt();
         if (paint != null) {
-            Paint.FontMetrics m = paint.getFontMetrics();
-            fm.ascent = (int) m.ascent;
-            fm.descent = (int) m.descent;
-            fm.top = (int) m.top;
-            fm.bottom = (int) m.bottom;
-            fm.leading = (int) m.leading;
+            fm.set(paint.getFontMetricsInt());
         }
         return fm;
     }

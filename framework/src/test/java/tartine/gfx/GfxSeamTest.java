@@ -187,7 +187,7 @@ class GfxSeamTest {
         FakeCanvas canvas = canvas();
         GfxPaint paint = new GfxPaint(0xFF000000, false,
                 GfxPaintStyle.FILL, 0.0f);
-        FakeFont font = (FakeFont) backend.newFont(backend.typeface, 14.0f);
+        FakeFont font = (FakeFont) backend.newFont(backend.typeface, 14.0f, false);
 
         canvas.drawText("abc", 1, 2, font, paint);
         assertFalse(font.isClosed());
@@ -238,7 +238,7 @@ class GfxSeamTest {
 
     @Test
     void fontMetricsAndMeasurementsAreDeterministic() {
-        FakeFont font = (FakeFont) backend.newFont(backend.typeface, 14.0f);
+        FakeFont font = (FakeFont) backend.newFont(backend.typeface, 14.0f, false);
 
         assertEquals(new GfxFontMetrics(-17, -15, 4, 5, 0),
                 font.getMetrics());

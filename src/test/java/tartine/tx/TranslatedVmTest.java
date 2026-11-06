@@ -417,7 +417,10 @@ final class TranslatedVmTest {
         assertEquals(18, length(layout));
         assertEquals("hello world test", element(layout, 13));
         assertTrue(element(layout, 14) instanceof TextPaint);
-        assertEquals(8, (int) (Integer) element(layout, 15));
+        // getLineBaseline(1) on a one-line layout: Tartine clamps to the final
+        // line box, so this is height - descent. With AOSP's default
+        // includePad (top..bottom on a single line) that is -floor(top).
+        assertEquals(9, (int) (Integer) element(layout, 15));
     }
 
     @Test

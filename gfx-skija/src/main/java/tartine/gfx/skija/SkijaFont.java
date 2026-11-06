@@ -17,11 +17,17 @@ import tartine.gfx.GfxRect;
 final class SkijaFont implements GfxFont {
 
     private final Font font;
+    private final boolean subpixel;
 
-    SkijaFont(Typeface typeface, float size) {
+    SkijaFont(Typeface typeface, float size, boolean subpixel) {
+        this.subpixel = subpixel;
         font = new Font(typeface, size);
-        font.setSubpixel(true);
-        font.setEdging(FontEdging.SUBPIXEL_ANTI_ALIAS);
+        // AOSP stores SUBPIXEL_TEXT_FLAG in the native SkFont and uses it for
+        // both positioning and the edging fallback; mirror it here so the
+        // draw path and the measurement path agree.
+        font.setSubpixel(subpixel);
+        font.setEdging(subpixel ? FontEdging.SUBPIXEL_ANTI_ALIAS
+                : FontEdging.ANTI_ALIAS);
     }
 
     Font font() {
@@ -37,7 +43,21 @@ final class SkijaFont implements GfxFont {
 
     @Override
     public float measureTextWidth(String text) {
-        return font.measureTextWidth(text);
+        if (subpixel) {
+            return font.measureTextWidth(text);
+        }
+        // Subpixel positioning off: AOSP (Minikin) rounds each glyph advance
+        // to an integer before summing, so measureText("ab") is
+        // round(w(a)) + round(w(b)), not round(w(a) + w(b)). Skia's
+        // setSubpixel(false) does not change measureTextWidth, so round the
+        // shaped advances explicitly.
+        short[] glyphs = font.getStringGlyphs(text);
+        float[] widths = font.getWidths(glyphs);
+        float total = 0.0f;
+        for (float width : widths) {
+            total += Math.round(width);
+        }
+        return total;
     }
 
     @Override

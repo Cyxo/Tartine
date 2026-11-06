@@ -34,7 +34,7 @@ class SkijaBackendTest {
                 assertInstanceOf(SkijaTypeface.class, resolved);
         assertEquals("Roboto", typeface.typeface().getFamilyName());
 
-        GfxFont font = backend.newFont(resolved, 16f);
+        GfxFont font = backend.newFont(resolved, 16f, false);
         try {
             assertTrue(font.measureTextWidth("Tartine") > 0);
         } finally {
@@ -55,6 +55,31 @@ class SkijaBackendTest {
                 .getFamilyName());
         assertSame(((SkijaTypeface) forNull).typeface(),
                 ((SkijaTypeface) forEmpty).typeface());
+    }
+
+    @Test
+    void subpixelOffRoundsEachGlyphAdvanceToAnInteger() {
+        SkijaBackend backend = new SkijaBackend();
+        GfxTypeface resolved = backend.defaultTypeface(new String[] {
+                "Tartine No Such Family"});
+
+        GfxFont subpixel = backend.newFont(resolved, 48f, true);
+        GfxFont integerAdvances = backend.newFont(resolved, 48f, false);
+        try {
+            // "WW" at 48px: raw ~85.17px. Rounding each glyph (43 + 43)
+            // gives 86, whereas rounding the total would keep 85 — the
+            // difference the device's per-character advances exposed.
+            float raw = subpixel.measureTextWidth("WW");
+            float rounded = integerAdvances.measureTextWidth("WW");
+            assertTrue(rounded == Math.round(rounded),
+                    "expected integer advances, got " + rounded);
+            assertTrue(rounded > raw,
+                    "per-glyph rounding (" + rounded + ") should exceed the"
+                            + " raw total (" + raw + ")");
+        } finally {
+            subpixel.close();
+            integerAdvances.close();
+        }
     }
 
     @Test

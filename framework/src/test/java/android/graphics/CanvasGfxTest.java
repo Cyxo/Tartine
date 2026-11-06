@@ -1,7 +1,5 @@
 package android.graphics;
 
-import android.text.StaticLayout;
-import android.text.TextPaint;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -157,7 +155,7 @@ class CanvasGfxTest {
     }
 
     @Test
-    void drawTextBreaksExplicitNewlinesAtFontSpacing() {
+    void drawTextFoldsExplicitNewlinesIntoOneRun() {
         Canvas canvas = canvas(100, 100);
         Paint paint = new Paint(0);
         paint.setTextSize(14.0f);
@@ -167,34 +165,27 @@ class CanvasGfxTest {
         List<String> draws = backend.calls.stream()
                 .filter(call -> call.startsWith("drawText("))
                 .toList();
-        assertEquals(2, draws.size());
-        assertTrue(draws.get(0).startsWith("drawText(a,0.0,15.0,"));
-        // FakeFont ascent/descent gives a 19px line box; leading is ignored.
-        assertTrue(draws.get(1).startsWith("drawText(b,0.0,34.0,"));
+        // AOSP shapes the whole run and gives '\n' zero advance and no glyph,
+        // so a device renders "a\nb" as "ab" on a single baseline.
+        assertEquals(1, draws.size());
+        assertTrue(draws.get(0).startsWith("drawText(ab,0.0,15.0,"));
     }
 
     @Test
-    void newlineAdvanceMatchesStaticLayoutWithNonZeroLeading() {
-        // A line gap that differs from the ascent/descent box: if Canvas
-        // added leading the second baseline would move by 26, not 19.
-        backend.metrics = new GfxFontMetrics(-18.0f, -15.0f, 4.0f, 6.0f, 7.0f);
+    void drawTextFoldsConsecutiveAndCarriageReturnBreaks() {
         Canvas canvas = canvas(100, 100);
-        TextPaint paint = new TextPaint();
+        Paint paint = new Paint(0);
         paint.setTextSize(14.0f);
-        StaticLayout layout = StaticLayout.Builder
-                .obtain("a\nb", 0, 3, paint, 100)
-                .build();
-        assertEquals(19, layout.getLineTop(1));
-        float secondBaseline = 15.0f + layout.getLineTop(1);
 
-        canvas.drawText("a\nb", 0, 15, paint);
+        canvas.drawText("a\n\nb", 0, 0, paint);
+        canvas.drawText("a\r\nb", 0, 0, paint);
 
         List<String> draws = backend.calls.stream()
                 .filter(call -> call.startsWith("drawText("))
                 .toList();
         assertEquals(2, draws.size());
-        assertTrue(draws.get(1).startsWith(
-                "drawText(b,0.0," + secondBaseline + ","));
+        assertTrue(draws.get(0).startsWith("drawText(ab,0.0,0.0,"));
+        assertTrue(draws.get(1).startsWith("drawText(ab,0.0,0.0,"));
     }
 
     @Test
@@ -252,19 +243,51 @@ class CanvasGfxTest {
     }
 
     @Test
-    void drawTextSkipsEmptyNewlineRunsButStillAdvances() {
-        Canvas canvas = canvas(100, 100);
+    void getFontMetricsIntRoundsLikeAosp() {
+        // GraphicsJNI::set_metrics_int: top floor, ascent/descent round,
+        // bottom ceil, leading round.
+        backend.metrics = new GfxFontMetrics(-17.4f, -15.6f, 4.4f, 5.2f, 0.3f);
         Paint paint = new Paint(0);
         paint.setTextSize(14.0f);
 
-        canvas.drawText("a\n\nb", 0, 0, paint);
+        Paint.FontMetricsInt fm = paint.getFontMetricsInt();
+        assertEquals(-18, fm.top);       // floor(-17.4)
+        assertEquals(-16, fm.ascent);    // round(-15.6)
+        assertEquals(4, fm.descent);     // round(4.4)
+        assertEquals(6, fm.bottom);      // ceil(5.2)
+        assertEquals(0, fm.leading);     // round(0.3)
 
-        List<String> draws = backend.calls.stream()
-                .filter(call -> call.startsWith("drawText("))
-                .toList();
-        assertEquals(2, draws.size());
-        assertTrue(draws.get(0).startsWith("drawText(a,0.0,0.0,"));
-        assertTrue(draws.get(1).startsWith("drawText(b,0.0,38.0,"));
+        Paint.FontMetricsInt into = new Paint.FontMetricsInt();
+        assertEquals(4 - (-16) + 0, paint.getFontMetricsInt(into));
+        assertEquals(fm, into);
+    }
+
+    @Test
+    void subpixelTextFlagRoundTripsAndRebuildsTheFont() {
+        // AOSP's HIDDEN_DEFAULT_PAINT_FLAGS does not set SUBPIXEL_TEXT_FLAG,
+        // so a fresh paint measures with integer advances.
+        Paint paint = new Paint(0);
+        paint.setTextSize(14.0f);
+
+        assertFalse(paint.isSubpixelText());
+        paint.measureText("abc");
+        assertEquals(1, backend.fonts.size());
+        assertTrue(backend.calls.contains("newFont(14.0,false)"));
+
+        paint.setSubpixelText(true);
+        assertTrue(paint.isSubpixelText());
+        assertEquals(Paint.SUBPIXEL_TEXT_FLAG,
+                paint.getFlags() & Paint.SUBPIXEL_TEXT_FLAG);
+        paint.measureText("abc");
+        assertEquals(2, backend.fonts.size());
+        assertTrue(backend.fonts.get(0).isClosed());
+        assertTrue(backend.calls.contains("newFont(14.0,true)"));
+
+        paint.setSubpixelText(false);
+        assertFalse(paint.isSubpixelText());
+        paint.measureText("abc");
+        assertEquals(3, backend.fonts.size());
+        assertTrue(backend.fonts.get(1).isClosed());
     }
 
     @Test
