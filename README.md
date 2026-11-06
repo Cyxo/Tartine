@@ -87,6 +87,19 @@ Single test/class:
 mise exec -- gradle test --tests "tartine.apk.*"
 ```
 
+Pre-commit gate (style + bug/security analysis on every commit):
+
+```sh
+mise run fetch-tools                            # once: Checkstyle jar for the hook
+mise generate git-pre-commit --write --task=pre-commit
+```
+
+The hook runs the suite only when a test source is staged, then Checkstyle on
+the staged Java and the PMD/SpotBugs gate across modules. See
+`config/checkstyle/`, `config/pmd/ruleset.xml` and
+`config/spotbugs/exclude.xml`; the generated `framework/src/main/java`
+skeletons are excluded from all three.
+
 ## APK probes
 
 ```sh
