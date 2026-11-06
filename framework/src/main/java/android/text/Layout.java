@@ -213,8 +213,41 @@ import java.util.List;
     }
 
     public static float getDesiredWidth(CharSequence arg0, int arg1, int arg2, TextPaint arg3) {
-        CharSequence body = (arg0 == null) ? "" : (arg1 == 0 && arg2 == 0 ? arg0 : arg0.subSequence(arg1, Math.min(arg0.length(),arg2)));
-        return arg3 == null ? (float) body.length() * 10.0f : arg3.measureText(body.toString());
+        CharSequence body;
+        if (arg0 == null) {
+            body = "";
+        } else if (arg1 == 0 && arg2 == 0) {
+            body = arg0;
+        } else {
+            int start = Math.max(0, Math.min(arg1, arg0.length()));
+            int end = Math.max(start, Math.min(arg2, arg0.length()));
+            body = arg0.subSequence(start, end);
+        }
+        // Intrinsic width is the widest explicit line, not the width of the
+        // whole string with the newlines folded in: Compose asks for this
+        // through LayoutIntrinsics to size a Text node.
+        String text = body.toString();
+        float widest = 0.0f;
+        int widestLength = 0;
+        int start = 0;
+        while (true) {
+            int newline = text.indexOf('\n', start);
+            int end = newline < 0 ? text.length() : newline;
+            if (end > start && text.charAt(end - 1) == '\r') {
+                end--;
+            }
+            int length = end - start;
+            if (length > widestLength) {
+                widestLength = length;
+            }
+            if (arg3 != null && length > 0) {
+                widest = Math.max(widest,
+                        arg3.measureText(text.substring(start, end)));
+            }
+            if (newline < 0) break;
+            start = newline + 1;
+        }
+        return arg3 == null ? widestLength * 10.0f : widest;
     }
 
     public int getEllipsisCount(int arg0) {

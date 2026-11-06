@@ -205,6 +205,36 @@ class StaticLayoutTest {
     }
 
     @Test
+    void getDesiredWidthUsesTheWidestExplicitLine() {
+        FixedPaint paint = new FixedPaint();
+        // Four characters on the first line, one on the second, two on the
+        // third: the intrinsic width is 4 * 6, not 7 * 6.
+        assertEquals(24.0f, Layout.getDesiredWidth("abcd\nx\nyz", paint));
+        // Trailing and blank lines contribute height, never width.
+        assertEquals(18.0f, Layout.getDesiredWidth("abc\n", paint));
+        assertEquals(18.0f, Layout.getDesiredWidth("abc\n\n", paint));
+        // CRLF: the '\r' is a line terminator, not a glyph.
+        assertEquals(18.0f, Layout.getDesiredWidth("abc\r\nx", paint));
+    }
+
+    @Test
+    void getDesiredWidthSlicesTheRequestedRange() {
+        FixedPaint paint = new FixedPaint();
+        // "ab\ncdef" sliced to [1, 6) is "b\ncde": widest line is 3 chars.
+        assertEquals(18.0f, Layout.getDesiredWidth("ab\ncdef", 1, 6, paint));
+        // A slice that ends on a newline still measures the line it closes.
+        assertEquals(12.0f, Layout.getDesiredWidth("xabc\ny", 2, 5, paint));
+    }
+
+    @Test
+    void getDesiredWidthWithoutPaintFallsBackToLineLength() {
+        // No paint to measure with: widest line length * 10, the documented
+        // fallback on the two-argument overload.
+        assertEquals(30.0f, Layout.getDesiredWidth("abc\nde", null));
+        assertEquals(30.0f, Layout.getDesiredWidth("abc\r\nde", null));
+    }
+
+    @Test
     void zeroPaintMetricsFallBackToTheTextSize() {
         StaticLayout layout = build("hi", 0, 2, false, 0.0f, 1.0f,
                 new FixedPaint(16.0f, 0.0f, 0.0f, 0.0f, 0.0f));
