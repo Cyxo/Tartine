@@ -38,6 +38,10 @@ fetch "baksmali-2.5.2.jar"  "$MAVEN/org/smali/baksmali/2.5.2/baksmali-2.5.2.jar"
 fetch "util-2.5.2.jar"      "$MAVEN/org/smali/util/2.5.2/util-2.5.2.jar"           27118
 fetch "jcommander-1.64.jar" "$MAVEN/com/beust/jcommander/1.64/jcommander-1.64.jar" 65585
 fetch "apktool_3.0.3.jar"   "https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_3.0.3.jar" 15478013
+# All-in-one jar: Checkstyle publishes it as a release asset, not on Central.
+fetch "checkstyle-14.4.0-all.jar" \
+      "https://github.com/checkstyle/checkstyle/releases/download/checkstyle-14.4.0/checkstyle-14.4.0-all.jar" \
+      15225265
 
 echo ""
 echo "tools/ is ready."

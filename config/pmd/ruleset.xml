@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<ruleset name="tartine"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0
+                             https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+    <description>
+        Tartine's bug/security gate (pre-commit and CI). PMD stands in for
+        SonarLint: there is no Sonar server or token here, so the same class
+        of finding is enforced locally.
+
+        Enabled: PMD's errorprone and security categories, restricted to
+        priority 3 (medium) or higher by the Gradle pmd task. These are the
+        rules that flag likely bugs and vulnerabilities, not formatting.
+
+        Excluded, with reasons (all are style/design or false positives in
+        this codebase, not bugs or security):
+        * AvoidDuplicateLiterals - DRY guideline; opcode/descriptor literals
+          repeat by nature in a DEX translator.
+        * AvoidLiteralsInIfCondition - readability only; comparing against
+          opcode and constant values is the point of the translator.
+        * DoNotHardCodeSDCard - flags the guest VFS's own /sdcard mount
+          path, which is not host storage.
+        * UseProperClassLoader - J2EE-specific; this is a desktop host.
+        * NullAssignment - clearing fields/locals is intentional here.
+        * AvoidCatchingGenericException - the translator catches broadly to
+          degrade an unresolved guest method to its named gap.
+        * AvoidFieldNameMatchingMethodName - naming only.
+        * AvoidAccessibilityAlteration - setAccessible IS the reflection
+          bridge and the probe harness (guest/ and Main); it is sandboxed.
+        * ReturnEmptyCollectionRatherThanNull - GuestFiles mirrors
+          java.io.File.list, whose contract is null when not a directory.
+        * AvoidBranchingStatementAsLastInLoop - style only.
+        * AssignmentInOperand - `while ((pos = next()) != -1)` is the
+          deliberate cursor idiom in the binary parsers.
+        * AvoidInstanceofChecksInCatchClause - style only; the multi-catch
+          rewrite adds no safety here.
+
+        CloseResource stays on, but limited to genuinely ownerless resources
+        (IO streams, the JDK file manager, executors, java.util streams).
+        The gfx seam, Skija natives and GLFW callbacks are owned by a field,
+        a caller or a singleton, and peekPixels()/static-font aliasing makes
+        the default AutoCloseable sweep pure false positives.
+
+        Its allowedResourceTypes keeps PMD's defaults (in-memory byte/char
+        streams need no close) plus two entries:
+        * java.nio.file.FileSystem - the system jrt: filesystem; closing it
+          breaks the JVM.
+        * java.lang.Process - the host theme probes and the Windows junction
+          helper drain and waitFor the child; Process.close() only exists
+          from a JDK newer than our release-21 floor, so destroy() is the
+          most these paths can do, and there is nothing left to release.
+
+        EmptyCatchBlock keeps its default severity but allows blocks that
+        hold only a comment: the translator and the JDK scanner deliberately
+        swallow unresolved-type/lookup failures, and the comment records why.
+
+        Everything else in those two categories is a gate.
+    </description>
+
+    <rule ref="category/java/errorprone.xml">
+        <exclude name="AvoidDuplicateLiterals"/>
+        <exclude name="AvoidLiteralsInIfCondition"/>
+        <exclude name="DoNotHardCodeSDCard"/>
+        <exclude name="UseProperClassLoader"/>
+        <exclude name="NullAssignment"/>
+        <exclude name="AvoidCatchingGenericException"/>
+        <exclude name="AvoidFieldNameMatchingMethodName"/>
+        <exclude name="AvoidAccessibilityAlteration"/>
+        <exclude name="ReturnEmptyCollectionRatherThanNull"/>
+        <exclude name="AvoidBranchingStatementAsLastInLoop"/>
+        <exclude name="AssignmentInOperand"/>
+        <exclude name="AvoidInstanceofChecksInCatchClause"/>
+        <exclude name="CloseResource"/>
+    </rule>
+    <rule ref="category/java/security.xml"/>
+
+    <rule ref="category/java/errorprone.xml/CloseResource">
+        <properties>
+            <property name="types"
+                      value="java.io.Closeable,java.util.stream.BaseStream,javax.tools.JavaFileManager,java.util.concurrent.ExecutorService"/>
+            <property name="allowedResourceTypes"
+                      value="java.io.ByteArrayOutputStream,java.io.ByteArrayInputStream,java.io.StringWriter,java.io.CharArrayWriter,java.util.stream.Stream,java.util.stream.IntStream,java.util.stream.LongStream,java.util.stream.DoubleStream,java.nio.file.FileSystem,java.lang.Process"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
+        <properties>
+            <property name="allowCommentedBlocks" value="true"/>
+        </properties>
+    </rule>
+</ruleset>

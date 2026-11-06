@@ -6,6 +6,10 @@ plugins {
     id 'java-library'
 }
 
+repositories {
+    mavenCentral()
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.release = 21
 }

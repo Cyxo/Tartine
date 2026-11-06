@@ -1,6 +1,8 @@
 plugins {
     id 'java'
     id 'application'
+    id 'pmd'
+    id 'com.github.spotbugs' version '6.5.13'
 }
 
 group = 'tartine'
@@ -52,6 +54,46 @@ dependencies {
 // Java 21 language/API level on every compile; never use source/target instead.
 tasks.withType(JavaCompile).configureEach {
     options.release = 21
+}
+
+// ---------------------------------------------------------------------------
+// Static analysis gate (pre-commit hook and CI).
+//
+// PMD and SpotBugs stand in for SonarLint/SonarQube: the repo has no Sonar
+// server or token, so the hook enforces the same class of findings locally.
+//   * PMD: errorprone + bestpractices + security rule categories at
+//     priority 3 (medium) or higher.
+//   * SpotBugs: max effort, report level medium (medium/high confidence).
+// Both fail the task on any finding (ignoreFailures = false is the default).
+// Applied to every module so the hand-written behavior under framework/ is
+// covered too; the generated skeletons are excluded there by their build file.
+// ---------------------------------------------------------------------------
+subprojects {
+    apply plugin: 'pmd'
+    apply plugin: 'com.github.spotbugs'
+}
+
+allprojects {
+    pmd {
+        toolVersion = '7.29.0'
+        rulesMinimumPriority = 3
+        ruleSetFiles = files("$rootDir/config/pmd/ruleset.xml")
+        consoleOutput = true
+    }
+
+    spotbugs {
+        toolVersion = '4.10.5'
+        effort = 'max'
+        reportLevel = 'medium'
+        excludeFilter = rootProject.file('config/spotbugs/exclude.xml')
+    }
+
+    tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+        reports {
+            html.required = true
+            xml.required = true
+        }
+    }
 }
 
 tasks.named('test', Test) {

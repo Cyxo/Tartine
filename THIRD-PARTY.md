@@ -5,7 +5,7 @@ and resolve from Maven Central. `tools/` holds dev-time CLI oracles
 (downloaded on demand via `mise run fetch-tools`, gitignored, never on
 the runtime classpath). `apks/` (gitignored) holds local test fixtures
 only. Build/test toolchain pins live in `mise.toml` (Java, Gradle) and
-`build.gradle` (JUnit).
+`build.gradle` (JUnit, PMD, SpotBugs).
 
 ## Runtime path (via Gradle / Central + Google Maven)
 
@@ -70,6 +70,28 @@ Files land in `tools/` which is gitignored. Size is verified on download.
 | `util-2.5.2.jar` | 2.5.2 | baksmali runtime dep | Maven Central `org/smali/util/2.5.2/` | BSD 3-Clause |
 | `jcommander-1.64.jar` | 1.64 | baksmali runtime dep (CLI parsing) | Maven Central `com/beust/jcommander/1.64/` | Apache-2.0 |
 | `apktool_3.0.3.jar` | 3.0.3 | Manifest/resource decode oracle | `https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_3.0.3.jar` (no published checksum; size 15 478 013 bytes matched, `version` + fixture decode smoke-tested) | Apache-2.0 |
+| `checkstyle-14.4.0-all.jar` | 14.4.0 | Pre-commit style gate (repo-tuned Google config) | GitHub release `checkstyle/checkstyle` tag `checkstyle-14.4.0` (all-in-one jar; no Maven Central equivalent) | LGPL-2.1 |
+
+Checkstyle is a dev-time gate only: the hook runs it as a CLI over staged
+files, and nothing in the runtime or test classpath references it. The
+permissive-license rule in `AGENTS.md` applies to the runtime path; this
+tool never ships.
+
+## Static analysis (Gradle plugins, dev-time only)
+
+| Artifact | Version | Role | License |
+|---|---|---|---|
+| `net.sourceforge.pmd:pmd-java` (via the Gradle `pmd` plugin) | 7.29.0 | Bug/security rule gate (`config/pmd/ruleset.xml`) | BSD-style (revised BSD) |
+| `com.github.spotbugs` Gradle plugin | 6.5.13 | Runs SpotBugs from the build (plugin itself) | Apache-2.0 |
+| SpotBugs | 4.10.5 | Bytecode bug analysis (`config/spotbugs/exclude.xml` filter) | LGPL-2.1 |
+
+Both analyzers are dev-time only: they inspect build output, are never on the
+runtime classpath, and their findings gate the pre-commit hook and CI.
+
+`config/checkstyle/google_checks.xml` is Checkstyle's own `google_checks.xml`
+kept verbatim as the upstream reference beside the tuned
+`config/checkstyle/checkstyle.xml` (also Checkstyle project content,
+LGPL-2.1).
 
 Example (Windows; `out/` is gitignored scratch):
 

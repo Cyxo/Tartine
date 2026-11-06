@@ -16,6 +16,7 @@
 - Verify: `sh scripts/verify.sh` (all platforms). Runs `mise install` (idempotent) then `gradle test`.
 - Prefer `mise run <task>` (`fetch-tools`/`test`/`build`/`apk`/`run`/`gui`/`dump`/`refs`/`coverage`/`fw-gen`/`shorten`, see `mise tasks ls`): `apk`/`run`/`gui`/`dump`/`refs` launch the last build via direct `java`, no recompile when unchanged. Run `mise trust` after editing `mise.toml` (edits revoke trust).
 - Single test: `mise exec -- gradle test --tests "tartine.apk.*"`.
+- Pre-commit gate: install once with `mise generate git-pre-commit --write --task=pre-commit`; the hook runs `mise run pre-commit` (`scripts/pre-commit.sh`/`.ps1`), which runs the suite only when a test source is staged, then Checkstyle on the staged Java (`config/checkstyle/checkstyle.xml`, repo-tuned Google style; generated `framework/src/main/java` skipped), then PMD (`config/pmd/ruleset.xml`) + SpotBugs (`config/spotbugs/exclude.xml`) across every module. Checkstyle is a CLI jar fetched into `tools/` (`mise run fetch-tools`); PMD/SpotBugs are Gradle plugins. Both analyzers fail on any finding, so a red gate means fix the code (or add a documented, tightly scoped filter entry — never a silent whole-pattern exemption for a real bug class).
 
 ## Debugging probe walls
 - `mise run refs [apk]` is the first stop when `run`/`gui` stops at a named gap or before porting a framework family. It resolves every method/field/type reference and class-hierarchy edge guest-dex-first, then by host reflection, and prints each unresolved one as `kind reference: reason`.

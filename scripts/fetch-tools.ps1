@@ -32,6 +32,13 @@ $tools = @(
         File    = "apktool_3.0.3.jar"
         Url     = "https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_3.0.3.jar"
         Bytes   = 15478013
+    },
+    @{
+        # All-in-one jar: Checkstyle publishes it as a release asset, not on
+        # Maven Central (Central has the plain jar plus separate dependencies).
+        File    = "checkstyle-14.4.0-all.jar"
+        Url     = "https://github.com/checkstyle/checkstyle/releases/download/checkstyle-14.4.0/checkstyle-14.4.0-all.jar"
+        Bytes   = 15225265
     }
 )
 

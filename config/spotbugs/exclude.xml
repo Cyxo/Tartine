@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<!--
+    Tartine's SpotBugs gate (pre-commit and CI).
+
+    SpotBugs stands in for SonarLint's bug/vulnerability analysis. The filter
+    below removes findings that are deliberate designs or detector false
+    positives in this repository, and every entry is scoped as tightly as the
+    finding allows (class or method) with a written rationale. Everything not
+    listed here is enforced at effort=max, reportLevel=medium, so a new bug or
+    exposure in these classes still fails the build.
+
+    The generated tree framework/src/main/java is skipped in
+    framework/build.gradle (see config/checkstyle/checkstyle.xml): on
+    generated skeletons SpotBugs reports structure, not bugs.
+-->
+<FindBugsFilter>
+
+    <!-- Guest-namespace literals. "/sdcard", "/proc/self/maps", "/data/..."
+         are guest VFS paths and the SDK install locations in tests, not host
+         absolute paths. Category STYLE, never a bug. -->
+    <Match>
+        <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
+    </Match>
+
+    <!-- Deliberate tri-state booleans: null means "unknown" or "invalid"
+         (theme probe result, config parse), and every caller tests for null
+         before using the value. Turning these into exceptions or Optionals
+         would change the probe API, not fix a bug. -->
+    <Match>
+        <Bug pattern="NP_BOOLEAN_RETURN_NULL"/>
+    </Match>
+
+    <!-- Stream constructors that must throw before returning: the assertion
+         is that GuestFileInputStream/GuestFileOutputStream refuse the path,
+         so no open stream ever exists to close. -->
+    <Match>
+        <Class name="tartine.guest.GuestFileStreamsTest"/>
+        <Bug pattern="OBL_UNSATISFIED_OBLIGATION"/>
+    </Match>
+    <Match>
+        <Class name="tartine.guest.GuestFileStreamsTest"/>
+        <Bug pattern="OS_OPEN_STREAM"/>
+    </Match>
+
+    <!-- Frame and WindowIcon are hot-path carriers whose array component is
+         the payload. Ownership is documented (postFrame may reuse the frame
+         buffer; the OS copies the icon bytes), so cloning on every access or
+         construction would defeat the contract. -->
+    <Match>
+        <Class name="tartine.graphics.HostDisplay$Frame"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="tartine.graphics.HostDisplay$Frame"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="tartine.graphics.WindowIcon"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="tartine.graphics.WindowIcon"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- GuestSurface.canvas returns the surface's own draw target; that
+         handle is the API, not leaked state. -->
+    <Match>
+        <Class name="tartine.graphics.GuestSurface"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+
+    <!-- The probe-harness resolver returns a caching helper whose caches are
+         an implementation detail; callers only read its problem census. -->
+    <Match>
+        <Class name="tartine.tx.TranslatedLoader"/>
+        <Method name="resolver"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+
+    <!-- Test helper returns the in-memory output stream it just created. -->
+    <Match>
+        <Class name="tartine.sdk.FwIndexLoaderTest$MemoryFileManager$1"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+
+    <!-- RecordingBackend is the test fixture for the renderer seam: its
+         public primitive counters and lists are the assertion surface, and
+         one of them is only written so tests can document the call. -->
+    <Match>
+        <Class name="tartine.gfx.testing.RecordingBackend"/>
+        <Bug pattern="PA_PUBLIC_PRIMITIVE_ATTRIBUTE"/>
+    </Match>
+    <Match>
+        <Class name="tartine.gfx.testing.RecordingBackend"/>
+        <Bug pattern="URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"/>
+    </Match>
+
+    <!-- Purity pins: the ignored return value is the point of the assertion
+         (these accessors have no side effect on an invalid index). -->
+    <Match>
+        <Class name="android.util.SparseBooleanArrayTest"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    </Match>
+
+    <!-- GuestFile deliberately hides File.createTempFile/listRoots with
+         denying statics so a guest that names GuestFile directly hits the
+         same denial as the translator's java.io.File rewrite. -->
+    <Match>
+        <Class name="tartine.guest.GuestFile"/>
+        <Bug pattern="HSM_HIDING_METHOD"/>
+    </Match>
+
+    <!-- The guest reflection bridge constructs guest classes by design; the
+         sandbox policy is enforced before the call. -->
+    <Match>
+        <Class name="tartine.guest.GuestReflect"/>
+        <Method name="newInstance"/>
+        <Bug pattern="REFLC_REFLECTION_MAY_INCREASE_ACCESSIBILITY_OF_CLASS"/>
+    </Match>
+
+    <!-- The test holds the logger only for the duration of the assertion and
+         removes the handler in a finally block; the weak-reference hazard is
+         about long-lived configuration, not this capture. -->
+    <Match>
+        <Class name="tartine.gfx.skija.SkijaBackendTest"/>
+        <Method name="usingTheFallbackIsLogged"/>
+        <Bug pattern="LG_LOST_LOGGER_DUE_TO_WEAK_REFERENCE"/>
+    </Match>
+
+</FindBugsFilter>
