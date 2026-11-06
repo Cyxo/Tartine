@@ -1,5 +1,12 @@
 package tartine.gfx;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,13 +18,6 @@ import tartine.gfx.testing.RecordingBackend.FakeImage;
 import tartine.gfx.testing.RecordingBackend.FakePicture;
 import tartine.gfx.testing.RecordingBackend.FakePictureRecorder;
 import tartine.gfx.testing.RecordingBackend.FakeSurface;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Contract tests for the renderer seam: install lifecycle, clipping,
@@ -65,7 +65,7 @@ class GfxSeamTest {
     }
 
     @Test
-    void installRejectsASecondBackend() {
+    void installRejectsSecondBackend() {
         IllegalStateException error = assertThrows(IllegalStateException.class,
                 () -> GfxBackend.install(new RecordingBackend()));
 
@@ -114,7 +114,7 @@ class GfxSeamTest {
     }
 
     @Test
-    void clipRectDifferenceLeavesAPartialClipNonEmpty() {
+    void clipRectDifferenceLeavesPartialClipNonEmpty() {
         FakeCanvas canvas = canvas();
         assertTrue(canvas.clipRect(0, 0, 100, 100, GfxClipMode.INTERSECT));
 
@@ -275,7 +275,7 @@ class GfxSeamTest {
     }
 
     @Test
-    void surfaceReadbackFillsACallerBuffer() {
+    void surfaceReadbackFillsCallerBuffer() {
         backend.createSurface(4, 2);
         FakeSurface surface = backend.lastSurface;
         int[] out = new int[8];

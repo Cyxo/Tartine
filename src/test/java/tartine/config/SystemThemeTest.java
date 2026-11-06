@@ -1,11 +1,11 @@
 package tartine.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 /** Host light/dark probes, pinned with canned command output (no OS calls). */
 final class SystemThemeTest {

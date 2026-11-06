@@ -1,12 +1,12 @@
 package android.text;
 
-import android.graphics.Paint;
-import android.graphics.Rect;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import android.graphics.Paint;
+import android.graphics.Rect;
+import org.junit.jupiter.api.Test;
 
 /**
  * AOSP line algebra: StaticLayout.generate stores
@@ -281,7 +281,7 @@ class StaticLayoutTest {
     }
 
     @Test
-    void explicitNewlineStartsANewLine() {
+    void explicitNewlineStartsNewLine() {
         StaticLayout layout = build("a\nb", 0, 3, false, 0.0f, 1.0f,
                 new FixedPaint());
         assertEquals(2, layout.getLineCount());

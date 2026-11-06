@@ -1,5 +1,10 @@
 package tartine.sdk;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
@@ -11,6 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.tools.FileObject;
@@ -24,11 +30,6 @@ import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tartine.sdk.FwIndex.FwClass;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the dev-time classfile parser against javac output (including lambdas
@@ -112,7 +113,7 @@ class FwIndexLoaderTest {
     }
 
     private static void writeJar(Path jar, Map<String, byte[]> classes) throws Exception {
-        Files.createDirectories(jar.getParent());
+        Files.createDirectories(Objects.requireNonNull(jar.getParent()));
         try (ZipOutputStream zip = new ZipOutputStream(Files.newOutputStream(jar))) {
             for (Map.Entry<String, byte[]> entry : classes.entrySet()) {
                 zip.putNextEntry(new ZipEntry(entry.getKey().replace('.', '/') + ".class"));
@@ -125,41 +126,55 @@ class FwIndexLoaderTest {
     private static Map<String, byte[]> compile(Map<String, String> sources) throws Exception {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         assertNotNull(compiler, "tests require a JDK");
-        StandardJavaFileManager standard =
-                compiler.getStandardFileManager(null, null, null);
         Map<String, ByteArrayOutputStream> output = new HashMap<>();
-        JavaFileManager files = new ForwardingJavaFileManager<StandardJavaFileManager>(standard) {
-            @Override
-            public JavaFileObject getJavaFileForOutput(Location location, String className,
-                    JavaFileObject.Kind kind, FileObject sibling) {
-                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                output.put(className, bytes);
-                return new SimpleJavaFileObject(
-                        URI.create("mem:///" + className + ".class"), kind) {
+        try (StandardJavaFileManager standard =
+                     compiler.getStandardFileManager(null, null, null);
+                JavaFileManager files = new MemoryFileManager(standard, output)) {
+            List<JavaFileObject> units = new ArrayList<>();
+            for (Map.Entry<String, String> source : sources.entrySet()) {
+                String simple = source.getKey()
+                        .substring(source.getKey().lastIndexOf('.') + 1);
+                units.add(new SimpleJavaFileObject(
+                        URI.create("mem:///" + simple + ".java"),
+                        JavaFileObject.Kind.SOURCE) {
                     @Override
-                    public OutputStream openOutputStream() {
-                        return bytes;
+                    public CharSequence getCharContent(boolean ignoreErrors) {
+                        return source.getValue();
                     }
-                };
+                });
             }
-        };
-        List<JavaFileObject> units = new ArrayList<>();
-        for (Map.Entry<String, String> source : sources.entrySet()) {
-            String simple = source.getKey().substring(source.getKey().lastIndexOf('.') + 1);
-            units.add(new SimpleJavaFileObject(
-                    URI.create("mem:///" + simple + ".java"),
-                    JavaFileObject.Kind.SOURCE) {
+            assertTrue(compiler.getTask(null, files, null, null, null, units).call());
+            Map<String, byte[]> result = new HashMap<>();
+            for (Map.Entry<String, ByteArrayOutputStream> entry : output.entrySet()) {
+                result.put(entry.getKey(), entry.getValue().toByteArray());
+            }
+            return result;
+        }
+    }
+
+    /** In-memory file manager: collects javac's class output by binary name. */
+    private static final class MemoryFileManager
+            extends ForwardingJavaFileManager<StandardJavaFileManager> {
+        private final Map<String, ByteArrayOutputStream> output;
+
+        MemoryFileManager(StandardJavaFileManager standard,
+                Map<String, ByteArrayOutputStream> output) {
+            super(standard);
+            this.output = output;
+        }
+
+        @Override
+        public JavaFileObject getJavaFileForOutput(Location location, String className,
+                JavaFileObject.Kind kind, FileObject sibling) {
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            output.put(className, bytes);
+            return new SimpleJavaFileObject(
+                    URI.create("mem:///" + className + ".class"), kind) {
                 @Override
-                public CharSequence getCharContent(boolean ignoreErrors) {
-                    return source.getValue();
+                public OutputStream openOutputStream() {
+                    return bytes;
                 }
-            });
+            };
         }
-        assertTrue(compiler.getTask(null, files, null, null, null, units).call());
-        Map<String, byte[]> result = new HashMap<>();
-        for (Map.Entry<String, ByteArrayOutputStream> entry : output.entrySet()) {
-            result.put(entry.getKey(), entry.getValue().toByteArray());
-        }
-        return result;
     }
 }

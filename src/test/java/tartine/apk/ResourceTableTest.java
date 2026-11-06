@@ -1,10 +1,10 @@
 package tartine.apk;
 
-import java.util.List;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link ResourceTable} against a hand-built arsc fixture (the

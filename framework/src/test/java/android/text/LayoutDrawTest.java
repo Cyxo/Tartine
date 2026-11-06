@@ -1,5 +1,8 @@
 package android.text;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import java.util.List;
@@ -7,9 +10,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tartine.gfx.GfxBackend;
 import tartine.gfx.testing.RecordingBackend;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Layout.draw must walk the line table, not hand the whole string to the

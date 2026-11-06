@@ -11,8 +11,8 @@ import java.util.Locale;
  * symlink privilege, a directory junction) inside a mount. Tests that need
  * one skip when neither is available.
  */
-public final class TestLinks {
-    private TestLinks() {
+public final class GuestLinks {
+    private GuestLinks() {
     }
 
     /** Creates {@code link} pointing at {@code target}; false when unsupported. */

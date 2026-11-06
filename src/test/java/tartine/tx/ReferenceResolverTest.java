@@ -1,5 +1,9 @@
 package tartine.tx;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -9,10 +13,6 @@ import tartine.dex.Dex;
 import tartine.dex.DexSet;
 import tartine.dex.FixtureDex;
 import tartine.dex.Insn;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Guest/host reference resolution and the up-front unresolved census. */
 final class ReferenceResolverTest {

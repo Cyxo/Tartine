@@ -106,6 +106,7 @@ public final class GuestReflect {
         return type.getDeclaredClasses();
     }
 
+    /** Reflective lookup restricted to guest-visible methods. */
     public static Method getMethod(Class<?> type, String name,
             Class<?>... parameterTypes) throws NoSuchMethodException {
         requireGuestClass(type, "Class.getMethod");
@@ -121,6 +122,7 @@ public final class GuestReflect {
         return method;
     }
 
+    /** Guest-visible public methods; host members are filtered out. */
     public static Method[] getMethods(Class<?> type) {
         requireGuestClass(type, "Class.getMethods");
         return Arrays.stream(type.getMethods())
@@ -128,6 +130,7 @@ public final class GuestReflect {
                 .toArray(Method[]::new);
     }
 
+    /** Reflective field lookup restricted to guest-visible fields. */
     public static Field getField(Class<?> type, String name)
             throws NoSuchFieldException {
         requireGuestClass(type, "Class.getField");
@@ -140,6 +143,7 @@ public final class GuestReflect {
         return field;
     }
 
+    /** Guest-visible public fields; host members are filtered out. */
     public static Field[] getFields(Class<?> type) {
         requireGuestClass(type, "Class.getFields");
         return Arrays.stream(type.getFields())
@@ -158,6 +162,7 @@ public final class GuestReflect {
         return type.getConstructors();
     }
 
+    /** Guest-visible member classes. */
     public static Class<?>[] getClasses(Class<?> type) {
         requireGuestClass(type, "Class.getClasses");
         return Arrays.stream(type.getClasses())
@@ -187,19 +192,7 @@ public final class GuestReflect {
         return type.newInstance();
     }
 
-    // ------------------------------------------------------------------
-    // Member access
-    // ------------------------------------------------------------------
-
-    public static Object invoke(Method method, Object receiver, Object... args)
-            throws IllegalAccessException, InvocationTargetException {
-        if (method == null) {
-            throw new NullPointerException("method");
-        }
-        requireGuestMember(method, "Method.invoke");
-        return method.invoke(receiver, args);
-    }
-
+    /** Reflection entry for {@code Constructor.newInstance}. */
     public static Object newInstance(Constructor<?> constructor, Object... args)
             throws InstantiationException, IllegalAccessException,
             InvocationTargetException {
@@ -208,6 +201,20 @@ public final class GuestReflect {
         }
         requireGuestMember(constructor, "Constructor.newInstance");
         return constructor.newInstance(args);
+    }
+
+    // ------------------------------------------------------------------
+    // Member access
+    // ------------------------------------------------------------------
+
+    /** Reflection entry for {@code Method.invoke}; host members are denied. */
+    public static Object invoke(Method method, Object receiver, Object... args)
+            throws IllegalAccessException, InvocationTargetException {
+        if (method == null) {
+            throw new NullPointerException("method");
+        }
+        requireGuestMember(method, "Method.invoke");
+        return method.invoke(receiver, args);
     }
 
     public static Object get(Field field, Object receiver)

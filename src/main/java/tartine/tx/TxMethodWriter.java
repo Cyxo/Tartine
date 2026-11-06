@@ -34,7 +34,11 @@ import tartine.dex.Insn;
  */
 final class TxMethodWriter implements Opcodes {
     /** Kind chars: narrow-int-family, float, reference, long, double. */
-    private static final char INT = 'I', FLOAT = 'F', OBJ = 'A', LONG = 'J', DOUBLE = 'D';
+    private static final char INT = 'I';
+    private static final char FLOAT = 'F';
+    private static final char OBJ = 'A';
+    private static final char LONG = 'J';
+    private static final char DOUBLE = 'D';
     private static final char UNKNOWN = 0;
 
     private static final int ACC_STATIC = 0x8;
@@ -72,9 +76,10 @@ final class TxMethodWriter implements Opcodes {
 
     private final char[] regKind;
     private final String[] regArray;
-    /** Slot created by new-instance whose <init> has not run yet: the JVM
-     *  verifier only permits <init> and astore on such refs, so a virtual
-     *  call on one is a loud gap (fixture-only shape; real dx never emits). */
+    /** Slot created by new-instance before its constructor runs. The JVM
+     *  verifier only permits {@code <init>} and astore on such refs, so a
+     *  virtual call on one is a loud gap (fixture-only shape; real dx never
+     *  emits). */
     private final boolean[] regUninit;
     /** Fixture shim: move-result slots whose value was already stored. */
     private final Set<Integer> skipInsn = new HashSet<>();
@@ -524,8 +529,6 @@ final class TxMethodWriter implements Opcodes {
                 regKind[r] = OBJ;
                 continue;
             }
-            if (method.owner.contains("TransferParameters")) {
-            }
             throw new TxTranslator.TxGap(method.owner + "->"
                     + method.signature() + " @" + off
                     + " : register v" + r + " joins with kinds " + ks);
@@ -625,7 +628,7 @@ final class TxMethodWriter implements Opcodes {
     /** Stack -> slot store for the given kind; records the slot kind. */
     private void store(int reg, char k) {
         regZero[reg] = false;
-        int slot = slotOf(reg);
+        final int slot = slotOf(reg);
         if (previewing) {
             // Mirror the real pass's value-kind tracking: a later move whose
             // source kind comes from regKind (not a forward scan) must decide
@@ -674,10 +677,18 @@ final class TxMethodWriter implements Opcodes {
             }
         }
         switch (emitKind) {
-            case LONG: mv.visitVarInsn(LSTORE, slot); break;
-            case DOUBLE: mv.visitVarInsn(DSTORE, slot); break;
-            case FLOAT: mv.visitVarInsn(FSTORE, slot); break;
-            case OBJ: mv.visitVarInsn(ASTORE, slot); break;
+            case LONG:
+                mv.visitVarInsn(LSTORE, slot);
+                break;
+            case DOUBLE:
+                mv.visitVarInsn(DSTORE, slot);
+                break;
+            case FLOAT:
+                mv.visitVarInsn(FSTORE, slot);
+                break;
+            case OBJ:
+                mv.visitVarInsn(ASTORE, slot);
+                break;
             default: mv.visitVarInsn(ISTORE, slot);
         }
     }
@@ -700,13 +711,27 @@ final class TxMethodWriter implements Opcodes {
     private int asmAccess() {
         int flags = method.accessFlags;
         int out = 0;
-        if ((flags & 0x1) != 0) out |= ACC_PUBLIC;
-        if ((flags & 0x2) != 0) out |= ACC_PRIVATE;
-        if ((flags & 0x4) != 0) out |= ACC_PROTECTED;
-        if ((flags & ACC_STATIC) != 0) out |= ACC_STATIC;
-        if ((flags & 0x10) != 0) out |= ACC_FINAL;
-        if ((flags & 0x20) != 0) out |= ACC_SYNCHRONIZED;
-        if ((flags & 0x400) != 0) out |= ACC_ABSTRACT;
+        if ((flags & 0x1) != 0) {
+            out |= ACC_PUBLIC;
+        }
+        if ((flags & 0x2) != 0) {
+            out |= ACC_PRIVATE;
+        }
+        if ((flags & 0x4) != 0) {
+            out |= ACC_PROTECTED;
+        }
+        if ((flags & ACC_STATIC) != 0) {
+            out |= ACC_STATIC;
+        }
+        if ((flags & 0x10) != 0) {
+            out |= ACC_FINAL;
+        }
+        if ((flags & 0x20) != 0) {
+            out |= ACC_SYNCHRONIZED;
+        }
+        if ((flags & 0x400) != 0) {
+            out |= ACC_ABSTRACT;
+        }
         return out;
     }
 
@@ -800,7 +825,7 @@ final class TxMethodWriter implements Opcodes {
      * (findAbsoluteInsertIndex: const #1 feeds if-eqz v7 before
      * move-wide v7 recycles the register).
      */
-    private static char zTestOnlyKind() {
+    private static char testOnlyKind() {
         return INT;
     }
 
@@ -814,7 +839,7 @@ final class TxMethodWriter implements Opcodes {
         if (!guard.add(token)) {
             return wide ? LONG : INT;
         }
-        int zTests = 0;
+        int skippedTests = 0;
         for (int i = producerIdx + 1; i < insns.size(); i++) {
             Insn in = insns.get(i);
             List<Integer> rs = in.registers;
@@ -838,8 +863,8 @@ final class TxMethodWriter implements Opcodes {
                 // those tests WERE the consumer (findAbsoluteInsertIndex:
                 // const #1 -> move v7 -> if-eqz v7 -> move-wide v7 re-stores
                 // it; chasing into the new wide value typed the int 1 as J).
-                if (zTests > 0) {
-                    return zTestOnlyKind();
+                if (skippedTests > 0) {
+                    return testOnlyKind();
                 }
                 continue;
             }
@@ -848,8 +873,8 @@ final class TxMethodWriter implements Opcodes {
                 if (dst != reg) {
                     return scanUse(i, dst, true, guard);
                 }
-                if (zTests > 0) {
-                    return zTestOnlyKind();
+                if (skippedTests > 0) {
+                    return testOnlyKind();
                 }
                 continue;
             }
@@ -893,7 +918,7 @@ final class TxMethodWriter implements Opcodes {
                 // (references only via if-eq/if-ne, where the zero side is
                 // regZero), so it demands INT.
                 if (op.endsWith("z")) {
-                    zTests++;
+                    skippedTests++;
                     Insn prod = insns.get(producerIdx);
                     if (!wide && prod.opcode.startsWith("const")
                             && prod.literal != 0) {
@@ -916,8 +941,8 @@ final class TxMethodWriter implements Opcodes {
                     }
                 }
                 if (!source) {
-                    if (zTests > 0) {
-                        return zTestOnlyKind();
+                    if (skippedTests > 0) {
+                        return testOnlyKind();
                     }
                     continue;
                 }
@@ -943,8 +968,8 @@ final class TxMethodWriter implements Opcodes {
                 if (pos == 1) {
                     return OBJ;
                 }
-                if (zTests > 0) {
-                    return zTestOnlyKind();
+                if (skippedTests > 0) {
+                    return testOnlyKind();
                 }
                 continue;
             }
@@ -961,8 +986,8 @@ final class TxMethodWriter implements Opcodes {
                 if (op.startsWith("aget")) {
                     // dst slot overwritten here; next read decides - or a
                     // z-test-only consumer decides INT right here.
-                    if (zTests > 0) {
-                        return zTestOnlyKind();
+                    if (skippedTests > 0) {
+                        return testOnlyKind();
                     }
                     continue;
                 }
@@ -1003,8 +1028,8 @@ final class TxMethodWriter implements Opcodes {
                 if (pos == 0 && rs.size() > 1 && rs.get(1) == reg) {
                     return OBJ;
                 }
-                if (zTests > 0) {
-                    return zTestOnlyKind();
+                if (skippedTests > 0) {
+                    return testOnlyKind();
                 }
                 continue; // dst: overwritten by this get; next read decides
             }
@@ -1051,8 +1076,8 @@ final class TxMethodWriter implements Opcodes {
                         }
                     }
                     if (srcPos < 0) {
-                        if (zTests > 0) {
-                            return zTestOnlyKind();
+                        if (skippedTests > 0) {
+                            return testOnlyKind();
                         }
                         continue;
                     }
@@ -1100,6 +1125,7 @@ final class TxMethodWriter implements Opcodes {
                     case "long": return LONG;
                     case "float": return FLOAT;
                     case "double": return DOUBLE;
+                    default: break;
                 }
             }
             if (op.contains("-long") && !op.startsWith("const")) {
@@ -1117,8 +1143,8 @@ final class TxMethodWriter implements Opcodes {
                 // exception arm const-4 v1, #0 followed the first arm's
                 // const-4 v1, #0, and the catch-all typed the DMZ zero INT,
                 // which boxed the null that join consumers needed OBJ).
-                if (zTests > 0) {
-                    return zTestOnlyKind();
+                if (skippedTests > 0) {
+                    return testOnlyKind();
                 }
                 continue;
             }
@@ -1300,16 +1326,24 @@ final class TxMethodWriter implements Opcodes {
                     // ACONST_NULL directly without store()); guard the unbox
                     // so null reads as 0 instead of NPEing on intValue().
                     Label notNull = new Label();
-                    Label done = new Label();
+                    final Label done = new Label();
                     mv.visitVarInsn(ALOAD, slot);
                     mv.visitInsn(DUP);
                     mv.visitJumpInsn(IFNONNULL, notNull);
                     mv.visitInsn(POP);
                     switch (want) {
-                        case LONG: mv.visitInsn(LCONST_0); break;
-                        case DOUBLE: mv.visitInsn(DCONST_0); break;
-                        case FLOAT: mv.visitInsn(FCONST_0); break;
-                        default: mv.visitInsn(ICONST_0); break;
+                        case LONG:
+                            mv.visitInsn(LCONST_0);
+                            break;
+                        case DOUBLE:
+                            mv.visitInsn(DCONST_0);
+                            break;
+                        case FLOAT:
+                            mv.visitInsn(FCONST_0);
+                            break;
+                        default:
+                            mv.visitInsn(ICONST_0);
+                            break;
                     }
                     mv.visitJumpInsn(GOTO, done);
                     mv.visitLabel(notNull);
@@ -1451,10 +1485,18 @@ final class TxMethodWriter implements Opcodes {
         }
         int slot = slotOf(reg);
         switch (k) {
-            case LONG: mv.visitVarInsn(LLOAD, slot); break;
-            case DOUBLE: mv.visitVarInsn(DLOAD, slot); break;
-            case FLOAT: mv.visitVarInsn(FLOAD, slot); break;
-            case OBJ: mv.visitVarInsn(ALOAD, slot); break;
+            case LONG:
+                mv.visitVarInsn(LLOAD, slot);
+                break;
+            case DOUBLE:
+                mv.visitVarInsn(DLOAD, slot);
+                break;
+            case FLOAT:
+                mv.visitVarInsn(FLOAD, slot);
+                break;
+            case OBJ:
+                mv.visitVarInsn(ALOAD, slot);
+                break;
             default: mv.visitVarInsn(ILOAD, slot);
         }
         // Narrow casts when the consumption wants a specific integral shape.
@@ -1529,7 +1571,8 @@ final class TxMethodWriter implements Opcodes {
             // interpreter kept the value with autoboxing at the bridge.
             // Zero remains zero-typed: load() pushes ACONST_NULL there.
             boolean objScan = k == OBJ;
-            if ("Landroidx/compose/runtime/tooling/InspectionTablesKt$LocalInspectionTables$1;".equals(method.owner)
+            if (("Landroidx/compose/runtime/tooling/"
+                    + "InspectionTablesKt$LocalInspectionTables$1;").equals(method.owner)
                     && "invoke".equals(method.name) && in.literal == 0) {
                 objScan = true;
             }
@@ -1738,7 +1781,7 @@ final class TxMethodWriter implements Opcodes {
             return;
         }
         if (op.equals("array-length")) {
-            int dst = in.registers.get(0);
+            final int dst = in.registers.get(0);
             int src = in.registers.get(1);
             String arrDesc = regArray[src];
             if (arrDesc == null) {
@@ -1919,12 +1962,24 @@ final class TxMethodWriter implements Opcodes {
             load(reg, INT); // unknown defaults to int/family shape
             int opc;
             switch (cmp) {
-                case "eq": opc = IFEQ; break;
-                case "ne": opc = IFNE; break;
-                case "lt": opc = IFLT; break;
-                case "ge": opc = IFGE; break;
-                case "gt": opc = IFGT; break;
-                case "le": opc = IFLE; break;
+                case "eq":
+                    opc = IFEQ;
+                    break;
+                case "ne":
+                    opc = IFNE;
+                    break;
+                case "lt":
+                    opc = IFLT;
+                    break;
+                case "ge":
+                    opc = IFGE;
+                    break;
+                case "gt":
+                    opc = IFGT;
+                    break;
+                case "le":
+                    opc = IFLE;
+                    break;
                 default: throw gap("z-branch " + op, in);
             }
             mv.visitJumpInsn(opc, to);
@@ -1971,12 +2026,24 @@ final class TxMethodWriter implements Opcodes {
         load(b, INT);
         int opc;
         switch (cmp) {
-            case "eq": opc = IF_ICMPEQ; break;
-            case "ne": opc = IF_ICMPNE; break;
-            case "lt": opc = IF_ICMPLT; break;
-            case "ge": opc = IF_ICMPGE; break;
-            case "gt": opc = IF_ICMPGT; break;
-            case "le": opc = IF_ICMPLE; break;
+            case "eq":
+                opc = IF_ICMPEQ;
+                break;
+            case "ne":
+                opc = IF_ICMPNE;
+                break;
+            case "lt":
+                opc = IF_ICMPLT;
+                break;
+            case "ge":
+                opc = IF_ICMPGE;
+                break;
+            case "gt":
+                opc = IF_ICMPGT;
+                break;
+            case "le":
+                opc = IF_ICMPLE;
+                break;
             default: throw gap("branch " + op, in);
         }
         mv.visitJumpInsn(opc, to);
@@ -2044,20 +2111,25 @@ final class TxMethodWriter implements Opcodes {
         Insn.MethodRef ref = methodRef(in);
         String owner = ref.owner();
         String name = ref.name();
-        String desc = ref.descriptor();
+        final String desc = ref.descriptor();
         boolean isStatic = op.startsWith("invoke-static");
         int opcode;
         switch (op) {
             case "invoke-virtual": case "invoke-virtual-range":
-                opcode = INVOKEVIRTUAL; break;
+                opcode = INVOKEVIRTUAL;
+                break;
             case "invoke-super": case "invoke-super-range":
-                opcode = INVOKESPECIAL; break;
+                opcode = INVOKESPECIAL;
+                break;
             case "invoke-direct": case "invoke-direct-range":
-                opcode = INVOKESPECIAL; break;
+                opcode = INVOKESPECIAL;
+                break;
             case "invoke-static": case "invoke-static-range":
-                opcode = INVOKESTATIC; break;
+                opcode = INVOKESTATIC;
+                break;
             case "invoke-interface": case "invoke-interface-range":
-                opcode = INVOKEINTERFACE; break;
+                opcode = INVOKEINTERFACE;
+                break;
             default:
                 throw gap("invoke kind " + op, in);
         }
@@ -2330,9 +2402,15 @@ final class TxMethodWriter implements Opcodes {
             load(reg, kindOf(elem));
             if (base >= 0) {
                 switch (elem) {
-                    case "J": mv.visitInsn(LASTORE); break;
-                    case "F": mv.visitInsn(FASTORE); break;
-                    case "D": mv.visitInsn(DASTORE); break;
+                    case "J":
+                        mv.visitInsn(LASTORE);
+                        break;
+                    case "F":
+                        mv.visitInsn(FASTORE);
+                        break;
+                    case "D":
+                        mv.visitInsn(DASTORE);
+                        break;
                     case "C":
                         mv.visitInsn(I2C);
                         mv.visitInsn(CASTORE);
@@ -2351,8 +2429,6 @@ final class TxMethodWriter implements Opcodes {
 
     private List<Integer> rangeRegs(Insn in) {
         List<Integer> out = new ArrayList<>();
-        int start = in.registers.get(0);
-        int count = in.registers.size() >= 2 ? in.registers.get(1) : 1;
         // 3rc counts encoded by the range length; use the opcode's register
         // list, which Insn already expanded for RegisterRangeInstruction.
         for (int r : in.registers) {
@@ -2377,10 +2453,8 @@ final class TxMethodWriter implements Opcodes {
                 case 8 -> LONG;
                 default -> INT;
             };
-            if (arrDesc == null) {
-                gapLog("fill-array-data array type unknown (width "
-                        + payload.elementWidth + ")", in);
-            }
+            gapLog("fill-array-data array type unknown (width "
+                    + payload.elementWidth + ")", in);
         }
         load(arr, OBJ);
         for (int e = 0; e < payload.payloadData.size(); e++) {
@@ -2512,9 +2586,9 @@ final class TxMethodWriter implements Opcodes {
     // ---------------------------------------------------------------------
 
     private void emitCompare(Insn in) {
-        int dst = in.registers.get(0);
+        final int dst = in.registers.get(0);
         int a = in.registers.get(1);
-        int b = in.registers.get(2);
+        final int b = in.registers.get(2);
         String op = in.opcode;
         int opc;
         char kind;
@@ -2529,9 +2603,6 @@ final class TxMethodWriter implements Opcodes {
             kind = DOUBLE;
         } else {
             throw gap("compare " + op, in);
-        }
-        if (method.owner.contains("BufferedChannel")
-                && method.name.equals("isRendezvousOrUnlimited")) {
         }
         load(a, kind);
         load(b, kind);
@@ -2562,7 +2633,9 @@ final class TxMethodWriter implements Opcodes {
         char k = unopKind(op);
         load(src, k);
         switch (op) {
-            case "neg-int": mv.visitInsn(INEG); break;
+            case "neg-int":
+                mv.visitInsn(INEG);
+                break;
             case "neg-long":
                 mv.visitInsn(LNEG);
                 k = LONG;
@@ -2596,9 +2669,15 @@ final class TxMethodWriter implements Opcodes {
                 mv.visitInsn(I2D);
                 k = DOUBLE;
                 break;
-            case "int-to-byte": mv.visitInsn(I2B); break;
-            case "int-to-char": mv.visitInsn(I2C); break;
-            case "int-to-short": mv.visitInsn(I2S); break;
+            case "int-to-byte":
+                mv.visitInsn(I2B);
+                break;
+            case "int-to-char":
+                mv.visitInsn(I2C);
+                break;
+            case "int-to-short":
+                mv.visitInsn(I2S);
+                break;
             case "long-to-int":
                 mv.visitInsn(L2I);
                 k = INT;

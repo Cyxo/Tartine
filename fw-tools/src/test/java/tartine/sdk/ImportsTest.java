@@ -1,8 +1,8 @@
 package tartine.sdk;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 /** Planner/rewriter rules for {@link Imports}. */
 class ImportsTest {

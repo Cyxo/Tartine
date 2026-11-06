@@ -1,5 +1,10 @@
 package tartine.tx;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -11,11 +16,6 @@ import org.junit.jupiter.api.io.TempDir;
 import tartine.dex.Dex;
 import tartine.dex.DexSet;
 import tartine.dex.FixtureDex;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Translation spike: the fixture's pure-DEX demos replay through translated
@@ -83,14 +83,30 @@ final class TranslatedFixtureTest {
 
     /** Reflection on translated methods wants primitive descriptors. */
     private static Class<?> prim(Class<?> boxed) {
-        if (boxed == Integer.class) return int.class;
-        if (boxed == Long.class) return long.class;
-        if (boxed == Float.class) return float.class;
-        if (boxed == Double.class) return double.class;
-        if (boxed == Byte.class) return byte.class;
-        if (boxed == Short.class) return short.class;
-        if (boxed == Boolean.class) return boolean.class;
-        if (boxed == Character.class) return char.class;
+        if (boxed == Integer.class) {
+            return int.class;
+        }
+        if (boxed == Long.class) {
+            return long.class;
+        }
+        if (boxed == Float.class) {
+            return float.class;
+        }
+        if (boxed == Double.class) {
+            return double.class;
+        }
+        if (boxed == Byte.class) {
+            return byte.class;
+        }
+        if (boxed == Short.class) {
+            return short.class;
+        }
+        if (boxed == Boolean.class) {
+            return boolean.class;
+        }
+        if (boxed == Character.class) {
+            return char.class;
+        }
         return boxed;
     }
 
@@ -158,7 +174,7 @@ final class TranslatedFixtureTest {
         assertThrows(NullPointerException.class, () -> call("nullRecv"));
         // casDemo returns Z; the interpreter's call() unified it into
         // Integer(1) while reflection faithfully yields Boolean.
-        assertEquals(true, (boolean) (Boolean) call("casDemo"));
+        assertEquals(true, (Boolean) call("casDemo"));
         assertEquals("x", (String) call("weakGet"));
         assertNull(call("weakClear"));
         assertEquals(5, (int) (Integer) call("intUpdaterDemo"));

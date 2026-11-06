@@ -45,7 +45,9 @@ public final class Sdk {
             }
             try (DirectoryStream<Path> dirs = Files.newDirectoryStream(platforms, "android-*")) {
                 for (Path dir : dirs) {
-                    int api = apiLevel(dir.getFileName().toString());
+                    Path name = dir.getFileName();
+                    int api = name == null ? -1
+                            : apiLevel(name.toString());
                     Path jar = dir.resolve("android.jar");
                     if (api > bestApi && Files.isRegularFile(jar)) {
                         bestApi = api;
@@ -80,8 +82,11 @@ public final class Sdk {
     /** API level encoded in a platform jar's parent directory ({@code android-36}), or -1. */
     static int apiLevelOf(Path jar) {
         Path platform = jar.getParent();
-        return platform == null || platform.getFileName() == null
-                ? -1 : apiLevel(platform.getFileName().toString());
+        if (platform == null) {
+            return -1;
+        }
+        Path name = platform.getFileName();
+        return name == null ? -1 : apiLevel(name.toString());
     }
 
     static List<Path> defaultRoots() {

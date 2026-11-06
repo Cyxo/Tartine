@@ -1,5 +1,14 @@
 package tartine.guest;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
@@ -10,14 +19,6 @@ import tartine.dex.Dex;
 import tartine.dex.DexSet;
 import tartine.dex.FixtureDex;
 import tartine.tx.TranslatedLoader;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Direct pins for the guest facades the translator routes host calls to. */
 class GuestFacadesTest {
@@ -118,7 +119,7 @@ class GuestFacadesTest {
     @Test
     void serviceLoaderIsEmptyAndIterable() {
         GuestServiceLoader services = GuestServiceLoader.load(Object.class);
-        assertTrue(services instanceof Iterable);
+        assertInstanceOf(Iterable.class, services);
         assertFalse(services.iterator().hasNext());
         assertFalse(GuestServiceLoader.load(Object.class, null)
                 .stream().findAny().isPresent());

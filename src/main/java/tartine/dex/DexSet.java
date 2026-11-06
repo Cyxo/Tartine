@@ -35,6 +35,7 @@ public final class DexSet {
         return null;
     }
 
+    /** Total classes across every loaded dex file. */
     public int classCount() {
         int count = 0;
         for (Dex dex : dexes) {
@@ -43,6 +44,7 @@ public final class DexSet {
         return count;
     }
 
+    /** Total methods across every class in every loaded dex file. */
     public int methodCount() {
         int count = 0;
         for (Dex dex : dexes) {

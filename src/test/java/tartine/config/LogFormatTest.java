@@ -1,11 +1,11 @@
 package tartine.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Pins the one-line logcat-style console format: priority letter, logger name
@@ -35,7 +35,7 @@ class LogFormatTest {
     }
 
     @Test
-    void throwableIsAppendedAsAStackTrace() {
+    void throwableIsAppendedAsStackTrace() {
         IllegalStateException boom = new IllegalStateException("kaput");
         LogRecord record = new LogRecord(Level.SEVERE, "failed");
         record.setLoggerName("com.example.MainActivity");

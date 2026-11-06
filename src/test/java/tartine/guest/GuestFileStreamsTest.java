@@ -1,5 +1,12 @@
 package tartine.guest;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -11,19 +18,13 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tartine.TestLinks;
+import tartine.GuestLinks;
 import tartine.runtime.Vfs;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Behavioral pins for the stream facade: file-backed stream, reader, writer,
@@ -164,7 +165,7 @@ class GuestFileStreamsTest {
     @Test
     void frameworkReturnedHostFilesReverseMap() throws Exception {
         Path host = root.resolve("data").resolve("pkg").resolve("f.bin");
-        Files.createDirectories(host.getParent());
+        Files.createDirectories(Objects.requireNonNull(host.getParent()));
         Files.write(host, new byte[] {1, 2, 3});
 
         try (FileInputStream in = new GuestFileInputStream(host.toFile())) {
@@ -213,7 +214,7 @@ class GuestFileStreamsTest {
         Path outside = root.resolve("outside");
         Files.createDirectories(outside);
         Files.writeString(outside.resolve("secret.txt"), "secret");
-        assumeTrue(TestLinks.create(card.resolve("escape"), outside),
+        assumeTrue(GuestLinks.create(card.resolve("escape"), outside),
                 "symlink/junction creation unavailable");
 
         GuestFile secret = new GuestFile("/sdcard/escape/secret.txt");

@@ -1,5 +1,13 @@
 package tartine.graphics;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -10,14 +18,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Threading and event pins for the host display seam: the window loop and
@@ -120,9 +120,8 @@ class HostDisplayTest {
         display.exitLoopOnStart = true;
         CountDownLatch closeEvent = new CountDownLatch(1);
         AtomicReference<HostDisplay.Event> seen = new AtomicReference<>();
-        ExecutorService runner = Executors.newSingleThreadExecutor();
 
-        try {
+        try (ExecutorService runner = Executors.newSingleThreadExecutor()) {
             Future<?> run = runner.submit(() -> {
                 try {
                     HostDisplays.run(display, true, guest -> {
@@ -139,8 +138,6 @@ class HostDisplayTest {
                 }
             });
             run.get(2, TimeUnit.SECONDS);
-        } finally {
-            runner.shutdownNow();
         }
 
         assertEquals(0, closeEvent.getCount());

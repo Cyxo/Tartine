@@ -70,6 +70,13 @@ import tartine.runtime.Vfs;
  */
 public final class HostConfig {
     private static final Logger log = Logger.getLogger(HostConfig.class.getName());
+    /**
+     * Strong references to the loggers configured in {@link #configureLogging}.
+     * JUL's {@code LogManager} only holds loggers weakly, so a configured
+     * namespace logger must stay reachable here or its level is silently lost
+     * after a GC (SpotBugs LG_LOST_LOGGER_DUE_TO_WEAK_REFERENCE).
+     */
+    private static final List<Logger> PINNED_LOGGERS = new ArrayList<>();
     static final String FILE_NAME = "config.properties";
 
     /** Default refresh rate when {@code display.refresh_hz} is absent. */
@@ -150,6 +157,8 @@ public final class HostConfig {
         Level level = toJulLevel(normalized);
         Logger root = Logger.getLogger("");
         root.setLevel(level);
+        PINNED_LOGGERS.clear();
+        PINNED_LOGGERS.add(root);
         for (Handler handler : root.getHandlers()) {
             root.removeHandler(handler);
         }
@@ -163,7 +172,9 @@ public final class HostConfig {
         // the platform, so no guest class can land there.
         for (String namespace : new String[] {"java", "javax", "jdk", "sun",
                 "com.sun"}) {
-            Logger.getLogger(namespace).setLevel(Level.INFO);
+            Logger logger = Logger.getLogger(namespace);
+            logger.setLevel(Level.INFO);
+            PINNED_LOGGERS.add(logger);
         }
     }
 
@@ -382,7 +393,7 @@ public final class HostConfig {
 
     /** The boolean literal the caller handed us, for warning text. */
     private static String boolLiteral(Boolean value) {
-        return value == Boolean.TRUE ? "true" : "false";
+        return Boolean.TRUE.equals(value) ? "true" : "false";
     }
 
     /** {@code true}/{@code false} case-insensitive, else null with a warning. */

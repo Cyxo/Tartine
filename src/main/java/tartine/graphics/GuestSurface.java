@@ -63,7 +63,7 @@ public final class GuestSurface implements RenderTarget {
             next.close();
             throw failure;
         }
-        GfxSurface previous = surface;
+        final GfxSurface previous = surface;
         surface = next;
         canvas = nextCanvas;
         this.width = width;

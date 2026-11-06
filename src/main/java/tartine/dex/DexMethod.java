@@ -33,6 +33,7 @@ public final class DexMethod {
         public final int end;
         public final List<Handler> handlers;
 
+        /** Builds a handler table for one protected range. */
         public Try(int start, int end, List<Handler> handlers) {
             this.start = start;
             this.end = end;
@@ -51,6 +52,7 @@ public final class DexMethod {
     public final List<Insn> instructions;
     public final List<Try> tries;
 
+    /** Builds a method entry; lists are defensively copied. */
     public DexMethod(String name, List<String> parameterTypes, String returnType, int accessFlags,
             String owner, boolean hasImplementation, int registerCount, List<Insn> instructions,
             List<Try> tries) {

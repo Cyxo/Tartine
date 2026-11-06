@@ -1,17 +1,17 @@
 package tartine.runtime;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import tartine.TestLinks;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import tartine.GuestLinks;
 
 /** Behavioral pins for the guest-path seam (tartine.runtime.Vfs). */
 class VfsTest {
@@ -23,22 +23,23 @@ class VfsTest {
         return new Vfs.Sdcard(root.resolve("sdcard"), false);
     }
 
-    private Path t(String guest) {
+    private Path guestPath(String guest) {
         return Vfs.target(guest, root, card());
     }
 
     @Test
     void sdcardMapsToTheVirtualCard() {
         Path card = root.resolve("sdcard");
-        assertEquals(card, t("/sdcard"));
+        assertEquals(card, guestPath("/sdcard"));
         assertEquals(card.resolve("Documents").resolve("a.txt"),
-                t("/sdcard/Documents/a.txt"));
+                guestPath("/sdcard/Documents/a.txt"));
         assertFalse(card().readOnly());
     }
 
     @Test
     void emulatedStorageAliasesSdcard() {
-        assertEquals(root.resolve("sdcard").resolve("Music"), t("/storage/emulated/0/Music"));
+        assertEquals(root.resolve("sdcard").resolve("Music"),
+                    guestPath("/storage/emulated/0/Music"));
     }
 
     @Test
@@ -66,76 +67,78 @@ class VfsTest {
     @Test
     void appDataDirsMapUnderRootData() {
         assertEquals(root.resolve("data").resolve("com.example").resolve("files").resolve("f.txt"),
-                t("/data/data/com.example/files/f.txt"));
+                guestPath("/data/data/com.example/files/f.txt"));
     }
 
     @Test
     void multiUserDataSpellingMapsTheSame() {
         assertEquals(root.resolve("data").resolve("com.example").resolve("cache").resolve("c"),
-                t("/data/user/0/com.example/cache/c"));
+                guestPath("/data/user/0/com.example/cache/c"));
     }
 
     @Test
     void installedAppApkIsGuestVisible() {
         assertEquals(root.resolve("apps").resolve("com.example").resolve("base.apk"),
-                t("/data/app/com.example/base.apk"));
+                guestPath("/data/app/com.example/base.apk"));
     }
 
     @Test
     void localTmpMapsToRootTmp() {
-        assertEquals(root.resolve("tmp").resolve("x"), t("/data/local/tmp/x"));
+        assertEquals(root.resolve("tmp").resolve("x"), guestPath("/data/local/tmp/x"));
     }
 
     @Test
     void longestPrefixWins() {
         // Deep prefixes must never be shadowed by shorter ones.
-        assertEquals(root.resolve("data").resolve("com.example").resolve("databases").resolve("x.db"),
-                t("/data/data/com.example/databases/x.db"));
-        assertEquals(root.resolve("tmp").resolve("y"), t("/data/local/tmp/y"));
+        Path expected = root.resolve("data").resolve("com.example")
+                .resolve("databases").resolve("x.db");
+        assertEquals(expected, guestPath("/data/data/com.example/databases/x.db"));
+        assertEquals(root.resolve("tmp").resolve("y"), guestPath("/data/local/tmp/y"));
     }
 
     @Test
     void deviceTreesStayUnmapped() {
-        assertNull(t("/system/lib/libc.so"));
-        assertNull(t("/proc/self/maps"));
-        assertNull(t("/dev/urandom"));
-        assertNull(t("/etc/passwd"));
-        assertNull(t("/data/private"));
+        assertNull(guestPath("/system/lib/libc.so"));
+        assertNull(guestPath("/proc/self/maps"));
+        assertNull(guestPath("/dev/urandom"));
+        assertNull(guestPath("/etc/passwd"));
+        assertNull(guestPath("/data/private"));
     }
 
     @Test
     void pathTraversalEscapesAreDenied() {
-        assertNull(t("/sdcard/../../etc/passwd"));
-        assertNull(t("/data/data/com.example/../../hostfile"));
-        assertNull(t("/data/data/com.example/../otherpkg/file"));
+        assertNull(guestPath("/sdcard/../../etc/passwd"));
+        assertNull(guestPath("/data/data/com.example/../../hostfile"));
+        assertNull(guestPath("/data/data/com.example/../otherpkg/file"));
     }
 
     @Test
     void windowsUnsafeSegmentsAreDenied() {
-        assertNull(t("/sdcard/a:b"));
-        assertNull(t("/sdcard/CON"));
-        assertNull(t("/sdcard/report.txt:NtfsStream"));
-        assertNull(t("/sdcard/aux.c"));
-        assertNull(t("/sdcard/LPT9"));
+        assertNull(guestPath("/sdcard/a:b"));
+        assertNull(guestPath("/sdcard/CON"));
+        assertNull(guestPath("/sdcard/report.txt:NtfsStream"));
+        assertNull(guestPath("/sdcard/aux.c"));
+        assertNull(guestPath("/sdcard/LPT9"));
     }
 
     @Test
     void relativeAndEmptyGuestPathsDoNotResolve() {
-        assertNull(t("relative/path"));
-        assertNull(t(""));
+        assertNull(guestPath("relative/path"));
+        assertNull(guestPath(""));
     }
 
     @Test
     void doubleAndTrailingSlashesCleanUp() {
-        assertEquals(root.resolve("sdcard").resolve("a").resolve("b"), t("/sdcard//a//b/"));
+        assertEquals(root.resolve("sdcard").resolve("a").resolve("b"), guestPath("/sdcard//a//b/"));
         assertEquals(root.resolve("sdcard").resolve("x"),
                 Vfs.target("/sdcard/./x", root, card()));
     }
 
     @Test
     void exactMountRootResolvesToItsDirectory() {
-        assertEquals(root.resolve("data").resolve("com.example"), t("/data/data/com.example"));
-        assertEquals(root.resolve("sdcard"), t("/storage/emulated/0"));
+        assertEquals(root.resolve("data").resolve("com.example"),
+                    guestPath("/data/data/com.example"));
+        assertEquals(root.resolve("sdcard"), guestPath("/storage/emulated/0"));
     }
 
     @Test
@@ -186,7 +189,7 @@ class VfsTest {
         Files.createDirectories(outside);
         Files.writeString(outside.resolve("secret.txt"), "secret");
         Path escape = card.resolve("escape");
-        assumeTrue(TestLinks.create(escape, outside),
+        assumeTrue(GuestLinks.create(escape, outside),
                 "symlink/junction creation unavailable");
 
         Vfs.Policy policy = new Vfs.Policy(root, card());
@@ -201,7 +204,7 @@ class VfsTest {
         Path real = card.resolve("real");
         Files.createDirectories(real);
         Path good = card.resolve("good");
-        assumeTrue(TestLinks.create(good, real),
+        assumeTrue(GuestLinks.create(good, real),
                 "symlink/junction creation unavailable");
 
         Vfs.Policy policy = new Vfs.Policy(root, card());
@@ -218,7 +221,7 @@ class VfsTest {
         Path outside = root.resolve("outside.txt");
         Files.writeString(outside, "secret");
         Path link = card.resolve("secret.txt");
-        assumeTrue(TestLinks.create(link, outside),
+        assumeTrue(GuestLinks.create(link, outside),
                 "file symlink creation unavailable");
 
         Vfs.Policy policy = new Vfs.Policy(root, card());
@@ -232,7 +235,7 @@ class VfsTest {
         Files.createDirectories(card);
         Path missing = root.resolve("missing.txt");
         Path link = card.resolve("dangling.txt");
-        assumeTrue(TestLinks.create(link, missing),
+        assumeTrue(GuestLinks.create(link, missing),
                 "dangling symlink creation unavailable");
 
         Vfs.Policy policy = new Vfs.Policy(root, card());

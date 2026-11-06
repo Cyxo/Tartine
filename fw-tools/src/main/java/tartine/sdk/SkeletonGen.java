@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * {@code UnsupportedOperationException("Tartine: not implemented:
  * <vmSignature>")} so the gap-driven loop survives.
  *
- * Emission rules:
+ * <p>Emission rules:
  * <ul>
  *   <li>Abstract members stay abstract on interfaces and enums; classes
  *       compile concrete (adapter surface: framework-dispatch mirrors
@@ -44,7 +44,7 @@ import java.util.logging.Logger;
  *   <li>Private members are skipped (not part of the published API).</li>
  * </ul>
  *
- * Regeneration is additive by default: an existing source file is skipped
+ * <p>Regeneration is additive by default: an existing source file is skipped
  * unless {@code --force} is passed (which overwrites and would discard
  * hand-ported bodies — use deliberately). CLI:
  * {@code SkeletonGen <outDir> [androidJarPath] [--force]}.
@@ -75,6 +75,7 @@ public final class SkeletonGen {
     private static final int ACC_SYNTHETIC = 0x1000;
     private static final int ACC_ENUM = 0x4000;
 
+    /** Runs the generator: {@code SkeletonGen <outDir> [androidJarPath] [--force]}. */
     public static void main(String[] args) throws IOException {
         Path outDir = null;
         Path jar = null;
@@ -99,7 +100,8 @@ public final class SkeletonGen {
             Path found = Sdk.findJar(Sdk.TARGET_API);
             if (found == null) {
                 throw new IllegalArgumentException(
-                        "no local android.jar (set ANDROID_HOME/ANDROID_SDK_ROOT or pass the path)");
+                        "no local android.jar (set ANDROID_HOME/ANDROID_SDK_ROOT"
+                                + " or pass the path)");
             }
             index = FwIndexLoader.loadJar(found);
         }
@@ -115,7 +117,10 @@ public final class SkeletonGen {
                 log.fine("skip (exists): " + file.getKey());
                 continue;
             }
-            Files.createDirectories(src.getParent());
+            Path parent = src.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
             String source = emitFile(file.getKey(), file.getValue(), closure);
             source = Imports.shorten(source, simpleName(file.getKey()), universe);
             Files.writeString(src, source, StandardCharsets.UTF_8);
@@ -247,7 +252,8 @@ public final class SkeletonGen {
         Map<String, Map<String, FwIndex.FwClass>> grouped = new LinkedHashMap<>();
         for (FwIndex.FwClass cls : closure.values()) {
             String binary = strip(cls.descriptor);
-            String top = binary.indexOf('$') < 0 ? binary : binary.substring(0, binary.indexOf('$'));
+            int cut = binary.indexOf('$');
+            String top = cut < 0 ? binary : binary.substring(0, cut);
             grouped.computeIfAbsent(top, k -> new LinkedHashMap<>()).put(binary, cls);
         }
         Map<String, List<FwIndex.FwClass>> out = new LinkedHashMap<>();
@@ -404,9 +410,9 @@ public final class SkeletonGen {
     }
 
     /**
-     * Collects bare parameter names for "<T:Ljava/lang/Object;>": bounds are
-     * consumed for cursor progress but not rendered (skeletons declare bare
-     * type parameters; erasure-checked code never reads the bounds).
+     * Collects bare parameter names for {@code <T:Ljava/lang/Object;>}: bounds
+     * are consumed for cursor progress but not rendered (skeletons declare
+     * bare type parameters; erasure-checked code never reads the bounds).
      */
     private static String typeParamNames(String sig, int[] pos) {
         StringBuilder names = new StringBuilder();
@@ -495,9 +501,18 @@ public final class SkeletonGen {
         // Peek, not consume: the default case hands the SAME position to
         // sourceTypeSig, which must see the 'L'/'['/'T' opening itself.
         return switch (sig.charAt(pos[0])) {
-            case '*' -> { pos[0]++; yield "?"; }
-            case '+' -> { pos[0]++; yield "? extends " + sourceTypeSig(sig, pos); }
-            case '-' -> { pos[0]++; yield "? super " + sourceTypeSig(sig, pos); }
+            case '*' -> {
+                pos[0]++;
+                yield "?";
+            }
+            case '+' -> {
+                pos[0]++;
+                yield "? extends " + sourceTypeSig(sig, pos);
+            }
+            case '-' -> {
+                pos[0]++;
+                yield "? super " + sourceTypeSig(sig, pos);
+            }
             default -> sourceTypeSig(sig, pos);
         };
     }
@@ -922,11 +937,21 @@ public final class SkeletonGen {
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
             switch (c) {
-                case '\\': out.append("\\\\"); break;
-                case '"': out.append("\\\""); break;
-                case '\n': out.append("\\n"); break;
-                case '\r': out.append("\\r"); break;
-                case '\t': out.append("\\t"); break;
+                case '\\':
+                    out.append("\\\\");
+                    break;
+                case '"':
+                    out.append("\\\"");
+                    break;
+                case '\n':
+                    out.append("\\n");
+                    break;
+                case '\r':
+                    out.append("\\r");
+                    break;
+                case '\t':
+                    out.append("\\t");
+                    break;
                 default:
                     if (Character.isISOControl(c)) {
                         out.append(String.format("\\u%04x", (int) c));
@@ -949,15 +974,33 @@ public final class SkeletonGen {
         String inner = descriptor.substring(pos);
         String base;
         switch (inner) {
-            case "I": base = "int"; break;
-            case "B": base = "byte"; break;
-            case "C": base = "char"; break;
-            case "D": base = "double"; break;
-            case "F": base = "float"; break;
-            case "J": base = "long"; break;
-            case "S": base = "short"; break;
-            case "Z": base = "boolean"; break;
-            case "V": base = "void"; break;
+            case "I":
+                base = "int";
+                break;
+            case "B":
+                base = "byte";
+                break;
+            case "C":
+                base = "char";
+                break;
+            case "D":
+                base = "double";
+                break;
+            case "F":
+                base = "float";
+                break;
+            case "J":
+                base = "long";
+                break;
+            case "S":
+                base = "short";
+                break;
+            case "Z":
+                base = "boolean";
+                break;
+            case "V":
+                base = "void";
+                break;
             default:
                 if (!inner.startsWith("L")) {
                     throw new IllegalStateException("not a ref: " + descriptor);

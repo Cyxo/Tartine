@@ -1,5 +1,12 @@
 package tartine.graphics;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -9,13 +16,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import tartine.gfx.GfxCanvas;
 import tartine.gfx.GfxSurface;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Pins the render loop's rules: draw when a frame is due (callback or dirty
@@ -28,7 +28,7 @@ class RenderLoopTest {
     private static final long PERIOD = 10_000_000L; // 100 Hz, one int per ms
 
     @Test
-    void drawsOnlyWhenAFrameIsDue() {
+    void drawsOnlyWhenFrameIsDue() {
         Harness harness = new Harness();
         harness.source.closeAfterDraws = 3;
 
@@ -81,7 +81,7 @@ class RenderLoopTest {
     }
 
     @Test
-    void stopsWhenTheDisplayDropsAFrame() {
+    void stopsWhenDisplayDropsFrame() {
         Harness harness = new Harness();
         harness.display.open = false;
 
@@ -96,7 +96,7 @@ class RenderLoopTest {
     }
 
     @Test
-    void aDrawFailureStopsTheLoopAndTheFailedFrameIsNotPresented() {
+    void drawFailureStopsLoopAndFailedFrameIsNotPresented() {
         Harness harness = new Harness();
         harness.source.failures = new RuntimeException[] {
                 null,
@@ -121,7 +121,7 @@ class RenderLoopTest {
     }
 
     @Test
-    void aFirstFrameFailurePostsNothing() {
+    void firstFrameFailurePostsNothing() {
         Harness harness = new Harness();
         harness.source.failures = new RuntimeException[] {
                 new IllegalStateException("boom"),
@@ -156,7 +156,7 @@ class RenderLoopTest {
     }
 
     @Test
-    void resizeReplacesTheReadbackBufferAndForcesARedraw() {
+    void resizeReplacesReadbackBufferAndForcesRedraw() {
         Harness harness = new Harness();
         harness.source.callbacks = 0;
         harness.source.closeAfterDraws = 2;
@@ -201,7 +201,7 @@ class RenderLoopTest {
     }
 
     @Test
-    void rejectsANonPositiveFramePeriod() {
+    void rejectsNonPositiveFramePeriod() {
         Harness harness = new Harness();
         assertThrows(IllegalArgumentException.class,
                 () -> new RenderLoop(harness.display, harness.target,
@@ -367,15 +367,12 @@ class RenderLoopTest {
             if (current.getWidth() == width && current.getHeight() == height) {
                 return;
             }
-            FakeSurface previous = current;
             current = new FakeSurface(width, height);
-            previous.closed = true;
         }
 
         @Override
         public void close() {
             closed = true;
-            current.closed = true;
         }
     }
 
@@ -385,7 +382,6 @@ class RenderLoopTest {
         private final int height;
         final List<int[]> readBuffers = new ArrayList<>();
         int reads;
-        boolean closed;
 
         FakeSurface(int width, int height) {
             this.width = width;
@@ -421,7 +417,6 @@ class RenderLoopTest {
 
         @Override
         public void close() {
-            closed = true;
         }
     }
 }

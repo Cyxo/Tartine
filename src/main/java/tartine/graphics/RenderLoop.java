@@ -122,6 +122,8 @@ public final class RenderLoop {
      * Runs until the window closes, the display drops a frame, or a draw
      * fails.
      */
+    // The != detects the resize-swapped surface by identity, not value.
+    @SuppressWarnings("PMD.CompareObjectsWithEquals")
     public void run() {
         GfxSurface surface = target.surface();
         int width = surface.getWidth();
@@ -144,7 +146,7 @@ public final class RenderLoop {
                     continue;
                 }
                 nextFrame = now + framePeriodNanos;
-                int callbacks = source.pumpCallbacks(now);
+                final int callbacks = source.pumpCallbacks(now);
                 source.drain();
                 if (source.isClosed()) {
                     break;

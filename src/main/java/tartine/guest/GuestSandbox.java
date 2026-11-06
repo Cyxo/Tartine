@@ -18,6 +18,7 @@ public final class GuestSandbox {
     private GuestSandbox() {
     }
 
+    /** Mirrors {@code Class.forName}; only the guest loader is accepted. */
     public static Class<?> forName(String name, boolean initialize,
             Object loader) throws ClassNotFoundException {
         if (name == null) {
@@ -49,6 +50,7 @@ public final class GuestSandbox {
         return forName(name, true, caller);
     }
 
+    /** Resolves within the calling guest class's sandboxed loader. */
     public static Class<?> forName(String name, boolean initialize,
             Class<?> caller) throws ClassNotFoundException {
         if (name == null) {

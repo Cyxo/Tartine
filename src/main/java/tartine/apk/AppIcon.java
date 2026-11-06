@@ -305,14 +305,16 @@ public final class AppIcon {
             svg.content().append("<path d=\"M0,0h108v108h-108z\" fill=\"")
                     .append(css(color.argb())).append("\"/>");
         } else if (layer instanceof VectorSource vector) {
-            double sx = vector.viewportWidth() == 108f
-                    ? 1 : 108.0 / vector.viewportWidth();
-            double sy = vector.viewportHeight() == 108f
-                    ? 1 : 108.0 / vector.viewportHeight();
-            svg.content().append(sx == 1 && sy == 1
-                    ? vector.body()
-                    : "<g transform=\"scale(" + sx + " " + sy + ")\">"
-                            + vector.body() + "</g>");
+            boolean unscaled = vector.viewportWidth() == 108f
+                    && vector.viewportHeight() == 108f;
+            if (unscaled) {
+                svg.content().append(vector.body());
+            } else {
+                double sx = 108.0 / vector.viewportWidth();
+                double sy = 108.0 / vector.viewportHeight();
+                svg.content().append("<g transform=\"scale(" + sx + " " + sy
+                        + ")\">" + vector.body() + "</g>");
+            }
         } else if (layer instanceof GapSource gap) {
             gapLayer(role + ": " + gap.why());
         }
@@ -721,7 +723,8 @@ public final class AppIcon {
                 BinaryXml.Attribute color = item.typed("color");
                 Integer argb = color == null ? null
                         : (isColorType(color.dataType)
-                                ? color.data : argbLiteral(color.value));
+                                ? Integer.valueOf(color.data)
+                                : argbLiteral(color.value));
                 if (argb == null) {
                     continue;
                 }
@@ -774,15 +777,19 @@ public final class AppIcon {
             if (attribute == null) {
                 return null;
             }
-            int mode = attribute.dataType == BinaryXml.TYPE_INT_DEC
-                    || attribute.dataType == BinaryXml.TYPE_INT_HEX
-                    ? attribute.data
-                    : switch (attribute.value != null
-                            ? attribute.value.toLowerCase(Locale.ROOT) : "") {
-                        case "repeat" -> 1;
-                        case "mirror" -> 2;
-                        default -> 0;
-                    };
+            int mode;
+            if (attribute.dataType == BinaryXml.TYPE_INT_DEC
+                    || attribute.dataType == BinaryXml.TYPE_INT_HEX) {
+                mode = attribute.data;
+            } else {
+                String tile = attribute.value == null
+                        ? "" : attribute.value.toLowerCase(Locale.ROOT);
+                mode = switch (tile) {
+                    case "repeat" -> 1;
+                    case "mirror" -> 2;
+                    default -> 0;
+                };
+            }
             return switch (mode) {
                 case 1 -> "repeat";
                 case 2 -> "reflect";

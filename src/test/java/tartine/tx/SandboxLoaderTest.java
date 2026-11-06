@@ -1,5 +1,12 @@
 package tartine.tx;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import android.graphics.Paint;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,13 +21,6 @@ import tartine.dex.DexSet;
 import tartine.dex.FixtureDex;
 import tartine.guest.GuestFile;
 import tartine.guest.GuestSandbox;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Loader-side sandbox pins: the allowlist, guest-first resolution, array
@@ -56,7 +56,7 @@ class SandboxLoaderTest {
     }
 
     @Test
-    void deniedHostClassesFailClosedWithAName() {
+    void deniedHostClassesFailClosedWithName() {
         String[] names = {
             "java.net.Socket",
             "java.nio.file.Path",

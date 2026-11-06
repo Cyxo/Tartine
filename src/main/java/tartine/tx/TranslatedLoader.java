@@ -44,6 +44,7 @@ public final class TranslatedLoader extends ClassLoader {
     private final List<DexClass> allClasses;
     private final ReferenceResolver resolver;
 
+    /** Builds the guest loader over a dex set; {@code parent} is the host loader. */
     public TranslatedLoader(ClassLoader parent, DexSet dex) {
         super(parent);
         this.dex = dex;
@@ -231,12 +232,12 @@ public final class TranslatedLoader extends ClassLoader {
 
     /** Guest dex-owned interface descriptors (probe harness seam). */
     public Set<String> guestInterfaces() {
-        return guestInterfaces;
+        return Collections.unmodifiableSet(guestInterfaces);
     }
 
     /** Undeclared referenced fields (probe harness seam). */
     public Map<String, List<DexClass.DexField>> fieldSynths() {
-        return fieldSynths;
+        return Collections.unmodifiableMap(fieldSynths);
     }
 
     /** Dex model lookup by descriptor (probe harness seam). */

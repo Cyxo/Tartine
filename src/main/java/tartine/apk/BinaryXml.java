@@ -111,6 +111,7 @@ public final class BinaryXml {
         }
     }
 
+    /** Parses a compiled binary XML document into its element tree. */
     public static Element parse(byte[] data) throws IOException {
         if (data == null || data.length < 8) {
             throw new IOException("too short for binary XML");
@@ -165,14 +166,14 @@ public final class BinaryXml {
         return root;
     }
 
-    private static List<String> readStringPool(byte[] data, ByteBuffer buf, int chunkStart, int chunkEnd)
-            throws IOException {
+    private static List<String> readStringPool(byte[] data, ByteBuffer buf, int chunkStart,
+            int chunkEnd) throws IOException {
         int stringCount = size(buf);
         int styleCount = size(buf);
         int flags = buf.getInt();
-        int stringsStart = size(buf);
+        final int stringsStart = size(buf);
         size(buf); // stylesStart, styles unsupported
-        boolean utf8 = (flags & UTF8_FLAG) != 0;
+        final boolean utf8 = (flags & UTF8_FLAG) != 0;
         int[] offsets = new int[stringCount];
         for (int i = 0; i < stringCount; i++) {
             offsets[i] = size(buf);
@@ -268,26 +269,26 @@ public final class BinaryXml {
     private static Element readStartElement(ByteBuffer buf, List<String> pool) throws IOException {
         size(buf); // lineNumber
         buf.getInt(); // comment
-        int ns = buf.getInt();
-        int name = buf.getInt();
+        final int ns = buf.getInt();
+        final int name = buf.getInt();
         u16(buf); // attributeStart, always 20 in practice
         int attributeSize = u16(buf);
         if (attributeSize < 20) {
             throw new IOException("bad attribute size");
         }
-        int attributeCount = u16(buf);
+        final int attributeCount = u16(buf);
         u16(buf); // idIndex
         u16(buf); // classIndex
         u16(buf); // styleIndex
         Element element = new Element(poolString(pool, ns, ""), poolName(pool, name));
         for (int i = 0; i < attributeCount; i++) {
-            int attrStart = buf.position();
+            final int attrStart = buf.position();
             if (buf.remaining() < 20) {
                 throw new IOException("truncated attribute");
             }
-            int attrNs = buf.getInt();
-            int attrName = buf.getInt();
-            int rawValue = buf.getInt();
+            final int attrNs = buf.getInt();
+            final int attrName = buf.getInt();
+            final int rawValue = buf.getInt();
             u16(buf); // typed value size, always 8
             buf.get(); // res0
             int dataType = buf.get() & 0xFF;
@@ -338,7 +339,8 @@ public final class BinaryXml {
         }
     }
 
-    private static String poolString(List<String> pool, int index, String missing) throws IOException {
+    private static String poolString(List<String> pool, int index, String missing)
+            throws IOException {
         if (index == NO_INDEX) {
             return missing;
         }

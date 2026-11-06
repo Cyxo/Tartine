@@ -1,5 +1,11 @@
 package tartine.config;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import android.graphics.Paint;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,12 +18,6 @@ import org.junit.jupiter.api.io.TempDir;
 import tartine.fw.SystemColors;
 import tartine.fw.ThemeMode;
 import tartine.runtime.Vfs;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Pins the host config file seam: per-id system-color overrides beat the

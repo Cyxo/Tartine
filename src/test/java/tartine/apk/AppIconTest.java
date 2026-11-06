@@ -1,5 +1,8 @@
 package tartine.apk;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -7,6 +10,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.AfterAll;
@@ -17,9 +21,6 @@ import org.junit.jupiter.api.io.TempDir;
 import tartine.gfx.GfxBackend;
 import tartine.gfx.skija.SkijaBackend;
 import tartine.graphics.WindowIcon;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the icon pipeline end to end against a synthetic APK: manifest
@@ -106,7 +107,7 @@ class AppIconTest {
     }
 
     private static String aapt(int argb) {
-        return String.format("#%08x", argb).toUpperCase();
+        return String.format("#%08x", argb).toUpperCase(Locale.ROOT);
     }
 
     private List<WindowIcon> load(Collector reporter) throws IOException {

@@ -1,5 +1,14 @@
 package tartine.tx;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import android.graphics.Paint;
 import android.text.TextDirectionHeuristics;
 import android.text.TextPaint;
@@ -21,15 +30,6 @@ import tartine.gfx.GfxBackend;
 import tartine.gfx.skija.SkijaBackend;
 import tartine.guest.SandboxDenied;
 import tartine.runtime.Vfs;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Translator suite: the shared fixture dex runs as translated JVM bytecode
@@ -121,14 +121,30 @@ final class TranslatedVmTest {
 
     /** Reflection on translated methods wants primitive descriptors. */
     private static Class<?> prim(Class<?> boxed) {
-        if (boxed == Integer.class) return int.class;
-        if (boxed == Long.class) return long.class;
-        if (boxed == Float.class) return float.class;
-        if (boxed == Double.class) return double.class;
-        if (boxed == Byte.class) return byte.class;
-        if (boxed == Short.class) return short.class;
-        if (boxed == Boolean.class) return boolean.class;
-        if (boxed == Character.class) return char.class;
+        if (boxed == Integer.class) {
+            return int.class;
+        }
+        if (boxed == Long.class) {
+            return long.class;
+        }
+        if (boxed == Float.class) {
+            return float.class;
+        }
+        if (boxed == Double.class) {
+            return double.class;
+        }
+        if (boxed == Byte.class) {
+            return byte.class;
+        }
+        if (boxed == Short.class) {
+            return short.class;
+        }
+        if (boxed == Boolean.class) {
+            return boolean.class;
+        }
+        if (boxed == Character.class) {
+            return char.class;
+        }
         return boxed;
     }
 

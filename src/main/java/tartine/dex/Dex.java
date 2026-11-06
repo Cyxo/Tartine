@@ -8,6 +8,7 @@ import com.android.tools.smali.dexlib2.iface.DexFile;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -25,6 +26,7 @@ public final class Dex {
         return fromIface(DexFileFactory.loadDexFile(file, Opcodes.getDefault()));
     }
 
+    /** Loads a dex image from memory; non-dex bytes surface as IOException. */
     public static Dex load(byte[] bytes) throws IOException {
         try {
             return fromIface(new DexBackedDexFile(Opcodes.getDefault(), bytes));
@@ -42,7 +44,7 @@ public final class Dex {
     }
 
     public List<DexClass> classes() {
-        return classes;
+        return Collections.unmodifiableList(classes);
     }
 
     /** Class by type descriptor, or null. */

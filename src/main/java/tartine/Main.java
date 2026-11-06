@@ -69,8 +69,9 @@ public final class Main {
     private Main() {
     }
 
+    /** Runs the CLI subcommand named by the first argument. */
     public static void main(String[] args) {
-        String cliLogLevel = parseLogLevelArg(args);
+        final String cliLogLevel = parseLogLevelArg(args);
         java.util.List<String> kept = new java.util.ArrayList<>();
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -276,10 +277,10 @@ public final class Main {
                 bytes = loader.translateClass(desc);
             }
             StringWriter dump = new StringWriter();
-            PrintWriter writer = new PrintWriter(dump);
-            TraceClassVisitor printer = new TraceClassVisitor(writer);
-            new ClassReader(bytes).accept(printer, 0);
-            writer.flush();
+            try (PrintWriter writer = new PrintWriter(dump)) {
+                TraceClassVisitor printer = new TraceClassVisitor(writer);
+                new ClassReader(bytes).accept(printer, 0);
+            }
             printResult(dump.toString());
         }
     }
@@ -377,6 +378,8 @@ public final class Main {
     }
 
     /** Root-cause stack frames for a launch failure (debug only). */
+    // The != is a self-cause identity guard, not value equality.
+    @SuppressWarnings("PMD.CompareObjectsWithEquals")
     private static void printRootFrames(Throwable source) {
         Throwable root = source;
         while (root.getCause() != null && root.getCause() != root) {
@@ -723,10 +726,12 @@ public final class Main {
      * Translates a reflective/launch failure to one printable line: the
      * exception chain with host frames trimmed away.
      */
+    // The == is a self-cause identity guard, not value equality.
+    @SuppressWarnings("PMD.CompareObjectsWithEquals")
     private static String sanitize(Throwable error) {
         StringBuilder text = new StringBuilder();
         for (Throwable t = error; t != null && text.length() < 2000;
-                t = t.getCause() instanceof Throwable ? t.getCause() : null) {
+                t = t.getCause()) {
             if (text.length() > 0) {
                 text.append(" <- ");
             }

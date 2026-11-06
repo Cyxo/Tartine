@@ -1,16 +1,16 @@
 package android.content.res;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import android.util.DisplayMetrics;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tartine.fw.DisplayConfig;
 import tartine.fw.ThemeMode;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The desktop device Resources mapping: a 480x960 mdpi surface whose
@@ -81,7 +81,7 @@ class ResourcesTest {
     void displayMetricsAgreeWithTheConfiguration() {
         Resources resources = new Resources();
         DisplayMetrics metrics = resources.getDisplayMetrics();
-        Configuration config = resources.getConfiguration();
+        final Configuration config = resources.getConfiguration();
 
         assertEquals(480, metrics.widthPixels);
         assertEquals(960, metrics.heightPixels);
@@ -99,7 +99,7 @@ class ResourcesTest {
         DisplayConfig.set(1200, 2000, 2.5f);
 
         Resources resources = new Resources();
-        Configuration config = resources.getConfiguration();
+        final Configuration config = resources.getConfiguration();
         DisplayMetrics metrics = resources.getDisplayMetrics();
 
         assertEquals(1200, metrics.widthPixels);

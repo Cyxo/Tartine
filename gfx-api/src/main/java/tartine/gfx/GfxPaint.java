@@ -12,6 +12,7 @@ public final class GfxPaint {
     public final GfxPaintStyle style;
     public final float strokeWidth;
 
+    /** Builds a snapshot; a null style means FILL. */
     public GfxPaint(int color, boolean antiAlias, GfxPaintStyle style,
             float strokeWidth) {
         this.color = color;

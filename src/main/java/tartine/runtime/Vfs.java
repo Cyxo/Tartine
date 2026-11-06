@@ -62,6 +62,7 @@ import java.util.logging.Logger;
  */
 public final class Vfs {
     private static final Logger log = Logger.getLogger(Vfs.class.getName());
+
     private Vfs() {
     }
 
@@ -245,12 +246,14 @@ public final class Vfs {
             return null;
         }
         Path root = root().normalize();
-        for (Path walk = normalized; walk.getParent() != null; walk = walk.getParent()) {
+        Path walk = normalized;
+        while (walk != null) {
             if (walk.equals(root)) {
                 log.warning("Tartine: sdcard mount refused: '" + raw
                         + "' (encloses the Tartine root)");
                 return null;
             }
+            walk = walk.getParent();
         }
         return normalized;
     }
@@ -377,8 +380,13 @@ public final class Vfs {
         }
         try {
             Path target = Files.readSymbolicLink(link);
+            Path parent = link.getParent();
+            if (parent == null) {
+                // A link at a filesystem root has no mount parent to check.
+                return false;
+            }
             Path resolved = (target.isAbsolute() ? target
-                    : link.getParent().resolve(target)).normalize();
+                    : parent.resolve(target)).normalize();
             if (Files.isSymbolicLink(resolved)) {
                 return resolvesLinkInside(resolved, realRoot, depth + 1);
             }

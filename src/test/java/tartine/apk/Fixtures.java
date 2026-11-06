@@ -74,7 +74,7 @@ final class Fixtures {
         ByteBuffer out = ByteBuffer.allocate(16384).order(ByteOrder.LITTLE_ENDIAN);
         putU16(out, 0x0003);
         putU16(out, 8);
-        int fileSizePos = out.position();
+        final int fileSizePos = out.position();
         putU32(out, 0);
         writeUtf16Pool(out, new ArrayList<>(strings));
         emitElement(out, strings, root);
@@ -121,10 +121,10 @@ final class Fixtures {
 
     private static void startElement(ByteBuffer out, int nameIdx,
             LinkedHashSet<String> strings, List<AxAttr> attrs) {
-        int chunkStart = out.position();
+        final int chunkStart = out.position();
         putU16(out, 0x0102);
         putU16(out, 16);
-        int sizePos = out.position();
+        final int sizePos = out.position();
         putU32(out, 0);
         putU32(out, 1); // lineNumber
         putU32(out, -1); // comment
@@ -216,16 +216,16 @@ final class Fixtures {
         // ResTable_header: header(8) + packageCount(4), headerSize 12.
         putU16(out, 0x0002);
         putU16(out, 12);
-        int tableSizePos = out.position();
+        final int tableSizePos = out.position();
         putU32(out, 0);
         putU32(out, 1); // packageCount
         writeUtf16Pool(out, globalList);
 
-        int packageStart = out.position();
+        final int packageStart = out.position();
         // ResTable_package: header(8) id(4) name[128 u16] + 4 u32 = 288.
         putU16(out, 0x0200);
         putU16(out, 288);
-        int packageSizePos = out.position();
+        final int packageSizePos = out.position();
         putU32(out, 0);
         putU32(out, 0x7F); // package id
         for (int unit = 0; unit < 128; unit++) {
@@ -234,7 +234,7 @@ final class Fixtures {
         }
         putU32(out, 288); // typeStringsOff
         putU32(out, typeNames.size()); // lastPublicType
-        int keyStringsOffPos = out.position();
+        final int keyStringsOffPos = out.position();
         putU32(out, 0);
         putU32(out, keyNames.size()); // lastPublicKey
         while (out.position() - packageStart < 288) {
@@ -275,12 +275,12 @@ final class Fixtures {
         }
         for (String configKey : configKeys) {
             String[] parts = configKey.split(":");
-            int density = Integer.parseInt(parts[0]);
-            int sdkVersion = Integer.parseInt(parts[1]);
-            int chunkStart = out.position();
+            final int density = Integer.parseInt(parts[0]);
+            final int sdkVersion = Integer.parseInt(parts[1]);
+            final int chunkStart = out.position();
             putU16(out, 0x0201);
             putU16(out, 20);
-            int sizePos = out.position();
+            final int sizePos = out.position();
             putU32(out, 0);
             out.put((byte) typeId);
             out.put((byte) 0); // res0
@@ -342,18 +342,18 @@ final class Fixtures {
 
     /** Writes a UTF-16 string pool chunk; returns its byte size. */
     private static int writeUtf16Pool(ByteBuffer out, List<String> strings) {
-        int chunkStart = out.position();
+        final int chunkStart = out.position();
         putU16(out, 0x0001);
         putU16(out, 28);
-        int poolSizePos = out.position();
+        final int poolSizePos = out.position();
         putU32(out, 0);
         putU32(out, strings.size());
         putU32(out, 0); // styleCount
         putU32(out, 0); // flags: UTF-16, unsorted
-        int stringsStartPos = out.position();
+        final int stringsStartPos = out.position();
         putU32(out, 0);
         putU32(out, 0); // stylesStart
-        int offsetsPos = out.position();
+        final int offsetsPos = out.position();
         for (int i = 0; i < strings.size(); i++) {
             putU32(out, 0);
         }

@@ -144,6 +144,8 @@ public final class HostDisplays {
     }
 
     /** Waits for the display loop, then reports the first real failure. */
+    // The != guards against suppressing a failure onto itself (identity).
+    @SuppressWarnings("PMD.CompareObjectsWithEquals")
     private static void finish(DisplayLoop display, Throwable guestFailure)
             throws Exception {
         try {

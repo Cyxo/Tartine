@@ -79,6 +79,7 @@ public final class GuestFiles {
         return guestPath(file);
     }
 
+    /** Last path segment, ignoring trailing separators. */
     public static String getName(File file) {
         String guest = guestPath(file);
         int end = guest.length();
@@ -89,6 +90,7 @@ public final class GuestFiles {
         return guest.substring(slash + 1, end);
     }
 
+    /** Parent guest path, or null at the root. */
     public static String getParent(File file) {
         String guest = guestPath(file);
         if (guest.equals("/")) {
@@ -161,6 +163,7 @@ public final class GuestFiles {
         return host != null && Files.isRegularFile(host);
     }
 
+    /** Host hidden-attribute check; unmapped paths read as visible. */
     public static boolean isHidden(File file) {
         Path host = target(file, Vfs.policy());
         if (host == null) {
@@ -173,6 +176,7 @@ public final class GuestFiles {
         }
     }
 
+    /** Last-modified time in millis, or 0 when unknown. */
     public static long lastModified(File file) {
         Path host = target(file, Vfs.policy());
         if (host == null) {
@@ -185,6 +189,7 @@ public final class GuestFiles {
         }
     }
 
+    /** File size in bytes, or 0 when unknown. */
     public static long length(File file) {
         Path host = target(file, Vfs.policy());
         if (host == null) {
@@ -197,6 +202,7 @@ public final class GuestFiles {
         }
     }
 
+    /** Creates an empty file; false when it already exists. */
     public static boolean createNewFile(File file) throws IOException {
         Path host = requireTarget(file, true);
         try {
@@ -207,6 +213,7 @@ public final class GuestFiles {
         }
     }
 
+    /** Deletes the file or empty directory; false on failure. */
     public static boolean delete(File file) {
         Path host = requireTarget(file, true);
         try {
@@ -224,6 +231,7 @@ public final class GuestFiles {
         return list(file, (FilenameFilter) null);
     }
 
+    /** Entry names accepted by the filter, or null when not a directory. */
     public static String[] list(File file, FilenameFilter filter) {
         Vfs.Policy policy = Vfs.policy();
         Path host = target(file, policy);
@@ -233,7 +241,7 @@ public final class GuestFiles {
         }
         File dir = new GuestFile(guest);
         try (Stream<Path> entries = Files.list(host)) {
-            return entries.map(entry -> entry.getFileName().toString())
+            return entries.map(entry -> entry.toFile().getName())
                     .filter(name -> filter == null || filter.accept(dir, name))
                     .toArray(String[]::new);
         } catch (IOException e) {
@@ -245,6 +253,7 @@ public final class GuestFiles {
         return listFiles(file, (FilenameFilter) null);
     }
 
+    /** Guest files for the names accepted by the filter. */
     public static File[] listFiles(File file, FilenameFilter filter) {
         String[] names = list(file, filter);
         if (names == null) {
@@ -258,6 +267,7 @@ public final class GuestFiles {
         return out;
     }
 
+    /** Guest files accepted by the filter, or null when not a directory. */
     public static File[] listFiles(File file, FileFilter filter) {
         Vfs.Policy policy = Vfs.policy();
         Path host = target(file, policy);
@@ -267,7 +277,7 @@ public final class GuestFiles {
         }
         try (Stream<Path> entries = Files.list(host)) {
             return entries.map(entry -> new GuestFile(
-                            join(guest, entry.getFileName().toString())))
+                            join(guest, entry.toFile().getName())))
                     .filter(child -> filter == null || filter.accept(child))
                     .toArray(File[]::new);
         } catch (IOException e) {
@@ -275,6 +285,7 @@ public final class GuestFiles {
         }
     }
 
+    /** Creates one directory; false when it cannot be created. */
     public static boolean mkdir(File file) {
         Path host = requireTarget(file, true);
         try {
@@ -285,6 +296,7 @@ public final class GuestFiles {
         }
     }
 
+    /** Creates missing parents; false when the path already exists or fails. */
     public static boolean mkdirs(File file) {
         Path host = requireTarget(file, true);
         if (Files.exists(host)) {
@@ -298,6 +310,7 @@ public final class GuestFiles {
         }
     }
 
+    /** Moves the file within the guest mounts; false on failure. */
     public static boolean renameTo(File file, File dest) {
         Path source = requireTarget(file, true);
         Path target = requireTarget(dest, true);
@@ -309,6 +322,7 @@ public final class GuestFiles {
         }
     }
 
+    /** Sets the modification time; false on failure. */
     public static boolean setLastModified(File file, long time) {
         Path host = requireTarget(file, true);
         try {
@@ -319,6 +333,7 @@ public final class GuestFiles {
         }
     }
 
+    /** Clears every write bit; false on failure. */
     public static boolean setReadOnly(File file) {
         Path host = requireTarget(file, true);
         try {
@@ -328,6 +343,7 @@ public final class GuestFiles {
         }
     }
 
+    /** Sets or clears the write bit; false on failure. */
     public static boolean setWritable(File file, boolean writable, boolean ownerOnly) {
         Path host = requireTarget(file, true);
         try {
@@ -341,6 +357,7 @@ public final class GuestFiles {
         return setWritable(file, writable, true);
     }
 
+    /** Sets or clears the read bit; false on failure. */
     public static boolean setReadable(File file, boolean readable, boolean ownerOnly) {
         Path host = requireTarget(file, true);
         try {
@@ -354,6 +371,7 @@ public final class GuestFiles {
         return setReadable(file, readable, true);
     }
 
+    /** Sets or clears the execute bit; false on failure. */
     public static boolean setExecutable(File file, boolean executable, boolean ownerOnly) {
         Path host = requireTarget(file, true);
         try {
@@ -399,6 +417,9 @@ public final class GuestFiles {
         return guestPath(file).compareTo(guestPath(other));
     }
 
+    /** Guest-path equality between two {@code File} values. */
+    // Static bridge for File.equals(Object): file is the receiver.
+    @SuppressWarnings("PMD.SuspiciousEqualsMethodName")
     public static boolean equals(File file, Object other) {
         if (!(other instanceof File that)) {
             return false;
@@ -423,10 +444,14 @@ public final class GuestFiles {
         throw new SandboxDenied("File.toPath is not available in the guest sandbox");
     }
 
+    /** Mirrors {@code java.io.File}; the acronym is the Java API name. */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static URI toURI(File file) {
         throw new SandboxDenied("File.toURI is not available in the guest sandbox");
     }
 
+    /** Mirrors {@code java.io.File}; the acronym is the Java API name. */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static URL toURL(File file) {
         throw new SandboxDenied("File.toURL is not available in the guest sandbox");
     }

@@ -1,5 +1,9 @@
 package tartine.apk;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -15,10 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tartine.dex.DexMagic;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests {@link ApkReader} and {@link BinaryXml} against a synthetic APK
@@ -135,7 +135,7 @@ class ApkReaderTest {
 
     // Attribute row: {nsIdx, nameIdx, rawIdx, dataType, data}.
     private static byte[] buildManifest() {
-        List<String> strings = Arrays.asList(
+        final List<String> strings = Arrays.asList(
                 ANDROID_NS, // 0
                 "application", // 1
                 "debuggable", // 2
@@ -151,21 +151,21 @@ class ApkReaderTest {
         ByteBuffer out = ByteBuffer.allocate(2048).order(ByteOrder.LITTLE_ENDIAN);
         putU16(out, 0x0003);
         putU16(out, 8);
-        int fileSizePos = out.position();
+        final int fileSizePos = out.position();
         putU32(out, 0);
 
-        int poolStart = out.position();
+        final int poolStart = out.position();
         putU16(out, 0x0001);
         putU16(out, 28);
-        int poolSizePos = out.position();
+        final int poolSizePos = out.position();
         putU32(out, 0);
         putU32(out, strings.size());
         putU32(out, 0); // styleCount
         putU32(out, 0); // flags: UTF-16, unsorted on purpose
-        int stringsStartPos = out.position();
+        final int stringsStartPos = out.position();
         putU32(out, 0);
         putU32(out, 0); // stylesStart
-        int offsetsPos = out.position();
+        final int offsetsPos = out.position();
         for (int i = 0; i < strings.size(); i++) {
             putU32(out, 0);
         }
@@ -175,7 +175,8 @@ class ApkReaderTest {
         }
         out.putInt(stringsStartPos, out.position() - poolStart);
         for (int i = 0; i < encoded.size(); i++) {
-            out.putInt(offsetsPos + i * 4, out.position() - (poolStart + out.getInt(stringsStartPos)));
+            int offset = out.position() - (poolStart + out.getInt(stringsStartPos));
+            out.putInt(offsetsPos + i * 4, offset);
             out.put(encoded.get(i));
         }
         while (out.position() % 4 != 0) {
@@ -207,10 +208,10 @@ class ApkReaderTest {
     }
 
     private static void startElement(ByteBuffer out, int nameIdx, int[][] attrs) {
-        int chunkStart = out.position();
+        final int chunkStart = out.position();
         putU16(out, 0x0102);
         putU16(out, 16);
-        int sizePos = out.position();
+        final int sizePos = out.position();
         putU32(out, 0);
         putU32(out, 1); // lineNumber
         putU32(out, -1); // comment

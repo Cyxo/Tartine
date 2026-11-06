@@ -61,6 +61,7 @@ public final class FixtureDex {
     private FixtureDex() {
     }
 
+    /** Writes the shared {@code Ltest/Hello;} dex fixture to {@code dexFile}. */
     public static void writeHello(Path dexFile) throws Exception {
         Opcodes opcodes = Opcodes.getDefault();
         DexBuilder builder = new DexBuilder(opcodes);
@@ -68,13 +69,14 @@ public final class FixtureDex {
                 new ImmutableMethodReference("Ljava/lang/Object;", "<init>",
                         Collections.<String>emptyList(), "V"));
 
-        BuilderMethod counterInit = trivialInit(builder, objectInit, COUNTER, "Ljava/lang/Object;");
-        BuilderMethod baseInit = trivialInit(builder, objectInit, BASE, "Ljava/lang/Object;");
+        final BuilderMethod counterInit =
+                trivialInit(builder, objectInit, COUNTER, "Ljava/lang/Object;");
+        final BuilderMethod baseInit = trivialInit(builder, objectInit, BASE, "Ljava/lang/Object;");
         MutableMethodImplementation baseWhoImpl = new MutableMethodImplementation(1);
         baseWhoImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
                 builder.internStringReference("base")));
         baseWhoImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
-        BuilderMethod baseWho = builder.internMethod(BASE, "who",
+        final BuilderMethod baseWho = builder.internMethod(BASE, "who",
                 Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/String;",
                 AccessFlags.PUBLIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), baseWhoImpl);
@@ -164,7 +166,7 @@ public final class FixtureDex {
                 Collections.singletonList(boomInit));
 
         // Cmp: a dex-defined Comparator comparing Integers by subtraction.
-        BuilderMethod cmpInit = trivialInit(builder, objectInit, "Ltest/Cmp;",
+        final BuilderMethod cmpInit = trivialInit(builder, objectInit, "Ltest/Cmp;",
                 "Ljava/lang/Object;");
         MutableMethodImplementation cmpCompareImpl = new MutableMethodImplementation(5);
         cmpCompareImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 3, 0, 0,
@@ -204,20 +206,21 @@ public final class FixtureDex {
                         "Ljava/util/TreeSet;", "<init>",
                         Collections.singletonList("Ljava/util/Comparator;"), "V"))));
         subSetInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
-        BuilderMethod subSetInit = builder.internMethod("Ltest/SubSet;", "<init>",
+        final BuilderMethod subSetInit = builder.internMethod("Ltest/SubSet;", "<init>",
                 Collections.singletonList(new ImmutableMethodParameter(
                         "Ljava/util/Comparator;", Collections.emptySet(), "comparator")),
                 "V",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(),
                 Collections.emptySet(), Collections.emptySet(), subSetInitImpl);
         MutableMethodImplementation subSetGetSizeImpl = new MutableMethodImplementation(1);
-        subSetGetSizeImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_SUPER, 1, 0, 0, 0, 0,
+        subSetGetSizeImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_SUPER, 1, 0, 0, 0, 0,
                 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Ljava/util/TreeSet;", "size",
                         Collections.<String>emptyList(), "I"))));
         subSetGetSizeImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
         subSetGetSizeImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
-        BuilderMethod subSetGetSize = builder.internMethod("Ltest/SubSet;", "getSize",
+        final BuilderMethod subSetGetSize = builder.internMethod("Ltest/SubSet;", "getSize",
                 Collections.<ImmutableMethodParameter>emptyList(), "I",
                 AccessFlags.PUBLIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), subSetGetSizeImpl);
@@ -250,68 +253,102 @@ public final class FixtureDex {
                 Collections.<String>emptyList(), "Hello.java",
                 Collections.emptySet(),
                 Collections.<BuilderField>emptyList(),
-                Arrays.asList(demos.get("init"), demos.get("id"), demos.get("twice"), demos.get("greet"), demos.get("make"), demos.get("sum"), demos.get("len"), demos.get("safely"), demos.get("clinit"), demos.get("boot"),
-                        demos.get("nullCast"), demos.get("castOk"), demos.get("castFail"), demos.get("cmpTiny"), demos.get("sb"), demos.get("throwCatch"), demos.get("intBox"), demos.get("arrayCopy"),
-                        demos.get("appendableCast"), demos.get("badCast"), demos.get("stringOps"), demos.get("mathMax"), demos.get("missing"), demos.get("vis"), demos.get("sdk"), demos.get("fwCast"),
-                        demos.get("fwGhost"), demos.get("fwInit"), demos.get("activityStub"), demos.get("nops"), demos.get("covarOk"), demos.get("covarPrim"), demos.get("constClass"),
-                        demos.get("clazzIsInstance"), demos.get("updater"), demos.get("sysClock"), demos.get("longArith"), demos.get("floatArith"), demos.get("doubleArith"),
-                        demos.get("lazyDemo"), demos.get("lazyIsInstance"), demos.get("executorDemo"), demos.get("postDemo"), demos.get("postSubDemo"), demos.get("casDemo"),
-                        demos.get("handlerDemo"),
-                        demos.get("threadDemo"), demos.get("mapDemo"), demos.get("listDemo"), demos.get("setDemo"), demos.get("iterDemo"), demos.get("nullish"), demos.get("nullRecv"),
-                        demos.get("boolStr"), demos.get("charStr"), demos.get("weakGet"), demos.get("weakClear"), demos.get("colorCmp"), demos.get("colorName"),
-                        demos.get("colorValueOf"), demos.get("mapDefaults"), demos.get("mapPutAbsent"), demos.get("repeatDemo"), demos.get("emptyDemo"),
-                        demos.get("strictSqrt"), demos.get("linkedMapDemo"), demos.get("blockedExec"), demos.get("txChain"), demos.get("argbDemo"),
-                        demos.get("parseDemo"), demos.get("activityWindow"), demos.get("viewVis"), demos.get("lpDemo"), demos.get("viewLp"), demos.get("vgAdd"), demos.get("paintDemo"), demos.get("textPaintDemo"),
-                        demos.get("paintTextDemo"), demos.get("paintFullDemo"), demos.get("typefaceDemo"), demos.get("heuristicDemo"), demos.get("boringDemo"),
-                        demos.get("desiredDemo"), demos.get("desiredSpanDemo"), demos.get("spannableDemo"), demos.get("enumValuesDemo"), demos.get("obtainDemo"),
-                        demos.get("directionDemo"), demos.get("builderOptsDemo"), demos.get("lineBreakDemo"), demos.get("buildLayoutDemo"),
-                        demos.get("layoutGetDemo"),
-                        demos.get("colorDemo"), demos.get("strokeDemo"), demos.get("styleDemo"), demos.get("styleRoundDemo"), demos.get("nanosDemo"), demos.get("contentGroup"),
-                        demos.get("missFind"), demos.get("contentChild"), demos.get("viewCtx"), demos.get("clipDemo"), demos.get("attachDemo"),
-                        demos.get("tagDemo"), demos.get("tagMiss"), demos.get("attachedDemo"), demos.get("parentDemo"), demos.get("vtoDemo"),
-                        demos.get("drawDemo"), demos.get("vtoLayoutDemo"), demos.get("vtoScrollDemo"), demos.get("vtoClusterDemo"),
-                        demos.get("contentViewDemo"), demos.get("choreoDemo"), demos.get("handlerAsyncDemo"),
-                        demos.get("high16Demo"), demos.get("wideHigh16Demo"), demos.get("fillDemo"), demos.get("runtimeDemo"),
-                        demos.get("runtimeExecDemo"), demos.get("runtimeExitDemo"), demos.get("runtimeHaltDemo"),
-                        demos.get("systemSetPropertyDemo"),
-                        demos.get("forNameDenied"),
-                        demos.get("cpuDemo"), demos.get("propDemo"), demos.get("windowDemo"), demos.get("parentLinkDemo"),
-                        demos.get("attachLinkDemo"), demos.get("parentIfDemo"), demos.get("idDemo"), demos.get("viewHandlerDemo"),
-                        demos.get("detachedHandlerDemo"), demos.get("reflectDemo"), demos.get("reflectInheritDemo"), demos.get("reflectMissDemo"), demos.get("reflectPubDemo"),
-                        demos.get("annoDemo"),
-                        demos.get("longUpdaterDemo"), demos.get("intUpdaterDemo"), demos.get("cloneDemo"), demos.get("ordinalDemo"),
-                        demos.get("switchDemo"), demos.get("switchDefaultDemo"), demos.get("copyDemo"), demos.get("loaderDemo"), demos.get("loadClassDemo"),
-                        demos.get("serviceDemo"), demos.get("sdkIntDemo"), demos.get("suppressedDemo"), demos.get("zeroCheckDemo"),
-                        demos.get("nullCheckDemo"), demos.get("frameIdDemo"), demos.get("frameCbDemo"), demos.get("postCbDemo"),
-                        demos.get("plusCollDemo"), demos.get("childAddDemo"), demos.get("childRemoveDemo"), demos.get("attachPropDemo"), demos.get("ctxDemo"),
-                        demos.get("resDemo"), demos.get("metricsDemo"), demos.get("configDemo"), demos.get("layoutDirDemo"), demos.get("configCopyDemo"),
-                        demos.get("touchModeDemo"),
-                        demos.get("willNotDrawDemo"), demos.get("focusableDemo"), demos.get("a11yImportantDemo"), demos.get("a11yDelegateDemo"),
-                        demos.get("dragDemo"), demos.get("getClassDemo"), demos.get("getClassHostDemo"), demos.get("subDemo"), demos.get("layoutDemo"),
-                        demos.get("measuredDemo"),
-                        demos.get("insetsAnimDemo"), demos.get("specDemo"), demos.get("localeDemo"), demos.get("forceDarkDemo"), demos.get("windowFocusDemo"), demos.get("hwDemo"), demos.get("focusCheckDemo"), demos.get("translationDemo"), demos.get("stackDemo"), demos.get("traceDemo"),
-                        demos.get("retainedDemo"), demos.get("bundleDemo"), demos.get("bundleIntDemo"), demos.get("applicationDemo"), demos.get("intentDemo"),
-                        demos.get("intentExtrasDemo"), demos.get("iterableDemo"), demos.get("entryDemo"), demos.get("classPrimDemo"),
-                        demos.get("resolverDemo"), demos.get("settingsUriDemo"), demos.get("contentObserverDemo"), demos.get("settingsFloatDemo"),
-                        demos.get("resolverObsDemo"), demos.get("themeDemo"), demos.get("resColorDemo"), demos.get("compCbDemo"), demos.get("fillFloatDemo"),
-                        demos.get("hostFillDemo"), demos.get("sysServiceDemo"), demos.get("a11yDemo"), demos.get("a11yEnabledDemo"), demos.get("sortDemo"),
-                        demos.get("autofillDemo"), demos.get("autofillCbDemo"),
-                        demos.get("importantDemo"), demos.get("captureDemo"), demos.get("clipboardDemo"), demos.get("treeDemo"), demos.get("viewConfigDemo"),
-                        demos.get("appCtxDemo"),
-                        demos.get("ctorDemo"), demos.get("fileDemo"),
-                        demos.get("fileDenyDemo"), demos.get("fileMkdirDemo"),
-                        demos.get("fileStreamDemo")));
+                Arrays.asList(
+                    demos.get("init"), demos.get("id"), demos.get("twice"), demos.get("greet"),
+                    demos.get("make"), demos.get("sum"), demos.get("len"), demos.get("safely"),
+                    demos.get("clinit"), demos.get("boot"), demos.get("nullCast"),
+                    demos.get("castOk"), demos.get("castFail"), demos.get("cmpTiny"),
+                    demos.get("sb"), demos.get("throwCatch"), demos.get("intBox"),
+                    demos.get("arrayCopy"), demos.get("appendableCast"), demos.get("badCast"),
+                    demos.get("stringOps"), demos.get("mathMax"), demos.get("missing"),
+                    demos.get("vis"), demos.get("sdk"), demos.get("fwCast"), demos.get("fwGhost"),
+                    demos.get("fwInit"), demos.get("activityStub"), demos.get("nops"),
+                    demos.get("covarOk"), demos.get("covarPrim"), demos.get("constClass"),
+                    demos.get("clazzIsInstance"), demos.get("updater"), demos.get("sysClock"),
+                    demos.get("longArith"), demos.get("floatArith"), demos.get("doubleArith"),
+                    demos.get("lazyDemo"), demos.get("lazyIsInstance"), demos.get("executorDemo"),
+                    demos.get("postDemo"), demos.get("postSubDemo"), demos.get("casDemo"),
+                    demos.get("handlerDemo"), demos.get("threadDemo"), demos.get("mapDemo"),
+                    demos.get("listDemo"), demos.get("setDemo"), demos.get("iterDemo"),
+                    demos.get("nullish"), demos.get("nullRecv"), demos.get("boolStr"),
+                    demos.get("charStr"), demos.get("weakGet"), demos.get("weakClear"),
+                    demos.get("colorCmp"), demos.get("colorName"), demos.get("colorValueOf"),
+                    demos.get("mapDefaults"), demos.get("mapPutAbsent"), demos.get("repeatDemo"),
+                    demos.get("emptyDemo"), demos.get("strictSqrt"), demos.get("linkedMapDemo"),
+                    demos.get("blockedExec"), demos.get("txChain"), demos.get("argbDemo"),
+                    demos.get("parseDemo"), demos.get("activityWindow"), demos.get("viewVis"),
+                    demos.get("lpDemo"), demos.get("viewLp"), demos.get("vgAdd"),
+                    demos.get("paintDemo"), demos.get("textPaintDemo"), demos.get("paintTextDemo"),
+                    demos.get("paintFullDemo"), demos.get("typefaceDemo"),
+                    demos.get("heuristicDemo"), demos.get("boringDemo"), demos.get("desiredDemo"),
+                    demos.get("desiredSpanDemo"), demos.get("spannableDemo"),
+                    demos.get("enumValuesDemo"), demos.get("obtainDemo"),
+                    demos.get("directionDemo"), demos.get("builderOptsDemo"),
+                    demos.get("lineBreakDemo"), demos.get("buildLayoutDemo"),
+                    demos.get("layoutGetDemo"), demos.get("colorDemo"), demos.get("strokeDemo"),
+                    demos.get("styleDemo"), demos.get("styleRoundDemo"), demos.get("nanosDemo"),
+                    demos.get("contentGroup"), demos.get("missFind"), demos.get("contentChild"),
+                    demos.get("viewCtx"), demos.get("clipDemo"), demos.get("attachDemo"),
+                    demos.get("tagDemo"), demos.get("tagMiss"), demos.get("attachedDemo"),
+                    demos.get("parentDemo"), demos.get("vtoDemo"), demos.get("drawDemo"),
+                    demos.get("vtoLayoutDemo"), demos.get("vtoScrollDemo"),
+                    demos.get("vtoClusterDemo"), demos.get("contentViewDemo"),
+                    demos.get("choreoDemo"), demos.get("handlerAsyncDemo"), demos.get("high16Demo"),
+                    demos.get("wideHigh16Demo"), demos.get("fillDemo"), demos.get("runtimeDemo"),
+                    demos.get("runtimeExecDemo"), demos.get("runtimeExitDemo"),
+                    demos.get("runtimeHaltDemo"), demos.get("systemSetPropertyDemo"),
+                    demos.get("forNameDenied"), demos.get("cpuDemo"), demos.get("propDemo"),
+                    demos.get("windowDemo"), demos.get("parentLinkDemo"),
+                    demos.get("attachLinkDemo"), demos.get("parentIfDemo"), demos.get("idDemo"),
+                    demos.get("viewHandlerDemo"), demos.get("detachedHandlerDemo"),
+                    demos.get("reflectDemo"), demos.get("reflectInheritDemo"),
+                    demos.get("reflectMissDemo"), demos.get("reflectPubDemo"),
+                    demos.get("annoDemo"), demos.get("longUpdaterDemo"),
+                    demos.get("intUpdaterDemo"), demos.get("cloneDemo"), demos.get("ordinalDemo"),
+                    demos.get("switchDemo"), demos.get("switchDefaultDemo"), demos.get("copyDemo"),
+                    demos.get("loaderDemo"), demos.get("loadClassDemo"), demos.get("serviceDemo"),
+                    demos.get("sdkIntDemo"), demos.get("suppressedDemo"),
+                    demos.get("zeroCheckDemo"), demos.get("nullCheckDemo"),
+                    demos.get("frameIdDemo"), demos.get("frameCbDemo"), demos.get("postCbDemo"),
+                    demos.get("plusCollDemo"), demos.get("childAddDemo"),
+                    demos.get("childRemoveDemo"), demos.get("attachPropDemo"), demos.get("ctxDemo"),
+                    demos.get("resDemo"), demos.get("metricsDemo"), demos.get("configDemo"),
+                    demos.get("layoutDirDemo"), demos.get("configCopyDemo"),
+                    demos.get("touchModeDemo"), demos.get("willNotDrawDemo"),
+                    demos.get("focusableDemo"), demos.get("a11yImportantDemo"),
+                    demos.get("a11yDelegateDemo"), demos.get("dragDemo"), demos.get("getClassDemo"),
+                    demos.get("getClassHostDemo"), demos.get("subDemo"), demos.get("layoutDemo"),
+                    demos.get("measuredDemo"), demos.get("insetsAnimDemo"), demos.get("specDemo"),
+                    demos.get("localeDemo"), demos.get("forceDarkDemo"),
+                    demos.get("windowFocusDemo"), demos.get("hwDemo"), demos.get("focusCheckDemo"),
+                    demos.get("translationDemo"), demos.get("stackDemo"), demos.get("traceDemo"),
+                    demos.get("retainedDemo"), demos.get("bundleDemo"), demos.get("bundleIntDemo"),
+                    demos.get("applicationDemo"), demos.get("intentDemo"),
+                    demos.get("intentExtrasDemo"), demos.get("iterableDemo"),
+                    demos.get("entryDemo"), demos.get("classPrimDemo"), demos.get("resolverDemo"),
+                    demos.get("settingsUriDemo"), demos.get("contentObserverDemo"),
+                    demos.get("settingsFloatDemo"), demos.get("resolverObsDemo"),
+                    demos.get("themeDemo"), demos.get("resColorDemo"), demos.get("compCbDemo"),
+                    demos.get("fillFloatDemo"), demos.get("hostFillDemo"),
+                    demos.get("sysServiceDemo"), demos.get("a11yDemo"),
+                    demos.get("a11yEnabledDemo"), demos.get("sortDemo"), demos.get("autofillDemo"),
+                    demos.get("autofillCbDemo"), demos.get("importantDemo"),
+                    demos.get("captureDemo"), demos.get("clipboardDemo"), demos.get("treeDemo"),
+                    demos.get("viewConfigDemo"), demos.get("appCtxDemo"), demos.get("ctorDemo"),
+                    demos.get("fileDemo"), demos.get("fileDenyDemo"), demos.get("fileMkdirDemo"),
+                    demos.get("fileStreamDemo")));
         builder.writeTo(new FileDataStore(dexFile.toFile()));
     }
 
-    private static Map<String, BuilderMethod> writeCoreDemos(DexBuilder builder, BuilderMethodReference objectInit) {
+    private static Map<String, BuilderMethod> writeCoreDemos(DexBuilder builder,
+            BuilderMethodReference objectInit) {
         Map<String, BuilderMethod> demos = new HashMap<>();
-        BuilderMethodReference helloId = builder.internMethodReference(
+        final BuilderMethodReference helloId = builder.internMethodReference(
                 new ImmutableMethodReference(HELLO, "id",
                         Collections.singletonList("I"), "I"));
-        BuilderFieldReference countField = builder.internFieldReference(
+        final BuilderFieldReference countField = builder.internFieldReference(
                 new ImmutableFieldReference(COUNTER, "count", "I"));
-        BuilderFieldReference counterStatic = builder.internFieldReference(
+        final BuilderFieldReference counterStatic = builder.internFieldReference(
                 new ImmutableFieldReference(HELLO, "counter", "I"));
 
         MutableMethodImplementation initImpl = new MutableMethodImplementation(1);
@@ -589,7 +626,8 @@ public final class FixtureDex {
         castFailImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
                 builder.internTypeReference(SUB)));
         castFailImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
-        castFailImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
+        castFailImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0, 0,
                 builder.internMethodReference(new ImmutableMethodReference(SUB, "<init>",
                         Collections.<String>emptyList(), "V"))));
         castFailImpl.addInstruction(new BuilderInstruction21c(Opcode.CHECK_CAST, 0,
@@ -1191,7 +1229,7 @@ public final class FixtureDex {
         jobInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
                 0, objectInit));
         jobInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
-        BuilderMethod jobInit = builder.internMethod("Ltest/Job;", "<init>",
+        final BuilderMethod jobInit = builder.internMethod("Ltest/Job;", "<init>",
                 Collections.<ImmutableMethodParameter>emptyList(), "V",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(),
                 Collections.emptySet(), Collections.emptySet(), jobInitImpl);
@@ -1258,7 +1296,7 @@ public final class FixtureDex {
         handlerInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0,
                 0, 0, objectInit));
         handlerInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
-        BuilderMethod handlerInit = builder.internMethod("Ltest/MyHandler;", "<init>",
+        final BuilderMethod handlerInit = builder.internMethod("Ltest/MyHandler;", "<init>",
                 Collections.<ImmutableMethodParameter>emptyList(), "V",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(),
                 Collections.emptySet(), Collections.emptySet(), handlerInitImpl);
@@ -1707,8 +1745,9 @@ public final class FixtureDex {
         return demos;
     }
 
-    private static Map<String, BuilderMethod> writeRuntimeDemos(DexBuilder builder, BuilderMethodReference objectInit) {
-        Map<String, BuilderMethod> demos = new HashMap<>();
+    private static Map<String, BuilderMethod> writeRuntimeDemos(DexBuilder builder,
+            BuilderMethodReference objectInit) {
+        final Map<String, BuilderMethod> demos = new HashMap<>();
         // Color enum with RED(0) and BLUE(1); <init> delegates to Enum.<init>.
         MutableMethodImplementation colorInitImpl = new MutableMethodImplementation(3);
         colorInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 3, 0, 1, 2, 0,
@@ -1716,7 +1755,7 @@ public final class FixtureDex {
                         "Ljava/lang/Enum;", "<init>",
                         Arrays.asList("Ljava/lang/String;", "I"), "V"))));
         colorInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
-        BuilderMethod colorInit = builder.internMethod("Ltest/Color;", "<init>",
+        final BuilderMethod colorInit = builder.internMethod("Ltest/Color;", "<init>",
                 Arrays.asList(
                         new ImmutableMethodParameter("Ljava/lang/String;",
                                 Collections.emptySet(), "name"),
@@ -1827,7 +1866,7 @@ public final class FixtureDex {
         flagInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
                 0, objectInit));
         flagInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
-        BuilderMethod flagInit = builder.internMethod("Ltest/FlagMap;", "<init>",
+        final BuilderMethod flagInit = builder.internMethod("Ltest/FlagMap;", "<init>",
                 Collections.<ImmutableMethodParameter>emptyList(), "V",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(),
                 Collections.emptySet(), Collections.emptySet(), flagInitImpl);
@@ -1839,7 +1878,7 @@ public final class FixtureDex {
                         Collections.singletonList("I"), "Ljava/lang/Integer;"))));
         flagGetImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
         flagGetImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 1));
-        BuilderMethod flagGet = builder.internMethod("Ltest/FlagMap;", "get",
+        final BuilderMethod flagGet = builder.internMethod("Ltest/FlagMap;", "get",
                 Collections.singletonList(
                         new ImmutableMethodParameter("Ljava/lang/Object;",
                                 Collections.emptySet(), "k")),
@@ -2146,17 +2185,20 @@ public final class FixtureDex {
                 builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/view/View;", "<init>",
                         Collections.<String>emptyList(), "V"))));
-        viewVisImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0, 0,
+        viewVisImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0, 0,
                 builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/view/View;", "getVisibility",
                         Collections.<String>emptyList(), "I"))));
         viewVisImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 1));
         viewVisImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 1, 8));
-        viewVisImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0, 0,
+        viewVisImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0, 0,
                 builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/view/View;", "setVisibility",
                         Collections.singletonList("I"), "V"))));
-        viewVisImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0, 0,
+        viewVisImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0, 0,
                 builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/view/View;", "getVisibility",
                         Collections.<String>emptyList(), "I"))));
@@ -3173,17 +3215,20 @@ public final class FixtureDex {
                 builder.internFieldReference(new ImmutableFieldReference(
                         "Landroid/graphics/Paint$Style;", "STROKE",
                         "Landroid/graphics/Paint$Style;"))));
-        styleRoundImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
+        styleRoundImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0,
                 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/graphics/Paint;", "setStyle",
                         Collections.singletonList("Landroid/graphics/Paint$Style;"), "V"))));
-        styleRoundImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+        styleRoundImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
                 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/graphics/Paint;", "getStyle",
                         Collections.<String>emptyList(),
                         "Landroid/graphics/Paint$Style;"))));
         styleRoundImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
-        styleRoundImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
+        styleRoundImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0,
                 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Ljava/lang/Enum;", "ordinal",
                         Collections.<String>emptyList(), "I"))));
@@ -3363,8 +3408,9 @@ public final class FixtureDex {
         return demos;
     }
 
-    private static Map<String, BuilderMethod> writeViewDemos(DexBuilder builder, BuilderMethodReference objectInit) {
-        Map<String, BuilderMethod> demos = new HashMap<>();
+    private static Map<String, BuilderMethod> writeViewDemos(DexBuilder builder,
+            BuilderMethodReference objectInit) {
+        final Map<String, BuilderMethod> demos = new HashMap<>();
         // attachDemo(): attach-listener registration is a silent no-op.
         MutableMethodImplementation attachImpl = new MutableMethodImplementation(2);
         attachImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
@@ -4411,8 +4457,9 @@ public final class FixtureDex {
                 builder.internTypeReference("Ljava/lang/Object;")));
         reflectInheritImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 4, 0));
         reflectInheritImpl.addInstruction(new BuilderInstruction23x(Opcode.APUT_OBJECT, 3, 2, 4));
-        reflectInheritImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 1, 2,
-                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+        reflectInheritImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_VIRTUAL, 3, 0, 1, 2, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
                         "Ljava/lang/Class;", "getMethod",
                         Arrays.asList("Ljava/lang/String;", "[Ljava/lang/Class;"),
                         "Ljava/lang/reflect/Method;"))));
@@ -5220,8 +5267,9 @@ public final class FixtureDex {
         return demos;
     }
 
-    private static Map<String, BuilderMethod> writeTextDemos(DexBuilder builder, BuilderMethodReference objectInit) {
-        Map<String, BuilderMethod> demos = new HashMap<>();
+    private static Map<String, BuilderMethod> writeTextDemos(DexBuilder builder,
+            BuilderMethodReference objectInit) {
+        final Map<String, BuilderMethod> demos = new HashMap<>();
         // a11yDemo(): no enabled accessibility services headless (empty list).
         MutableMethodImplementation a11yImpl = new MutableMethodImplementation(2);
         a11yImpl.addInstruction(new BuilderInstruction21c(Opcode.NEW_INSTANCE, 0,
@@ -5617,12 +5665,14 @@ public final class FixtureDex {
                         "Landroid/view/View;", "<init>",
                         Collections.<String>emptyList(), "V"))));
         a11yImportantImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 1));
-        a11yImportantImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0,
-                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+        a11yImportantImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_VIRTUAL, 2, 0, 1, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/view/View;", "setImportantForAccessibility",
                         Collections.singletonList("I"), "V"))));
-        a11yImportantImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0,
-                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+        a11yImportantImpl.addInstruction(new BuilderInstruction35c(
+                Opcode.INVOKE_VIRTUAL, 1, 0, 0, 0, 0, 0,
+                builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/view/View;", "getImportantForAccessibility",
                         Collections.<String>emptyList(), "I"))));
         a11yImportantImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
@@ -5714,7 +5764,7 @@ public final class FixtureDex {
         layoutImpl.addInstruction(new BuilderInstruction22b(Opcode.MUL_INT_LIT8, 1, 1, 10));
         layoutImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_INT, 1, 1, 2));
         layoutImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 1));
-        BuilderMethod layoutDemo = builder.internMethod(HELLO, "layoutDemo",
+        final BuilderMethod layoutDemo = builder.internMethod(HELLO, "layoutDemo",
                 Collections.<ImmutableMethodParameter>emptyList(), "I",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), layoutImpl);
@@ -5907,7 +5957,7 @@ public final class FixtureDex {
                         Collections.<String>emptyList(), "Z"))));
         windowFocusImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 0));
         windowFocusImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
-        BuilderMethod windowFocusDemo = builder.internMethod(HELLO, "windowFocusDemo",
+        final BuilderMethod windowFocusDemo = builder.internMethod(HELLO, "windowFocusDemo",
                 Collections.<ImmutableMethodParameter>emptyList(), "Z",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), windowFocusImpl);

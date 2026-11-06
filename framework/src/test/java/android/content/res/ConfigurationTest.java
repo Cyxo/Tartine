@@ -1,11 +1,11 @@
 package android.content.res;
 
-import java.util.Locale;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.Locale;
+import org.junit.jupiter.api.Test;
 
 /**
  * AOSP parity for the configuration value object. Source:

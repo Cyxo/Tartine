@@ -12,6 +12,7 @@ public final class GfxFontMetrics {
     public final float bottom;
     public final float leading;
 
+    /** Builds a metrics snapshot from the five Paint.FontMetrics values. */
     public GfxFontMetrics(float top, float ascent, float descent,
             float bottom, float leading) {
         this.top = top;

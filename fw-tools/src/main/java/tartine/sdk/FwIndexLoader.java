@@ -113,10 +113,10 @@ public final class FwIndexLoader {
                     throw new IOException("bad constant tag");
             }
         }
-        int classAccess = u2(buf);
-        String type = className(pool, u2(buf));
+        final int classAccess = u2(buf);
+        final String type = className(pool, u2(buf));
         int superIndex = u2(buf);
-        String superclass = superIndex == 0 ? null : className(pool, superIndex);
+        final String superclass = superIndex == 0 ? null : className(pool, superIndex);
         List<String> interfaces = new ArrayList<>();
         int interfaceCount = u2(buf);
         for (int i = 0; i < interfaceCount; i++) {

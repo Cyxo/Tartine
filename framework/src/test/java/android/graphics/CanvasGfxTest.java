@@ -1,17 +1,16 @@
 package android.graphics;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tartine.gfx.GfxBackend;
 import tartine.gfx.GfxFontMetrics;
 import tartine.gfx.testing.RecordingBackend;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Framework-side seam tests: android.graphics.Canvas/Paint/RecordingCanvas/
@@ -111,7 +110,7 @@ class CanvasGfxTest {
 
     @Test
     void drawRectForwardsThePaintSnapshot() {
-        Canvas canvas = canvas(100, 100);
+        final Canvas canvas = canvas(100, 100);
         Paint paint = new Paint(0);
         paint.setColor(0xFF336699);
         paint.setAntiAlias(true);
@@ -337,7 +336,7 @@ class CanvasGfxTest {
 
     @Test
     void renderNodeRecordingReplaysTheSealedPicture() {
-        Canvas target = canvas(100, 100);
+        final Canvas target = canvas(100, 100);
         RenderNode node = new RenderNode("test");
         RecordingCanvas recording = node.beginRecording(30, 40);
         recording.drawRect(1, 2, 3, 4, new Paint(0));
@@ -353,7 +352,7 @@ class CanvasGfxTest {
     }
 
     @Test
-    void rootlessCanvasKeepsStateWithoutABackend() {
+    void rootlessCanvasKeepsStateWithoutBackend() {
         Canvas canvas = new Canvas();
 
         assertEquals(0, canvas.getWidth());

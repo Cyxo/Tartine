@@ -48,6 +48,7 @@ public final class ApkReader implements AutoCloseable {
         return names;
     }
 
+    /** Reads one ZIP entry's bytes; throws when the entry is absent. */
     public byte[] readEntry(String name) throws IOException {
         ZipEntry entry = zip.getEntry(name);
         if (entry == null) {
@@ -89,7 +90,8 @@ public final class ApkReader implements AutoCloseable {
         if (name.equals("classes.dex")) {
             return 1;
         }
-        return Integer.parseInt(name.substring("classes".length(), name.length() - ".dex".length()));
+        return Integer.parseInt(
+                name.substring("classes".length(), name.length() - ".dex".length()));
     }
 
     public boolean hasResources() {

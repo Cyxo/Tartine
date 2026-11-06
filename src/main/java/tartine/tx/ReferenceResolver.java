@@ -44,6 +44,7 @@ public final class ReferenceResolver {
     private final Map<String, Boolean> methodMemo = new HashMap<>();
     private final Map<String, Boolean> typeMemo = new HashMap<>();
 
+    /** Builds a resolver over the guest dex and the host reflection fallback. */
     public ReferenceResolver(Function<String, DexClass> dexLookup,
             Map<String, List<DexClass.DexField>> synthsByOwner,
             Set<String> guestInterfaces, ClassLoader hostLoader) {
@@ -107,7 +108,7 @@ public final class ReferenceResolver {
         }
         boolean found = ref.owner().startsWith("[")
                 ? arrayMethod(ref)
-                : hasMethod(ref.owner(), ref, new HashSet<>());
+                : hasMethodIn(ref.owner(), ref, new HashSet<>());
         methodMemo.put(ref.text(), found);
         return found;
     }
@@ -308,7 +309,7 @@ public final class ReferenceResolver {
         return false;
     }
 
-    private boolean hasMethod(String type, Insn.MethodRef ref, Set<String> seen) {
+    private boolean hasMethodIn(String type, Insn.MethodRef ref, Set<String> seen) {
         if (type == null || type.isEmpty() || !seen.add(type)) {
             return false;
         }
@@ -321,11 +322,11 @@ public final class ReferenceResolver {
                     return true;
                 }
             }
-            if (hasMethod(guest.superclass, ref, seen)) {
+            if (hasMethodIn(guest.superclass, ref, seen)) {
                 return true;
             }
             for (String itf : guest.interfaces) {
-                if (hasMethod(itf, ref, seen)) {
+                if (hasMethodIn(itf, ref, seen)) {
                     return true;
                 }
             }
@@ -353,11 +354,11 @@ public final class ReferenceResolver {
             }
         }
         if (host.getSuperclass() != null
-                && hasMethod(descriptorOf(host.getSuperclass()), ref, seen)) {
+                && hasMethodIn(descriptorOf(host.getSuperclass()), ref, seen)) {
             return true;
         }
         for (Class<?> itf : host.getInterfaces()) {
-            if (hasMethod(descriptorOf(itf), ref, seen)) {
+            if (hasMethodIn(descriptorOf(itf), ref, seen)) {
                 return true;
             }
         }

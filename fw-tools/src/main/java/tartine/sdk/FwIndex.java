@@ -16,6 +16,7 @@ import java.util.Map;
  * and has no dependency on this model.
  */
 public final class FwIndex {
+    /** Method entry: name, erased parameter/return types, access bits, generic Signature. */
     public static final class FwMethod {
         public final String name;
         public final List<String> params;
@@ -33,6 +34,7 @@ public final class FwIndex {
             this(name, params, ret, access, null);
         }
 
+        /** Builds a method entry with an explicit generic Signature (nullable). */
         public FwMethod(String name, List<String> params, String ret, int access,
                 String signature) {
             this.name = name;
@@ -43,6 +45,7 @@ public final class FwIndex {
         }
     }
 
+    /** Field entry: name, erased type descriptor, and access bits. */
     public static final class FwField {
         public final String name;
         public final String type;
@@ -53,6 +56,7 @@ public final class FwIndex {
             this(name, type, 0);
         }
 
+        /** Builds a field entry with explicit access bits. */
         public FwField(String name, String type, int access) {
             this.name = name;
             this.type = type;
@@ -60,6 +64,7 @@ public final class FwIndex {
         }
     }
 
+    /** Class entry: hierarchy, members, true constants, access bits, and generic Signature. */
     public static final class FwClass {
         public final String descriptor;
         /** Superclass descriptor, or null (only {@code Ljava/lang/Object;}). */
@@ -85,6 +90,7 @@ public final class FwIndex {
             this(descriptor, superclass, interfaces, methods, fields, constants, access, null);
         }
 
+        /** Builds a class entry with explicit access bits and generic Signature. */
         public FwClass(String descriptor, String superclass, List<String> interfaces,
                 List<FwMethod> methods, List<FwField> fields, Map<String, Object> constants,
                 int access, String signature) {
@@ -98,6 +104,7 @@ public final class FwIndex {
             this.signature = signature;
         }
 
+        /** True when a method with the same erased signature is indexed. */
         public boolean hasMethod(String name, List<String> params, String ret) {
             for (FwMethod method : methods) {
                 if (method.name.equals(name) && method.params.equals(params)
@@ -108,6 +115,7 @@ public final class FwIndex {
             return false;
         }
 
+        /** True when a field with this name is indexed. */
         public boolean hasField(String name) {
             for (FwField field : fields) {
                 if (field.name.equals(name)) {

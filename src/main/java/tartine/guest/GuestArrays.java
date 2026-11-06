@@ -16,6 +16,7 @@ public final class GuestArrays {
     private GuestArrays() {
     }
 
+    /** Coerces a bridged value to its declared array type; non-arrays pass through. */
     public static Object coerce(Object value, String arrDesc, Class<?> caller) {
         if (value == null || arrDesc == null || !arrDesc.startsWith("[")) {
             return value;

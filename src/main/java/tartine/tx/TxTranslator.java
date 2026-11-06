@@ -128,6 +128,7 @@ public final class TxTranslator implements Opcodes {
         }
         return byOwner;
     }
+
     /** DEX access flag bits (dex spec), shared by classes/methods/fields. */
     static final int ACC_PUBLIC = 0x1;
     static final int ACC_PRIVATE = 0x2;
@@ -149,6 +150,8 @@ public final class TxTranslator implements Opcodes {
 
     /** Exceptions who cannot be translated surface as this named failure. */
     public static final class TxGap extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
         public TxGap(String message) {
             super(message);
         }
@@ -544,8 +547,6 @@ public final class TxTranslator implements Opcodes {
         }
     }
 
-    /** Probe-only: print locals/stack frames around a verifier conflict so
-     *  the guest dex shapes behind it can be matched quickly. */
     /** One-line description of a failing ASM instruction for the census. */
     private static String brief(AbstractInsnNode n) {
         if (n == null) {

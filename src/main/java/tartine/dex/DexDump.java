@@ -7,6 +7,7 @@ public final class DexDump {
     private DexDump() {
     }
 
+    /** Renders one class: its methods and one instruction per line. */
     public static String dump(DexClass cls) {
         StringBuilder out = new StringBuilder();
         out.append("class ").append(cls.type).append('\n');

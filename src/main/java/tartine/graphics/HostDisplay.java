@@ -24,6 +24,7 @@ public interface HostDisplay extends AutoCloseable {
      * displays that keep pixels beyond that call must copy them.
      */
     record Frame(int width, int height, int[] argb) {
+        /** Rejects non-positive sizes and mismatched pixel counts. */
         public Frame {
             if (width <= 0 || height <= 0) {
                 throw new IllegalArgumentException(
@@ -43,6 +44,7 @@ public interface HostDisplay extends AutoCloseable {
      * scale, so a HiDPI window keeps the same dp size as an mdpi one.
      */
     record WindowMetrics(int width, int height, float contentScale) {
+        /** Rejects non-positive sizes and a non-finite/non-positive scale. */
         public WindowMetrics {
             if (width <= 0 || height <= 0) {
                 throw new IllegalArgumentException("window size must be "
@@ -79,6 +81,7 @@ public interface HostDisplay extends AutoCloseable {
      * directly.
      */
     record Resized(int width, int height) implements Event {
+        /** Rejects a non-positive framebuffer size. */
         public Resized {
             if (width <= 0 || height <= 0) {
                 throw new IllegalArgumentException("window size must be "
@@ -109,7 +112,7 @@ public interface HostDisplay extends AutoCloseable {
     }
 
     /** Scroll wheel delta. */
-    record Scrolled(double xOffset, double yOffset) implements Event {
+    record Scrolled(double scrollX, double scrollY) implements Event {
     }
 
     /** GLFW release/press/repeat actions, independent of its constants. */

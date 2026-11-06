@@ -35,6 +35,7 @@ public final class DexClass {
          */
         public final Object initialValue;
 
+        /** Builds a field entry, including its dex static initial value (nullable). */
         public DexField(String name, String type, int accessFlags, Object initialValue) {
             this.name = name;
             this.type = type;
@@ -53,6 +54,7 @@ public final class DexClass {
     public final List<DexMethod> methods;
     public final List<DexField> fields;
 
+    /** Builds a parsed class with its members; lists are defensively copied. */
     public DexClass(String type, int accessFlags, String superclass,
             List<String> interfaces, List<DexMethod> methods, List<DexField> fields) {
         this.type = type;
@@ -125,16 +127,13 @@ public final class DexClass {
         if (ev instanceof FloatEncodedValue v) {
             return v.getValue();
         }
-        if (ev instanceof
-                DoubleEncodedValue v) {
+        if (ev instanceof DoubleEncodedValue v) {
             return v.getValue();
         }
-        if (ev instanceof
-                BooleanEncodedValue v) {
+        if (ev instanceof BooleanEncodedValue v) {
             return v.getValue();
         }
-        if (ev instanceof
-                StringEncodedValue v) {
+        if (ev instanceof StringEncodedValue v) {
             return v.getValue();
         }
         return null;

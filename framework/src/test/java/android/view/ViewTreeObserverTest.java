@@ -1,11 +1,11 @@
 package android.view;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.Test;
 
 /**
  * AOSP parity for the listener registry and dispatch paths. Source:
@@ -98,17 +98,18 @@ class ViewTreeObserverTest {
 
         ViewTreeObserver.OnWindowFocusChangeListener focusListener =
                 hasFocus -> focus.incrementAndGet();
-        ViewTreeObserver.OnWindowAttachListener attachListener = new ViewTreeObserver.OnWindowAttachListener() {
-            @Override
-            public void onWindowAttached() {
-                attach.incrementAndGet();
-            }
+        ViewTreeObserver.OnWindowAttachListener attachListener =
+                new ViewTreeObserver.OnWindowAttachListener() {
+                    @Override
+                    public void onWindowAttached() {
+                        attach.incrementAndGet();
+                    }
 
-            @Override
-            public void onWindowDetached() {
-                attach.incrementAndGet();
-            }
-        };
+                    @Override
+                    public void onWindowDetached() {
+                        attach.incrementAndGet();
+                    }
+                };
         ViewTreeObserver.OnWindowVisibilityChangeListener visibilityListener =
                 v -> visibility.incrementAndGet();
         ViewTreeObserver.OnTouchModeChangeListener touchListener =

@@ -49,6 +49,7 @@ import java.util.zip.ZipFile;
  */
 public final class Imports {
     private static final Logger log = Logger.getLogger(Imports.class.getName());
+
     private Imports() {
     }
 
@@ -126,8 +127,9 @@ public final class Imports {
             }
             try (Stream<Path> walk = Files.walk(root)) {
                 walk.filter(path -> path.toString().endsWith(".java")).forEach(path -> {
-                    String fileName = path.getFileName().toString();
-                    if (fileName.equals("module-info.java") || fileName.equals("package-info.java")) {
+                    String fileName = path.toFile().getName();
+                    if (fileName.equals("module-info.java")
+                            || fileName.equals("package-info.java")) {
                         return;
                     }
                     try {
@@ -416,14 +418,14 @@ public final class Imports {
             List<Path> javaFiles;
             try (Stream<Path> walk = Files.walk(root)) {
                 javaFiles = walk.filter(path -> path.toString().endsWith(".java"))
-                        .filter(path -> !path.getFileName().toString().equals("module-info.java"))
+                        .filter(path -> !path.toFile().getName().equals("module-info.java"))
                         .sorted()
                         .toList();
             }
             for (Path file : javaFiles) {
                 files++;
                 String source = Files.readString(file, StandardCharsets.UTF_8);
-                String fileName = file.getFileName().toString();
+                String fileName = file.toFile().getName();
                 String simple = fileName.substring(0, fileName.length() - ".java".length());
                 String shortened = shorten(source, simple, universe);
                 if (!shortened.equals(source)) {
@@ -494,7 +496,7 @@ public final class Imports {
                 continue;
             }
             if (startsWithWord(source, pos, "import")) {
-                int lineStart = lineStart(source, pos);
+                final int lineStart = lineStart(source, pos);
                 int cursor = skipTrivia(source, pos + "import".length());
                 boolean isStatic = false;
                 if (startsWithWord(source, cursor, "static")) {
@@ -727,7 +729,8 @@ public final class Imports {
             char c = text.charAt(pos);
             if (c == ' ' || c == '\t') {
                 int end = pos;
-                while (end < text.length() && (text.charAt(end) == ' ' || text.charAt(end) == '\t')) {
+                while (end < text.length()
+                        && (text.charAt(end) == ' ' || text.charAt(end) == '\t')) {
                     end++;
                 }
                 if (end < text.length() && (text.charAt(end) == '\n' || text.charAt(end) == '\r')) {

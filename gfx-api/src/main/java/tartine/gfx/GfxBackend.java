@@ -21,6 +21,8 @@ public interface GfxBackend {
      * second, different backend is rejected rather than silently replacing
      * the first. Re-installing the same instance is a no-op.
      */
+    // The != is identity: re-installing the very same instance is a no-op.
+    @SuppressWarnings("PMD.CompareObjectsWithEquals")
     static void install(GfxBackend backend) {
         if (backend == null) {
             throw new NullPointerException("backend");

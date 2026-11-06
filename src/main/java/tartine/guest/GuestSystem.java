@@ -50,6 +50,7 @@ public final class GuestSystem {
         return getProperty(key, null);
     }
 
+    /** System property value when allowlisted, else {@code def}. */
     public static String getProperty(String key, String def) {
         if (key == null) {
             throw new NullPointerException("key");

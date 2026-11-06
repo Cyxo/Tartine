@@ -1,23 +1,5 @@
 package tartine.graphics;
 
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.glfw.Callbacks;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.glfw.GLFWImage;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.system.MemoryStack;
-
 import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
 import static org.lwjgl.glfw.GLFW.GLFW_RESIZABLE;
 import static org.lwjgl.glfw.GLFW.GLFW_TRUE;
@@ -80,6 +62,24 @@ import static org.lwjgl.opengl.GL11.glViewport;
 import static org.lwjgl.opengl.GL12.GL_BGRA;
 import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.system.MemoryUtil.NULL;
+
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.glfw.Callbacks;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWImage;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.system.MemoryStack;
 
 /**
  * GLFW implementation of {@link HostDisplay}: one Android Window on one
@@ -390,8 +390,8 @@ final class GlfwHostDisplay implements DisplayLoop {
         glfwSetMouseButtonCallback(window, (win, button, action, mods) ->
                 events.publish(new HostDisplay.Button(button, action(action),
                         mods)));
-        glfwSetScrollCallback(window, (win, xOffset, yOffset) ->
-                events.publish(new HostDisplay.Scrolled(xOffset, yOffset)));
+        glfwSetScrollCallback(window, (win, scrollX, scrollY) ->
+                events.publish(new HostDisplay.Scrolled(scrollX, scrollY)));
         // Framebuffer, not window-size, callbacks: the guest viewport is
         // already in pixels, so no point-to-pixel conversion is needed here.
         glfwSetFramebufferSizeCallback(window, (win, width, height) ->
@@ -410,11 +410,11 @@ final class GlfwHostDisplay implements DisplayLoop {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer width = stack.mallocInt(1);
             IntBuffer height = stack.mallocInt(1);
-            FloatBuffer xScale = stack.mallocFloat(1);
-            FloatBuffer yScale = stack.mallocFloat(1);
+            FloatBuffer scaleX = stack.mallocFloat(1);
+            FloatBuffer scaleY = stack.mallocFloat(1);
             glfwGetFramebufferSize(window, width, height);
-            glfwGetWindowContentScale(window, xScale, yScale);
-            float scale = Math.max(xScale.get(0), yScale.get(0));
+            glfwGetWindowContentScale(window, scaleX, scaleY);
+            float scale = Math.max(scaleX.get(0), scaleY.get(0));
             if (!(scale > 0) || !Float.isFinite(scale)) {
                 scale = 1.0f;
             }
@@ -518,8 +518,8 @@ final class GlfwHostDisplay implements DisplayLoop {
                     (double) bufferHeight / frameHeight);
             int drawWidth = (int) Math.round(frameWidth * scale);
             int drawHeight = (int) Math.round(frameHeight * scale);
-            int left = (bufferWidth - drawWidth) / 2;
-            int top = (bufferHeight - drawHeight) / 2;
+            final int left = (bufferWidth - drawWidth) / 2;
+            final int top = (bufferHeight - drawHeight) / 2;
             glEnable(GL_TEXTURE_2D);
             glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
             glBindTexture(GL_TEXTURE_2D, texture);

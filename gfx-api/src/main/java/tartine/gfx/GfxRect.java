@@ -12,6 +12,7 @@ public final class GfxRect {
     public final float right;
     public final float bottom;
 
+    /** Builds a rectangle from its four edges. */
     public GfxRect(float left, float top, float right, float bottom) {
         this.left = left;
         this.top = top;

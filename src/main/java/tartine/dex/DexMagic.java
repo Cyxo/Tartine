@@ -12,7 +12,7 @@ public final class DexMagic {
     }
 
     /** First four bytes of every DEX file: {@code 64 65 78 0A} ("dex\n"). */
-    public static final byte[] PREFIX = new byte[]{0x64, 0x65, 0x78, 0x0A};
+    private static final byte[] PREFIX = new byte[]{0x64, 0x65, 0x78, 0x0A};
 
     /** Known DEX format versions, oldest first. */
     public static final String[] VERSIONS = new String[]{"035", "037", "038", "039"};

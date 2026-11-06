@@ -49,29 +49,33 @@ public final class ResourceTable {
     private final Map<String, List<ConfValue>> byName = new LinkedHashMap<>();
     private String packageName = "";
 
-    /** One (type, entry) value under one configuration. */
+    /**
+     * One (type, entry) value under one configuration.
+     *
+     * @param type enclosing type name, e.g. {@code mipmap}
+     * @param entry entry name from the package key pool, e.g. {@code ic_launcher}
+     * @param density configuration density (0 = default/any)
+     * @param sdkVersion declared version (0 = none)
+     * @param dataType Res_value dataType (raw)
+     * @param data Res_value data word (raw)
+     */
     public record ConfValue(
-            /** Enclosing type name, e.g. {@code mipmap}. */
             String type,
-            /** Entry name from the package key pool, e.g. {@code ic_launcher}. */
             String entry,
-            /** Configuration density (0 = default/any). */
             int density,
-            /** Declared version (0 = none). */
             int sdkVersion,
-            /** Res_value dataType (raw). */
             int dataType,
-            /** Res_value data word (raw). */
             int data) {
     }
 
     private ResourceTable() {
     }
 
+    /** Parses a resources.arsc table into its global string pool and value maps. */
     public static ResourceTable parse(byte[] data) throws IOException {
         ByteBuffer buf = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
-        ResourceTable table = new ResourceTable();
-        int rootStart = buf.position();
+        final ResourceTable table = new ResourceTable();
+        final int rootStart = buf.position();
         if (buf.remaining() < 12) {
             throw new IOException("too short for resources.arsc");
         }
@@ -108,7 +112,7 @@ public final class ResourceTable {
         if (buf.remaining() < 12) {
             throw new IOException("truncated package header");
         }
-        int id = buf.getInt();
+        final int id = buf.getInt();
         byte[] nameBytes = new byte[256];
         buf.get(nameBytes);
         int typeStringsOff = buf.getInt();
@@ -156,11 +160,11 @@ public final class ResourceTable {
         if (buf.remaining() < 20) {
             throw new IOException("truncated type chunk");
         }
-        int typeId = buf.get() & 0xFF;
+        final int typeId = buf.get() & 0xFF;
         buf.get(); // res0
         int flags = buf.getShort() & 0xFFFF;
         int entryCount = buf.getInt();
-        int entriesStart = buf.getInt();
+        final int entriesStart = buf.getInt();
         int configSize = buf.getInt();
         if (configSize < 8 || 20 + configSize > end - start) {
             throw new IOException("bad config size");
@@ -168,8 +172,8 @@ public final class ResourceTable {
         // ResTable_config fields we model: density (offset 14), sdkVersion
         // (offset 24, only when the config actually carries it).
         int configStart = start + 20;
-        int density = configSize >= 16 ? u16(data, configStart + 14) : DENSITY_DEFAULT;
-        int sdkVersion = configSize >= 28 ? u16(data, configStart + 24) : 0;
+        final int density = configSize >= 16 ? u16(data, configStart + 14) : DENSITY_DEFAULT;
+        final int sdkVersion = configSize >= 28 ? u16(data, configStart + 24) : 0;
         int offsetsStart = start + 20 + configSize;
         int[] indexes = new int[entryCount];
         int[] offsets = new int[entryCount];
@@ -199,7 +203,7 @@ public final class ResourceTable {
         }
         String typeName = typeNames.get(typeId - 1);
         for (int i = 0; i < entryCount; i++) {
-            int entryIndex = indexes[i];
+            final int entryIndex = indexes[i];
             if (offsets[i] == NO_ENTRY) {
                 continue;
             }
@@ -284,7 +288,7 @@ public final class ResourceTable {
     private static List<String> readStringPool(byte[] data, ByteBuffer buf,
             int chunkStart, int chunkEnd) throws IOException {
         int stringCount = buf.getInt();
-        int styleCount = buf.getInt();
+        buf.getInt(); // styleCount
         int flags = buf.getInt();
         int stringsStart = buf.getInt();
         buf.getInt(); // stylesStart

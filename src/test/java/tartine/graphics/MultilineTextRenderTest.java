@@ -1,5 +1,8 @@
 package tartine.graphics;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import android.graphics.Canvas;
 import android.text.Layout;
 import android.text.StaticLayout;
@@ -10,9 +13,6 @@ import org.junit.jupiter.api.Test;
 import tartine.gfx.GfxBackend;
 import tartine.gfx.GfxSurface;
 import tartine.gfx.skija.SkijaBackend;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * End-to-end multiline text: six one-character lines must rasterise as a
@@ -62,10 +62,18 @@ class MultilineTextRenderTest {
                 if ((pixels[y * width + x] >>> 24) == 0) {
                     continue;
                 }
-                if (x < minX) minX = x;
-                if (x > maxX) maxX = x;
-                if (y < minY) minY = y;
-                if (y > maxY) maxY = y;
+                if (x < minX) {
+                    minX = x;
+                }
+                if (x > maxX) {
+                    maxX = x;
+                }
+                if (y < minY) {
+                    minY = y;
+                }
+                if (y > maxY) {
+                    maxY = y;
+                }
             }
         }
 

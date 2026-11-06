@@ -1,17 +1,5 @@
 package tartine.guest;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import tartine.TestLinks;
-import tartine.runtime.Vfs;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -20,6 +8,19 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Objects;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import tartine.GuestLinks;
+import tartine.runtime.Vfs;
 
 /**
  * Behavioral pins for the File bridge: guest paths map through the VFS,
@@ -171,7 +172,7 @@ class GuestFilesTest {
         Path outside = root.resolve("outside");
         Files.createDirectories(outside);
         Files.writeString(outside.resolve("secret.txt"), "secret");
-        assumeTrue(TestLinks.create(card.resolve("escape"), outside),
+        assumeTrue(GuestLinks.create(card.resolve("escape"), outside),
                 "symlink/junction creation unavailable");
 
         GuestFile secret = new GuestFile("/sdcard/escape/secret.txt");
@@ -212,7 +213,7 @@ class GuestFilesTest {
         Files.writeString(dir.resolve("b.bin"), "b");
 
         GuestFile guest = new GuestFile("/sdcard/dir");
-        String[] names = guest.list();
+        String[] names = Objects.requireNonNull(guest.list());
         Arrays.sort(names);
         assertArrayEquals(new String[] {"a.txt", "b.bin"}, names);
 
