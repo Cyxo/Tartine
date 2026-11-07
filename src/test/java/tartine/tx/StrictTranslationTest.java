@@ -26,7 +26,7 @@ import tartine.guest.SandboxDenied;
  */
 final class StrictTranslationTest {
     /** Fixture demos for intentionally denied host/framework surfaces. */
-    private static final Set<String> EXPECTED_DENIALS = Set.of(
+    private static final Set<String> EXPECTED_SANDBOX_DENIALS = Set.of(
             "Ltest/Hello;->applicationDemo()Ljava/lang/Object;",
             "Ltest/Hello;->blockedExec()V",
             "Ltest/Hello;->fwCast()I",
@@ -43,12 +43,12 @@ final class StrictTranslationTest {
             "Ltest/Hello;->systemSetPropertyDemo()Ljava/lang/Object;");
 
     /**
-     * Known translator defects in the fixture corpus: object-builder chains
-     * whose initialized-instance tracking misses a register move, and a
-     * second {@code <init>} on a reused register. Fixing one should remove
-     * its entry here.
+     * Fixture-only shapes real d8 never emits and the JVM verifier cannot
+     * accept: a {@code new-instance} consumed by a virtual call without any
+     * {@code <init>}, and a second {@code <init>} on an already-initialized
+     * instance. They exist to pin the interpreter-era demos.
      */
-    private static final Set<String> KNOWN_TRANSLATOR_GAPS = Set.of(
+    private static final Set<String> FIXTURE_ONLY_GAPS = Set.of(
             "Ltest/Hello;->builderOptsDemo()Ljava/lang/Object;",
             "Ltest/Hello;->directionDemo()Ljava/lang/Object;",
             "Ltest/Hello;->handlerDemo()I",
@@ -81,8 +81,8 @@ final class StrictTranslationTest {
             }
         }
 
-        assertEquals(EXPECTED_DENIALS, denials);
-        assertEquals(KNOWN_TRANSLATOR_GAPS, translatorGaps);
+        assertEquals(EXPECTED_SANDBOX_DENIALS, denials);
+        assertEquals(FIXTURE_ONLY_GAPS, translatorGaps);
         assertEquals(EXPECTED_CLASS_DENIALS, classDenials);
     }
 
@@ -104,8 +104,8 @@ final class StrictTranslationTest {
                         context.loader.dexLookup(), context.parent,
                         context.loader.resolver()));
 
-        int expected = EXPECTED_DENIALS.size()
-                + KNOWN_TRANSLATOR_GAPS.size();
+        int expected = EXPECTED_SANDBOX_DENIALS.size()
+                + FIXTURE_ONLY_GAPS.size();
         assertEquals(expected, gap.degradations().size());
         assertTrue(gap.getMessage().startsWith(
                 "strict translation: " + expected
