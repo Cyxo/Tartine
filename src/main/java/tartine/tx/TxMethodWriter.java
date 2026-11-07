@@ -33,13 +33,15 @@ import tartine.dex.Insn;
  * silently-invalid bytecode.
  */
 final class TxMethodWriter implements Opcodes {
-    /** Kind chars: narrow-int-family, float, reference, long, double. */
-    private static final char INT = 'I';
-    private static final char FLOAT = 'F';
-    private static final char OBJ = 'A';
-    private static final char LONG = 'J';
-    private static final char DOUBLE = 'D';
-    private static final char UNKNOWN = 0;
+    // Local aliases for the RegisterKinds lattice: Opcodes declares FLOAT,
+    // DOUBLE and LONG as Integer fields, and inherited fields shadow static
+    // imports, so importing these names from RegisterKinds cannot work.
+    private static final char INT = RegisterKinds.INT;
+    private static final char FLOAT = RegisterKinds.FLOAT;
+    private static final char OBJ = RegisterKinds.OBJ;
+    private static final char LONG = RegisterKinds.LONG;
+    private static final char DOUBLE = RegisterKinds.DOUBLE;
+    private static final char UNKNOWN = RegisterKinds.UNKNOWN;
 
     private static final int ACC_STATIC = 0x8;
 
@@ -179,7 +181,7 @@ final class TxMethodWriter implements Opcodes {
             Map<Integer, Set<Character>> kinds = new HashMap<>();
             storeKinds = kinds;
             emitBody();
-            mixedSlots = conflicting(kinds);
+            mixedSlots = RegisterKinds.conflicting(kinds);
         } finally {
             previewing = false;
             storeKinds = null;
@@ -204,38 +206,6 @@ final class TxMethodWriter implements Opcodes {
         pendingResult = null;
         pendingArray = null;
         currentInsn = null;
-    }
-
-    /** Registers whose stores carry conflicting kinds unify Object-typed. */
-    private Set<Integer> conflicting(Map<Integer, Set<Character>> kinds) {
-        Set<Integer> out = new HashSet<>();
-        for (Map.Entry<Integer, Set<Character>> e : kinds.entrySet()) {
-            Set<Character> ks = e.getValue();
-            // {reference + int}/{reference + long} stores unify: the real
-            // d8 shape is a numeric landing in a register that also carries
-            // a reference (the merged merge then rejects int in one path
-            // and the ref type in another; SnapshotIdSet.set(I) joins a
-            // long-typed arm with a ref arm at one label; Long.valueOf
-            // boxes the numeric arm, loads unbox per demand).
-            // {int,long} joins unify too: d8 never bit-reinterprets
-            // through a merged register (the dex verifier rejects
-            // width-mixed register pairs at the read), so boxing stays
-            // exact.
-            // Float/long/double joins WITHOUT an int/reference arm stay
-            // raw-typed: their bit-reinterpret semantics (aget of a
-            // float[] read as int bits) die under boxing, and
-            // int-to-float vN,vN reuses a register in straight-line code
-            // without any merge. A truly merging numeric conflict degrades
-            // loudly through the BasicVerifier probe instead.
-            if ((ks.contains(OBJ) && (ks.contains(INT) || ks.contains(LONG)
-                    || ks.contains(FLOAT) || ks.contains(DOUBLE)))
-                    || (ks.contains(INT) && (ks.contains(LONG)
-                            || ks.contains(FLOAT)))
-                     || (ks.contains(LONG) && ks.contains(DOUBLE))) {
-                out.add(e.getKey());
-            }
-        }
-        return out;
     }
 
     void emitBody() {
@@ -508,30 +478,13 @@ final class TxMethodWriter implements Opcodes {
             if (ks.isEmpty()) {
                 continue;
             }
-            if (ks.size() == 1) {
-                regKind[r] = ks.iterator().next();
-                continue;
+            char joined = RegisterKinds.join(ks);
+            if (joined == RegisterKinds.CONFLICT) {
+                throw new TxTranslator.TxGap(method.owner + "->"
+                        + method.signature() + " @" + off
+                        + " : register v" + r + " joins with kinds " + ks);
             }
-            if ((ks.contains(OBJ) && (ks.contains(INT)
-                    || ks.contains(LONG) || ks.contains(FLOAT)
-                    || ks.contains(DOUBLE)))
-                    || (ks.contains(INT) && (ks.contains(LONG)
-                            || ks.contains(FLOAT)))
-                     || (ks.contains(LONG) && ks.contains(DOUBLE))
-                     || (ks.contains(FLOAT) && ks.contains(LONG))) {
-                // {obj,int}/{obj,long} joins live in unified slots: numerics
-                // box through the store's mixed-slot lane and loads unbox
-                // per demand (SnapshotIdSet.set(I) joins a long-typed arm
-                // with a ref arm at one label). {int,long} merges box too:
-                // d8 never bit-reinterprets through a merged register (the
-                // dex verifier rejects width-mixed register pairs at the
-                // read), so the value world stays exact.
-                regKind[r] = OBJ;
-                continue;
-            }
-            throw new TxTranslator.TxGap(method.owner + "->"
-                    + method.signature() + " @" + off
-                    + " : register v" + r + " joins with kinds " + ks);
+            regKind[r] = joined;
         }
     }
 
