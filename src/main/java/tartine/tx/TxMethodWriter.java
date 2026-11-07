@@ -72,6 +72,9 @@ final class TxMethodWriter implements Opcodes {
      *   <li>regKind — the same for DEX value kinds: {@code if-ge} on a
      *       register both preds typed int must not inherit the Object kind
      *       a <i>returned</i> branch left (Lifecycling's adapter loop).</li>
+     *   <li>regArray — array descriptors, so a dead throw arm's
+     *       {@code new-instance} overwrite cannot erase the array a live
+     *       loop-exit edge still carries (ComposableMethod.invoke).</li>
      * </ul>
      */
     private final Map<Integer, List<JoinPred>> joinPreds = new HashMap<>();
@@ -96,11 +99,14 @@ final class TxMethodWriter implements Opcodes {
     private static final class JoinPred {
         final boolean[] zero;
         final char[] kind;
+        final String[] array;
         final boolean[] uninit;
 
-        JoinPred(boolean[] zero, char[] kind, boolean[] uninit) {
+        JoinPred(boolean[] zero, char[] kind, String[] array,
+                boolean[] uninit) {
             this.zero = zero;
             this.kind = kind;
+            this.array = array;
             this.uninit = uninit;
         }
     }
@@ -385,7 +391,7 @@ final class TxMethodWriter implements Opcodes {
     private void snapshotJoin(int target) {
         joinPreds.computeIfAbsent(target, x -> new ArrayList<>()).add(
                 new JoinPred(regZero.clone(), regKind.clone(),
-                        regUninit.clone()));
+                        regArray.clone(), regUninit.clone()));
     }
 
     /** Code whose flow never falls through to a following label. */
@@ -485,6 +491,27 @@ final class TxMethodWriter implements Opcodes {
                         + " : register v" + r + " joins with kinds " + ks);
             }
             regKind[r] = joined;
+            // Array view: restore the descriptor from the crossings instead
+            // of trusting the linear replay. A dead throw arm's overwrite
+            // must not erase the array a live edge still carries; keep a
+            // descriptor only when every crossing agrees.
+            String array = null;
+            boolean firstArray = true;
+            if (fallIn) {
+                array = regArray[r];
+                firstArray = false;
+            }
+            for (JoinPred pred : preds) {
+                String candidate = pred.array[r];
+                if (firstArray) {
+                    array = candidate;
+                    firstArray = false;
+                } else if (array == null || candidate == null
+                        || !array.equals(candidate)) {
+                    array = null;
+                }
+            }
+            regArray[r] = array;
         }
     }
 
