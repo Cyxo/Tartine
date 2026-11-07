@@ -41,6 +41,7 @@ import tartine.graphics.RenderLoop;
 import tartine.graphics.WindowIcon;
 import tartine.runtime.Vfs;
 import tartine.tx.ReferenceResolver;
+import tartine.tx.StrictAudit;
 import tartine.tx.TranslatedLoader;
 import tartine.tx.TxTranslator;
 
@@ -61,6 +62,9 @@ import tartine.tx.TxTranslator;
  * {@code txdump} is kept as an alias for the translated-class dump.
  * <li>{@code refs <file.apk>} — unresolved-reference census over every dex
  * class, before any translation.
+ * <li>{@code strict <file.apk> [classFilter]} — strict translation audit:
+ * translates every class (or descriptor substring matches) and fails on any
+ * translator gap while aggregating expected sandbox denials.
  * </ul>
  */
 public final class Main {
@@ -140,6 +144,11 @@ public final class Main {
                     require(args, 2);
                     printReferenceProblems(new File(args[1]));
                     break;
+                case "strict":
+                    require(args, 2);
+                    strictCheck(new File(args[1]),
+                            args.length > 2 ? args[2] : null);
+                    break;
                 default:
                     if (args[0].endsWith(".apk")) {
                         printApkSummary(new File(args[0]));
@@ -171,7 +180,7 @@ public final class Main {
     }
 
     private static void usage() {
-        printResult("Usage: tartine.Main (apk|run|gui|dump|refs) <file>");
+        printResult("Usage: tartine.Main (apk|run|gui|strict|dump|refs) <file>");
     }
 
     /**
@@ -250,6 +259,45 @@ public final class Main {
                 printResult(String.valueOf(problem));
             }
             printResult("refs: " + problems.size() + " unresolved reference(s)");
+        }
+    }
+
+    /**
+     * Strict translation audit ({@code strict}): translates the whole APK
+     * with gap degradation disabled, prints translator gaps individually and
+     * sandbox denials as an aggregate, and fails the command when a
+     * translator gap remains.
+     */
+    private static void strictCheck(File apk, String classFilter)
+            throws Exception {
+        try (ApkReader reader = ApkReader.open(apk.toPath())) {
+            DexSet dexes = reader.dexSet();
+            TranslatedLoader loader = new TranslatedLoader(
+                    Main.class.getClassLoader(), dexes);
+            StrictAudit.Result result = StrictAudit.run(
+                    dexes, loader, classFilter);
+            printResult("strict: " + result.audited() + " of "
+                    + result.classes() + " class(es) audited, "
+                    + result.translated() + " translated, "
+                    + result.classDenials()
+                    + " class-level sandbox denial(s)");
+            printResult("strict: " + result.translatorGaps().size()
+                    + " translator gap(s)"
+                    + (result.translatorGaps().isEmpty() ? "" : ":"));
+            for (TxTranslator.TxGap.Degradation gap
+                    : result.translatorGaps()) {
+                printResult("  " + gap.signature() + ": " + gap.reason());
+            }
+            int methodDenials = result.sandboxDenials().values().stream()
+                    .mapToInt(Integer::intValue).sum();
+            printResult("strict: " + methodDenials
+                    + " method-level sandbox denial(s)");
+            result.sandboxDenials().forEach((reason, count) ->
+                    printResult("  " + count + "x " + reason));
+            if (!result.clean()) {
+                throw new IllegalStateException(
+                        "strict: translator gaps found (see above)");
+            }
         }
     }
 

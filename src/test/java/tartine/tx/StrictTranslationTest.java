@@ -87,6 +87,35 @@ final class StrictTranslationTest {
     }
 
     @Test
+    void strictAuditClassifiesGapsAndRestoresTheFlag() throws Exception {
+        Context context = fixture();
+        TxTranslator.setStrictGaps(true);
+
+        StrictAudit.Result all = StrictAudit.run(
+                context.dex, context.loader, null);
+        assertTrue(TxTranslator.strictGaps());
+        assertEquals(context.dex.classCount(), all.classes());
+        assertEquals(context.dex.classCount(), all.audited());
+        assertFalse(all.clean());
+        assertEquals(EXPECTED_CLASS_DENIALS.size(), all.classDenials());
+        assertEquals(EXPECTED_SANDBOX_DENIALS.size(),
+                all.sandboxDenials().values().stream()
+                        .mapToInt(Integer::intValue).sum());
+        Set<String> gapSignatures = new TreeSet<>();
+        for (TxTranslator.TxGap.Degradation degradation
+                : all.translatorGaps()) {
+            gapSignatures.add(degradation.signature());
+        }
+        assertEquals(FIXTURE_ONLY_GAPS, gapSignatures);
+
+        StrictAudit.Result filtered = StrictAudit.run(
+                context.dex, context.loader, "Ltest/Orphan");
+        assertEquals(1, filtered.audited());
+        assertEquals(1, filtered.classDenials());
+        assertTrue(filtered.clean());
+    }
+
+    @Test
     void strictAggregateNamesEveryDegradedMethod() throws Exception {
         Context context = fixture();
         DexClass hello = context.dex.findClass("Ltest/Hello;");

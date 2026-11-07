@@ -58,6 +58,14 @@ usage = 'arg "[apk]" default="apks/app-debug.apk" help="APK file to inspect"'
 run = "bash scripts/refs.sh"
 run_windows = "pwsh -File scripts/refs.ps1"
 
+[tasks.strict]
+description = "Strict translation audit: fail on translator gaps across an APK"
+depends = ["build"]
+usage = '''arg "[apk]" default="apks/app-debug.apk" help="APK file to audit"
+  arg "[filter]" default="" help="Class descriptor substring to restrict the audit"'''
+run = "bash scripts/strict.sh"
+run_windows = "pwsh -File scripts/strict.ps1"
+
 [tasks.pre-commit]
 description = "Pre-commit gate: tests when test sources are staged, then Checkstyle, PMD and SpotBugs"
 run = "bash scripts/pre-commit.sh"

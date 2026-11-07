@@ -109,6 +109,7 @@ mise run gui [apks/app-debug.apk] [timeout]    # translated GUI probe: show the 
 mise run coverage                               # estimate framework method coverage (logic vs. auto-generated stubs)
 mise run dump <file.dex>                       # instruction dump of one dex file
 mise run refs [apks/app-debug.apk]             # unresolved-reference census (guest dex, then host)
+mise run strict [apks/app-debug.apk] [filter]  # translator-gap gate over every class
 ```
 
 `run` and `gui` execute the launcher as real JVM bytecode through the
@@ -137,6 +138,12 @@ It is a census, not a gate: translation still degrades an unresolved method
 body to its named `UnsupportedOperationException` gap on first use. A
 signature absent from the census points at behavior (or a translator bug),
 not missing linkage.
+
+`strict` is the translator-correctness gate: it translates every class with
+degradation disabled, lists each method the translator cannot translate, and
+exits non-zero when any remain. Sandbox denials are expected boundaries and
+are shown only as an aggregate. Pass a class descriptor substring (for
+example `Landroidx/compose/`) to sweep one package first.
 
 `mise tasks ls` lists everything; `mise run <task> --help` shows args.
 Launchers reuse the last `mise run build` output via direct `java`
