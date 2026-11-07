@@ -152,9 +152,51 @@ public final class TxTranslator implements Opcodes {
     public static final class TxGap extends RuntimeException {
         private static final long serialVersionUID = 1L;
 
-        public TxGap(String message) {
-            super(message);
+        /** One method that would have degraded to a named gap stub. */
+        public record Degradation(String signature, String reason) {
         }
+
+        /** Diagnostics only: safe to drop if the exception is serialized. */
+        private final transient List<Degradation> degradations;
+
+        public TxGap(String message) {
+            this(message, List.of());
+        }
+
+        /** A gap carrying one entry per degraded method (strict mode). */
+        public TxGap(String message, List<Degradation> degradations) {
+            super(message);
+            this.degradations = List.copyOf(degradations);
+        }
+
+        /** Per-method entries for an aggregate strict-mode failure. */
+        public List<Degradation> degradations() {
+            return degradations == null ? List.of() : degradations;
+        }
+    }
+
+    /**
+     * Strict translation: when set, a method that would degrade to a gap
+     * stub fails the whole class instead, with one aggregate {@link TxGap}
+     * naming every degraded method. Off by default so {@code run}/{@code gui}
+     * keep the live-and-degrade behavior; CI switches it on to turn silent
+     * correctness regressions into failures.
+     */
+    private static volatile boolean strictGaps;
+
+    /** Enables or disables strict gap handling (process-wide). */
+    public static void setStrictGaps(boolean strict) {
+        strictGaps = strict;
+    }
+
+    /** Whether strict gap handling is on. */
+    public static boolean strictGaps() {
+        return strictGaps;
+    }
+
+    /** Restores the production default (off); tests call this after use. */
+    public static void resetStrictGaps() {
+        strictGaps = false;
     }
 
     private final DexClass cls;
@@ -201,6 +243,7 @@ public final class TxTranslator implements Opcodes {
             Function<String, DexClass> dexLookup,
             ClassLoader hostLoader,
             ReferenceResolver resolver) {
+        final boolean strict = strictGaps;
         // Class-level flags come from the dex class_def_item (interfaces are
         // emitted ACC_INTERFACE: implementers fail at defineClass time
         // otherwise). ACC_SUPER only applies to class files.
@@ -236,6 +279,7 @@ public final class TxTranslator implements Opcodes {
                     field.type, null, null).visitEnd();
         }
         List<DexClass.DexField> staticSeeds = new ArrayList<>();
+        List<TxGap.Degradation> degraded = new ArrayList<>();
         boolean sawClinit = false;
         for (DexClass.DexField field : cls.fields) {
             if ((field.accessFlags & ACC_STATIC) != 0
@@ -315,9 +359,15 @@ public final class TxTranslator implements Opcodes {
             if (ok) {
                 new TxMethodWriter(out, method, staticSeeds,
                         resolver).emit();
+            } else if (strict) {
+                degraded.add(new TxGap.Degradation(
+                        method.owner + "->" + method.signature(), msg));
             } else {
                 emitGapStub(out, method, base, msg);
             }
+        }
+        if (!degraded.isEmpty()) {
+            throw strictFailure(cls, degraded);
         }
         if (!staticSeeds.isEmpty() && !sawClinit) {
             // The class seeds non-final statics but carries no <clinit>:
@@ -572,6 +622,19 @@ public final class TxTranslator implements Opcodes {
             return head + " " + ld.cst;
         }
         return head + " op=" + n.getOpcode();
+    }
+
+    /** Aggregate strict-mode failure: every degraded method, one per line. */
+    private static TxGap strictFailure(DexClass cls,
+            List<TxGap.Degradation> degraded) {
+        StringBuilder msg = new StringBuilder("strict translation: ")
+                .append(degraded.size()).append(" degraded method(s) in ")
+                .append(cls.type).append(':');
+        for (TxGap.Degradation entry : degraded) {
+            msg.append("\n  ").append(entry.signature()).append(": ")
+                    .append(entry.reason());
+        }
+        return new TxGap(msg.toString(), degraded);
     }
 
     /**
