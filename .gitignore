@@ -9,3 +9,6 @@ build/
 apks/*
 # THE one committed fixture APK (probe target for fresh clones) — never ignored:
 !apks/app-debug.apk
+
+# Dev-time CLI oracles fetched by mise run fetch-tools
+tools/

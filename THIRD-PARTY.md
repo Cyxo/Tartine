@@ -70,6 +70,7 @@ Files land in `tools/` which is gitignored. Size is verified on download.
 | `util-2.5.2.jar` | 2.5.2 | baksmali runtime dep | Maven Central `org/smali/util/2.5.2/` | BSD 3-Clause |
 | `jcommander-1.64.jar` | 1.64 | baksmali runtime dep (CLI parsing) | Maven Central `com/beust/jcommander/1.64/` | Apache-2.0 |
 | `apktool_3.0.3.jar` | 3.0.3 | Manifest/resource decode oracle | `https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_3.0.3.jar` (no published checksum; size 15 478 013 bytes matched, `version` + fixture decode smoke-tested) | Apache-2.0 |
+| `dex-tools-v2.4.zip` (extracted to `dex-tools-v2.4/`) | 2.4 | DEX→JVM behavioral differential oracle (`OracleDifferentialTest`) | GitHub release `pxb1988/dex2jar` tag `v2.4` (size 19 105 975 bytes; SHA-256 `EE7C45EB3C1D2474A6145D8D447E651A736A22D9664B6D3D3BE5A5A817DDA23A`) | Apache-2.0 |
 | `checkstyle-14.4.0-all.jar` | 14.4.0 | Pre-commit style gate (repo-tuned Google config) | GitHub release `checkstyle/checkstyle` tag `checkstyle-14.4.0` (all-in-one jar; no Maven Central equivalent) | LGPL-2.1 |
 
 Checkstyle is a dev-time gate only: the hook runs it as a CLI over staged
@@ -105,11 +106,10 @@ java -cp "tools/baksmali-2.5.2.jar;tools/util-2.5.2.jar;tools/jcommander-1.64.ja
 - **`com.android.tools.build:apksig`** (Google Maven only, Apache-2.0;
   stable 8.13.2 as of 2026-10-17) — APK signature verification (v2/v3,
   v1 fallback) for the future install/daemon flow.
-- **dex2jar** (Apache-2.0) / **Enjarify** (Apache-2.0, pure Python 3,
-  archived; successor `Storyyeller/enjarify`) - translation oracles that
-  convert DEX into JVM bytecode / Java source (dex2jar) or native Java
-  decompilation output (Enjarify) for cross-checking translated code.
-  Fetch on demand, scratch-only; not included.
+- **Enjarify** (Apache-2.0, pure Python 3, archived; successor
+  `Storyyeller/enjarify`) - native Java decompilation oracle for
+  cross-checking translated code. Fetch on demand, scratch-only; not
+  included.
 forge private classes. Analysis narrowly looks at request components.
 - **AOSP ART** — reference only, nothing to embed. Skia's Java route is now
   embedded **via Skija** (`io.github.humbleui:skija-shared` +

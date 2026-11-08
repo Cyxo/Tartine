@@ -58,5 +58,32 @@ foreach ($t in $tools) {
     Write-Host "  ok    $($t.File) ($actual bytes)"
 }
 
+# dex2jar ships as a zip distribution (the differential oracle); extract it
+# once. The jar inside the distribution is the presence marker.
+$dex2jarJar = Join-Path $toolsDir "dex-tools-v2.4/lib/dex-tools-v2.4.jar"
+if (Test-Path $dex2jarJar) {
+    Write-Host "  skip  dex-tools-v2.4 (already extracted)"
+} else {
+    $zip = Join-Path $toolsDir "dex-tools-v2.4.zip"
+    $dex2jarZip = Join-Path $toolsDir "dex-tools-v2.4"
+    if (Test-Path $dex2jarZip) { Remove-Item -Recurse -Force $dex2jarZip }
+    Write-Host "  fetch dex-tools-v2.4.zip ..."
+    Invoke-WebRequest -UseBasicParsing -OutFile $zip `
+        -Uri "https://github.com/pxb1988/dex2jar/releases/download/v2.4/dex-tools-v2.4.zip"
+    $actual = (Get-Item $zip).Length
+    if ($actual -ne 19105975) {
+        Remove-Item $zip
+        throw "Size mismatch for dex-tools-v2.4.zip: expected 19105975 bytes, got $actual. Aborting."
+    }
+    $sha = (Get-FileHash -Algorithm SHA256 $zip).Hash
+    if ($sha -ne "EE7C45EB3C1D2474A6145D8D447E651A736A22D9664B6D3D3BE5A5A817DDA23A") {
+        Remove-Item $zip
+        throw "SHA-256 mismatch for dex-tools-v2.4.zip: got $sha. Aborting."
+    }
+    Expand-Archive -Path $zip -DestinationPath $toolsDir -Force
+    Remove-Item $zip
+    Write-Host "  ok    dex-tools-v2.4 (extracted)"
+}
+
 Write-Host ""
 Write-Host "tools/ is ready."
