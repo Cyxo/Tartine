@@ -40,4 +40,37 @@ final class ComposeTranslationTest {
                     () -> result.translatorGaps().toString());
         }
     }
+
+    /**
+     * Join/scan shapes the synthetic fixture does not reach: a zero-const
+     * fallthrough arm must not erase a branch crossing's array descriptor
+     * ({@code LazyStaggeredGridMeasureKt.measure}), a skipped z-test then a
+     * dst-only conversion consumes an int ({@code MathKt.log}), a scan must
+     * not cross a fork ({@code FastFloatParserKt.nextFloat}), and a
+     * finally-restore {@code move-wide} must not trust the linear replay's
+     * stale narrow kind ({@code PainterNode.draw}).
+     */
+    @Test
+    void handlerAndJoinShapesTranslateUnderStrictMode() throws Exception {
+        Path apk = Path.of("apks", "app-debug.apk");
+        assumeTrue(Files.exists(apk), "committed Compose fixture APK missing");
+        String[] filters = {
+            "Landroidx/compose/ui/draw/PainterNode;",
+            "Landroidx/compose/foundation/lazy/staggeredgrid/"
+                    + "LazyStaggeredGridMeasureKt;",
+            "Lkotlin/math/MathKt__MathJVMKt;",
+            "Landroidx/compose/ui/graphics/vector/FastFloatParserKt;",
+        };
+        try (ApkReader reader = ApkReader.open(apk)) {
+            DexSet dex = reader.dexSet();
+            TranslatedLoader loader = new TranslatedLoader(
+                    ComposeTranslationTest.class.getClassLoader(), dex);
+            for (String filter : filters) {
+                StrictAudit.Result result = StrictAudit.run(dex, loader, filter);
+                assertTrue(result.translated() > 0, filter);
+                assertTrue(result.clean(),
+                        () -> filter + ": " + result.translatorGaps());
+            }
+        }
+    }
 }

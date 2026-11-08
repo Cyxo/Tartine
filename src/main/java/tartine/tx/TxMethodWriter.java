@@ -81,6 +81,16 @@ final class TxMethodWriter implements Opcodes {
 
     private final char[] regKind;
     private final String[] regArray;
+    /**
+     * Allocation token per uninitialized register (0 = none): new-instance
+     * results get their instruction token, the constructor {@code this} gets
+     * -1, and moves copy the token. An {@code <init>} call initializes every
+     * register sharing the token, matching ART (which marks all aliases of
+     * the allocation initialized when its constructor completes); without it
+     * a default-arg constructor initializing through a copy leaves the
+     * original register "uninitialized" at later uses (FlowLayoutKt).
+     */
+    private final int[] uninitGroup;
     /** Slot created by new-instance before its constructor runs. The JVM
      *  verifier only permits {@code <init>} and astore on such refs, so a
      *  virtual call on one is a loud gap (fixture-only shape; real dx never
@@ -88,6 +98,8 @@ final class TxMethodWriter implements Opcodes {
     private final boolean[] regUninit;
     /** Fixture shim: move-result slots whose value was already stored. */
     private final Set<Integer> skipInsn = new HashSet<>();
+    /** Registers read by at least one instruction (filled by emitBody). */
+    private boolean[] everRead;
     /** Register currently holds the literal zero (DEX zero-type: usable as
      *  both an int and the null reference at each use site). */
     private final boolean[] regZero;
@@ -101,13 +113,15 @@ final class TxMethodWriter implements Opcodes {
         final char[] kind;
         final String[] array;
         final boolean[] uninit;
+        final int[] group;
 
         JoinPred(boolean[] zero, char[] kind, String[] array,
-                boolean[] uninit) {
+                boolean[] uninit, int[] group) {
             this.zero = zero;
             this.kind = kind;
             this.array = array;
             this.uninit = uninit;
+            this.group = group;
         }
     }
 
@@ -157,6 +171,7 @@ final class TxMethodWriter implements Opcodes {
         this.regArray = new String[regCount + 1];
         this.regZero = new boolean[regCount + 1];
         this.regUninit = new boolean[regCount + 1];
+        this.uninitGroup = new int[regCount + 1];
         this.mv = cw.visitMethod(asmAccess(), method.name, TxTranslator.asmDesc(method),
                 null, null);
     }
@@ -206,6 +221,7 @@ final class TxMethodWriter implements Opcodes {
         Arrays.fill(regArray, null);
         Arrays.fill(regZero, false);
         Arrays.fill(regUninit, false);
+        Arrays.fill(uninitGroup, 0);
         labels.clear();
         labelsVisited.clear();
         joinPreds.clear();
@@ -215,6 +231,7 @@ final class TxMethodWriter implements Opcodes {
     }
 
     void emitBody() {
+        computeEverRead();
         // Head-of-<clinit> seeding for the non-final static_values: LDC the
         // dex initial value and PUTSTATIC it before any body instruction —
         // device ordering (exploring dex-format static field initial
@@ -391,7 +408,8 @@ final class TxMethodWriter implements Opcodes {
     private void snapshotJoin(int target) {
         joinPreds.computeIfAbsent(target, x -> new ArrayList<>()).add(
                 new JoinPred(regZero.clone(), regKind.clone(),
-                        regArray.clone(), regUninit.clone()));
+                        regArray.clone(), regUninit.clone(),
+                        uninitGroup.clone()));
     }
 
     /** Code whose flow never falls through to a following label. */
@@ -438,6 +456,12 @@ final class TxMethodWriter implements Opcodes {
             fallIn = p >= 0 && !isDeadEnd(insns.get(p));
         }
         for (int r = 0; r < regZero.length; r++) {
+            // The fall-in zero fact must be read before the zero-view merge
+            // below clears it: a const/4 #0 on the fallthrough arm is the
+            // universal zero and must not erase an array descriptor that a
+            // branch crossing carries (the getGaps(I)[I join in
+            // LazyStaggeredGridMeasureKt.measure).
+            final boolean fallZero = regZero[r];
             // Zero view: only clear, never set — all crossing preds must
             // agree the register is the universal zero.
             boolean allZero = true;
@@ -457,6 +481,8 @@ final class TxMethodWriter implements Opcodes {
             // zh-linear replay saw another arm's earlier <init> on the same
             // register number; preds-keyed merge keeps the linear pollution
             // from leaking across arms.
+            boolean fallUninit = regUninit[r];
+            int fallGroup = uninitGroup[r];
             boolean allUninit = true;
             for (JoinPred pred : preds) {
                 if (!pred.uninit[r]) {
@@ -468,6 +494,31 @@ final class TxMethodWriter implements Opcodes {
                 regUninit[r] &= allUninit;
             } else {
                 regUninit[r] = allUninit;
+            }
+            // Alias group: keep the shared allocation token only while the
+            // merged state is uninit and every uninit crossing agrees; a
+            // mixed or tokenless set degrades to 0, which can only make a
+            // later <init> miss aliases, never clear a wrong register.
+            if (regUninit[r]) {
+                int group = 0;
+                boolean conflict = false;
+                if (fallIn && fallUninit) {
+                    group = fallGroup;
+                }
+                for (JoinPred pred : preds) {
+                    if (!pred.uninit[r]) {
+                        continue;
+                    }
+                    int g = pred.group[r];
+                    if (g == 0 || (group != 0 && g != group)) {
+                        conflict = true;
+                        break;
+                    }
+                    group = g;
+                }
+                uninitGroup[r] = conflict ? 0 : group;
+            } else {
+                uninitGroup[r] = 0;
             }
             // Kind view: single-agreed pred kind wins; {obj,int} pred mixes
             // live in unified slots (the frame merges as Object and load()
@@ -486,23 +537,41 @@ final class TxMethodWriter implements Opcodes {
             }
             char joined = RegisterKinds.join(ks);
             if (joined == RegisterKinds.CONFLICT) {
-                throw new TxTranslator.TxGap(method.owner + "->"
-                        + method.signature() + " @" + off
-                        + " : register v" + r + " joins with kinds " + ks);
+                if (!ks.contains(OBJ) && deadAfter(insnIndex, r)) {
+                    // The DEX verifier admits a width/float conflict whose
+                    // value is overwritten on every path before any read
+                    // (d8 reuses a scratch register across arms: a compare
+                    // flag joins a double arm). The JVM merges those locals
+                    // to Top too, which is legal until read, so this is not
+                    // a gap: forget the kind and let the dominating store
+                    // retype the slot.
+                    joined = UNKNOWN;
+                } else {
+                    throw new TxTranslator.TxGap(method.owner + "->"
+                            + method.signature() + " @" + off
+                            + " : register v" + r + " joins with kinds " + ks);
+                }
             }
             regKind[r] = joined;
             // Array view: restore the descriptor from the crossings instead
             // of trusting the linear replay. A dead throw arm's overwrite
             // must not erase the array a live edge still carries; keep a
-            // descriptor only when every crossing agrees.
+            // descriptor only when every non-zero crossing agrees. The
+            // universal zero merges with any reference type (a getGaps(I)[I
+            // result joined a const/4 #0 null arm), so it must not erase the
+            // descriptor — its read is guarded by the null test that
+            // produced the arm.
             String array = null;
             boolean firstArray = true;
-            if (fallIn) {
+            if (fallIn && !(regArray[r] == null && fallZero)) {
                 array = regArray[r];
                 firstArray = false;
             }
             for (JoinPred pred : preds) {
                 String candidate = pred.array[r];
+                if (candidate == null && pred.zero[r]) {
+                    continue;
+                }
                 if (firstArray) {
                     array = candidate;
                     firstArray = false;
@@ -587,6 +656,7 @@ final class TxMethodWriter implements Opcodes {
             // uninitialized-this: the verifier admits exactly one <init>
             // call on it, which the uninit-tracking then clears.
             regUninit[first] = method.name.equals("<init>");
+            uninitGroup[first] = method.name.equals("<init>") ? -1 : 0;
         }
     }
 
@@ -608,6 +678,11 @@ final class TxMethodWriter implements Opcodes {
     /** Stack -> slot store for the given kind; records the slot kind. */
     private void store(int reg, char k) {
         regZero[reg] = false;
+        // Any store replaces the slot's value, so a pending uninitialized
+        // new-instance dies here (d8's dead select$$forInline stubs: NEW,
+        // const-4 0, invoke-interface on the overwritten register).
+        regUninit[reg] = false;
+        uninitGroup[reg] = 0;
         final int slot = slotOf(reg);
         if (previewing) {
             // Mirror the real pass's value-kind tracking: a later move whose
@@ -820,17 +895,61 @@ final class TxMethodWriter implements Opcodes {
             return wide ? LONG : INT;
         }
         int skippedTests = 0;
+        Set<Integer> followed = new HashSet<>();
         for (int i = producerIdx + 1; i < insns.size(); i++) {
             Insn in = insns.get(i);
             List<Integer> rs = in.registers;
             int pos = rs.indexOf(reg);
             if (pos < 0) {
+                if (in.opcode.startsWith("goto")) {
+                    // An unconditional branch has one successor: keep
+                    // scanning at its target (a handler's restore move
+                    // chases the value into the shared finally block across
+                    // the handler's closing goto). Backward targets would
+                    // cycle, so only forward targets are followed, once.
+                    int target = in.codeOffset + in.branchOffset;
+                    if (target <= in.codeOffset) {
+                        return wide ? LONG : INT;
+                    }
+                    int targetIdx = -1;
+                    for (int j = i + 1; j < insns.size(); j++) {
+                        if (insns.get(j).codeOffset == target) {
+                            targetIdx = j;
+                            break;
+                        }
+                    }
+                    if (targetIdx < 0 || !followed.add(targetIdx)) {
+                        return wide ? LONG : INT;
+                    }
+                    i = targetIdx - 1;
+                    continue;
+                }
+                if (in.opcode.startsWith("if-")) {
+                    // A conditional branch that does not read the scanned
+                    // register forks it: the linear fallthrough is not the
+                    // value's only consumer, and a const scanned past the
+                    // fork was typed by the wrong arm
+                    // (FastFloatParserKt.nextFloat: #46 followed the
+                    // fallthrough's int-to-long and stored J, while the jump
+                    // arm read it as int; MathKt.roundToInt crossed a goto
+                    // into the next arm's wide const). Stop here; the
+                    // caller's family default stays bit-exact through load's
+                    // reinterpretation.
+                    return wide ? LONG : INT;
+                }
                 continue;
             }
             String op = in.opcode;
             if (isMoveResult(in)) {
-                // A move-result WRITES rather than reads; only the producer
-                // of that slot matters; skip chasing it here.
+                if (rs.get(0) == reg) {
+                    // The write replaces the scanned value: it dies before
+                    // any read, so type it in its own narrow family. Chasing
+                    // past the overwrite retyped an int flag by a later wide
+                    // reuse (MathKt.log's const 0 overwritten by
+                    // move-result-wide before div-double) and the flag's
+                    // join conflicted [D, I].
+                    return wide ? LONG : INT;
+                }
                 continue;
             }
             if (op.equals("move") || op.equals("move-from16") || op.equals("move-16")) {
@@ -944,8 +1063,10 @@ final class TxMethodWriter implements Opcodes {
             }
             if (op.equals("instance-of") || op.equals("array-length")) {
                 // [dst, ref]: the ref operand consumes OBJ; the dst slot is
-                // overwritten here.
-                if (pos == 1) {
+                // overwritten here. The ref is read before the overwrite, so
+                // check it by position: array-length v11, v11 reads the slot
+                // as its array (the null arm of Kotlin's !! throw-guard).
+                if (rs.size() > 1 && rs.get(1) == reg) {
                     return OBJ;
                 }
                 if (skippedTests > 0) {
@@ -957,10 +1078,14 @@ final class TxMethodWriter implements Opcodes {
                 // Position-aware: aget [dst, arr, idx], aput [value, arr,
                 // idx]. The index is INT and the array a plain reference in
                 // every form; only element slots follow the component kind.
-                if (pos == 2) {
+                // Sources read before any dst write, so check them by
+                // position rather than indexOf's first hit: aget-wide v1, v0,
+                // v1 reads v1 as its index before the wide store, and the
+                // first hit (dst) typed the const #1 as D.
+                if (rs.size() > 2 && rs.get(2) == reg) {
                     return INT;
                 }
-                if (pos == 1) {
+                if (rs.size() > 1 && rs.get(1) == reg) {
                     return OBJ;
                 }
                 if (op.startsWith("aget")) {
@@ -1093,6 +1218,13 @@ final class TxMethodWriter implements Opcodes {
                     }
                 }
                 if (dstOnly) {
+                    if (skippedTests > 0) {
+                        // The skipped z-test read the value as an int; this
+                        // conversion overwrites the slot without reading it,
+                        // so the test was the consumer (MathKt.log's const 0
+                        // feeding if-eqz, then int-to-double on the arm).
+                        return testOnlyKind();
+                    }
                     switch (op.substring(cut + 4)) {
                         case "long": return LONG;
                         case "double": return DOUBLE;
@@ -1149,6 +1281,158 @@ final class TxMethodWriter implements Opcodes {
             return wide ? LONG : INT;
         }
         return wide ? LONG : INT;
+    }
+
+    /** Register access shape of one instruction for the dead-join walk. */
+    private enum Access { NONE, READ, WRITE }
+
+    /**
+     * True when every path from instruction {@code start} writes register
+     * {@code reg} before reading it, i.e. the value merged at that label is
+     * dead. ART tolerates a numeric type conflict there (d8 reuses a scratch
+     * register across arms), and the JVM verifier merges the locals to Top,
+     * which is legal until read. Deliberately conservative: an unrecognized
+     * access counts as a read, so an unsure method keeps the join gap.
+     */
+    private boolean deadAfter(int start, int reg) {
+        if (start < 0) {
+            return true; // boundary label past the last instruction
+        }
+        List<Integer> work = new ArrayList<>();
+        Set<Integer> seen = new HashSet<>();
+        work.add(start);
+        for (int cursor = 0; cursor < work.size(); cursor++) {
+            int i = work.get(cursor);
+            if (i < 0 || i >= insns.size() || !seen.add(i)) {
+                continue;
+            }
+            Insn in = insns.get(i);
+            Access access = access(in, reg);
+            if (access == Access.READ) {
+                return false;
+            }
+            if (access == Access.WRITE) {
+                continue;
+            }
+            enqueueSuccessors(i, in, work);
+        }
+        return true;
+    }
+
+    /**
+     * Marks every register some instruction reads. A write-only register's
+     * moves (handler restore scratch slots d8 never reads) can be dropped:
+     * they have no observer, and their load opcode could not match the
+     * verifier's frame for a stale handler-entry state.
+     */
+    private void computeEverRead() {
+        everRead = new boolean[regKind.length];
+        for (Insn in : insns) {
+            if (in.registers == null) {
+                continue;
+            }
+            for (int r : in.registers) {
+                if (r >= 0 && r < everRead.length && !everRead[r]
+                        && access(in, r) == Access.READ) {
+                    everRead[r] = true;
+                }
+            }
+        }
+    }
+
+    private Access access(Insn in, int reg) {
+        List<Integer> rs = in.registers;
+        if (rs == null || !rs.contains(reg)) {
+            return Access.NONE;
+        }
+        String op = in.opcode;
+        if (isMoveResult(in) || op.startsWith("const")) {
+            // move-result and every const form only write their destination.
+            return Access.WRITE;
+        }
+        if (op.startsWith("move")) {
+            for (int p = 1; p < rs.size(); p++) {
+                if (rs.get(p) == reg) {
+                    return Access.READ;
+                }
+            }
+            return Access.WRITE;
+        }
+        if (op.equals("new-instance")) {
+            return Access.WRITE;
+        }
+        if (op.equals("new-array") || op.startsWith("aget")
+                || op.equals("instance-of") || op.equals("array-length")) {
+            // [dst, ...sources]: the destination is written, but a source
+            // in the same slot is read first.
+            for (int p = 1; p < rs.size(); p++) {
+                if (rs.get(p) == reg) {
+                    return Access.READ;
+                }
+            }
+            return Access.WRITE;
+        }
+        if (op.startsWith("iget") || op.startsWith("sget")) {
+            // [dst, objref]: the object reference is a read.
+            for (int p = 1; p < rs.size(); p++) {
+                if (rs.get(p) == reg) {
+                    return Access.READ;
+                }
+            }
+            return Access.WRITE;
+        }
+        if (isBinop(op)) {
+            for (int p = 1; p < rs.size(); p++) {
+                if (rs.get(p) == reg) {
+                    return Access.READ;
+                }
+            }
+            // A 2addr destination is also a source (read-modify-write).
+            return op.endsWith("-2addr") ? Access.READ : Access.WRITE;
+        }
+        if (isUnop(op) || op.startsWith("cmp")) {
+            for (int p = 1; p < rs.size(); p++) {
+                if (rs.get(p) == reg) {
+                    return Access.READ;
+                }
+            }
+            return Access.WRITE;
+        }
+        return Access.READ;
+    }
+
+    private void enqueueSuccessors(int i, Insn in, List<Integer> work) {
+        String op = in.opcode;
+        if (op.startsWith("goto")) {
+            addTarget(work, in.codeOffset + in.branchOffset);
+            return;
+        }
+        if (op.startsWith("if-")) {
+            work.add(i + 1);
+            addTarget(work, in.codeOffset + in.branchOffset);
+            return;
+        }
+        if (op.equals("packed-switch") || op.equals("sparse-switch")) {
+            work.add(i + 1);
+            Insn payload = payloadOf(in);
+            for (int target : payload.payloadTargets) {
+                addTarget(work, in.codeOffset + target);
+            }
+            return;
+        }
+        if (op.startsWith("return") || op.equals("throw")) {
+            return;
+        }
+        work.add(i + 1);
+    }
+
+    private void addTarget(List<Integer> work, int off) {
+        for (int i = 0; i < insns.size(); i++) {
+            if (insns.get(i).codeOffset == off) {
+                work.add(i);
+                return;
+            }
+        }
     }
 
     /** aget/aput-wide resolves long-vs-double from our emitted array map. */
@@ -1559,7 +1843,20 @@ final class TxMethodWriter implements Opcodes {
             if (k == OBJ) {
                 k = INT;
             }
-            if (objScan && in.literal == 0) {
+            boolean nullRef = false;
+            if (in.literal == 0 && mixedSlots != null
+                    && mixedSlots.contains(dst)) {
+                // Unified slot: DEX's universal zero is the null reference
+                // here, so reference reads see null (LiveData's loop
+                // compares the entry-time const against a state ref) while
+                // numeric reads synthesize 0 through load's null-tolerant
+                // lane. The value world stays what the preview recorded —
+                // store()'s boxing is an emission detail.
+                mv.visitInsn(ACONST_NULL);
+                store(dst, OBJ);
+                regKind[dst] = k;
+                nullRef = true;
+            } else if (objScan && in.literal == 0) {
                 // Reference-domain zero: the first-consumer scan typed this
                 // register by its reference uses, so the slot VALUE is the
                 // null reference. Boxing the zero leaks Integer(0) into
@@ -1568,11 +1865,18 @@ final class TxMethodWriter implements Opcodes {
                 // nullable observer state hitting the min() argument cast).
                 mv.visitInsn(ACONST_NULL);
                 store(dst, OBJ);
+                nullRef = true;
             } else {
                 pushLiteral(in.literal, k);
                 store(dst, k);
             }
-            regArray[dst] = null;
+            if (!nullRef) {
+                regArray[dst] = null;
+            }
+            // A null store keeps the previous array descriptor: null is
+            // cast-compatible with any array, and Kotlin's !! throw-guard
+            // stores the zero on its dead arm before array-length reads the
+            // live arm's array (VectorizedKeyframesSpec).
             regZero[dst] = k == INT && in.literal == 0;
             return;
         }
@@ -1653,6 +1957,7 @@ final class TxMethodWriter implements Opcodes {
             store(dst, OBJ);
             regArray[dst] = null;
             regUninit[dst] = true;
+            uninitGroup[dst] = i + 1;
             // The fixture also emits move-result-object right after
             // new-instance (real dx never does). The value is already in the
             // slot, so the copy is a no-op: skip the next move-result-object.
@@ -1829,21 +2134,47 @@ final class TxMethodWriter implements Opcodes {
     private void moveObject(Insn in) {
         int dst = in.registers.get(0);
         int src = in.registers.get(1);
+        if (!everRead[dst]) {
+            return; // write-only scratch: no observer, skip the load
+        }
         load(src, OBJ);
         store(dst, OBJ);
-        regArray[dst] = regArray[src];
+        // A null move (DEX's zero moved as an object) is cast-compatible
+        // with the destination's array view, which the live arm still
+        // carries: Kotlin's !! throw-guard moves the null arm over the
+        // array register before array-length reads the live arm
+        // (VectorizedKeyframesSpec.getVelocityFromNanos).
+        String srcArray = regArray[src];
+        if (srcArray != null) {
+            regArray[dst] = srcArray;
+        } else if (!regZero[src]) {
+            regArray[dst] = null;
+        }
         regZero[dst] = regZero[src];
         // An uninitialized ref travels with the value: kotlin-style ctor
         // chains move the uninit this (v6) into the callee-register (v0)
         // before the single <init> call — without the copied mark the init
         // fires the false "second <init> on initialized instance" gap.
         regUninit[dst] = regUninit[src];
+        uninitGroup[dst] = uninitGroup[src];
     }
 
     private void moveNarrow(int i, Insn in) {
         int dst = in.registers.get(0);
         int src = in.registers.get(1);
-        char k = regKind[src] != UNKNOWN ? regKind[src] : narrowScan(i, src);
+        if (!everRead[dst]) {
+            return; // write-only scratch: no observer, skip the load
+        }
+        char k = regKind[src];
+        if (k == LONG || k == DOUBLE) {
+            // A narrow move's source is 4-byte by opcode; a wide recorded
+            // kind is stale state (handler entry crossed by the linear
+            // replay's previous handler). Rescan the moved value's uses.
+            k = narrowScan(i, src);
+        } else if (k == UNKNOWN) {
+            k = narrowScan(i, src);
+        }
+        regKind[src] = k;
         if (k == OBJ && regZero[src]) {
             // d8 never emits a narrow move for a reference (move-object
             // carries those; the dex verifier types move's source as a
@@ -1867,7 +2198,17 @@ final class TxMethodWriter implements Opcodes {
     private void moveWide(int i, Insn in) {
         int dst = in.registers.get(0);
         int src = in.registers.get(1);
-        char k = regKind[src] != UNKNOWN ? regKind[src] : wideScan(i, src);
+        if (!everRead[dst]) {
+            return; // write-only scratch: no observer, skip the load
+        }
+        char k = regKind[src];
+        if (k != LONG && k != DOUBLE) {
+            // A wide move's source is wide by opcode; a narrow recorded
+            // kind is stale state (a handler entry crossed by the linear
+            // replay). Rescan the moved value's uses for J vs D.
+            k = wideScan(i, src) == DOUBLE ? DOUBLE : LONG;
+        }
+        regKind[src] = k;
         load(src, k);
         store(dst, k);
     }
@@ -1978,29 +2319,52 @@ final class TxMethodWriter implements Opcodes {
             kb = INT;
         }
         if ((ka == OBJ || kb == OBJ)) {
-            if (!(cmp.equals("eq") || cmp.equals("ne"))) {
+            if (cmp.equals("eq") || cmp.equals("ne")) {
+                // A unified {obj,int} side reads its reference view: the
+                // null zero (mixed zero consts store null) or a ref from a
+                // later arm. The preview pass has no census and lets the
+                // real pass decide.
+                boolean refA = ka == OBJ
+                        || (mixedSlots != null && mixedSlots.contains(a));
+                boolean refB = kb == OBJ
+                        || (mixedSlots != null && mixedSlots.contains(b));
+                if (mixedSlots != null) {
+                    // The DEX verifier only admits int/ref mixed compares
+                    // when the int side is the zero-type (null); anything
+                    // else is a real gap.
+                    if (!refA && !regZero[a]) {
+                        throw gap("compare mixes reference with non-zero int",
+                                in);
+                    }
+                    if (!refB && !regZero[b]) {
+                        throw gap("compare mixes reference with non-zero int",
+                                in);
+                    }
+                }
+                if (refA) {
+                    load(a, OBJ);
+                } else {
+                    mv.visitInsn(ACONST_NULL);
+                }
+                if (refB) {
+                    load(b, OBJ);
+                } else {
+                    mv.visitInsn(ACONST_NULL);
+                }
+                mv.visitJumpInsn(cmp.equals("eq") ? IF_ACMPEQ : IF_ACMPNE, to);
+                return;
+            }
+            // Ordered compares are int-only in DEX, so an OBJ side must
+            // have an int view: a zero-typed register (load's constant
+            // lane) or a unified {obj,int} slot (load unboxes; null, the
+            // loop-carried zero, reads as 0). The preview pass has no
+            // census yet and defers to the real pass, which rethrows here
+            // when a side really is a plain reference.
+            if (mixedSlots != null
+                    && ((ka == OBJ && !regZero[a] && !mixedSlots.contains(a))
+                    || (kb == OBJ && !regZero[b] && !mixedSlots.contains(b)))) {
                 throw gap("ordered compare on references " + op, in);
             }
-            // The DEX verifier only admits int/ref mixed compares when the
-            // int side is the zero-type (null); anything else is a real gap.
-            if (ka != OBJ && !regZero[a]) {
-                throw gap("compare mixes reference with non-zero int", in);
-            }
-            if (kb != OBJ && !regZero[b]) {
-                throw gap("compare mixes reference with non-zero int", in);
-            }
-            if (ka == OBJ) {
-                load(a, OBJ);
-            } else {
-                mv.visitInsn(ACONST_NULL);
-            }
-            if (kb == OBJ) {
-                load(b, OBJ);
-            } else {
-                mv.visitInsn(ACONST_NULL);
-            }
-            mv.visitJumpInsn(cmp.equals("eq") ? IF_ACMPEQ : IF_ACMPNE, to);
-            return;
         }
         load(a, INT);
         load(b, INT);
@@ -2142,7 +2506,20 @@ final class TxMethodWriter implements Opcodes {
                     // ref). Degrade loudly; real dx never emits this.
                     throw gap("second <init> on initialized instance", in);
                 }
-                regUninit[recv] = false; // constructor call initializes the ref
+                // Constructor call initializes every alias of the
+                // allocation, like ART: d8 default-arg constructors
+                // <init> through a copy and later code reads the original.
+                int group = uninitGroup[recv];
+                regUninit[recv] = false;
+                uninitGroup[recv] = 0;
+                if (group != 0) {
+                    for (int s = 0; s < uninitGroup.length; s++) {
+                        if (uninitGroup[s] == group) {
+                            uninitGroup[s] = 0;
+                            regUninit[s] = false;
+                        }
+                    }
+                }
             }
         }
         // Registers list layout: non-static -> [receiver, arg0, arg1, ...];
@@ -2239,7 +2616,13 @@ final class TxMethodWriter implements Opcodes {
         if (op.equals("aget-object")) {
             mv.visitInsn(AALOAD);
             store(dst, OBJ);
-            regArray[dst] = null;
+            // A nested-array element is itself an array: carry its
+            // descriptor forward so array-length/aget on the result
+            // resolve (MonoSpline.<init> reads the slope pairs' lengths).
+            String arrayDesc = regArray[arr];
+            regArray[dst] = arrayDesc != null && arrayDesc.length() > 1
+                    && arrayDesc.charAt(1) == '[' ? arrayDesc.substring(1)
+                    : null;
             return;
         }
         if (op.equals("aget-wide")) {
@@ -2721,14 +3104,21 @@ final class TxMethodWriter implements Opcodes {
     private void emitBinop(int i, Insn in) {
         String op = in.opcode;
         boolean addr = op.endsWith("-2addr");
-        boolean lit = op.endsWith("-lit16") || op.endsWith("-lit8");
+        // RSUB_INT is the one 22b-only op whose enum name carries no -lit8
+        // suffix (the only subtract taking the literal as the left operand).
+        boolean lit = op.endsWith("-lit16") || op.endsWith("-lit8")
+                || op.equals("rsub-int");
         String family;
         if (addr) {
             family = op.substring(0, op.length() - 6);
         } else if (lit) {
-            family = op.endsWith("-lit8")
-                    ? op.substring(0, op.length() - 5)
-                    : op.substring(0, op.length() - 6);
+            if (op.equals("rsub-int")) {
+                family = op;
+            } else {
+                family = op.endsWith("-lit8")
+                        ? op.substring(0, op.length() - 5)
+                        : op.substring(0, op.length() - 6);
+            }
         } else {
             family = familyOf(op);
         }
