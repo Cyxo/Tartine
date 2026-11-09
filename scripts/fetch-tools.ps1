@@ -15,23 +15,26 @@ $tools = @(
     @{
         File    = "baksmali-2.5.2.jar"
         Url     = "$maven/org/smali/baksmali/2.5.2/baksmali-2.5.2.jar"
-        Sha1    = "1e95fe9f9bde43c2b8b7e5b7e2d35e48c8b2d3e4"   # placeholder — verified by size below
         Bytes   = 123309
+        Sha256  = "1ED236266D7DC4907AADE0B19A34F77EFAC25342B63C8ACE52E579039941B389"
     },
     @{
         File    = "util-2.5.2.jar"
         Url     = "$maven/org/smali/util/2.5.2/util-2.5.2.jar"
         Bytes   = 27118
+        Sha256  = "4F580A9CFF3EBB83CB3FD20BEC88E37E4F183796CA652732992611620282DAEA"
     },
     @{
         File    = "jcommander-1.64.jar"
         Url     = "$maven/com/beust/jcommander/1.64/jcommander-1.64.jar"
         Bytes   = 65585
+        Sha256  = "156BE736199C990321D9FF77090B199629CFC9865E2D6C13F7CD291BB1641817"
     },
     @{
         File    = "apktool_3.0.3.jar"
         Url     = "https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_3.0.3.jar"
         Bytes   = 15478013
+        Sha256  = "DBF930B076C6B9BE08D57C449CACEFC3BDD6B71EBD59B3066FC0E1F5B14F9423"
     },
     @{
         # All-in-one jar: Checkstyle publishes it as a release asset, not on
@@ -39,6 +42,7 @@ $tools = @(
         File    = "checkstyle-14.4.0-all.jar"
         Url     = "https://github.com/checkstyle/checkstyle/releases/download/checkstyle-14.4.0/checkstyle-14.4.0-all.jar"
         Bytes   = 15225265
+        Sha256  = "C0A521E54EABD1ECE4FF7BD84CF231B012615745ED3AA4FB27AB0CA73097250C"
     }
 )
 
@@ -54,6 +58,11 @@ foreach ($t in $tools) {
     if ($t.ContainsKey("Bytes") -and $actual -ne $t.Bytes) {
         Remove-Item $dest
         throw "Size mismatch for $($t.File): expected $($t.Bytes) bytes, got $actual. Aborting."
+    }
+    $sha = (Get-FileHash -Algorithm SHA256 $dest).Hash
+    if ($sha -ne $t.Sha256) {
+        Remove-Item $dest
+        throw "SHA-256 mismatch for $($t.File): got $sha. Aborting."
     }
     Write-Host "  ok    $($t.File) ($actual bytes)"
 }

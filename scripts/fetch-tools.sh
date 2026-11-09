@@ -10,8 +10,18 @@ mkdir -p "$TOOLS"
 
 MAVEN="https://repo1.maven.org/maven2"
 
+sha256_of() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | cut -d' ' -f1
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$1" | cut -d' ' -f1
+    else
+        echo ""
+    fi
+}
+
 fetch() {
-    file="$1"; url="$2"; expected_bytes="$3"
+    file="$1"; url="$2"; expected_bytes="$3"; expected_sha="$4"
     dest="$TOOLS/$file"
     if [ -f "$dest" ]; then
         printf "  skip  %s (already present)\n" "$file"
@@ -31,17 +41,30 @@ fetch() {
         echo "Size mismatch for $file: expected $expected_bytes bytes, got $actual. Aborting." >&2
         exit 1
     fi
+    actual_sha=$(sha256_of "$dest")
+    if [ -z "$actual_sha" ]; then
+        echo "Warning: no sha256sum/shasum; skipped checksum for $file." >&2
+    elif [ "$actual_sha" != "$expected_sha" ]; then
+        rm -f "$dest"
+        echo "SHA-256 mismatch for $file: got $actual_sha. Aborting." >&2
+        exit 1
+    fi
     printf "  ok    %s (%s bytes)\n" "$file" "$actual"
 }
 
-fetch "baksmali-2.5.2.jar"  "$MAVEN/org/smali/baksmali/2.5.2/baksmali-2.5.2.jar"  123309
-fetch "util-2.5.2.jar"      "$MAVEN/org/smali/util/2.5.2/util-2.5.2.jar"           27118
-fetch "jcommander-1.64.jar" "$MAVEN/com/beust/jcommander/1.64/jcommander-1.64.jar" 65585
-fetch "apktool_3.0.3.jar"   "https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_3.0.3.jar" 15478013
+fetch "baksmali-2.5.2.jar"  "$MAVEN/org/smali/baksmali/2.5.2/baksmali-2.5.2.jar"  123309 \
+      1ed236266d7dc4907aade0b19a34f77efac25342b63c8ace52e579039941b389
+fetch "util-2.5.2.jar"      "$MAVEN/org/smali/util/2.5.2/util-2.5.2.jar"           27118 \
+      4f580a9cff3ebb83cb3fd20bec88e37e4f183796ca652732992611620282daea
+fetch "jcommander-1.64.jar" "$MAVEN/com/beust/jcommander/1.64/jcommander-1.64.jar" 65585 \
+      156be736199c990321d9ff77090b199629cfc9865e2d6c13f7cd291bb1641817
+fetch "apktool_3.0.3.jar"   "https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_3.0.3.jar" 15478013 \
+      dbf930b076c6b9be08d57c449cacefc3bdd6b71ebd59b3066fc0e1f5b14f9423
 # All-in-one jar: Checkstyle publishes it as a release asset, not on Central.
 fetch "checkstyle-14.4.0-all.jar" \
       "https://github.com/checkstyle/checkstyle/releases/download/checkstyle-14.4.0/checkstyle-14.4.0-all.jar" \
-      15225265
+      15225265 \
+      c0a521e54eabd1ece4ff7bd84cf231b012615745ed3aa4fb27ab0ca73097250c
 
 # dex2jar ships as a zip distribution (the differential oracle); extract it
 # once. The inner jar is the presence marker.
