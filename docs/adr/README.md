@@ -13,3 +13,4 @@ Format: [Michael Nygard's ADR template](https://cognitect.com/blog/2011/11/15/do
 9. [ADR-0009 — Guest sandbox: restricted classloader plus translation-time File bridge](0009-guest-sandbox.md)
 10. [ADR-0010 — Host window viewport and guest density](0010-host-window-viewport.md)
 11. [ADR-0011 — Logging through java.util.logging and android.util.Log](0011-logging-jul-and-logcat.md)
+12. [ADR-0012 — Wine trust model: run apps you trust, not a security boundary](0012-trust-model.md)

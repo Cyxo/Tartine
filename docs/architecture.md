@@ -75,7 +75,8 @@ GitLab `android_translation_layer/android_translation_layer`
   interpreter's per-instruction dispatch seam is gone with `tartine.vm`;
   reflection reaches only guest-declared members through the `GuestReflect`
   facade, and host-declared ones stay filtered/denied.
-  sandbox is ClassLoader-level (ADR-0009): `TranslatedLoader` is guest-first
+  The sandbox is ClassLoader-level (ADR-0009) and is a compatibility/accident
+  boundary, not a security boundary (ADR-0012): `TranslatedLoader` is guest-first
   and applies `SandboxPolicy` to every guest-reachable lookup, while plain
   JVM linkage may resolve a denied host type that appears only in a
   translated signature (for example `ClassLoader` in a framework method).
@@ -140,6 +141,10 @@ GitLab `android_translation_layer/android_translation_layer`
 
 ## Sandbox (ADR-0009)
 
+- Scope: a compatibility and accident boundary, not a security boundary
+  (ADR-0012). Guest code shares Tartine's JVM, process, and OS user, so the
+  sandbox keeps it on the Vfs and makes host access explicit; it does not
+  contain a malicious APK.
 - Boundary: `TranslatedLoader` is guest-first. Guest-reachable lookups
   (`loadGuestClass`, `GuestClassLoader`, `GuestSandbox`) apply
   `SandboxPolicy`; plain `loadClass` is the JVM linkage path and may resolve

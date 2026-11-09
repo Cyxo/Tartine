@@ -1,6 +1,6 @@
 # ADR-0009: Guest sandbox — restricted classloader plus translation-time File bridge
 
-- **Status**: Accepted
+- **Status**: Accepted; trust-model framing superseded by ADR-0012
 - **Date**: 2026-10-31
 - **Updated**: 2026-11-02 (file-backed streams, per-access realpath check)
 
@@ -8,9 +8,9 @@
 
 Translation links guest DEX bytecode to the host JDK by ordinary JVM
 linkage. That makes every host class the parent classpath carries reachable
-from an untrusted APK: `java.io` streams and `java.nio.file` read and write
-the real disk, `java.net` opens sockets, `Runtime`/`ProcessBuilder` spawn
-processes, reflection reaches host class loaders, and the Tartine host
+from translated guest code: `java.io` streams and `java.nio.file` read and
+write the real disk, `java.net` opens sockets, `Runtime`/`ProcessBuilder`
+spawn processes, reflection reaches host class loaders, and the Tartine host
 internals (`tartine.*`, ASM, Skija) are one `Class.forName` away. The
 2026-10 audit's "virtual filesystem" finding asked for a real boundary, not
 another dispatch table.
@@ -138,9 +138,11 @@ descriptors, guest `java.io.File` subclasses) is checked before define.
   capability fails loudly at first use with a named gap, preserving the
   project's gap-driven loop. The Compose probe (`mise run gui`) reaches
   `window ready` with no sandbox denial in the trace.
-- The sandbox is a linkage boundary, not a capability system: the
-  `framework` module runs as trusted host code and may use the full JDK on
-  the guest's behalf. Native/ARM code is still out of scope.
+- The sandbox is a linkage and accident boundary, not a capability or
+  security system (ADR-0012): the `framework` module runs as trusted host
+  code and may use the full JDK on the guest's behalf, and the guest shares
+  the host JVM, process, and user account. It is not intended to contain a
+  malicious APK. Native/ARM code is still out of scope.
 - `java.lang.invoke` stays denied, including method handles. Dynamic proxies
   (`java.lang.reflect.Proxy`) are denied as a type; a guest-interface-only
   `GuestProxy` facade is the path to Retrofit-style support if it becomes a

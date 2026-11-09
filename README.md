@@ -10,6 +10,13 @@
 
 Tartine is a tool to run Android apps on Desktop OSes natively, in a similar fashion to [Wine](https://www.winehq.org/).
 
+> **Trust model:** Tartine is a compatibility layer, in the spirit of Wine: it
+> runs Android apps you trust. It is **not** a security sandbox and does not
+> isolate apps from your system. A malicious APK can do anything your user
+> account can do. Run only apps you would run as a normal desktop program. The
+> Android-style permission prompts are a convenience and fidelity feature, not
+> a security control. See [ADR-0012](docs/adr/0012-trust-model.md).
+
 ## Scope
 
 - **Supported target: pure-DEX apps.** Java/Kotlin/Compose apps whose APK ships no native code. Apps bundling ARM `.so` libraries (Flutter, most games) are out of reach for now: a desktop JVM cannot load Bionic-built ARM binaries.
@@ -43,7 +50,7 @@ Here's a list of currently working features:
 - **App icon extraction** - manifest `android:icon`/`roundIcon` resolves through `resources.arsc`; bitmaps decode through the renderer; adaptive/vector icons convert to SVG (aapt2 inline gradients and group transforms) rendered at 16/32/48 px; unconverted sources log an `icon:` gap and fall back to the OS default.
 - **Host display threading + event channel** - one host UI thread owns GLFW/GL and a separate guest looper thread; input/resize/focus/close events publish on the display thread, buffer until registration, replay, and post to the guest `Looper` `MessageQueue`; `postFrame` returns `false` on close.
 - **Virtual filesystem** - guest paths (`/data/data/<pkg>`, `/sdcard`) map under the Tartine root; default private card with seeded Download/Documents/Pictures/DCIM/Music/Movies; optional shared host mount (`sdcard.mount`, read-only by default, validated for safety); `TARTINE_SDCARD` env fallback.
-- **Guest sandbox** - restricted classloader + SDK-free runtime; a ported File bridge and `Class.forName` helper; translation-time gating of blocked members; sandbox policy surfaced as `tartine.tx.SandboxPolicy`.
+- **Guest sandbox** - restricted classloader + SDK-free runtime; a ported File bridge and `Class.forName` helper; translation-time gating of blocked members; sandbox policy surfaced as `tartine.tx.SandboxPolicy`. A compatibility/accident boundary, not a security sandbox ([ADR-0012](docs/adr/0012-trust-model.md)).
 - **Host configuration** (`config.properties`): per-color overrides, font families, `theme.mode` (`auto`/`light`/`dark`), sdcard mount + read-only flag, `display.refresh_hz`, `display.debug_frames`; host theme auto-probes the Windows registry, macOS `defaults`, GNOME/KDE.
 
 *Global limits: no XML layouts or non-icon images; no ARM `.so` native libraries; no IPC/intents; no input dispatch into the view tree (events reach the queue, but GLFW->Android key/motion mapping and ViewRootImpl-style delivery are gaps); graphics are software-raster only for now.*
@@ -247,6 +254,11 @@ Environment knobs:
 Every configuration knob is documented here in the same commit that lands it.
 
 ## Guest sandbox
+
+This is a compatibility and accident boundary, not a security boundary: guest
+code runs in the same JVM and process as Tartine, so it cannot contain a
+malicious APK (ADR-0012). It keeps an app on the virtual filesystem and makes
+host capabilities explicit.
 
 Apps only ever see Android paths. App-private dirs
 (`/data/data/<pkg>`, `/data/user/0/<pkg>`, `/data/local/tmp`) map under
