@@ -2665,15 +2665,6 @@ final class TxMethodWriter implements Opcodes {
             // though the method is static (invokestatic ignores the receiver).
             itf = true;
         }
-        // TEMPORARY trace: did the guest's main-thread gate run?
-        if (isStatic && (owner.startsWith("Landroid/os/Looper;")
-                || owner.contains("arch/core/executor")
-                || owner.contains("LifecycleRegistry_androidKt"))) {
-            mv.visitLdcInsn(owner);
-            mv.visitLdcInsn(name);
-            mv.visitMethodInsn(INVOKESTATIC, "tartine/guest/TxTrace",
-                    "site", "(Ljava/lang/String;Ljava/lang/String;)V", false);
-        }
         mv.visitMethodInsn(opcode, TxDescriptors.internal(owner), name, desc,
                 itf);
         pended(ref.returnType(), i);

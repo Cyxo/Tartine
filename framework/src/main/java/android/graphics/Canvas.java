@@ -452,7 +452,7 @@ import tartine.gfx.GfxRect;
 
     public void drawTextRun(CharSequence text, int start, int end, int contextStart, int contextEnd, float x, float y, boolean isRtl, Paint paint) {
         if (text == null || end <= start) return;
-        try { drawTextChars(text.subSequence(start, end).toString(), x, y, paint); } catch (Exception e) { }
+        drawTextChars(text.subSequence(start, end).toString(), x, y, paint);
     }
 
     public void drawVertices(Canvas.VertexMode arg0, int arg1, float[] arg2, int arg3, float[] arg4, int arg5, int[] arg6, int arg7, short[] arg8, int arg9, int arg10, Paint arg11) {

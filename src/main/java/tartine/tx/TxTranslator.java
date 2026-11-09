@@ -34,12 +34,13 @@ import tartine.dex.Insn;
 import tartine.guest.SandboxDenied;
 
 /**
- * Spikes the translation one class at a time: DEX model -> JVM bytecode.
+ * Translates DEX classes to JVM bytecode, one class at a time.
  *
- * <p>Classfile version 49 (Java 5): no StackMapTable, so the old
- * type-inferencing verifier covers our register-machine shapes; {@code
- * COMPUTE_MAXS} suffices because there are no frames to compute. All DEX
- * types keep their descriptors ({@code Lpkg/Cls;} etc.) verbatim.
+ * <p>Classfile version 52 (Java 8) with {@code COMPUTE_MAXS |
+ * COMPUTE_FRAMES}: ASM derives the StackMapTable from the emitted shapes and
+ * the JVM verifier checks them, so translation defects surface as verify
+ * failures (degraded to a named gap outside strict mode). All DEX types keep
+ * their descriptors ({@code Lpkg/Cls;} etc.) verbatim.
  */
 public final class TxTranslator implements Opcodes {
 
