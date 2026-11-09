@@ -42,7 +42,6 @@ import android.os.Parcelable;
     public String versionName;
 
     public PackageInfo() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageInfo;-><init>()V");
     }
 
     public int describeContents() {

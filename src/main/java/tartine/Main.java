@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.view.Choreographer;
 import android.view.View;
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -13,13 +14,17 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 import tartine.apk.Abi;
@@ -32,6 +37,8 @@ import tartine.dex.DexClass;
 import tartine.dex.DexDump;
 import tartine.dex.DexSet;
 import tartine.fw.DisplayConfig;
+import tartine.fw.PermissionManager;
+import tartine.fw.PermissionPrompt;
 import tartine.gfx.GfxBackend;
 import tartine.gfx.skija.SkijaBackend;
 import tartine.graphics.GuestSurface;
@@ -360,6 +367,7 @@ public final class Main {
         ApkReader reader = ApkReader.open(apk.toPath());
         BinaryXml.Element manifest = reader.manifest();
         String packageName = manifest.attr("package");
+        configurePermissions(reader, packageName);
         String activity = findLauncher(manifest);
         if (activity == null) {
             log.info("no launcher activity in manifest");
@@ -425,6 +433,71 @@ public final class Main {
         }
     }
 
+    /**
+     * Host half of the permission/consent layer: publish the manifest's
+     * requested permissions and target SDK, and point the grant store at
+     * {@code <Tartine root>/permissions/<package>.properties}. Consent is a
+     * fidelity feature, not an enforcement boundary (ADR-0012).
+     */
+    private static void configurePermissions(ApkReader reader,
+            String packageName) throws IOException {
+        Path store = Vfs.root().resolve("permissions")
+                .resolve(sanitizePackage(packageName) + ".properties");
+        PermissionManager.configure(packageName,
+                reader.declaredPermissions(), reader.targetSdk(), store);
+    }
+
+    /** Filesystem-safe file stem for a package name; never empty. */
+    private static String sanitizePackage(String packageName) {
+        if (packageName == null || packageName.isEmpty()) {
+            return "app";
+        }
+        StringBuilder safe = new StringBuilder(packageName.length());
+        for (int i = 0; i < packageName.length(); i++) {
+            char c = packageName.charAt(i);
+            boolean keep = c >= 'a' && c <= 'z'
+                    || c >= 'A' && c <= 'Z'
+                    || c >= '0' && c <= '9'
+                    || c == '.' || c == '_' || c == '-';
+            safe.append(keep ? c : '_');
+        }
+        return safe.toString();
+    }
+
+    /**
+     * Desktop consent dialog for GUI runs. Headless runs leave the prompt
+     * unset, so {@link PermissionManager} answers denied without recording a
+     * decision and a later GUI run can still ask.
+     */
+    private static PermissionPrompt desktopPrompt() {
+        return (packageName, permission, label) -> {
+            if (GraphicsEnvironment.isHeadless()) {
+                return PermissionPrompt.Decision.UNAVAILABLE;
+            }
+            AtomicReference<PermissionPrompt.Decision> answer =
+                    new AtomicReference<>(PermissionPrompt.Decision.UNAVAILABLE);
+            try {
+                SwingUtilities.invokeAndWait(() -> {
+                    int choice = JOptionPane.showConfirmDialog(null,
+                            packageName + " wants to access " + label + ".",
+                            "Tartine permission",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.QUESTION_MESSAGE);
+                    answer.set(choice == JOptionPane.YES_OPTION
+                            ? PermissionPrompt.Decision.GRANTED
+                            : PermissionPrompt.Decision.DENIED);
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return PermissionPrompt.Decision.UNAVAILABLE;
+            } catch (InvocationTargetException e) {
+                log.log(Level.WARNING, "permission dialog failed", e);
+                return PermissionPrompt.Decision.UNAVAILABLE;
+            }
+            return answer.get();
+        };
+    }
+
     /** Root-cause stack frames for a launch failure (debug only). */
     // The != is a self-cause identity guard, not value equality.
     @SuppressWarnings("PMD.CompareObjectsWithEquals")
@@ -450,8 +523,13 @@ public final class Main {
      * ready first.
      */
     private static void gui(File apk, long timeoutSecs) throws Exception {
-        HostDisplays.run(launcherTitle(apk), timeoutSecs, loadWindowIcons(apk),
-                display -> txGuiRun(apk, display));
+        PermissionManager.setPrompt(desktopPrompt());
+        try {
+            HostDisplays.run(launcherTitle(apk), timeoutSecs, loadWindowIcons(apk),
+                    display -> txGuiRun(apk, display));
+        } finally {
+            PermissionManager.setPrompt(null);
+        }
     }
 
     /**

@@ -50,6 +50,7 @@ Here's a list of currently working features:
 - **App icon extraction** - manifest `android:icon`/`roundIcon` resolves through `resources.arsc`; bitmaps decode through the renderer; adaptive/vector icons convert to SVG (aapt2 inline gradients and group transforms) rendered at 16/32/48 px; unconverted sources log an `icon:` gap and fall back to the OS default.
 - **Host display threading + event channel** - one host UI thread owns GLFW/GL and a separate guest looper thread; input/resize/focus/close events publish on the display thread, buffer until registration, replay, and post to the guest `Looper` `MessageQueue`; `postFrame` returns `false` on close.
 - **Virtual filesystem** - guest paths (`/data/data/<pkg>`, `/sdcard`) map under the Tartine root; default private card with seeded Download/Documents/Pictures/DCIM/Music/Movies; optional shared host mount (`sdcard.mount`, read-only by default, validated for safety); `TARTINE_SDCARD` env fallback.
+- **Permissions and consent** - manifest `<uses-permission>` parsing, `Context.checkSelfPermission`, `Activity.requestPermissions`/`onRequestPermissionsResult`, and `PackageManager` permission queries backed by `tartine.fw.PermissionManager`; dangerous permissions prompt through a desktop dialog in `gui` and decisions persist under `<root>/permissions/<package>.properties`; shared `/sdcard` reads/writes need a granted storage permission at the file bridge. Consent, not enforcement ([ADR-0013](docs/adr/0013-permission-consent.md), [ADR-0012](docs/adr/0012-trust-model.md)).
 - **Guest sandbox** - restricted classloader + SDK-free runtime; a ported File bridge and `Class.forName` helper; translation-time gating of blocked members; sandbox policy surfaced as `tartine.tx.SandboxPolicy`. A compatibility/accident boundary, not a security sandbox ([ADR-0012](docs/adr/0012-trust-model.md)).
 - **Host configuration** (`config.properties`): per-color overrides, font families, `theme.mode` (`auto`/`light`/`dark`), sdcard mount + read-only flag, `display.refresh_hz`, `display.debug_frames`; host theme auto-probes the Windows registry, macOS `defaults`, GNOME/KDE.
 
@@ -60,7 +61,7 @@ Here's a list of currently working features:
 - **Input dispatch into the view tree** - GLFW-to-Android `KeyEvent`/`MotionEvent` mapping and ViewRootImpl-style focus/key/motion delivery.
 - **Hardware/GLES path** - future `GLES`/`ANativeWindow`/`Surface` use alongside Skia, atop the livewired `gfx-api`/`gfx-skija` seam (only software raster UI today).
 - **Surface/Window layers** - `SurfaceView` own layer and `TextureView` inside-app GLES compositing semantics at the host level.
-- **Shared-storage / IPC layer** - intents and inter-app communication (design notes only today).
+- **Shared-storage pickers / IPC layer** - MediaStore and SAF document pickers with per-app grants (ADR-0005 tier 3), intents and inter-app communication (design notes only today).
 - **Installation, daemon, packaging** - per-user unprivileged daemon, signature verification + install/unpack, AppCDS, Unix-domain IPC (design notes in `architecture.md`).
 - **Framework family ports** - ongoing per-probe gap filling (`View`, measure, nested touch, accessibility, etc.) driven by `refs`; `KeyboardNavigationCluster`, `Autofill`, etc. remain named gaps.
 - **Guest-facing VSync Choreographer equivalence beyond animation** - callbacks driven by `pumpFrameCallbacks` today, not a native VSync receiver.
@@ -291,6 +292,27 @@ from plural lookups, answer "not found" from `getMethod`/`getField`, and
 are refused with a named denial at invoke/access. Denied calls surface as
 named `UnsupportedOperationException` gaps at first use, never as silent
 success.
+
+### Permissions (ADR-0013)
+
+The manifest's `<uses-permission>` entries seed
+`tartine.fw.PermissionManager` before launch. Declared normal permissions
+(and app-defined ones) grant at install time; declared dangerous ones stay
+denied until the user answers a dialog - `gui` shows a desktop prompt,
+headless `run` answers deny without recording the decision, and a persisted
+answer is reused next run from
+`<root>/permissions/<package>.properties`. `Activity.requestPermissions` /
+`onRequestPermissionsResult`, `Context.checkSelfPermission`, and the
+`PackageManager` permission queries behave like their device counterparts.
+
+Shared storage follows the same table: reads under `/sdcard` and
+`/storage/emulated/0` need a granted `READ_EXTERNAL_STORAGE` /
+`READ_MEDIA_*` / `MANAGE_EXTERNAL_STORAGE`, writes need
+`WRITE_EXTERNAL_STORAGE` / `MANAGE_EXTERNAL_STORAGE`, and the app's own
+`Android/data|media|obb/<pkg>` directories - like app-private `/data` -
+stay free. A denied read answers nonexistent; a denied write is a
+`SecurityException`. This is consent for fidelity, not a security boundary
+(ADR-0012).
 
 Planned (decided in ADR-0005, not wired yet): per-folder user maps
 (`/sdcard/Download` -> `~/Downloads`), file-picker grants, whole-home

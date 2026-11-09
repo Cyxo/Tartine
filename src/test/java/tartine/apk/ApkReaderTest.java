@@ -86,7 +86,7 @@ class ApkReaderTest {
             assertTrue(root.namespaceUri.isEmpty());
             assertEquals("com.example.test", root.attr("package"));
             assertEquals("3", root.attr("versionCode"));
-            assertEquals(2, root.children.size());
+            assertEquals(4, root.children.size());
 
             BinaryXml.Element app = root.child("application");
             assertNotNull(app);
@@ -106,6 +106,17 @@ class ApkReaderTest {
             assertNotNull(sdk);
             assertEquals("21", sdk.attr("minSdkVersion"));
             assertEquals("36", sdk.attr("targetSdkVersion"));
+        }
+    }
+
+    @Test
+    void readsDeclaredPermissionsAndTargetSdk() throws Exception {
+        try (ApkReader reader = ApkReader.open(apk)) {
+            assertEquals(Arrays.asList(
+                    "android.permission.CAMERA",
+                    "android.permission.INTERNET"),
+                    reader.declaredPermissions());
+            assertEquals(36, reader.targetSdk());
         }
     }
 
@@ -147,7 +158,11 @@ class ApkReaderTest {
                 "com.example.test", // 8
                 "minSdkVersion", // 9
                 "targetSdkVersion", // 10
-                "uses-sdk"); // 11
+                "uses-sdk", // 11
+                "uses-permission", // 12
+                "name", // 13
+                "android.permission.CAMERA", // 14
+                "android.permission.INTERNET"); // 15
         ByteBuffer out = ByteBuffer.allocate(2048).order(ByteOrder.LITTLE_ENDIAN);
         putU16(out, 0x0003);
         putU16(out, 8);
@@ -198,6 +213,14 @@ class ApkReaderTest {
                 {0, 10, -1, 0x10, 36}, // android:targetSdkVersion=36
         });
         endElement(out, 11);
+        startElement(out, 12, new int[][]{
+                {0, 13, 14, 0x03, 14}, // android:name="android.permission.CAMERA"
+        });
+        endElement(out, 12);
+        startElement(out, 12, new int[][]{
+                {0, 13, 15, 0x03, 15}, // android:name="android.permission.INTERNET"
+        });
+        endElement(out, 12);
         endElement(out, 4);
 
         out.putInt(fileSizePos, out.position());

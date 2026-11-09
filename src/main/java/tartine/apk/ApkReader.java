@@ -72,6 +72,52 @@ public final class ApkReader implements AutoCloseable {
         return BinaryXml.parse(manifestBytes());
     }
 
+    /**
+     * Permissions named by {@code <uses-permission>} (including the legacy
+     * {@code uses-permission-sdk-23}/{@code -sdk-m} spellings), in manifest
+     * order and without duplicates.
+     */
+    public List<String> declaredPermissions() throws IOException {
+        List<String> names = new ArrayList<>();
+        for (BinaryXml.Element child : manifest().children) {
+            if (!child.name.equals("uses-permission")
+                    && !child.name.equals("uses-permission-sdk-23")
+                    && !child.name.equals("uses-permission-sdk-m")) {
+                continue;
+            }
+            String name = child.attr("name");
+            if (name != null && !name.isEmpty() && !names.contains(name)) {
+                names.add(name);
+            }
+        }
+        return names;
+    }
+
+    /**
+     * Manifest {@code targetSdkVersion}, falling back to
+     * {@code minSdkVersion} and then API 1 (the pre-runtime-permission
+     * default) when the attribute is absent or a preview codename.
+     */
+    public int targetSdk() throws IOException {
+        BinaryXml.Element sdk = manifest().child("uses-sdk");
+        if (sdk == null) {
+            return 1;
+        }
+        int min = sdkInt(sdk.attr("minSdkVersion"), 1);
+        return sdkInt(sdk.attr("targetSdkVersion"), min);
+    }
+
+    private static int sdkInt(String value, int fallback) {
+        if (value == null) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
     /** DEX entry names ({@code classes.dex}, {@code classes2.dex}, ...) in numeric order. */
     public List<String> dexEntries() {
         List<String> dex = new ArrayList<>();

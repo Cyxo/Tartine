@@ -76,7 +76,8 @@ import java.util.function.IntConsumer;
     }
 
     public int checkCallingOrSelfPermission(String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->checkCallingOrSelfPermission(Ljava/lang/String;)I");
+        return mBase == null ? super.checkCallingOrSelfPermission(arg0)
+                : mBase.checkCallingOrSelfPermission(arg0);
     }
 
     public int checkCallingOrSelfUriPermission(Uri arg0, int arg1) {
@@ -88,7 +89,8 @@ import java.util.function.IntConsumer;
     }
 
     public int checkCallingPermission(String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->checkCallingPermission(Ljava/lang/String;)I");
+        return mBase == null ? super.checkCallingPermission(arg0)
+                : mBase.checkCallingPermission(arg0);
     }
 
     public int checkCallingUriPermission(Uri arg0, int arg1) {
@@ -104,11 +106,13 @@ import java.util.function.IntConsumer;
     }
 
     public int checkPermission(String arg0, int arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->checkPermission(Ljava/lang/String;II)I");
+        return mBase == null ? super.checkPermission(arg0, arg1, arg2)
+                : mBase.checkPermission(arg0, arg1, arg2);
     }
 
     public int checkSelfPermission(String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->checkSelfPermission(Ljava/lang/String;)I");
+        return mBase == null ? super.checkSelfPermission(arg0)
+                : mBase.checkSelfPermission(arg0);
     }
 
     public int checkUriPermission(Uri arg0, int arg1, int arg2, int arg3) {
@@ -184,7 +188,11 @@ import java.util.function.IntConsumer;
     }
 
     public void enforceCallingOrSelfPermission(String arg0, String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->enforceCallingOrSelfPermission(Ljava/lang/String;Ljava/lang/String;)V");
+        if (mBase == null) {
+            super.enforceCallingOrSelfPermission(arg0, arg1);
+        } else {
+            mBase.enforceCallingOrSelfPermission(arg0, arg1);
+        }
     }
 
     public void enforceCallingOrSelfUriPermission(Uri arg0, int arg1, String arg2) {
@@ -192,7 +200,11 @@ import java.util.function.IntConsumer;
     }
 
     public void enforceCallingPermission(String arg0, String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->enforceCallingPermission(Ljava/lang/String;Ljava/lang/String;)V");
+        if (mBase == null) {
+            super.enforceCallingPermission(arg0, arg1);
+        } else {
+            mBase.enforceCallingPermission(arg0, arg1);
+        }
     }
 
     public void enforceCallingUriPermission(Uri arg0, int arg1, String arg2) {
@@ -200,7 +212,11 @@ import java.util.function.IntConsumer;
     }
 
     public void enforcePermission(String arg0, int arg1, int arg2, String arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->enforcePermission(Ljava/lang/String;IILjava/lang/String;)V");
+        if (mBase == null) {
+            super.enforcePermission(arg0, arg1, arg2, arg3);
+        } else {
+            mBase.enforcePermission(arg0, arg1, arg2, arg3);
+        }
     }
 
     public void enforceUriPermission(Uri arg0, int arg1, int arg2, int arg3, String arg4) {
@@ -330,7 +346,8 @@ import java.util.function.IntConsumer;
     }
 
     public String getOpPackageName() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getOpPackageName()Ljava/lang/String;");
+        return mBase == null ? super.getOpPackageName()
+                : mBase.getOpPackageName();
     }
 
     public String getPackageCodePath() {
@@ -338,11 +355,12 @@ import java.util.function.IntConsumer;
     }
 
     public PackageManager getPackageManager() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getPackageManager()Landroid/content/pm/PackageManager;");
+        return mBase == null ? super.getPackageManager()
+                : mBase.getPackageManager();
     }
 
     public String getPackageName() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getPackageName()Ljava/lang/String;");
+        return mBase == null ? super.getPackageName() : mBase.getPackageName();
     }
 
     public String getPackageResourcePath() {

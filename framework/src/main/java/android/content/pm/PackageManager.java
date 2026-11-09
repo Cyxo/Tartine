@@ -16,11 +16,13 @@ import android.os.Parcelable;
 import android.os.UserHandle;
 import java.io.File;
 import java.security.cert.Certificate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import tartine.fw.PermissionManager;
 
     public class PackageManager {
 
@@ -245,8 +247,8 @@ import java.util.function.Function;
     public static final int VERIFICATION_REJECT = -1;
     public static final int VERSION_CODE_HIGHEST = -1;
 
+    /** Desktop mapping: the shell owns one stateless façade per process. */
     public PackageManager() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;-><init>()V");
     }
 
     public void addPackageToPreferred(String arg0) {
@@ -286,7 +288,7 @@ import java.util.function.Function;
     }
 
     public int checkPermission(String arg0, String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->checkPermission(Ljava/lang/String;Ljava/lang/String;)I");
+        return PermissionManager.checkForPackage(arg1, arg0);
     }
 
     public int checkSignatures(int arg0, int arg1) {
@@ -346,7 +348,11 @@ import java.util.function.Function;
     }
 
     public List<PermissionGroupInfo> getAllPermissionGroups(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getAllPermissionGroups(I)Ljava/util/List;");
+        List<PermissionGroupInfo> groups = new ArrayList<>();
+        for (String group : PermissionManager.permissionGroups()) {
+            groups.add(PermissionManager.permissionGroupInfo(group));
+        }
+        return groups;
     }
 
     public Drawable getApplicationBanner(ApplicationInfo arg0) {
@@ -501,20 +507,48 @@ import java.util.function.Function;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageGids(Ljava/lang/String;I)[I");
     }
 
-    public PackageInfo getPackageInfo(VersionedPackage arg0, PackageManager.PackageInfoFlags arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageInfo(Landroid/content/pm/VersionedPackage;Landroid/content/pm/PackageManager$PackageInfoFlags;)Landroid/content/pm/PackageInfo;");
+    public PackageInfo getPackageInfo(VersionedPackage arg0, PackageManager.PackageInfoFlags arg1) throws PackageManager.NameNotFoundException {
+        return getPackageInfo(arg0 == null ? null : arg0.getPackageName(),
+                (int) (arg1 == null ? 0L : arg1.getValue()));
     }
 
-    public PackageInfo getPackageInfo(VersionedPackage arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageInfo(Landroid/content/pm/VersionedPackage;I)Landroid/content/pm/PackageInfo;");
+    public PackageInfo getPackageInfo(VersionedPackage arg0, int arg1) throws PackageManager.NameNotFoundException {
+        return getPackageInfo(arg0 == null ? null : arg0.getPackageName(), arg1);
     }
 
-    public PackageInfo getPackageInfo(String arg0, PackageManager.PackageInfoFlags arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String;Landroid/content/pm/PackageManager$PackageInfoFlags;)Landroid/content/pm/PackageInfo;");
+    public PackageInfo getPackageInfo(String arg0, PackageManager.PackageInfoFlags arg1) throws PackageManager.NameNotFoundException {
+        return getPackageInfo(arg0, (int) (arg1 == null ? 0L : arg1.getValue()));
     }
 
-    public PackageInfo getPackageInfo(String arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
+    public PackageInfo getPackageInfo(String arg0, int arg1) throws PackageManager.NameNotFoundException {
+        if (arg0 == null || !PermissionManager.isConfigured()
+                || !arg0.equals(PermissionManager.packageName())) {
+            throw new NameNotFoundException(arg0);
+        }
+        return currentPackageInfo(arg1);
+    }
+
+    /**
+     * The installed app's visible package record. Permission names are
+     * reported when {@code GET_PERMISSIONS} is requested; the flag word on
+     * each entry records whether the permission is currently granted.
+     */
+    private static PackageInfo currentPackageInfo(int flags) {
+        PackageInfo info = new PackageInfo();
+        info.packageName = PermissionManager.packageName();
+        if ((flags & GET_PERMISSIONS) != 0) {
+            List<String> requested = PermissionManager.declaredPermissions();
+            info.requestedPermissions = requested.toArray(new String[0]);
+            info.requestedPermissionsFlags = new int[requested.size()];
+            for (int i = 0; i < requested.size(); i++) {
+                if (PermissionManager.check(requested.get(i))
+                        == PERMISSION_GRANTED) {
+                    info.requestedPermissionsFlags[i] =
+                            PackageInfo.REQUESTED_PERMISSION_GRANTED;
+                }
+            }
+        }
+        return info;
     }
 
     public PackageInstaller getPackageInstaller() {
@@ -534,19 +568,38 @@ import java.util.function.Function;
     }
 
     public List<PackageInfo> getPackagesHoldingPermissions(String[] arg0, PackageManager.PackageInfoFlags arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackagesHoldingPermissions([Ljava/lang/String;Landroid/content/pm/PackageManager$PackageInfoFlags;)Ljava/util/List;");
+        return getPackagesHoldingPermissions(arg0,
+                (int) (arg1 == null ? 0L : arg1.getValue()));
     }
 
     public List<PackageInfo> getPackagesHoldingPermissions(String[] arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPackagesHoldingPermissions([Ljava/lang/String;I)Ljava/util/List;");
+        if (!PermissionManager.isConfigured() || arg0 == null) {
+            return new ArrayList<>();
+        }
+        for (String permission : arg0) {
+            if (PermissionManager.check(permission) != PERMISSION_GRANTED) {
+                return new ArrayList<>();
+            }
+        }
+        List<PackageInfo> holders = new ArrayList<>();
+        holders.add(currentPackageInfo(arg1));
+        return holders;
     }
 
-    public PermissionGroupInfo getPermissionGroupInfo(String arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPermissionGroupInfo(Ljava/lang/String;I)Landroid/content/pm/PermissionGroupInfo;");
+    public PermissionGroupInfo getPermissionGroupInfo(String arg0, int arg1) throws PackageManager.NameNotFoundException {
+        PermissionGroupInfo info = PermissionManager.permissionGroupInfo(arg0);
+        if (info == null) {
+            throw new NameNotFoundException(arg0);
+        }
+        return info;
     }
 
-    public PermissionInfo getPermissionInfo(String arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getPermissionInfo(Ljava/lang/String;I)Landroid/content/pm/PermissionInfo;");
+    public PermissionInfo getPermissionInfo(String arg0, int arg1) throws PackageManager.NameNotFoundException {
+        PermissionInfo info = PermissionManager.permissionInfo(arg0);
+        if (info == null) {
+            throw new NameNotFoundException(arg0);
+        }
+        return info;
     }
 
     public void getPlatformPermissionsForGroup(String arg0, Executor arg1, Consumer<List<String>> arg2) {
@@ -633,8 +686,12 @@ import java.util.function.Function;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getSystemSharedLibraryNames()[Ljava/lang/String;");
     }
 
-    public int getTargetSdkVersion(String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getTargetSdkVersion(Ljava/lang/String;)I");
+    public int getTargetSdkVersion(String arg0) throws PackageManager.NameNotFoundException {
+        if (arg0 == null || !PermissionManager.isConfigured()
+                || !arg0.equals(PermissionManager.packageName())) {
+            throw new NameNotFoundException(arg0);
+        }
+        return PermissionManager.targetSdk();
     }
 
     public CharSequence getText(String arg0, int arg1, ApplicationInfo arg2) {
@@ -722,7 +779,7 @@ import java.util.function.Function;
     }
 
     public boolean isPermissionRevokedByPolicy(String arg0, String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->isPermissionRevokedByPolicy(Ljava/lang/String;Ljava/lang/String;)Z");
+        return false;
     }
 
     public boolean isSafeMode() {
@@ -797,8 +854,18 @@ import java.util.function.Function;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryIntentServices(Landroid/content/Intent;I)Ljava/util/List;");
     }
 
-    public List<PermissionInfo> queryPermissionsByGroup(String arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->queryPermissionsByGroup(Ljava/lang/String;I)Ljava/util/List;");
+    public List<PermissionInfo> queryPermissionsByGroup(String arg0, int arg1) throws PackageManager.NameNotFoundException {
+        if (arg0 == null || PermissionManager.permissionGroupInfo(arg0) == null) {
+            throw new NameNotFoundException(arg0);
+        }
+        List<PermissionInfo> permissions = new ArrayList<>();
+        for (String name : PermissionManager.knownPermissions()) {
+            PermissionInfo info = PermissionManager.permissionInfo(name);
+            if (info != null && arg0.equals(info.group)) {
+                permissions.add(info);
+            }
+        }
+        return permissions;
     }
 
     public List<PackageManager.Property> queryProviderProperty(String arg0) {
@@ -948,14 +1015,32 @@ import java.util.function.Function;
 
         public abstract void onChecksumsReady(List<ApkChecksum> arg0);
         }
-        public static class PackageInfoFlags {
+        public static final class PackageInfoFlags {
+        private final long value;
+
+        PackageInfoFlags(long value) {
+            this.value = value;
+        }
 
         public long getValue() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager$PackageInfoFlags;->getValue()J");
+            return value;
         }
 
         public static PackageManager.PackageInfoFlags of(long arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager$PackageInfoFlags;->of(J)Landroid/content/pm/PackageManager$PackageInfoFlags;");
+            return new PackageManager.PackageInfoFlags(arg0);
+        }
+        }
+
+        /** AOSP PackageManager.NameNotFoundException (checked). */
+        public static class NameNotFoundException extends android.util.AndroidException {
+        private static final long serialVersionUID = 1L;
+
+        public NameNotFoundException() {
+            super();
+        }
+
+        public NameNotFoundException(String name) {
+            super(name);
         }
         }
         public static class Property implements Parcelable {

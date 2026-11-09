@@ -36,11 +36,16 @@ import android.os.Parcelable;
     public int protectionLevel;
 
     public PermissionInfo() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PermissionInfo;-><init>()V");
+        super();
     }
 
     public PermissionInfo(PermissionInfo arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PermissionInfo;-><init>(Landroid/content/pm/PermissionInfo;)V");
+        super(arg0);
+        descriptionRes = arg0.descriptionRes;
+        flags = arg0.flags;
+        group = arg0.group;
+        nonLocalizedDescription = arg0.nonLocalizedDescription;
+        protectionLevel = arg0.protectionLevel;
     }
 
     public int describeContents() {
@@ -48,15 +53,15 @@ import android.os.Parcelable;
     }
 
     public int getProtection() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PermissionInfo;->getProtection()I");
+        return protectionLevel & PROTECTION_MASK_BASE;
     }
 
     public int getProtectionFlags() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PermissionInfo;->getProtectionFlags()I");
+        return protectionLevel & PROTECTION_MASK_FLAGS;
     }
 
     public CharSequence loadDescription(PackageManager arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PermissionInfo;->loadDescription(Landroid/content/pm/PackageManager;)Ljava/lang/CharSequence;");
+        return nonLocalizedDescription;
     }
 
     public String toString() {

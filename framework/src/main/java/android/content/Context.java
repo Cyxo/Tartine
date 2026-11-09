@@ -28,8 +28,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.IntConsumer;
+import tartine.fw.PermissionManager;
 
     public class Context {
+
+    /** Desktop mapping: one stateless façade shared by every context. */
+    private static final PackageManager PACKAGE_MANAGER = new PackageManager();
 
     public static final String ACCESSIBILITY_SERVICE = "accessibility";
     public static final String ACCOUNT_SERVICE = "account";
@@ -204,7 +208,7 @@ import java.util.function.IntConsumer;
     }
 
     public int checkCallingOrSelfPermission(String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkCallingOrSelfPermission(Ljava/lang/String;)I");
+        return checkSelfPermission(arg0);
     }
 
     public int checkCallingOrSelfUriPermission(Uri arg0, int arg1) {
@@ -216,7 +220,7 @@ import java.util.function.IntConsumer;
     }
 
     public int checkCallingPermission(String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkCallingPermission(Ljava/lang/String;)I");
+        return checkSelfPermission(arg0);
     }
 
     public int checkCallingUriPermission(Uri arg0, int arg1) {
@@ -232,11 +236,11 @@ import java.util.function.IntConsumer;
     }
 
     public int checkPermission(String arg0, int arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkPermission(Ljava/lang/String;II)I");
+        return checkSelfPermission(arg0);
     }
 
     public int checkSelfPermission(String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->checkSelfPermission(Ljava/lang/String;)I");
+        return PermissionManager.check(arg0);
     }
 
     public int checkUriPermission(Uri arg0, int arg1, int arg2, int arg3) {
@@ -312,7 +316,7 @@ import java.util.function.IntConsumer;
     }
 
     public void enforceCallingOrSelfPermission(String arg0, String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->enforceCallingOrSelfPermission(Ljava/lang/String;Ljava/lang/String;)V");
+        enforce(arg0, arg1);
     }
 
     public void enforceCallingOrSelfUriPermission(Uri arg0, int arg1, String arg2) {
@@ -320,7 +324,7 @@ import java.util.function.IntConsumer;
     }
 
     public void enforceCallingPermission(String arg0, String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->enforceCallingPermission(Ljava/lang/String;Ljava/lang/String;)V");
+        enforce(arg0, arg1);
     }
 
     public void enforceCallingUriPermission(Uri arg0, int arg1, String arg2) {
@@ -328,7 +332,14 @@ import java.util.function.IntConsumer;
     }
 
     public void enforcePermission(String arg0, int arg1, int arg2, String arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->enforcePermission(Ljava/lang/String;IILjava/lang/String;)V");
+        enforce(arg0, arg3);
+    }
+
+    private void enforce(String permission, String message) {
+        if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+            throw new SecurityException(message != null ? message
+                    : "Permission Denial: " + permission);
+        }
     }
 
     public void enforceUriPermission(Uri arg0, int arg1, int arg2, int arg3, String arg4) {
@@ -463,7 +474,7 @@ import java.util.function.IntConsumer;
     }
 
     public String getOpPackageName() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getOpPackageName()Ljava/lang/String;");
+        return getPackageName();
     }
 
     public String getPackageCodePath() {
@@ -471,11 +482,12 @@ import java.util.function.IntConsumer;
     }
 
     public PackageManager getPackageManager() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getPackageManager()Landroid/content/pm/PackageManager;");
+        return PACKAGE_MANAGER;
     }
 
     public String getPackageName() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getPackageName()Ljava/lang/String;");
+        String name = PermissionManager.packageName();
+        return name.isEmpty() ? "android" : name;
     }
 
     public String getPackageResourcePath() {

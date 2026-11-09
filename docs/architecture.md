@@ -192,6 +192,29 @@ GitLab `android_translation_layer/android_translation_layer`
   host stream opens. Wrapping constructors pass through; `Scanner` and
   `Formatter` file constructors stay denied.
 
+## Permissions and consent (ADR-0013)
+
+- `tartine.fw.PermissionManager` is the per-app table: package name,
+  manifest-declared `<uses-permission>` entries, target SDK, and persisted
+  grant/deny decisions under `<root>/permissions/<package>.properties`.
+  `Main.txLaunch` configures it before guest code runs; with no app
+  configured it answers granted, which keeps framework-only runs and the
+  Vfs tests unchanged.
+- Two chokepoints reach it: the framework APIs (`Context.checkSelfPermission`
+  and friends, `Activity.requestPermissions`/`onRequestPermissionsResult`,
+  `PackageManager` permission queries) and the file bridge
+  (`GuestFiles`/`GuestFileStreams`), because file access bypasses the
+  framework into the host JDK.
+- Rules: normal and declared app-defined permissions grant at install;
+  declared dangerous ones prompt (GUI: a Swing dialog; headless: deny
+  without recording, so a later GUI run can ask); signature and undeclared
+  stay denied; target API < 23 means install-time grants. `PermissionPrompt`
+  is the host seam, consent not enforcement (ADR-0012).
+- Shared storage (`/sdcard`, `/storage/emulated/0`) needs a granted
+  read/write or all-files permission; app-specific external dirs and
+  app-private `/data` stay free. Denied reads look nonexistent, denied
+  writes are `SecurityException`. The gate is active only when configured.
+
 ## Virtual filesystem (decided 2026-10)
 
 - Seam: `tartine.runtime.Vfs` maps guest absolute paths to host paths;

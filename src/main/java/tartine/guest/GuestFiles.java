@@ -13,6 +13,7 @@ import java.nio.file.attribute.FileTime;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.stream.Stream;
+import tartine.fw.PermissionManager;
 import tartine.runtime.Vfs;
 
 /**
@@ -54,7 +55,19 @@ public final class GuestFiles {
 
     private static Path target(File file, Vfs.Policy policy) {
         String guest = guestPathOrNull(file, policy);
-        return guest == null ? null : policy.secureTarget(guest, false);
+        if (guest == null || !PermissionManager.storageAllowed(guest, false)) {
+            return null;
+        }
+        return policy.secureTarget(guest, false);
+    }
+
+    /** Like {@link #target} but gated on the shared-storage write grant. */
+    private static Path writeTarget(File file, Vfs.Policy policy) {
+        String guest = guestPathOrNull(file, policy);
+        if (guest == null || !PermissionManager.storageAllowed(guest, true)) {
+            return null;
+        }
+        return policy.secureTarget(guest, false);
     }
 
     private static Path requireTarget(File file, boolean write) {
@@ -62,6 +75,10 @@ public final class GuestFiles {
         String guest = guestPathOrNull(file, policy);
         if (guest == null) {
             throw new SandboxDenied("path is outside the guest filesystem");
+        }
+        if (!PermissionManager.storageAllowed(guest, write)) {
+            throw new SecurityException("Permission Denial: "
+                    + (write ? "writing " : "reading ") + guest);
         }
         // secureTarget rechecks the real path, so a symlink/junction inside
         // a mount cannot point the guest outside it.
@@ -139,7 +156,7 @@ public final class GuestFiles {
     }
 
     public static boolean canWrite(File file) {
-        Path host = target(file, Vfs.policy());
+        Path host = writeTarget(file, Vfs.policy());
         return host != null && Files.isWritable(host);
     }
 

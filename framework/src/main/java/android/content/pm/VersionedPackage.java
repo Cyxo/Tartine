@@ -7,40 +7,51 @@ import android.os.Parcelable;
 
     public static Parcelable.Creator CREATOR;
 
+    private final String packageName;
+    private final long versionCode;
+
     public VersionedPackage(String arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;-><init>(Ljava/lang/String;I)V");
+        this(arg0, (long) arg1);
     }
 
     public VersionedPackage(String arg0, long arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;-><init>(Ljava/lang/String;J)V");
+        packageName = arg0;
+        versionCode = arg1;
     }
 
     public int describeContents() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->describeContents()I");
+        return 0;
     }
 
     public boolean equals(Object arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->equals(Ljava/lang/Object;)Z");
+        if (this == arg0) {
+            return true;
+        }
+        if (!(arg0 instanceof VersionedPackage other)) {
+            return false;
+        }
+        return versionCode == other.versionCode
+                && java.util.Objects.equals(packageName, other.packageName);
     }
 
     public long getLongVersionCode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->getLongVersionCode()J");
+        return versionCode;
     }
 
     public String getPackageName() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->getPackageName()Ljava/lang/String;");
+        return packageName;
     }
 
     public int getVersionCode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->getVersionCode()I");
+        return (int) versionCode;
     }
 
     public int hashCode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->hashCode()I");
+        return java.util.Objects.hash(packageName, versionCode);
     }
 
     public String toString() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/VersionedPackage;->toString()Ljava/lang/String;");
+        return "VersionedPackage{" + packageName + ":" + versionCode + "}";
     }
 
     public void writeToParcel(Parcel arg0, int arg1) {
@@ -49,5 +60,6 @@ import android.os.Parcelable;
 
         /** Scratch mirror constructor (SkeletonGen). */
         public VersionedPackage() {
+            this(null, 0L);
         }
     }

@@ -13,11 +13,15 @@ import android.os.Parcelable;
     public int priority;
 
     public PermissionGroupInfo() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PermissionGroupInfo;-><init>()V");
+        super();
     }
 
     public PermissionGroupInfo(PermissionGroupInfo arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PermissionGroupInfo;-><init>(Landroid/content/pm/PermissionGroupInfo;)V");
+        super(arg0);
+        descriptionRes = arg0.descriptionRes;
+        flags = arg0.flags;
+        nonLocalizedDescription = arg0.nonLocalizedDescription;
+        priority = arg0.priority;
     }
 
     public int describeContents() {
@@ -25,7 +29,7 @@ import android.os.Parcelable;
     }
 
     public CharSequence loadDescription(PackageManager arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PermissionGroupInfo;->loadDescription(Landroid/content/pm/PackageManager;)Ljava/lang/CharSequence;");
+        return nonLocalizedDescription;
     }
 
     public String toString() {

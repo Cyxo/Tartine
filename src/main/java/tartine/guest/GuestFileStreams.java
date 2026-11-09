@@ -3,6 +3,7 @@ package tartine.guest;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
+import tartine.fw.PermissionManager;
 import tartine.runtime.Vfs;
 
 /**
@@ -56,6 +57,10 @@ public final class GuestFileStreams {
                     + (guest == null ? "outside the guest filesystem"
                             : guest));
         }
+        if (!PermissionManager.storageAllowed(guest, false)) {
+            throw new FileNotFoundException(
+                    "permission denied (guest sandbox): " + guest);
+        }
         return host;
     }
 
@@ -67,6 +72,10 @@ public final class GuestFileStreams {
                 : name;
         if (guest == null) {
             throw new SandboxDenied("path is outside the guest filesystem");
+        }
+        if (!PermissionManager.storageAllowed(guest, true)) {
+            throw new SecurityException(
+                    "Permission Denial: writing " + guest);
         }
         Path host = policy.secureTarget(guest, true);
         if (host == null) {

@@ -19,11 +19,18 @@ import android.util.Printer;
     public String packageName;
 
     public PackageItemInfo() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageItemInfo;-><init>()V");
     }
 
     public PackageItemInfo(PackageItemInfo arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageItemInfo;-><init>(Landroid/content/pm/PackageItemInfo;)V");
+        banner = arg0.banner;
+        icon = arg0.icon;
+        isArchived = arg0.isArchived;
+        labelRes = arg0.labelRes;
+        logo = arg0.logo;
+        metaData = arg0.metaData;
+        name = arg0.name;
+        nonLocalizedLabel = arg0.nonLocalizedLabel;
+        packageName = arg0.packageName;
     }
 
     protected PackageItemInfo(Parcel arg0) {
@@ -47,7 +54,7 @@ import android.util.Printer;
     }
 
     public CharSequence loadLabel(PackageManager arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageItemInfo;->loadLabel(Landroid/content/pm/PackageManager;)Ljava/lang/CharSequence;");
+        return nonLocalizedLabel != null ? nonLocalizedLabel : name;
     }
 
     public Drawable loadLogo(PackageManager arg0) {

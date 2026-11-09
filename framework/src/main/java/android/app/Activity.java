@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import java.util.ArrayList;
+import tartine.fw.PermissionManager;
 
 /**
  * Tartine: minimal skeleton for the translation spike. The fw-gen closure
@@ -15,6 +16,47 @@ import java.util.ArrayList;
 public class Activity extends ContextThemeWrapper {
 
     public Activity() {
+    }
+
+    /**
+     * AOSP Activity.requestPermissions(String[], int): resolve the requests
+     * through the host consent seam and deliver the result to
+     * {@link #onRequestPermissionsResult}. The desktop Handler delivers
+     * inline, so the callback runs before this method returns.
+     */
+    public final void requestPermissions(String[] arg0, int arg1) {
+        PermissionManager.request(this, arg0, arg1);
+    }
+
+    /** User-scoped overload; the desktop has one user. */
+    public final void requestPermissions(String[] arg0, int arg1, int arg2) {
+        requestPermissions(arg0, arg1);
+    }
+
+    /** AOSP default: subclasses override to consume the result. */
+    public void onRequestPermissionsResult(int arg0, String[] arg1,
+            int[] arg2) {
+    }
+
+    /** User-scoped overload forwarding to the three-argument callback. */
+    public void onRequestPermissionsResult(int arg0, String[] arg1,
+            int[] arg2, int arg3) {
+        onRequestPermissionsResult(arg0, arg1, arg2);
+    }
+
+    /**
+     * AOSP asks whether a previous denial should show rationale. The
+     * desktop prompts once and remembers the answer, so there is no
+     * separate rationale step.
+     */
+    public boolean shouldShowRequestPermissionRationale(String arg0) {
+        return false;
+    }
+
+    /** User-scoped overload; the desktop has one user. */
+    public boolean shouldShowRequestPermissionRationale(String arg0,
+            int arg1) {
+        return false;
     }
 
     /**
