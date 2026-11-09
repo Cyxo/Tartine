@@ -60,6 +60,11 @@ final class ComposeTranslationTest {
                     + "LazyStaggeredGridMeasureKt;",
             "Lkotlin/math/MathKt__MathJVMKt;",
             "Landroidx/compose/ui/graphics/vector/FastFloatParserKt;",
+            // Catch-handler slots: a pre-init null merged with an int store
+            // to TOP at a catch-all entry, and a const typed by the consumer
+            // of an unrelated binop overwrite.
+            "Landroidx/profileinstaller/ProfileVerifier;",
+            "Lkotlinx/coroutines/channels/BufferedChannel;",
         };
         try (ApkReader reader = ApkReader.open(apk)) {
             DexSet dex = reader.dexSet();

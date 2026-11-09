@@ -129,6 +129,19 @@ final class TxMethodWriter implements Opcodes {
     private boolean previewing;
     /** Per-register store kinds observed by the preview pass. */
     private Map<Integer, Set<Character>> storeKinds;
+    /** The preview census, kept for the real pass's slot pre-init. */
+    private Map<Integer, Set<Character>> previewKinds;
+    /**
+     * Preview loads issued while the register had no store yet on the linear
+     * replay: the value read is the interpreter's zero/null, so the slot's
+     * pre-init type must be acceptable to every such demand. A reference
+     * demand forces the null lane even when the register's stores are all
+     * numeric (Paint demos read a fresh register as a null ColorFilter
+     * before storing float shadow radii into it).
+     */
+    private Map<Integer, Set<Character>> previewLoadKinds;
+    /** Preview load-demand census (only live during the preview pass). */
+    private Map<Integer, Set<Character>> loadKinds;
     /** Registers whose stores take conflicting kinds (int on one path, a
      *  reference on another — d8 reuses registers polymorphically). All
      *  their writes unify Object-typed so frame merges stay compatible. */
@@ -200,12 +213,17 @@ final class TxMethodWriter implements Opcodes {
             };
             previewing = true;
             Map<Integer, Set<Character>> kinds = new HashMap<>();
+            Map<Integer, Set<Character>> loads = new HashMap<>();
             storeKinds = kinds;
+            loadKinds = loads;
             emitBody();
             mixedSlots = RegisterKinds.conflicting(kinds);
+            previewKinds = kinds;
+            previewLoadKinds = loads;
         } finally {
             previewing = false;
             storeKinds = null;
+            loadKinds = null;
             mv = real;
         }
         resetRegisterState();
@@ -252,16 +270,34 @@ final class TxMethodWriter implements Opcodes {
         preRegisterBranchTargets();
         preScanLoops();
         visitTries();
-        // Interpreter semantics: reading a register never written in a path
+        // Interpreter semantics: reading a register never written on a path
         // yields zero/null. The JVM verifier forbids reads of unassigned
-        // locals, so pre-initialize every non-parameter slot to null (the
-        // copyParams window immediately after overwrites its own initial
-        // slots). REF demands then read null; INT demands on untouched
-        // slots remain a loud wall.
+        // locals, so pre-initialize every non-parameter slot after the
+        // incoming JVM argument window (copyParams overwrites its own slots
+        // after). The value is the zero of the register's census family: a
+        // null here merges with an int store to TOP at a catch-all handler
+        // entry (ProfileVerifier.writeProfileVerification's v2 is undefined
+        // in the first try range and int afterwards). An unknown or
+        // object-mixed register keeps the null/zero-type lane.
         int paramSlots = paramRegs();
         for (int slot = paramSlots; slot < slots(); slot++) {
-            mv.visitInsn(ACONST_NULL);
-            mv.visitVarInsn(ASTORE, slot);
+            char k = preInitKind(slot / 2);
+            if (k == LONG || k == DOUBLE) {
+                if ((slot & 1) != 0) {
+                    continue; // the even slot stored the wide pair
+                }
+                mv.visitInsn(k == LONG ? LCONST_0 : DCONST_0);
+                mv.visitVarInsn(k == LONG ? LSTORE : DSTORE, slot);
+            } else if (k == INT) {
+                mv.visitInsn(ICONST_0);
+                mv.visitVarInsn(ISTORE, slot);
+            } else if (k == FLOAT) {
+                mv.visitInsn(FCONST_0);
+                mv.visitVarInsn(FSTORE, slot);
+            } else {
+                mv.visitInsn(ACONST_NULL);
+                mv.visitVarInsn(ASTORE, slot);
+            }
         }
         copyParams();
         for (int i = 0; i < insns.size(); i++) {
@@ -292,6 +328,37 @@ final class TxMethodWriter implements Opcodes {
 
     private int slots() {
         return 2 * Math.max(method.registerCount, paramRegs()) + 2;
+    }
+
+    /**
+     * Slot pre-init family for a register: the single numeric kind its
+     * stores take in the preview census, provided every pre-store read
+     * accepts that family too; otherwise UNKNOWN (null lane). The null lane
+     * covers empty/mixed/reference-involved censuses and registers read as
+     * references before their first store.
+     */
+    private char preInitKind(int reg) {
+        if (mixedSlots != null && mixedSlots.contains(reg)) {
+            return UNKNOWN;
+        }
+        Set<Character> ks = previewKinds == null ? null : previewKinds.get(reg);
+        if (ks == null || ks.size() != 1) {
+            return UNKNOWN;
+        }
+        char k = ks.iterator().next();
+        if (k != INT && k != FLOAT && k != LONG && k != DOUBLE) {
+            return UNKNOWN;
+        }
+        Set<Character> reads = previewLoadKinds == null
+                ? null : previewLoadKinds.get(reg);
+        if (reads != null) {
+            for (char w : reads) {
+                if (w != UNKNOWN && w != k) {
+                    return UNKNOWN; // a pre-store read of another family
+                }
+            }
+        }
+        return k;
     }
 
     private boolean isPayloadOp(Insn in) {
@@ -1184,7 +1251,13 @@ final class TxMethodWriter implements Opcodes {
                         if (skippedTests > 0) {
                             return testOnlyKind();
                         }
-                        continue;
+                        // The destination write replaces the scanned value:
+                        // later reads see the binop result, not this value
+                        // (BufferedChannel.isClosed's const-4 v5 was typed
+                        // by the default arm's long-to-int on the binop's
+                        // output). Type the scanned value by its own family
+                        // and let the store census unify the slot.
+                        return wide ? LONG : INT;
                     }
                     pos = srcPos;
                 }
@@ -1506,6 +1579,10 @@ final class TxMethodWriter implements Opcodes {
     // ---------------------------------------------------------------------
 
     private void load(int reg, char want) {
+        if (previewing && regKind[reg] == UNKNOWN && !regZero[reg]) {
+            loadKinds.computeIfAbsent(reg, x -> new HashSet<Character>())
+                    .add(want);
+        }
         boolean mixed = mixedSlots != null && mixedSlots.contains(reg);
         char have = regKind[reg];
         char k = have == UNKNOWN ? want : have;
