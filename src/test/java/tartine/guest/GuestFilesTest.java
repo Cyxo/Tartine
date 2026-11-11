@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import android.os.Environment;
 import java.io.File;
 import java.io.FileFilter;
 import java.nio.file.Files;
@@ -203,6 +205,41 @@ class GuestFilesTest {
                 outside));
         assertEquals("<outside guest filesystem>", GuestFiles.toString(outside));
         assertFalse(GuestFiles.toString(outside).contains(root.toString()));
+    }
+
+    @Test
+    void frameworkPlainFilesWithGuestSpellingMapThroughTheVfs() throws Exception {
+        // Trusted framework code (Environment) answers a plain File carrying
+        // the guest spelling of a mount; the bridge must treat it like a
+        // GuestFile rather than a host path.
+        Files.createDirectories(root.resolve("sdcard").resolve("Download"));
+        File external = new File("/storage/emulated/0");
+        assertEquals("/storage/emulated/0", GuestFiles.guestPath(external));
+        assertTrue(GuestFiles.exists(external));
+        assertTrue(GuestFiles.isDirectory(external));
+        File[] children = GuestFiles.listFiles(external);
+        assertNotNull(children);
+        assertEquals(1, children.length);
+        assertTrue(children[0] instanceof GuestFile);
+        assertEquals("/storage/emulated/0/Download", children[0].getPath());
+
+        // An absolute spelling with no mount still fails closed.
+        assertThrows(SandboxDenied.class,
+                () -> GuestFiles.guestPath(new File("/proc/self/maps")));
+    }
+
+    @Test
+    void environmentExternalDirectoryListsTheSeededCard() {
+        // The fixture's exact chain: the framework's
+        // Environment.getExternalStorageDirectory() answers a plain File,
+        // then the guest bridge lists it. ensureDefaultCard seeds the
+        // standard folders, so the listing is non-empty.
+        Vfs.ensureDefaultCard();
+        File external = Environment.getExternalStorageDirectory();
+        assertEquals("/storage/emulated/0", GuestFiles.guestPath(external));
+        String[] names = GuestFiles.list(external);
+        assertNotNull(names);
+        assertTrue(Arrays.asList(names).contains("Download"));
     }
 
     @Test

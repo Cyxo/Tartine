@@ -221,9 +221,13 @@ GitLab `android_translation_layer/android_translation_layer`
   unmapped paths resolve to `null` and the `java.io.File` bridge
   (`tartine.guest.GuestFile`/`GuestFiles`) fails closed - reads answer
   nonexistent, writes raise a named `SandboxDenied` - never falling back to
-  the host cwd. `Policy.guestPath(Path)` reverse-maps framework-returned
-  `File` objects with the canonical mount order (`/data/data` over
-  `/data/user/0`, `/sdcard` over `/storage/emulated/0`).
+  the host cwd. A framework-returned `File` is a plain host object the
+  bridge resolves two ways: `Policy.guestPath(Path)` reverse-maps a host
+  path inside a mount with the canonical mount order (`/data/data` over
+  `/data/user/0`, `/sdcard` over `/storage/emulated/0`), and an absolute
+  guest spelling (e.g. `Environment.getExternalStorageDirectory()`'s
+  `/storage/emulated/0`) is accepted when the Vfs maps it. Anything
+  unmapped still fails closed.
 - Real-path check: every bridge access calls `Policy.secureTarget`, which
   resolves the deepest existing component (and a final symlink, including a
   dangling one on writes) and requires it inside the mount's real root.

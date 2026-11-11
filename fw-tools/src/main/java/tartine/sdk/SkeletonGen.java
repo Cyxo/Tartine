@@ -60,7 +60,8 @@ public final class SkeletonGen {
      * story exists. Activity grew a hand-minimal skeleton instead.
      */
     private static final List<String> DEFAULT_SEEDS = List.of(
-            "android/graphics/Paint", "android/view/View");
+            "android/graphics/Paint", "android/view/View",
+            "android/os/Environment");
 
     /** ACC bits (JVMS 4.1/4.5/4.6). */
     private static final int ACC_PUBLIC = 0x0001;

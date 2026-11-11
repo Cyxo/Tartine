@@ -30,7 +30,16 @@ public final class GuestFiles {
     private GuestFiles() {
     }
 
-    /** Guest path carried by {@code file}, or {@code null} when unmapped. */
+    /**
+     * Guest path carried by {@code file}, or {@code null} when unmapped.
+     *
+     * <p>A guest {@link GuestFile} carries its spelling directly. Trusted
+     * framework code cannot link {@code tartine.guest}, so a framework method
+     * that answers a {@code File} builds a plain one; that file is accepted
+     * when it names either a host path inside a mount (reverse-mapped) or an
+     * absolute guest spelling such as {@code Environment}'s storage roots.
+     * Both are validated through the Vfs, so anything unmapped stays denied.
+     */
     static String guestPathOrNull(File file, Vfs.Policy policy) {
         if (file instanceof GuestFile guest) {
             return guest.guestPath();
@@ -38,7 +47,15 @@ public final class GuestFiles {
         if (file == null) {
             return null;
         }
-        return policy.guestPath(file.toPath());
+        String host = policy.guestPath(file.toPath());
+        if (host != null) {
+            return host;
+        }
+        String guest = file.getPath().replace('\\', '/');
+        if (guest.startsWith("/") && policy.target(guest) != null) {
+            return guest;
+        }
+        return null;
     }
 
     /** Guest path for {@code file}; unmapped host files are denied. */
