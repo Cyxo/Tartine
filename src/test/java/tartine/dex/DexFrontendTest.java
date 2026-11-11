@@ -1479,6 +1479,14 @@ class DexFrontendTest {
         expected.append("method missing()V regs=0\n");
         expected.append("  0: invoke-static, Lfw/Base;->nope()V\n");
         expected.append("  3: return-void\n");
+        expected.append("method mixedZeroDemo()I regs=2\n");
+        expected.append("  0: const-4 v0, #0\n");
+        expected.append("  1: const-string v1, x\n");
+        expected.append("  3: if-eqz v0, +5\n");
+        expected.append("  5: const-16 v0, #7\n");
+        expected.append("  7: return v0\n");
+        expected.append("  8: move-object v0, v1\n");
+        expected.append("  9: goto, +-6\n");
         expected.append("method nanosDemo()J regs=3\n");
         expected.append("  0: sget-object v0, Ljava/util/concurrent/TimeUnit;->SECONDS:Ljava/util/concurrent/TimeUnit;\n");
         expected.append("  2: const-wide-16 v1, #60\n");

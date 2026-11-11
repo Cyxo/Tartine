@@ -191,6 +191,9 @@ final class TranslatedVmTest {
         assertEquals(0x3F800000, (int) (Integer) call("fillFloatDemo"));
         assertEquals(7, (int) (Integer) call("zeroCheckDemo"));
         assertEquals(7, (int) (Integer) call("nullCheckDemo"));
+        // A loop-carried {int,ref} register read by if-eqz with a stale
+        // linear int kind: the reference must test true, not unbox.
+        assertEquals(7, (int) (Integer) call("mixedZeroDemo"));
         assertEquals(7, (int) (Integer) call("switchDemo"));
         assertEquals(99, (int) (Integer) call("switchDefaultDemo"));
         assertEquals(8, (int) (Integer) call("arrayCopy"));

@@ -2354,9 +2354,18 @@ final class TxMethodWriter implements Opcodes {
                 }
                 return;
             }
+            if (nullCmp && mixedSlots != null && mixedSlots.contains(reg)) {
+                // {obj,int}-unified slot: its JVM value is an Object, and the
+                // DEX zero test must read both views. A bare unbox crashed
+                // SnapshotKt.readable: the candidate register holds a
+                // StateRecord on later loop iterations while the stale
+                // linear kind still said int, so the Number cast blew up.
+                emitMixedZeroBranch(reg, cmp.equals("eq"), to);
+                return;
+            }
             // Numeric z-comparisons (ltz/gez/gtz/lez, and eqz/neqz on typed
-            // int slots) unbox through load(reg, INT): {obj,int}-unified
-            // slots read Integer and precedent (negative value) flows on.
+            // int slots) unbox through load(reg, INT): precedent (negative
+            // value) flows on.
             load(reg, INT); // unknown defaults to int/family shape
             int opc;
             switch (cmp) {
@@ -2468,6 +2477,34 @@ final class TxMethodWriter implements Opcodes {
             default: throw gap("branch " + op, in);
         }
         mv.visitJumpInsn(opc, to);
+    }
+
+    /**
+     * DEX {@code if-eqz}/{@code if-nez} on a polymorphic {obj,int} slot: the
+     * JVM local always holds an Object, so the zero test must read both
+     * views — null is the DEX zero, a boxed Number tests its numeric value,
+     * and any other reference (the value-world kind at this site) is
+     * non-zero. The bare unbox the numeric lane emits crashed
+     * SnapshotKt.readable: its candidate register holds a StateRecord on
+     * later loop iterations while the stale linear kind still said int, so
+     * the unbox's Number cast rejected the reference.
+     */
+    private void emitMixedZeroBranch(int reg, boolean jumpOnZero, Label to) {
+        int slot = slotOf(reg);
+        Label done = new Label();
+        mv.visitVarInsn(ALOAD, slot);
+        mv.visitJumpInsn(IFNULL, jumpOnZero ? to : done);
+        mv.visitVarInsn(ALOAD, slot);
+        mv.visitTypeInsn(INSTANCEOF, "java/lang/Number");
+        // A non-null raw reference is the DEX non-zero value: jump (or not)
+        // straight to the decided destination.
+        mv.visitJumpInsn(IFEQ, jumpOnZero ? done : to);
+        mv.visitVarInsn(ALOAD, slot);
+        mv.visitTypeInsn(CHECKCAST, "java/lang/Number");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Number", "intValue",
+                "()I", false);
+        mv.visitJumpInsn(jumpOnZero ? IFEQ : IFNE, to);
+        mv.visitLabel(done);
     }
 
     // ---------------------------------------------------------------------

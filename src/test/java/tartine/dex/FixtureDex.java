@@ -6,6 +6,7 @@ import com.android.tools.smali.dexlib2.Opcodes;
 import com.android.tools.smali.dexlib2.builder.Label;
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation;
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderArrayPayload;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction10t;
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction10x;
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction11n;
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction11x;
@@ -309,6 +310,7 @@ public final class FixtureDex {
                     demos.get("loaderDemo"), demos.get("loadClassDemo"), demos.get("serviceDemo"),
                     demos.get("sdkIntDemo"), demos.get("suppressedDemo"),
                     demos.get("zeroCheckDemo"), demos.get("nullCheckDemo"),
+                    demos.get("mixedZeroDemo"),
                     demos.get("frameIdDemo"), demos.get("frameCbDemo"), demos.get("postCbDemo"),
                     demos.get("plusCollDemo"), demos.get("childAddDemo"),
                     demos.get("childRemoveDemo"), demos.get("attachPropDemo"), demos.get("ctxDemo"),
@@ -4872,6 +4874,31 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), nullCheckImpl);
         demos.put("nullCheckDemo", nullCheckDemo);
+
+        // mixedZeroDemo(): a loop-carried {int,ref} register tested by
+        // if-eqz at the loop head. The object write sits later in linear
+        // order, so the kind at the branch is the entry int while the
+        // back-edge leaves a String in the slot: the zero test must not
+        // unbox the reference. Mirrors SnapshotKt.readable, whose candidate
+        // register carries an int on the first pass and a StateRecord
+        // afterwards.
+        MutableMethodImplementation mixedZeroImpl = new MutableMethodImplementation(2);
+        mixedZeroImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 0));
+        mixedZeroImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 1,
+                builder.internStringReference("x")));
+        mixedZeroImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 0, 7));
+        mixedZeroImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        mixedZeroImpl.addInstruction(new BuilderInstruction12x(Opcode.MOVE_OBJECT, 0, 1));
+        Label mixedFirst = mixedZeroImpl.newLabelForIndex(4);
+        mixedZeroImpl.addInstruction(2,
+                new BuilderInstruction21t(Opcode.IF_EQZ, 0, mixedFirst));
+        Label mixedLoop = mixedZeroImpl.newLabelForIndex(2);
+        mixedZeroImpl.addInstruction(new BuilderInstruction10t(Opcode.GOTO, mixedLoop));
+        BuilderMethod mixedZeroDemo = builder.internMethod(HELLO, "mixedZeroDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), mixedZeroImpl);
+        demos.put("mixedZeroDemo", mixedZeroDemo);
 
         // frameIdDemo(): the content frame carries android.R.id.content.
         MutableMethodImplementation frameIdImpl = new MutableMethodImplementation(2);
