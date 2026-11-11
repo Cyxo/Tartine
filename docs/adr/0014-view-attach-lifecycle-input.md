@@ -68,6 +68,22 @@ from the host focus event updates `AttachInfo.mHasWindowFocus` and fans out
 to the tree and the observer. Events are posted to the guest looper and run
 synchronously on the guest thread; there is no input batching.
 
+The host-built `MotionEvent` follows the device contract Compose depends on:
+mouse buttons ride in the button-state field only (never in the action, whose
+upper byte is the pointer index for `ACTION_POINTER_DOWN`/`UP`), and the
+frame's pointer count matches the arrays passed to `obtain`. Because AOSP's
+`PointerCoords` has no `AXIS_HSCROLL`/`AXIS_VSCROLL` fields (a native event
+carries them), the shell adds explicit `hscroll`/`vscroll` fields so a
+Java-built wheel event can express a delta; without them
+`setAxisValue` dropped the scroll.
+
+Compose's pointer path also builds a window matrix for hit testing, so
+`android.graphics.Matrix` is a real row-major 3x3 affine (Skia's
+pre/post-concat naming), `RenderNode` computes its 2D transform and inverse,
+and `View.getMatrix` / `transformMatrixToGlobal` / `transformMatrixToLocal`
+walk the tree with scroll offsets. `View` scrolling (`scrollTo`/`scrollBy`/
+`onScrollChanged`) exists because those transforms read the offsets.
+
 **Unmodelled subsystems terminate at the framework seam.** The shell has no
 window-insets model, so `View.requestApplyInsets` walks to the parent and
 `ViewRootImpl.requestFitSystemWindows` is the terminating no-op; Compose's
@@ -87,8 +103,9 @@ framework lifecycle, creates the `ViewRootImpl`, attaches the decor, wires
 - Compose and ordinary SDK views go through the same attach/measure/layout/
   draw path as on a device; the host driver is the only substitution.
   No host-side reflection into library internals remains in the GUI path.
-  The committed Compose probe renders and animates through it (a run drew
-  254 frames before the host auto-closed the window).
+  The committed Compose probe renders and animates through it, and an
+  OS-level pointer probe (hover sweep, clicks, drag, vertical/horizontal
+  wheel over the real window) drew 10119 frames with no guest exception.
 - Window focus, mouse clicks, hover, scroll wheel and keyboard events reach
   the guest view tree through `ViewRootImpl`, so apps that gate behavior on
   click/key/focus now work; text input still uses key events plus a raw
