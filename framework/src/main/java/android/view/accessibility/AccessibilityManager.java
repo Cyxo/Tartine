@@ -81,9 +81,64 @@ public final class AccessibilityManager {
         return Collections.emptyList();
     }
 
+    /**
+     * AOSP .../AccessibilityManager.java#getInstalledAccessibilityServiceList:
+     * with no service manager the list is empty on the desktop, matching the
+     * disabled state (the AOSP body returns an empty list when nothing is
+     * installed).
+     */
+    public List<AccessibilityServiceInfo> getInstalledAccessibilityServiceList() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * AOSP .../AccessibilityManager.java#addAccessibilityServicesState
+     * ChangeListener: registration against the bound services; nothing binds,
+     * so the call is a no-op that never fires. Compose registers here to
+     * invalidate its accessibility configuration on pointer input setup.
+     */
+    public void addAccessibilityServicesStateChangeListener(
+            AccessibilityServicesStateChangeListener listener) {
+    }
+
+    /**
+     * AOSP .../AccessibilityManager.java#removeAccessibilityServicesState
+     * ChangeListener: true when the listener had been registered; the
+     * no-service shell never holds one.
+     */
+    public boolean removeAccessibilityServicesStateChangeListener(
+            AccessibilityServicesStateChangeListener listener) {
+        return false;
+    }
+
+    /**
+     * AOSP .../AccessibilityManager.java#getRecommendedTimeoutMillis: when
+     * the user has not requested extended timeouts (recommended timeout 0)
+     * the AOSP body returns {@code originalTimeout} unchanged; the desktop
+     * never sets the extended-timeout preference, so that branch always wins.
+     * Compose's hover/touch-slop bookkeeping reads this value directly.
+     */
+    public int getRecommendedTimeoutMillis(int originalTimeout,
+            int uiContentFlags) {
+        return originalTimeout;
+    }
+
+    /**
+     * AOSP .../AccessibilityManager.java#isRequestFromAccessibilityTool: true
+     * only when the caller is an accessibility tool; the desktop has none.
+     */
+    public boolean isRequestFromAccessibilityTool() {
+        return false;
+    }
+
     /** Listener contract from android.jar signatures. */
     public interface AccessibilityStateChangeListener {
         void onAccessibilityStateChanged(boolean enabled);
+    }
+
+    /** Listener contract from android.jar signatures. */
+    public interface AccessibilityServicesStateChangeListener {
+        void onAccessibilityServicesStateChanged(AccessibilityManager manager);
     }
 
     /** Listener contract from android.jar signatures. */
