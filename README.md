@@ -39,9 +39,9 @@ Tartine can currently parse **pure-Kotlin/Java APKs** (no XML layouts or images)
   <i>On the left, the app run by Tartine. On the right, the same app running on a real Android device, mirrored with scrcpy.</i>
 </p>
 
-> Current Android Framework coverage: ~11.9%
+> Current Android API coverage: ~3.6% of the public SDK's concrete `android.*` methods (`mise run coverage:api`)
 > 
-> ![](https://api.barbuilder.dev/percentage/11.9?style=pill&color=44cc11&label=11.9%&width=400)
+> ![](https://api.barbuilder.dev/percentage/3.6?style=pill&color=44cc11&label=3.6%&width=400)
 
 Here's a list of currently working features:
 - **Pure-DEX apps (Java/Kotlin/Compose, no XML layouts, no native code) run end-to-end** - manifest parsing, DEX -> JVM translation (the only VM), the framework activity lifecycle and a real `ViewRootImpl` attach, composition, and a continuous measure/layout/draw loop; framework behavior is added wall-by-wall via named `UnsupportedOperationException` gaps surfaced by `mise run run`/`refs`. *Limitation: `mise run run` halts at the first named gap on headless runs until the family is ported.*
@@ -115,6 +115,7 @@ mise run apk [apks/app-debug.apk]              # manifest, code, and library sum
 mise run run [apks/app-debug.apk]              # translated headless probe: onCreate until the first gap
 mise run gui [apks/app-debug.apk] [timeout]    # translated GUI probe: show the activity window (Compose frames animate)
 mise run coverage                               # estimate framework method coverage (logic vs. auto-generated stubs)
+mise run coverage:api                           # exact Android API coverage: implemented android.jar methods vs the compiled framework
 mise run dump <file.dex>                       # instruction dump of one dex file
 mise run refs [apks/app-debug.apk]             # unresolved-reference census (guest dex, then host)
 mise run strict [apks/app-debug.apk] [filter]  # translator-gap gate over every class

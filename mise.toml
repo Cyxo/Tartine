@@ -14,6 +14,10 @@ description = "Estimate framework method coverage: methods carrying logic vs aut
 run = "python scripts/coverage.py"
 run_windows = "python scripts/coverage.py"
 
+[tasks.'coverage:api']
+description = "Exact android.* API coverage: implemented android.jar methods vs the compiled framework"
+run = "gradle :fw-tools:apiCoverage"
+
 [tasks.build]
 description = "Incremental compile + refresh launch classpath"
 run = "gradle compileTestJava writeClasspath"

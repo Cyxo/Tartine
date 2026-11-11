@@ -17,6 +17,9 @@ repositories {
 dependencies {
     // SkeletonGen reads DEX descriptors through the runtime's shared helper.
     implementation project(':')
+    // ApiCoverage reads compiled framework method bodies to tell a real
+    // implementation from a generated gap (same ASM the translator emits with).
+    implementation 'org.ow2.asm:asm:9.6'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
@@ -62,5 +65,19 @@ tasks.register('fwShorten', JavaExec) {
     if (project.findProperty('shortenCheck') != null) {
         args += '--check'
     }
+    environment 'ANDROID_HOME': (System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT') ?: '')
+}
+
+// Exact API-coverage metric (mise run coverage:api): how many concrete
+// android.* methods in the local SDK android.jar have a real, non-gap body in
+// the compiled framework. Unlike fwGen this needs framework/classes compiled,
+// so it depends on :framework:classes and only reports.
+tasks.register('apiCoverage', JavaExec) {
+    group = 'framework'
+    description = 'Report android.* API coverage against the compiled framework'
+    dependsOn ':framework:classes'
+    mainClass = 'tartine.sdk.ApiCoverage'
+    classpath = sourceSets.main.runtimeClasspath
+    args = [rootProject.file('framework/build/classes/java/main').path]
     environment 'ANDROID_HOME': (System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT') ?: '')
 }
