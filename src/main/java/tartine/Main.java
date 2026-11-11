@@ -164,7 +164,7 @@ public final class Main {
                     break;
             }
         } catch (Exception e) {
-            log.severe("tartine: " + e);
+            log.log(Level.SEVERE, "tartine", e);
             System.exit(1);
         }
     }
