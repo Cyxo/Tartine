@@ -7,6 +7,7 @@ import android.view.Choreographer;
 import android.view.View;
 import android.view.ViewRootImpl;
 import java.awt.GraphicsEnvironment;
+import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -21,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -448,11 +448,14 @@ public final class Main {
     }
 
     /**
-     * Desktop consent dialog for GUI runs. Headless runs leave the prompt
-     * unset, so {@link PermissionManager} answers denied without recording a
-     * decision and a later GUI run can still ask.
+     * Desktop consent dialog for GUI runs, carrying the app's window icons
+     * onto the prompt so it shows the app icon and flashes for attention.
+     * Headless runs leave the prompt unset, so {@link PermissionManager}
+     * answers denied without recording a decision and a later GUI run can
+     * still ask.
      */
-    private static PermissionPrompt desktopPrompt() {
+    private static PermissionPrompt desktopPrompt(List<WindowIcon> icons) {
+        List<Image> images = ConsentDialog.toAwtImages(icons);
         return (packageName, permission, label) -> {
             if (GraphicsEnvironment.isHeadless()) {
                 return PermissionPrompt.Decision.UNAVAILABLE;
@@ -460,16 +463,8 @@ public final class Main {
             AtomicReference<PermissionPrompt.Decision> answer =
                     new AtomicReference<>(PermissionPrompt.Decision.UNAVAILABLE);
             try {
-                SwingUtilities.invokeAndWait(() -> {
-                    int choice = JOptionPane.showConfirmDialog(null,
-                            packageName + " wants to access " + label + ".",
-                            "Tartine permission",
-                            JOptionPane.YES_NO_OPTION,
-                            JOptionPane.QUESTION_MESSAGE);
-                    answer.set(choice == JOptionPane.YES_OPTION
-                            ? PermissionPrompt.Decision.GRANTED
-                            : PermissionPrompt.Decision.DENIED);
-                });
+                SwingUtilities.invokeAndWait(() -> answer.set(
+                        ConsentDialog.ask(packageName, label, images)));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return PermissionPrompt.Decision.UNAVAILABLE;
@@ -506,9 +501,10 @@ public final class Main {
      * ready first.
      */
     private static void gui(File apk, long timeoutSecs) throws Exception {
-        PermissionManager.setPrompt(desktopPrompt());
+        List<WindowIcon> icons = loadWindowIcons(apk);
+        PermissionManager.setPrompt(desktopPrompt(icons));
         try {
-            HostDisplays.run(launcherTitle(apk), timeoutSecs, loadWindowIcons(apk),
+            HostDisplays.run(launcherTitle(apk), timeoutSecs, icons,
                     display -> txGuiRun(apk, display));
         } finally {
             PermissionManager.setPrompt(null);
