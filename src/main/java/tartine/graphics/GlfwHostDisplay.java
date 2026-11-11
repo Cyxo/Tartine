@@ -394,8 +394,14 @@ final class GlfwHostDisplay implements DisplayLoop {
                 events.publish(new HostDisplay.Scrolled(scrollX, scrollY)));
         // Framebuffer, not window-size, callbacks: the guest viewport is
         // already in pixels, so no point-to-pixel conversion is needed here.
-        glfwSetFramebufferSizeCallback(window, (win, width, height) ->
-                events.publish(new HostDisplay.Resized(width, height)));
+        // A minimised/hidden window reports a 0x0 framebuffer on some
+        // platforms; that is not a real resize (AOSP keeps the last
+        // configuration), so it is skipped instead of failing the record.
+        glfwSetFramebufferSizeCallback(window, (win, width, height) -> {
+            if (width > 0 && height > 0) {
+                events.publish(new HostDisplay.Resized(width, height));
+            }
+        });
         glfwSetWindowFocusCallback(window, (win, focused) ->
                 events.publish(new HostDisplay.FocusChanged(focused)));
     }
