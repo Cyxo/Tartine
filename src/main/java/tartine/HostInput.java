@@ -50,7 +50,7 @@ final class HostInput {
             cursorX = (float) (moved.x() * contentScale);
             cursorY = (float) (moved.y() * contentScale);
             if (buttonState != 0) {
-                dispatchTouch(MotionEvent.ACTION_MOVE, 0);
+                dispatchTouch(MotionEvent.ACTION_MOVE);
             } else {
                 dispatchHover();
             }
@@ -64,10 +64,13 @@ final class HostInput {
             if (button.action() == HostDisplay.Action.PRESS) {
                 downTime = SystemClock.uptimeMillis();
                 buttonState |= androidButton;
-                dispatchTouch(MotionEvent.ACTION_DOWN, androidButton);
+                dispatchTouch(MotionEvent.ACTION_DOWN);
             } else if (button.action() == HostDisplay.Action.RELEASE) {
-                dispatchTouch(MotionEvent.ACTION_UP, androidButton);
+                // AOSP reports the released button in the event's button
+                // state, not in the action, and the state excludes it by the
+                // time ACTION_UP is dispatched.
                 buttonState &= ~androidButton;
+                dispatchTouch(MotionEvent.ACTION_UP);
                 if (buttonState == 0) {
                     downTime = 0;
                 }
@@ -97,12 +100,11 @@ final class HostInput {
                 ? MotionEvent.ACTION_HOVER_MOVE
                 : MotionEvent.ACTION_HOVER_ENTER;
         hovering = true;
-        root.dispatchHoverEvent(motionEvent(action, 0, 0, 0));
+        root.dispatchHoverEvent(motionEvent(action, 0, 0));
     }
 
-    private void dispatchTouch(int action, int actionButton) {
-        root.dispatchTouchEvent(motionEvent(action, buttonState, actionButton,
-                0));
+    private void dispatchTouch(int action) {
+        root.dispatchTouchEvent(motionEvent(action, buttonState, 0));
     }
 
     private void dispatchScroll(float scrollX, float scrollY) {
@@ -142,8 +144,14 @@ final class HostInput {
         }
     }
 
-    private MotionEvent motionEvent(int action, int buttons, int actionButton,
-            int metaState) {
+    /**
+     * Builds the single-pointer mouse event. The mouse buttons ride in the
+     * button-state field ({@code buttons}), never in the action: the action's
+     * upper byte is the pointer index for ACTION_POINTER_DOWN/UP, so
+     * encoding a button there makes {@code getActionIndex()} report a second
+     * pointer that does not exist.
+     */
+    private MotionEvent motionEvent(int action, int buttons, int metaState) {
         MotionEvent.PointerProperties properties = pointerProperties();
         MotionEvent.PointerCoords coords = pointerCoords();
         coords.pressure = action == MotionEvent.ACTION_UP ? 0f : 1f;
@@ -151,15 +159,11 @@ final class HostInput {
         if (action == MotionEvent.ACTION_DOWN) {
             downTime = now;
         }
-        MotionEvent event = MotionEvent.obtain(
+        return MotionEvent.obtain(
                 downTime != 0 ? downTime : now, now, action, 1,
                 new MotionEvent.PointerProperties[] {properties},
                 new MotionEvent.PointerCoords[] {coords}, metaState, buttons,
                 1.0f, 1.0f, 0, 0, InputDevice.SOURCE_MOUSE, 0);
-        if (actionButton != 0) {
-            event.setAction(action | (actionButton << 8));
-        }
-        return event;
     }
 
     private MotionEvent.PointerProperties pointerProperties() {

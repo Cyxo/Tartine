@@ -43,4 +43,34 @@ class MotionEventTest {
         assertEquals(10f, event.getX());
         assertEquals(KeyEvent.META_SHIFT_ON, event.getMetaState());
     }
+
+    /**
+     * Mouse buttons ride in the button-state field, never in the action: the
+     * action's upper byte is the pointer index for ACTION_POINTER_DOWN/UP, so
+     * an ACTION_DOWN carrying it would report a phantom second pointer. This
+     * is the contract the host input translator relies on (the hover/click
+     * probe hit exactly this as Compose's addFreshIds read pointer 1).
+     */
+    @Test
+    void actionDownCarriesButtonsInTheStateNotTheActionIndex() {
+        MotionEvent.PointerProperties properties =
+                new MotionEvent.PointerProperties();
+        properties.id = 0;
+        properties.toolType = MotionEvent.TOOL_TYPE_MOUSE;
+        MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
+        coords.x = 1f;
+        coords.y = 2f;
+
+        MotionEvent event = MotionEvent.obtain(0L, 0L,
+                MotionEvent.ACTION_DOWN, 1,
+                new MotionEvent.PointerProperties[] {properties},
+                new MotionEvent.PointerCoords[] {coords}, 0,
+                MotionEvent.BUTTON_PRIMARY, 1f, 1f, 0, 0,
+                InputDevice.SOURCE_MOUSE, 0);
+
+        assertEquals(0, event.getActionIndex());
+        assertEquals(MotionEvent.ACTION_DOWN, event.getActionMasked());
+        assertEquals(MotionEvent.BUTTON_PRIMARY, event.getButtonState());
+        assertEquals(0, event.getPointerId(0));
+    }
 }
