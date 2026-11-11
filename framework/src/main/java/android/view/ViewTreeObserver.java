@@ -337,6 +337,97 @@ import java.util.function.Consumer;
         }
     }
 
+    /** AOSP ViewTreeObserver.dispatchOnGlobalFocusChanged. */
+    public void dispatchOnGlobalFocusChanged(View oldFocus, View newFocus) {
+        if (mOnGlobalFocusListeners != null
+                && !mOnGlobalFocusListeners.isEmpty()) {
+            ArrayList<OnGlobalFocusChangeListener> listeners =
+                    new ArrayList<>(mOnGlobalFocusListeners);
+            int count = listeners.size();
+            for (int i = 0; i < count; i++) {
+                listeners.get(i).onGlobalFocusChanged(oldFocus, newFocus);
+            }
+        }
+    }
+
+    /** AOSP ViewTreeObserver.dispatchOnWindowAttached. */
+    public void dispatchOnWindowAttached() {
+        if (mOnWindowAttachListeners != null
+                && !mOnWindowAttachListeners.isEmpty()) {
+            ArrayList<OnWindowAttachListener> listeners =
+                    new ArrayList<>(mOnWindowAttachListeners);
+            int count = listeners.size();
+            for (int i = 0; i < count; i++) {
+                listeners.get(i).onWindowAttached();
+            }
+        }
+    }
+
+    /** AOSP ViewTreeObserver.dispatchOnWindowDetached. */
+    public void dispatchOnWindowDetached() {
+        if (mOnWindowAttachListeners != null
+                && !mOnWindowAttachListeners.isEmpty()) {
+            ArrayList<OnWindowAttachListener> listeners =
+                    new ArrayList<>(mOnWindowAttachListeners);
+            int count = listeners.size();
+            for (int i = 0; i < count; i++) {
+                listeners.get(i).onWindowDetached();
+            }
+        }
+    }
+
+    /** AOSP ViewTreeObserver.dispatchOnWindowFocusChange. */
+    public void dispatchOnWindowFocusChange(boolean hasFocus) {
+        if (mOnWindowFocusListeners != null
+                && !mOnWindowFocusListeners.isEmpty()) {
+            ArrayList<OnWindowFocusChangeListener> listeners =
+                    new ArrayList<>(mOnWindowFocusListeners);
+            int count = listeners.size();
+            for (int i = 0; i < count; i++) {
+                listeners.get(i).onWindowFocusChanged(hasFocus);
+            }
+        }
+    }
+
+    /** AOSP ViewTreeObserver.dispatchOnWindowVisibilityChange. */
+    public void dispatchOnWindowVisibilityChange(int visibility) {
+        if (mOnWindowVisibilityListeners != null
+                && !mOnWindowVisibilityListeners.isEmpty()) {
+            ArrayList<OnWindowVisibilityChangeListener> listeners =
+                    new ArrayList<>(mOnWindowVisibilityListeners);
+            int count = listeners.size();
+            for (int i = 0; i < count; i++) {
+                listeners.get(i).onWindowVisibilityChanged(visibility);
+            }
+        }
+    }
+
+    /** AOSP ViewTreeObserver.dispatchOnTouchModeChanged. */
+    public void dispatchOnTouchModeChanged(boolean inTouchMode) {
+        if (mOnTouchModeChangeListeners != null
+                && !mOnTouchModeChangeListeners.isEmpty()) {
+            ArrayList<OnTouchModeChangeListener> listeners =
+                    new ArrayList<>(mOnTouchModeChangeListeners);
+            int count = listeners.size();
+            for (int i = 0; i < count; i++) {
+                listeners.get(i).onTouchModeChanged(inTouchMode);
+            }
+        }
+    }
+
+    /** AOSP ViewTreeObserver.dispatchOnScrollChanged. */
+    public void dispatchOnScrollChanged() {
+        if (mOnScrollChangedListeners != null
+                && !mOnScrollChangedListeners.isEmpty()) {
+            ArrayList<OnScrollChangedListener> listeners =
+                    new ArrayList<>(mOnScrollChangedListeners);
+            int count = listeners.size();
+            for (int i = 0; i < count; i++) {
+                listeners.get(i).onScrollChanged();
+            }
+        }
+    }
+
     public boolean dispatchOnPreDraw() {
         // AOSP ViewTreeObserver.java:1166-1196 dispatchOnPreDraw: walk
         // collecting cancellations; any false return cancels the draw. The

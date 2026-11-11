@@ -286,9 +286,19 @@ GitLab `android_translation_layer/android_translation_layer`
   until the guest registers a listener (so a close that races startup is not
   lost). The guest listener posts each event to its Looper `MessageQueue` and
   the render loop drains it on the looper thread; `Closed` ends the loop.
-  Input values stay in GLFW space until Android key/motion mapping and
-  ViewRootImpl-style dispatch land. `postFrame` returns `false` once the
-  window is closed.
+  `tartine.HostInput` translates keys, modifiers, buttons, scroll and cursor
+  coordinates into Android `KeyEvent`/`MotionEvent`s and delivers them
+  through `ViewRootImpl`, which runs the ordinary view-tree dispatch chain
+  (ADR-0014). `postFrame` returns `false` once the window is closed.
+- The guest window is a real framework root: the launcher runs the framework
+  activity lifecycle (`performCreate`/`Start`/`Resume`), then the decor is
+  attached to a `ViewRootImpl` with a `View.AttachInfo`
+  (`dispatchAttachedToWindow`, `ViewTreeObserver` callbacks, layout request).
+  `ViewRootImpl.performTraversals` owns measure/layout/pre-draw/draw at the
+  framebuffer size; the host render loop only decides when to call it
+  (ADR-0014). Window focus/input arrive through the same root. Window insets
+  are unmodelled: the request walks to the root and terminates there.
+  Teardown is pause/stop, detach, destroy.
 - First bridge landed (`f4f113c`): the display uploads the first-draw raster
   (`GfxSurface.readPixels`) as a GL texture, letterboxes per VSync-paced swap.
   `RasterPresenter` mints the surface and binds it to a framework `Canvas`.

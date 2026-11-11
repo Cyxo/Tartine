@@ -1,19 +1,17 @@
 package tartine;
 
+import android.app.Activity;
 import android.graphics.Canvas;
-import android.os.Bundle;
 import android.os.Looper;
 import android.view.Choreographer;
 import android.view.View;
+import android.view.ViewRootImpl;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -343,25 +341,39 @@ public final class Main {
     /** Launcher activity loaded through the translated loader, plus the
      *  still-open APK reader the loader's lazy per-class translation needs. */
     private record TxApp(ApkReader reader, TranslatedLoader loader,
-            Object activity) {
+            Activity activity) {
     }
 
     /**
-     * Translated-run probe ({@code run}): launcher {@code <init>} then
-     * {@code onCreate} as real JVM bytecode. The framework module supplies
+     * Translated-run probe ({@code run}): launcher {@code <init>}, then the
+     * framework-driven create phase (pre/post lifecycle callbacks and
+     * {@code onCreate}) as real JVM bytecode. The framework module supplies
      * android.* skeletons (UOE bodies = the gap census); the dex classes come
      * from {@link tartine.tx.TranslatedLoader}.
      */
     private static void txRun(File apk) throws Exception {
-        txLaunch(apk).reader().close();
+        TxApp app = txLaunch(apk);
+        try {
+            if (app.activity() == null) {
+                return;
+            }
+            app.activity().performCreate(null);
+            log.info("onCreate returned");
+        } catch (RuntimeException | Error e) {
+            log.info("onCreate threw: " + sanitize(e));
+            printRootFrames(e);
+        } finally {
+            app.reader().close();
+        }
     }
 
     /**
      * Translated launch: loader bring-up, main Looper, launcher {@code
-     * <init>} then {@code onCreate} as real JVM bytecode. Keeps the APK
-     * reader open (the loader translates classes lazily); callers close
-     * {@code TxApp.reader()} when done. Failures print and come back with a
-     * null activity.
+     * <init>}. The host driver runs the activity lifecycle afterwards
+     * ({@code Activity.performCreate} and friends, AOSP ActivityThread
+     * parity). Keeps the APK reader open (the loader translates classes
+     * lazily); callers close {@code TxApp.reader()} when done. Failures
+     * print and come back with a null activity.
      */
     private static TxApp txLaunch(File apk) throws Exception {
         ApkReader reader = ApkReader.open(apk.toPath());
@@ -392,45 +404,16 @@ public final class Main {
         // Device parity with ActivityThread.main(): the guest's main
         // thread carries the main Looper before any Activity code runs.
         Looper.prepareMainLooper();
-        Object receiver;
+        Activity receiver;
         try {
-            receiver = task.getDeclaredConstructor().newInstance();
-        } catch (ReflectiveOperationException | LinkageError e) {
+            receiver = (Activity) task.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException | LinkageError
+                | ClassCastException e) {
             log.info("<init>: " + sanitize(e));
             printRootFrames(e);
             return new TxApp(reader, loader, null);
         }
-        Method onCreate;
-        try {
-            // Android Activity.onCreate(Bundle) is protected — getMethod
-            // (public only) misses it; walk the chain with accessibility.
-            onCreate = null;
-            for (Class<?> c = task; c != null && onCreate == null;
-                    c = c.getSuperclass()) {
-                try {
-                    onCreate = c.getDeclaredMethod("onCreate",
-                            Bundle.class);
-                } catch (NoSuchMethodException ignored) {
-                    // continue up the chain
-                }
-            }
-            if (onCreate == null) {
-                throw new NoSuchMethodException("onCreate(android.os.Bundle)");
-            }
-            onCreate.setAccessible(true);
-        } catch (ReflectiveOperationException e) {
-            log.info("no onCreate(Bundle): " + sanitize(e));
-            return new TxApp(reader, loader, null);
-        }
-        try {
-            onCreate.invoke(receiver, new Object[] { null });
-            log.info("onCreate returned");
-            return new TxApp(reader, loader, receiver);
-        } catch (InvocationTargetException x) {
-            log.info("onCreate threw: " + sanitize(x));
-            printRootFrames(x);
-            return new TxApp(reader, loader, null);
-        }
+        return new TxApp(reader, loader, receiver);
     }
 
     /**
@@ -534,11 +517,11 @@ public final class Main {
 
     /**
      * Translated GUI probe ({@code gui}): run the launcher through {@code
-     * TranslatedLoader}, then drive the compose pipeline (createComposition,
-     * setContent, attach owners, lifecycle to RESUMED) with plain reflection on
-     * the translated classes, and hand the first frame to the host display.
-     * Gaps print; a failed draw is logged and stops the render loop instead of
-     * retrying a wedged traversal (the partial raster is not presented).
+     * TranslatedLoader}, drive the ordinary framework lifecycle to RESUMED,
+     * then attach the decor to a {@link ViewRootImpl} and render its
+     * traversals into the host surface. Gaps print; a failed draw is logged
+     * and stops the render loop instead of retrying a wedged traversal (the
+     * partial raster is not presented).
      */
     private static void txGuiRun(File apk, HostDisplay display)
             throws Exception {
@@ -557,8 +540,10 @@ public final class Main {
         TxApp app = txLaunch(apk);
         GuestSurface target = new GuestSurface(metrics.width(),
                 metrics.height());
+        Activity activity = app.activity();
+        ViewRootImpl root = null;
         try {
-            if (app.activity() == null) {
+            if (activity == null) {
                 log.info("gui: launch failed; no window");
                 return;
             }
@@ -567,79 +552,45 @@ public final class Main {
                 log.info("gui: no guest looper; no event pump");
                 return;
             }
+            // ActivityThread.handleLaunchActivity parity: create, start,
+            // resume, then add the decor to the window manager. The
+            // framework drives both Application-level and activity-local
+            // lifecycle callbacks, which is how androidx.lifecycle reaches
+            // ON_RESUME before the first composition.
+            try {
+                activity.performCreate(null);
+                activity.performStart();
+                activity.performResume();
+            } catch (RuntimeException | Error e) {
+                log.info("gui: lifecycle failed: " + sanitize(e));
+                printRootFrames(e);
+                return;
+            }
+            log.info("gui: lifecycle resumed");
+            // ActivityThread.handleResumeActivity's wm.addView(decor):
+            // a real attach handshake, so AbstractComposeView creates its
+            // composition from onAttachedToWindow/onMeasure exactly as on
+            // a device.
+            root = new ViewRootImpl(activity);
+            View decor = activity.getWindow().getDecorView();
+            root.setView(decor);
+            root.windowFocusChanged(true);
+            log.info("gui: decor attached ("
+                    + decor.getClass().getName() + ")");
             // The display publishes events on its own thread; this listener
             // only posts them to the guest queue, which the render loop
             // drains on the guest main-looper thread.
             AtomicBoolean windowClosed = new AtomicBoolean();
-            display.setEventListener(
-                    event -> postHostEvent(looper, windowClosed, target,
-                            event));
-            Object activity = app.activity();
-            // Activity.setContentView delegates to the window (framework
-            // Activity.java lines 3906-3911); the flattened decor keeps the
-            // view as its child (PhoneWindow.setContentView flow per the
-            // framework Window shell).
-            Object window = txField(activity, "mWindow");
-            Object decor = txField(window, "mDecor");
-            Object view = txInvoke(decor, "getChildAt", 0);
-            log.info("gui content view: " + describeTx(view));
-            Object deferred = txField(view,
-                    "shouldCreateCompositionOnAttachedToWindow");
-            log.info("gui defer-composition flag: " + deferred);
-            boolean defer = Boolean.TRUE.equals(deferred)
-                    || Integer.valueOf(1).equals(deferred);
-            if (!defer) {
-                log.info(
-                        "gui: no deferred composition; nothing to drive");
-                return;
-            }
-            log.info("gui parentContext: "
-                    + describeTx(txField(view, "parentContext")));
-            log.info("gui attached: "
-                    + txInvoke(view, "isAttachedToWindow"));
-            // Attach parity: joinWindow marks the content view attached at
-            // setContentView time; the host shell's ViewRootImpl-style attach
-            // chain has not landed, so the driver stands in and sets the
-            // AttachInfo ref the same way.
-            txSetField(view, "mAttachInfo", new Object());
-            log.info("gui attached after mark: "
-                    + txInvoke(view, "isAttachedToWindow"));
-            txInvoke(view, "createComposition");
-            log.info("gui: createComposition returned");
-            Object lambda = txInvoke(txField(view, "content"), "getValue");
-            log.info("gui content lambda: " + describeTx(lambda));
-            Object composition = txField(view, "composition");
-            txInvoke(composition, "setContent", lambda);
-            log.info("gui: setContent returned");
-            Object owner = txInvoke(composition, "getOwner");
-            // Attach parity: the activity is the view tree's lifecycle and
-            // saved-state owner (what ComponentActivity does to the decor
-            // on device), then the owner's onAttachedToWindow fires the
-            // stored composition callback.
-            txInvokeStatic(app.loader(),
-                    "androidx.lifecycle.ViewTreeLifecycleOwner", "set",
-                    view, activity);
-            txInvokeStatic(app.loader(),
-                    "androidx.savedstate.ViewTreeSavedStateRegistryOwner",
-                    "set", view, activity);
-            txInvoke(owner, "onAttachedToWindow");
-            log.info("gui: onAttachedToWindow returned");
-            Object lifecycle = txInvoke(activity, "getLifecycle");
-            Class<?> events = app.loader()
-                    .loadClass("androidx.lifecycle.Lifecycle$Event");
-            for (String event : new String[] {"ON_CREATE", "ON_START",
-                    "ON_RESUME"}) {
-                txInvoke(lifecycle, "handleLifecycleEvent",
-                        events.getDeclaredField(event).get(null));
-            }
-            log.info("gui: lifecycle resumed");
-            // Content again post-attach: the observer forwards the stored
-            // content to the inner composition.
-            txInvoke(composition, "setContent", lambda);
-            log.info("gui: post-attach setContent returned");
-            renderLoop(looper, display, owner, target, windowClosed);
+            HostInput input = new HostInput(root, metrics.contentScale());
+            ViewRootImpl attached = root;
+            display.setEventListener(event -> postHostEvent(looper,
+                    windowClosed, target, attached, input, event));
+            renderLoop(looper, display, root, target, windowClosed);
             log.info("gui: render loop stopped");
         } finally {
+            if (root != null) {
+                teardown(activity, root);
+            }
             // The render loop closes the target; close again for early
             // returns and setup failures (GuestSurface.close is idempotent).
             target.close();
@@ -648,14 +599,35 @@ public final class Main {
     }
 
     /**
+     * Window removal parity: pause/stop, detach the decor, destroy. Desktop
+     * close is best-effort — a guest gap in teardown must not mask the
+     * original render-loop outcome.
+     */
+    private static void teardown(Activity activity, ViewRootImpl root) {
+        try {
+            activity.performPause();
+            activity.performStop();
+        } catch (RuntimeException | Error e) {
+            log.info("gui: teardown pause/stop: " + sanitize(e));
+        }
+        root.die(false);
+        try {
+            activity.performDestroy();
+        } catch (RuntimeException | Error e) {
+            log.info("gui: teardown destroy: " + sanitize(e));
+        }
+    }
+
+    /**
      * Posts one host event to the guest main-looper queue. Runs on the
      * display thread, so it must only enqueue. The queued action runs on the
-     * guest thread: a resize replaces the raster target there (the render
-     * loop then notices the new pixel size and redraws), and close quits the
-     * guest loop.
+     * guest thread: resize replaces the raster target and requests a new
+     * traversal, close quits the guest loop, and the rest goes through the
+     * {@link ViewRootImpl} input entry points.
      */
     private static void postHostEvent(Looper looper, AtomicBoolean windowClosed,
-            GuestSurface target, HostDisplay.Event event) {
+            GuestSurface target, ViewRootImpl root, HostInput input,
+            HostDisplay.Event event) {
         looper.getQueue().post(() -> {
             if (event instanceof HostDisplay.Closed) {
                 log.info("gui: window close event");
@@ -667,6 +639,7 @@ public final class Main {
                 DisplayConfig.setSize(resized.width(), resized.height());
                 boolean changed = target.resize(resized.width(),
                         resized.height());
+                root.requestLayout();
                 log.info("gui: window resized to "
                         + resized.width() + "x" + resized.height()
                         + (changed ? "" : " (unchanged)"));
@@ -675,6 +648,7 @@ public final class Main {
             // Cursor moves/focus edges are very chatty; keep them (and
             // keyboard/mouse details) at debug so default INFO stays calm.
             log.fine("gui: host event " + event);
+            input.handle(event);
         });
     }
 
@@ -683,10 +657,11 @@ public final class Main {
      * ({@code display.refresh_hz}, 60 Hz by default), driven by
      * {@link RenderLoop}: the loop owns draw-when-due pacing, stop rules and
      * readback reuse; this method only supplies the guest-side source (queue
-     * drain, Choreographer pump, dirty check, measure/layout/draw).
+     * drain, Choreographer pump, traversal check, measure/layout/draw).
      */
     private static void renderLoop(Looper looper, HostDisplay display,
-            Object owner, GuestSurface target, AtomicBoolean windowClosed) {
+            ViewRootImpl root, GuestSurface target,
+            AtomicBoolean windowClosed) {
         RenderLoop.FrameSource frames = new RenderLoop.FrameSource() {
             @Override
             public void drain() {
@@ -700,13 +675,15 @@ public final class Main {
 
             @Override
             public boolean needsRedraw() {
-                return owner instanceof View view
-                        && view.tartineConsumeDirty();
+                return root.tartineNeedsTraversal();
             }
 
             @Override
             public void draw() {
-                txDrawFrame(owner, target);
+                Canvas canvas = target.canvas();
+                canvas.drawColor(0xFF000000);
+                root.performTraversals(canvas, target.width(),
+                        target.height());
             }
 
             @Override
@@ -725,127 +702,6 @@ public final class Main {
         while ((action = looper.getQueue().poll()) != null) {
             action.run();
         }
-    }
-
-    /**
-     * Measure, layout, then render the composed root into the target's
-     * current surface (the desktop twin of the device's VSync traversal);
-     * the caller reads the surface back. Dimensions come from the target
-     * every frame, so a resize is honored on the next draw.
-     */
-    private static void txDrawFrame(Object owner, GuestSurface target) {
-        int width = target.width();
-        int height = target.height();
-        txInvoke(owner, "onMeasure", width | (1 << 30),
-                height | (1 << 30));
-        txInvoke(owner, "onLayout", false, 0, 0, width, height);
-        Canvas canvas = target.canvas();
-        canvas.drawColor(0xFF000000);
-        txInvoke(owner, "dispatchDraw", canvas);
-    }
-
-    /** Reads a private field walking the receiver's runtime class chain. */
-    private static Object txField(Object owner, String name) {
-        try {
-            for (Class<?> c = owner.getClass(); c != null;
-                    c = c.getSuperclass()) {
-                try {
-                    Field f = c.getDeclaredField(name);
-                    f.setAccessible(true);
-                    return f.get(owner);
-                } catch (NoSuchFieldException ignored) {
-                    // continue up the chain
-                }
-            }
-            throw new NoSuchFieldException(name);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("tx field " + name + ": " + e,
-                    e);
-        }
-    }
-
-    /** Writes a private field walking the receiver's runtime class chain. */
-    private static void txSetField(Object owner, String name, Object value) {
-        try {
-            for (Class<?> c = owner.getClass(); c != null;
-                    c = c.getSuperclass()) {
-                try {
-                    Field f = c.getDeclaredField(name);
-                    f.setAccessible(true);
-                    f.set(owner, value);
-                    return;
-                } catch (NoSuchFieldException ignored) {
-                    // continue up the chain
-                }
-            }
-            throw new NoSuchFieldException(name);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("tx field " + name + ": " + e,
-                    e);
-        }
-    }
-
-    /** Reflective invoke walking the receiver's runtime class chain. */
-    private static Object txInvoke(Object owner, String name, Object... args) {
-        try {
-            for (Class<?> c = owner.getClass(); c != null;
-                    c = c.getSuperclass()) {
-                for (Method m : c.getDeclaredMethods()) {
-                    if (!m.getName().equals(name)
-                            || m.getParameterCount() != args.length) {
-                        continue;
-                    }
-                    m.setAccessible(true);
-                    return m.invoke(owner, args);
-                }
-            }
-            throw new NoSuchMethodException(name);
-        } catch (ReflectiveOperationException | IllegalArgumentException e) {
-            Throwable cause = e;
-            if (e instanceof InvocationTargetException x) {
-                cause = x.getCause();
-                if (cause != null) {
-                    log.log(Level.FINE, "tx invoke failed", cause);
-                }
-            }
-            throw new IllegalStateException("tx invoke " + name + ": "
-                    + sanitize(cause), cause);
-        }
-    }
-
-    /** Reflective invoke of a static translated method by binary name. */
-    private static Object txInvokeStatic(TranslatedLoader loader,
-            String className, String name, Object... args) {
-        try {
-            Class<?> cls = loader.loadClass(className);
-            for (Method m : cls.getDeclaredMethods()) {
-                boolean stat = Modifier.isStatic(
-                        m.getModifiers());
-                if (m.getName().equals(name)
-                        && m.getParameterCount() == args.length && stat) {
-                    m.setAccessible(true);
-                    return m.invoke(null, args);
-                }
-            }
-            throw new NoSuchMethodException(className + "." + name);
-        } catch (ReflectiveOperationException | IllegalArgumentException e) {
-            Throwable cause = e;
-            if (e instanceof InvocationTargetException x) {
-                cause = x.getCause();
-            }
-            throw new IllegalStateException("tx static " + className + "."
-                    + name + ": " + sanitize(cause), cause);
-        }
-    }
-
-    /** Safe one-line description: literals verbatim, unknown guest
-     *  references as class names only (never their toString). */
-    private static String describeTx(Object value) {
-        if (value == null || value instanceof Integer
-                || value instanceof Boolean || value instanceof String) {
-            return String.valueOf(value);
-        }
-        return "<ref " + value.getClass().getName() + ">";
     }
 
     /**

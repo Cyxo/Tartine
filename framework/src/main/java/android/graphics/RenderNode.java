@@ -63,6 +63,26 @@ import tartine.gfx.GfxPicture;
 
     protected float mCameraDistance = -326.4f;
 
+    /**
+     * Alpha state ported from AOSP {@code RenderNode#getAlpha/setAlpha}
+     * (native-backed there); 1.0 is the identity default. The raster draw
+     * path does not consume it yet, but the property round-trips so Compose's
+     * ViewLayer stays live.
+     */
+    protected float mAlpha = 1.0f;
+
+    /**
+     * Shadow colors and render effect ported from AOSP RenderProperties
+     * (native-backed on device): both shadow colors default to opaque black,
+     * the render effect to null. The raster path draws no shadows/effects
+     * yet; the state round-trips.
+     */
+    protected int mAmbientShadowColor = 0xFF000000;
+
+    protected int mSpotShadowColor = 0xFF000000;
+
+    protected RenderEffect mRenderEffect;
+
     /*
      * Recording state (AOSP RenderNode.java:485-526): the RecordingCanvas in
      * progress plus the finished recorded picture that drawRenderNode
@@ -121,11 +141,11 @@ import tartine.gfx.GfxPicture;
     }
 
     public float getAlpha() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->getAlpha()F");
+        return mAlpha;
     }
 
     public int getAmbientShadowColor() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->getAmbientShadowColor()I");
+        return mAmbientShadowColor;
     }
 
     /** Ported from AOSP {@code RenderNode#getBottom} (native-backed there). */
@@ -221,7 +241,7 @@ import tartine.gfx.GfxPicture;
     }
 
     public int getSpotShadowColor() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->getSpotShadowColor()I");
+        return mSpotShadowColor;
     }
 
     /** Ported from AOSP {@code RenderNode#getTop} (native-backed there). */
@@ -314,12 +334,11 @@ import tartine.gfx.GfxPicture;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->resetPivot()Z");
     }
 
-    public boolean setAlpha(float arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->setAlpha(F)Z");
-    }
-
+    /** Ported from AOSP {@code RenderNode#setAmbientShadowColor} semantics. */
     public boolean setAmbientShadowColor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->setAmbientShadowColor(I)Z");
+        boolean changed = arg0 != mAmbientShadowColor;
+        mAmbientShadowColor = arg0;
+        return changed;
     }
 
     /** Ported from AOSP {@code RenderNode#setCameraDistance} semantics. */
@@ -356,6 +375,13 @@ import tartine.gfx.GfxPicture;
         } else {
             mClipRectState = null;
         }
+        return changed;
+    }
+
+    /** Ported from AOSP {@code RenderNode#setAlpha} semantics. */
+    public boolean setAlpha(float arg0) {
+        boolean changed = arg0 != mAlpha;
+        mAlpha = arg0;
         return changed;
     }
 
@@ -446,8 +472,16 @@ import tartine.gfx.GfxPicture;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->setProjectionReceiver(Z)Z");
     }
 
+    /** Ported from AOSP {@code RenderNode#getRenderEffect}. */
+    public RenderEffect getRenderEffect() {
+        return mRenderEffect;
+    }
+
+    /** Ported from AOSP {@code RenderNode#setRenderEffect} semantics. */
     public boolean setRenderEffect(RenderEffect arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->setRenderEffect(Landroid/graphics/RenderEffect;)Z");
+        boolean changed = arg0 != mRenderEffect;
+        mRenderEffect = arg0;
+        return changed;
     }
 
     /** Ported from AOSP {@code RenderNode#setRotationX} semantics. */
@@ -481,8 +515,11 @@ import tartine.gfx.GfxPicture;
         return changed;
     }
 
+    /** Ported from AOSP {@code RenderNode#setSpotShadowColor} semantics. */
     public boolean setSpotShadowColor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->setSpotShadowColor(I)Z");
+        boolean changed = arg0 != mSpotShadowColor;
+        mSpotShadowColor = arg0;
+        return changed;
     }
 
     public boolean setTranslationX(float arg0) {

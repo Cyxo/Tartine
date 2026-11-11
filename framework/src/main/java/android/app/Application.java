@@ -49,6 +49,186 @@ public class Application extends ContextWrapper {
         }
     }
 
+    private Object[] collectActivityLifecycleCallbacks() {
+        synchronized (mActivityLifecycleCallbacks) {
+            return mActivityLifecycleCallbacks.toArray();
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Activity-lifecycle dispatch helpers (AOSP ActivityThread calls the
+    // same onActivity* methods through the Application list). The shell's
+    // Activity.perform* methods drive them, so android.app owns the walk.
+    // ------------------------------------------------------------------
+
+    void dispatchActivityPreCreated(Activity activity, Bundle bundle) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPreCreated(activity, bundle);
+        }
+    }
+
+    void dispatchActivityCreated(Activity activity, Bundle bundle) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityCreated(activity, bundle);
+        }
+    }
+
+    void dispatchActivityPostCreated(Activity activity, Bundle bundle) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPostCreated(activity, bundle);
+        }
+    }
+
+    void dispatchActivityPreStarted(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPreStarted(activity);
+        }
+    }
+
+    void dispatchActivityStarted(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityStarted(activity);
+        }
+    }
+
+    void dispatchActivityPostStarted(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPostStarted(activity);
+        }
+    }
+
+    void dispatchActivityPreResumed(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPreResumed(activity);
+        }
+    }
+
+    void dispatchActivityResumed(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityResumed(activity);
+        }
+    }
+
+    void dispatchActivityPostResumed(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPostResumed(activity);
+        }
+    }
+
+    void dispatchActivityPrePaused(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPrePaused(activity);
+        }
+    }
+
+    void dispatchActivityPaused(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPaused(activity);
+        }
+    }
+
+    void dispatchActivityPostPaused(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPostPaused(activity);
+        }
+    }
+
+    void dispatchActivityPreStopped(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPreStopped(activity);
+        }
+    }
+
+    void dispatchActivityStopped(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityStopped(activity);
+        }
+    }
+
+    void dispatchActivityPostStopped(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPostStopped(activity);
+        }
+    }
+
+    void dispatchActivityPreSaveInstanceState(Activity activity, Bundle bundle) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPreSaveInstanceState(activity, bundle);
+        }
+    }
+
+    void dispatchActivitySaveInstanceState(Activity activity, Bundle bundle) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivitySaveInstanceState(activity, bundle);
+        }
+    }
+
+    void dispatchActivityPostSaveInstanceState(Activity activity, Bundle bundle) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPostSaveInstanceState(activity, bundle);
+        }
+    }
+
+    void dispatchActivityPreDestroyed(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPreDestroyed(activity);
+        }
+    }
+
+    void dispatchActivityDestroyed(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityDestroyed(activity);
+        }
+    }
+
+    void dispatchActivityPostDestroyed(Activity activity) {
+        Object[] callbacks = collectActivityLifecycleCallbacks();
+        for (Object callback : callbacks) {
+            ((ActivityLifecycleCallbacks) callback)
+                    .onActivityPostDestroyed(activity);
+        }
+    }
+
     /** AOSP Application$ActivityLifecycleCallbacks. */
     public interface ActivityLifecycleCallbacks {
 

@@ -7,10 +7,11 @@ import android.content.Context;
  * created in AOSP Activity.attach (core/java/android/app/Activity.java
  * line 8969 {@code mWindow = new PhoneWindow(this, ...)}); until the
  * desktop windowing stack owns Activity content, the shell lazily owns
- * one concrete Window per Activity standing in for it. Its decor is an
- * inert shell View — androidx Activity code asserts the decor non-null
- * (Intrinsics.checkNotNullExpressionValue on window.decorView) and
- * fully-drawn-reporting posts against it.
+ * one concrete Window per Activity standing in for it. Its decor is the
+ * shell content holder ({@link DecorView}) and is attached to a
+ * {@link ViewRootImpl} by the host driver, so androidx Activity code sees a
+ * real attached decor (Intrinsics.checkNotNullExpressionValue on
+ * window.decorView, fully-drawn reporting against it).
  */
 public class Window {
 
@@ -36,6 +37,16 @@ public class Window {
 
     /** AOSP Window.getDecorView(). */
     public View getDecorView() {
+        return mDecor;
+    }
+
+    /**
+     * AOSP Window.peekDecorView(): the decor if it already exists, else null.
+     * The shell creates the decor in its constructor, so it always exists;
+     * androidx (e.g. EdgeToEdge) calls this on pause/stop and must not hit a
+     * NoSuchMethodError.
+     */
+    public View peekDecorView() {
         return mDecor;
     }
 

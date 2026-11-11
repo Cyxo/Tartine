@@ -127,11 +127,11 @@ import java.util.function.Consumer;
     }
 
     public void addView(View arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addView(Landroid/view/View;I)V");
+        addViewInLayout(arg0, arg1, null, false);
     }
 
     public void addView(View arg0, int arg1, ViewGroup.LayoutParams arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addView(Landroid/view/View;ILandroid/view/ViewGroup$LayoutParams;)V");
+        addViewInLayout(arg0, arg1, arg2, false);
     }
 
     public void addView(View arg0, int arg1, int arg2) {
@@ -177,7 +177,29 @@ import java.util.function.Consumer;
         } else {
             children.add(arg0);
         }
+        if (mAttachInfo != null) {
+            arg0.dispatchAttachedToWindow(mAttachInfo,
+                    mAttachInfo.mWindowVisibility);
+        }
         return true;
+    }
+
+    @Override
+    void dispatchAttachedToWindow(View.AttachInfo info, int visibility) {
+        super.dispatchAttachedToWindow(info, visibility);
+        final List<View> children = mChildren;
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).dispatchAttachedToWindow(info, visibility);
+        }
+    }
+
+    @Override
+    void dispatchDetachedFromWindow() {
+        final List<View> children = mChildren;
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).dispatchDetachedFromWindow();
+        }
+        super.dispatchDetachedFromWindow();
     }
 
     /**
@@ -230,7 +252,11 @@ import java.util.function.Consumer;
     }
 
     public void clearFocus() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->clearFocus()V");
+        View focused = getFocusedChild();
+        if (focused != null) {
+            focused.clearFocus();
+        }
+        super.clearFocus();
     }
 
     protected void debug(int arg0) {
@@ -344,19 +370,49 @@ import java.util.function.Consumer;
     }
 
     protected boolean dispatchHoverEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchHoverEvent(Landroid/view/MotionEvent;)Z");
+        View target = findTouchTarget((int) arg0.getX(), (int) arg0.getY());
+        if (target != null) {
+            MotionEvent childEvent = MotionEvent.obtain(arg0);
+            childEvent.offsetLocation(-(target.getLeft() - getScrollX()),
+                    -(target.getTop() - getScrollY()));
+            boolean handled = target.dispatchHoverEvent(childEvent);
+            childEvent.recycle();
+            if (handled) {
+                return true;
+            }
+        }
+        return super.onHoverEvent(arg0);
+    }
+
+    public boolean dispatchGenericMotionEvent(MotionEvent arg0) {
+        View target = findTouchTarget((int) arg0.getX(), (int) arg0.getY());
+        if (target != null) {
+            MotionEvent childEvent = MotionEvent.obtain(arg0);
+            childEvent.offsetLocation(-(target.getLeft() - getScrollX()),
+                    -(target.getTop() - getScrollY()));
+            boolean handled = target.dispatchGenericMotionEvent(childEvent);
+            childEvent.recycle();
+            if (handled) {
+                return true;
+            }
+        }
+        return super.onGenericMotionEvent(arg0);
     }
 
     public boolean dispatchKeyEvent(KeyEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchKeyEvent(Landroid/view/KeyEvent;)Z");
+        View focused = getFocusedChild();
+        if (focused != null && focused.dispatchKeyEvent(arg0)) {
+            return true;
+        }
+        return super.dispatchKeyEvent(arg0);
     }
 
     public boolean dispatchKeyEventPreIme(KeyEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchKeyEventPreIme(Landroid/view/KeyEvent;)Z");
+        return super.dispatchKeyEventPreIme(arg0);
     }
 
     public boolean dispatchKeyShortcutEvent(KeyEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchKeyShortcutEvent(Landroid/view/KeyEvent;)Z");
+        return super.dispatchKeyEvent(arg0);
     }
 
     public void dispatchPointerCaptureChanged(boolean arg0) {
@@ -408,7 +464,81 @@ import java.util.function.Consumer;
     }
 
     public boolean dispatchTouchEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchTouchEvent(Landroid/view/MotionEvent;)Z");
+        final int action = arg0.getActionMasked();
+        boolean handled = false;
+        // AOSP contract: a container may claim the gesture from its child
+        // at DOWN or at any later event (ScrollView-style interception).
+        // A claimed gesture sends the current target one CANCEL.
+        boolean intercepted = false;
+        if (action == MotionEvent.ACTION_DOWN) {
+            mFirstTouchTarget = null;
+            intercepted = onInterceptTouchEvent(arg0);
+        } else if (mFirstTouchTarget != null) {
+            intercepted = onInterceptTouchEvent(arg0);
+        }
+        if (!intercepted) {
+            if (action == MotionEvent.ACTION_DOWN) {
+                View target = findTouchTarget((int) arg0.getX(),
+                        (int) arg0.getY());
+                if (target != null) {
+                    handled = dispatchTransformedTouchEvent(arg0, target);
+                    if (handled) {
+                        mFirstTouchTarget = target;
+                    }
+                }
+            } else if (mFirstTouchTarget != null) {
+                handled = dispatchTransformedTouchEvent(arg0, mFirstTouchTarget);
+            } else if (action == MotionEvent.ACTION_MOVE
+                    || action == MotionEvent.ACTION_UP) {
+                View target = findTouchTarget((int) arg0.getX(),
+                        (int) arg0.getY());
+                if (target != null) {
+                    handled = dispatchTransformedTouchEvent(arg0, target);
+                }
+            }
+        }
+        if (intercepted && mFirstTouchTarget != null) {
+            MotionEvent cancel = MotionEvent.obtain(arg0);
+            cancel.setAction(MotionEvent.ACTION_CANCEL);
+            dispatchTransformedTouchEvent(cancel, mFirstTouchTarget);
+            cancel.recycle();
+            mFirstTouchTarget = null;
+        }
+        if (action == MotionEvent.ACTION_UP
+                || action == MotionEvent.ACTION_CANCEL) {
+            mFirstTouchTarget = null;
+        }
+        if (!handled) {
+            handled = super.dispatchTouchEvent(arg0);
+        }
+        return handled;
+    }
+
+    /** The child currently receiving the gesture, or null. */
+    private View mFirstTouchTarget;
+
+    private boolean dispatchTransformedTouchEvent(MotionEvent event, View target) {
+        MotionEvent childEvent = MotionEvent.obtain(event);
+        childEvent.offsetLocation(-(target.getLeft() - getScrollX()),
+                -(target.getTop() - getScrollY()));
+        boolean handled = target.dispatchTouchEvent(childEvent);
+        childEvent.recycle();
+        return handled;
+    }
+
+    /** Reverse-order hit test over visible children. */
+    private View findTouchTarget(float x, float y) {
+        for (int i = mChildren.size() - 1; i >= 0; i--) {
+            View child = mChildren.get(i);
+            if (child.getVisibility() != VISIBLE) {
+                continue;
+            }
+            if (x >= child.getLeft() && x < child.getRight()
+                    && y >= child.getTop() && y < child.getBottom()) {
+                return child;
+            }
+        }
+        return null;
     }
 
     public boolean dispatchTrackballEvent(MotionEvent arg0) {
@@ -424,7 +554,11 @@ import java.util.function.Consumer;
     }
 
     public void dispatchWindowFocusChanged(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchWindowFocusChanged(Z)V");
+        super.dispatchWindowFocusChanged(arg0);
+        final List<View> children = mChildren;
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).dispatchWindowFocusChanged(arg0);
+        }
     }
 
     public void dispatchWindowInsetsAnimationEnd(WindowInsetsAnimation arg0) {
@@ -460,7 +594,11 @@ import java.util.function.Consumer;
     }
 
     public void dispatchWindowVisibilityChanged(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchWindowVisibilityChanged(I)V");
+        super.dispatchWindowVisibilityChanged(arg0);
+        final List<View> children = mChildren;
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).dispatchWindowVisibilityChanged(arg0);
+        }
     }
 
     /**
@@ -483,7 +621,17 @@ import java.util.function.Consumer;
     }
 
     public View findFocus() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->findFocus()Landroid/view/View;");
+        if (isFocused()) {
+            return this;
+        }
+        final List<View> children = mChildren;
+        for (int i = 0; i < children.size(); i++) {
+            View focused = children.get(i).findFocus();
+            if (focused != null) {
+                return focused;
+            }
+        }
+        return null;
     }
 
     public OnBackInvokedDispatcher findOnBackInvokedDispatcherForChild(View arg0, View arg1) {
@@ -558,7 +706,24 @@ import java.util.function.Consumer;
     }
 
     public static int getChildMeasureSpec(int arg0, int arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getChildMeasureSpec(III)I");
+        int specMode = MeasureSpec.getMode(arg0);
+        int specSize = MeasureSpec.getSize(arg0);
+        int resultSize = 0;
+        int resultMode = 0;
+        if (arg2 >= 0) {
+            resultSize = arg2;
+            resultMode = MeasureSpec.MODE_EXACTLY;
+        } else if (specMode == MeasureSpec.MODE_EXACTLY) {
+            resultSize = Math.max(0, specSize - arg1);
+            resultMode = MeasureSpec.MODE_EXACTLY;
+        } else if (specMode == MeasureSpec.MODE_AT_MOST) {
+            resultSize = Math.max(0, specSize - arg1);
+            resultMode = MeasureSpec.MODE_AT_MOST;
+        } else {
+            resultSize = 0;
+            resultMode = MeasureSpec.MODE_UNSPECIFIED;
+        }
+        return MeasureSpec.makeMeasureSpec(resultSize, resultMode);
     }
 
     protected boolean getChildStaticTransformation(View arg0, Transformation arg1) {
@@ -566,7 +731,17 @@ import java.util.function.Consumer;
     }
 
     public boolean getChildVisibleRect(View arg0, Rect arg1, Point arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getChildVisibleRect(Landroid/view/View;Landroid/graphics/Rect;Landroid/graphics/Point;)Z");
+        if (arg0 == null) {
+            return false;
+        }
+        int dx = arg0.getLeft() - getScrollX();
+        int dy = arg0.getTop() - getScrollY();
+        arg1.offset(dx, dy);
+        if (arg2 != null) {
+            arg2.x += dx;
+            arg2.y += dy;
+        }
+        return true;
     }
 
     /** AOSP ViewGroup.getClipChildren (lines 4596-4598): reads the
@@ -586,7 +761,14 @@ import java.util.function.Consumer;
     }
 
     public View getFocusedChild() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getFocusedChild()Landroid/view/View;");
+        final List<View> children = mChildren;
+        for (int i = 0; i < children.size(); i++) {
+            View child = children.get(i);
+            if (child.findFocus() != null) {
+                return child;
+            }
+        }
+        return null;
     }
 
     public LayoutAnimationController getLayoutAnimation() {
@@ -633,15 +815,19 @@ import java.util.function.Consumer;
     }
 
     public int indexOfChild(View arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->indexOfChild(Landroid/view/View;)I");
+        return mChildren.indexOf(arg0);
     }
 
     public final void invalidateChild(View arg0, Rect arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->invalidateChild(Landroid/view/View;Landroid/graphics/Rect;)V");
+        mDirty = true;
+        if (mParent != null) {
+            mParent.onDescendantInvalidated(this, this);
+        }
     }
 
     public ViewParent invalidateChildInParent(int[] arg0, Rect arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->invalidateChildInParent([ILandroid/graphics/Rect;)Landroid/view/ViewParent;");
+        mDirty = true;
+        return mParent;
     }
 
     public boolean isAlwaysDrawnWithCacheEnabled() {
@@ -677,19 +863,37 @@ import java.util.function.Consumer;
     }
 
     public final void layout(int arg0, int arg1, int arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->layout(IIII)V");
+        super.layout(arg0, arg1, arg2, arg3);
     }
 
     protected void measureChild(View arg0, int arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->measureChild(Landroid/view/View;II)V");
+        ViewGroup.LayoutParams lp = arg0.getLayoutParams();
+        int childWidthMeasureSpec = getChildMeasureSpec(arg1,
+                mPaddingLeft + mPaddingRight, lp.width);
+        int childHeightMeasureSpec = getChildMeasureSpec(arg2,
+                mPaddingTop + mPaddingBottom, lp.height);
+        arg0.measure(childWidthMeasureSpec, childHeightMeasureSpec);
     }
 
     protected void measureChildWithMargins(View arg0, int arg1, int arg2, int arg3, int arg4) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->measureChildWithMargins(Landroid/view/View;IIII)V");
+        // The shell carries no MarginLayoutParams skeleton yet, so margins
+        // are zero (the base LayoutParams shape).
+        ViewGroup.LayoutParams lp = arg0.getLayoutParams();
+        int childWidthMeasureSpec = getChildMeasureSpec(arg1,
+                mPaddingLeft + mPaddingRight + arg2, lp.width);
+        int childHeightMeasureSpec = getChildMeasureSpec(arg3,
+                mPaddingTop + mPaddingBottom + arg4, lp.height);
+        arg0.measure(childWidthMeasureSpec, childHeightMeasureSpec);
     }
 
     protected void measureChildren(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->measureChildren(II)V");
+        final int count = mChildren.size();
+        for (int i = 0; i < count; i++) {
+            final View child = mChildren.get(i);
+            if (child.getVisibility() != GONE) {
+                measureChild(child, arg0, arg1);
+            }
+        }
     }
 
     public void notifySubtreeAccessibilityStateChanged(View arg0, View arg1, int arg2) {
@@ -705,13 +909,7 @@ import java.util.function.Consumer;
     }
 
     protected void onAttachedToWindow() {
-        // AOSP frameworks-base core/java/android/view/ViewGroup.java:5209-5212
-        // onAttachedToWindow: super.onAttachedToWindow() then
-        // clearCachedLayoutMode() (ViewGroup.java:5202-5206, resets
-        // mLayoutMode when FLAG_LAYOUT_MODE_WAS_EXPLICITLY_SET is clear).
-        // The shell carries no cached layout mode, so the reset is a no-op;
-        // the View super is the shell no-op below (attachment is already
-        // tracked through mAttachInfo).
+        super.onAttachedToWindow();
     }
 
     protected int[] onCreateDrawableState(int arg0) {
@@ -719,23 +917,27 @@ import java.util.function.Consumer;
     }
 
     public void onDescendantInvalidated(View arg0, View arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onDescendantInvalidated(Landroid/view/View;Landroid/view/View;)V");
+        mDirty = true;
+        if (mParent != null) {
+            mParent.onDescendantInvalidated(this, arg1);
+        }
     }
 
     protected void onDetachedFromWindow() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onDetachedFromWindow()V");
+        super.onDetachedFromWindow();
     }
 
     public boolean onInterceptHoverEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onInterceptHoverEvent(Landroid/view/MotionEvent;)Z");
+        return false;
     }
 
     public boolean onInterceptTouchEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onInterceptTouchEvent(Landroid/view/MotionEvent;)Z");
+        return false;
     }
 
     protected void onLayout(boolean arg0, int arg1, int arg2, int arg3, int arg4) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onLayout(ZIIII)V");
+        // AOSP ViewGroup does not override View.onLayout; base containers
+        // that do not lay out children are legal no-ops.
     }
 
     public boolean onNestedFling(View arg0, float arg1, float arg2, boolean arg3) {
@@ -799,20 +1001,17 @@ import java.util.function.Consumer;
     }
 
     public void removeAllViews() {
-        for (Object child : mChildren) {
-            if (child instanceof View) {
-                ((View) child).mParent = null;
-                ((View) child).mAttached = 0;
-            }
-        }
-        mChildren.clear();
+        removeAllViewsInLayout();
     }
 
     public void removeAllViewsInLayout() {
-        for (Object child : mChildren) {
-            if (child instanceof View) {
-                ((View) child).mParent = null;
-                ((View) child).mAttached = 0;
+        for (Object child : new ArrayList<>(mChildren)) {
+            if (child instanceof View view) {
+                if (view.mAttachInfo != null) {
+                    view.dispatchDetachedFromWindow();
+                }
+                view.mParent = null;
+                view.mAttached = 0;
             }
         }
         mChildren.clear();
@@ -823,15 +1022,27 @@ import java.util.function.Consumer;
     }
 
     public void removeView(View arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->removeView(Landroid/view/View;)V");
+        removeViewInLayout(arg0);
     }
 
     public void removeViewAt(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->removeViewAt(I)V");
+        if (arg0 >= 0 && arg0 < mChildren.size()) {
+            removeViewInLayout(mChildren.get(arg0));
+        }
     }
 
     public void removeViewInLayout(View arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->removeViewInLayout(Landroid/view/View;)V");
+        if (arg0 == null) {
+            return;
+        }
+        if (mChildren.remove(arg0)) {
+            if (arg0.mAttachInfo != null) {
+                arg0.dispatchDetachedFromWindow();
+            }
+            arg0.mParent = null;
+            arg0.mAttached = 0;
+            requestLayout();
+        }
     }
 
     public void removeViews(int arg0, int arg1) {
@@ -855,7 +1066,17 @@ import java.util.function.Consumer;
     }
 
     public boolean requestFocus(int arg0, Rect arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->requestFocus(ILandroid/graphics/Rect;)Z");
+        // AOSP ViewGroup.requestFocus(direction, rect): descendants first
+        // (unless descendant focusability blocks), then this group itself.
+        final List<View> children = mChildren;
+        for (int i = 0; i < children.size(); i++) {
+            View child = children.get(i);
+            if (child.getVisibility() == View.VISIBLE && child.isFocusable()
+                    && child.requestFocus(arg0, arg1)) {
+                return true;
+            }
+        }
+        return super.requestFocus(arg0, arg1);
     }
 
     public boolean requestSendAccessibilityEvent(View arg0, AccessibilityEvent arg1) {

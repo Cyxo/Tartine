@@ -2,6 +2,7 @@ package android.view;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.SystemClock;
 
     public class KeyEvent extends InputEvent implements Parcelable {
 
@@ -382,267 +383,495 @@ import android.os.Parcelable;
     public static final int META_SYM_ON = 4;
 
     public KeyEvent(KeyEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(Landroid/view/KeyEvent;)V");
+        mDownTime = arg0.mDownTime;
+        mEventTime = arg0.mEventTime;
+        mAction = arg0.mAction;
+        mKeyCode = arg0.mKeyCode;
+        mRepeatCount = arg0.mRepeatCount;
+        mMetaState = arg0.mMetaState;
+        mScanCode = arg0.mScanCode;
+        mDeviceId = arg0.mDeviceId;
+        mSource = arg0.mSource;
+        mFlags = arg0.mFlags;
+        mCharacters = arg0.mCharacters;
     }
 
     public KeyEvent(KeyEvent arg0, long arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(Landroid/view/KeyEvent;JI)V");
+        this(arg0);
+        mEventTime = arg1;
+        mRepeatCount = arg2;
     }
 
     public KeyEvent(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(II)V");
+        this(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), arg0, arg1,
+                0);
     }
 
     public KeyEvent(long arg0, String arg1, int arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(JLjava/lang/String;II)V");
+        mDownTime = arg0;
+        mEventTime = arg0;
+        mAction = ACTION_MULTIPLE;
+        mCharacters = arg1;
+        mDeviceId = arg2;
+        mFlags = arg3;
     }
 
     public KeyEvent(long arg0, long arg1, int arg2, int arg3, int arg4) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(JJIII)V");
+        this(arg0, arg1, arg2, arg3, arg4, 0);
     }
 
-    public KeyEvent(long arg0, long arg1, int arg2, int arg3, int arg4, int arg5) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(JJIIII)V");
+    public KeyEvent(long arg0, long arg1, int arg2, int arg3, int arg4,
+            int arg5) {
+        this(arg0, arg1, arg2, arg3, arg4, arg5, 0, 0);
     }
 
-    public KeyEvent(long arg0, long arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(JJIIIIII)V");
+    public KeyEvent(long arg0, long arg1, int arg2, int arg3, int arg4,
+            int arg5, int arg6, int arg7) {
+        this(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, 0);
     }
 
-    public KeyEvent(long arg0, long arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(JJIIIIIII)V");
+    public KeyEvent(long arg0, long arg1, int arg2, int arg3, int arg4,
+            int arg5, int arg6, int arg7, int arg8) {
+        this(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, 0);
     }
 
-    public KeyEvent(long arg0, long arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;-><init>(JJIIIIIIII)V");
+    public KeyEvent(long arg0, long arg1, int arg2, int arg3, int arg4,
+            int arg5, int arg6, int arg7, int arg8, int arg9) {
+        mDownTime = arg0;
+        mEventTime = arg1;
+        mAction = arg2;
+        mKeyCode = arg3;
+        mRepeatCount = arg4;
+        mMetaState = arg5;
+        mDeviceId = arg6;
+        mScanCode = arg7;
+        mFlags = arg8;
+        mSource = arg9;
     }
 
     public static KeyEvent changeAction(KeyEvent arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->changeAction(Landroid/view/KeyEvent;I)Landroid/view/KeyEvent;");
+        KeyEvent event = new KeyEvent(arg0);
+        event.mAction = arg1;
+        return event;
     }
 
     public static KeyEvent changeFlags(KeyEvent arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->changeFlags(Landroid/view/KeyEvent;I)Landroid/view/KeyEvent;");
+        KeyEvent event = new KeyEvent(arg0);
+        event.mFlags = arg1;
+        return event;
     }
 
     public static KeyEvent changeTimeRepeat(KeyEvent arg0, long arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->changeTimeRepeat(Landroid/view/KeyEvent;JI)Landroid/view/KeyEvent;");
+        return changeTimeRepeat(arg0, arg1, arg2, arg0.mFlags);
     }
 
-    public static KeyEvent changeTimeRepeat(KeyEvent arg0, long arg1, int arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->changeTimeRepeat(Landroid/view/KeyEvent;JII)Landroid/view/KeyEvent;");
+    public static KeyEvent changeTimeRepeat(KeyEvent arg0, long arg1, int arg2,
+            int arg3) {
+        KeyEvent event = new KeyEvent(arg0);
+        event.mEventTime = arg1;
+        event.mRepeatCount = arg2;
+        event.mFlags = arg3;
+        return event;
     }
 
     public final boolean dispatch(KeyEvent.Callback arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->dispatch(Landroid/view/KeyEvent$Callback;)Z");
+        return dispatch(arg0, null, null);
     }
 
-    public final boolean dispatch(KeyEvent.Callback arg0, KeyEvent.DispatcherState arg1, Object arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->dispatch(Landroid/view/KeyEvent$Callback;Landroid/view/KeyEvent$DispatcherState;Ljava/lang/Object;)Z");
+    public final boolean dispatch(KeyEvent.Callback arg0,
+            KeyEvent.DispatcherState arg1, Object arg2) {
+        switch (mAction) {
+            case ACTION_DOWN:
+                if (arg1 != null && mRepeatCount == 0) {
+                    arg1.startTracking(this, arg2);
+                }
+                return arg0.onKeyDown(mKeyCode, this);
+            case ACTION_UP:
+                if (arg1 != null) {
+                    arg1.handleUpEvent(this);
+                }
+                return arg0.onKeyUp(mKeyCode, this);
+            case ACTION_MULTIPLE:
+                return arg0.onKeyMultiple(mKeyCode, mRepeatCount, this);
+            default:
+                return false;
+        }
     }
 
     public final int getAction() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getAction()I");
+        return mAction;
     }
 
     public final String getCharacters() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getCharacters()Ljava/lang/String;");
+        return mCharacters;
     }
 
     public static int getDeadChar(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getDeadChar(II)I");
+        return KeyCharacterMap.getDeadChar(arg0, arg1);
     }
 
     public final int getDeviceId() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getDeviceId()I");
+        return mDeviceId;
     }
 
     public char getDisplayLabel() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getDisplayLabel()C");
+        return 0;
     }
 
     public final long getDownTime() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getDownTime()J");
+        return mDownTime;
     }
 
     public final long getEventTime() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getEventTime()J");
+        return mEventTime;
     }
 
     public final int getFlags() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getFlags()I");
+        return mFlags;
     }
 
     public final KeyCharacterMap getKeyCharacterMap() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getKeyCharacterMap()Landroid/view/KeyCharacterMap;");
+        // No built-in key map on the desktop host yet.
+        return null;
     }
 
     public final int getKeyCode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getKeyCode()I");
+        return mKeyCode;
     }
 
     public boolean getKeyData(KeyCharacterMap.KeyData arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getKeyData(Landroid/view/KeyCharacterMap$KeyData;)Z");
+        return false;
     }
 
     public char getMatch(char[] arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getMatch([C)C");
+        return getMatch(arg0, 0);
     }
 
     public char getMatch(char[] arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getMatch([CI)C");
+        return 0;
     }
 
     public static int getMaxKeyCode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getMaxKeyCode()I");
+        return 337;
     }
 
     public final int getMetaState() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getMetaState()I");
+        return mMetaState;
     }
 
     public static int getModifierMetaStateMask() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getModifierMetaStateMask()I");
+        return META_ALT_ON | META_ALT_LEFT_ON | META_ALT_RIGHT_ON
+                | META_SHIFT_ON | META_SHIFT_LEFT_ON | META_SHIFT_RIGHT_ON
+                | META_SYM_ON | META_FUNCTION_ON
+                | META_CTRL_ON | META_CTRL_LEFT_ON | META_CTRL_RIGHT_ON
+                | META_META_ON | META_META_LEFT_ON | META_META_RIGHT_ON
+                | META_CAPS_LOCK_ON | META_NUM_LOCK_ON | META_SCROLL_LOCK_ON;
     }
 
     public final int getModifiers() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getModifiers()I");
+        return normalizeMetaState(mMetaState) & getModifierMetaStateMask();
     }
 
     public char getNumber() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getNumber()C");
+        return 0;
     }
 
     public final int getRepeatCount() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getRepeatCount()I");
+        return mRepeatCount;
     }
 
     public final int getScanCode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getScanCode()I");
+        return mScanCode;
     }
 
     public final int getSource() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getSource()I");
+        return mSource;
     }
 
     public int getUnicodeChar() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getUnicodeChar()I");
+        return getUnicodeChar(mMetaState);
     }
 
     public int getUnicodeChar(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->getUnicodeChar(I)I");
+        return 0;
     }
 
     public final boolean hasModifiers(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->hasModifiers(I)Z");
+        return metaStateHasModifiers(mMetaState, arg0);
     }
 
     public final boolean hasNoModifiers() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->hasNoModifiers()Z");
+        return metaStateHasNoModifiers(mMetaState);
     }
 
     public final boolean isAltPressed() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isAltPressed()Z");
+        return (mMetaState & META_ALT_ON) != 0;
     }
 
     public final boolean isCanceled() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isCanceled()Z");
+        return (mFlags & FLAG_CANCELED) != 0;
     }
 
     public final boolean isCapsLockOn() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isCapsLockOn()Z");
+        return (mMetaState & META_CAPS_LOCK_ON) != 0;
     }
 
     public final boolean isCtrlPressed() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isCtrlPressed()Z");
+        return (mMetaState & META_CTRL_ON) != 0;
     }
 
     public final boolean isFunctionPressed() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isFunctionPressed()Z");
+        return (mMetaState & META_FUNCTION_ON) != 0;
     }
 
     public static final boolean isGamepadButton(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isGamepadButton(I)Z");
+        return (arg0 >= KEYCODE_BUTTON_A && arg0 <= KEYCODE_BUTTON_MODE)
+                || (arg0 >= KEYCODE_BUTTON_1 && arg0 <= KEYCODE_BUTTON_16);
     }
 
     public final boolean isLongPress() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isLongPress()Z");
+        return (mFlags & FLAG_LONG_PRESS) != 0;
     }
 
     public static final boolean isMediaSessionKey(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isMediaSessionKey(I)Z");
+        return arg0 == KEYCODE_MEDIA_PLAY || arg0 == KEYCODE_MEDIA_PAUSE
+                || arg0 == KEYCODE_MEDIA_PLAY_PAUSE
+                || arg0 == KEYCODE_MEDIA_STOP
+                || arg0 == KEYCODE_MEDIA_NEXT
+                || arg0 == KEYCODE_MEDIA_PREVIOUS
+                || arg0 == KEYCODE_MEDIA_FAST_FORWARD
+                || arg0 == KEYCODE_MEDIA_REWIND
+                || arg0 == KEYCODE_MEDIA_RECORD
+                || arg0 == KEYCODE_MEDIA_EJECT;
     }
 
     public final boolean isMetaPressed() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isMetaPressed()Z");
+        return (mMetaState & META_META_ON) != 0;
     }
 
     public static boolean isModifierKey(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isModifierKey(I)Z");
+        switch (arg0) {
+            case KEYCODE_ALT_LEFT:
+            case KEYCODE_ALT_RIGHT:
+            case KEYCODE_SHIFT_LEFT:
+            case KEYCODE_SHIFT_RIGHT:
+            case KEYCODE_CTRL_LEFT:
+            case KEYCODE_CTRL_RIGHT:
+            case KEYCODE_META_LEFT:
+            case KEYCODE_META_RIGHT:
+            case KEYCODE_SYM:
+            case KEYCODE_FUNCTION:
+            case KEYCODE_CAPS_LOCK:
+            case KEYCODE_NUM_LOCK:
+            case KEYCODE_SCROLL_LOCK:
+                return true;
+            default:
+                return false;
+        }
     }
 
     public final boolean isNumLockOn() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isNumLockOn()Z");
+        return (mMetaState & META_NUM_LOCK_ON) != 0;
     }
 
     public boolean isPrintingKey() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isPrintingKey()Z");
+        return (mKeyCode >= KEYCODE_A && mKeyCode <= KEYCODE_Z)
+                || (mKeyCode >= KEYCODE_0 && mKeyCode <= KEYCODE_9)
+                || mKeyCode == KEYCODE_SPACE
+                || mKeyCode == KEYCODE_APOSTROPHE
+                || mKeyCode == KEYCODE_AT
+                || mKeyCode == KEYCODE_BACKSLASH
+                || mKeyCode == KEYCODE_COMMA
+                || mKeyCode == KEYCODE_EQUALS
+                || mKeyCode == KEYCODE_GRAVE
+                || mKeyCode == KEYCODE_LEFT_BRACKET
+                || mKeyCode == KEYCODE_MINUS
+                || mKeyCode == KEYCODE_PERIOD
+                || mKeyCode == KEYCODE_PLUS
+                || mKeyCode == KEYCODE_RIGHT_BRACKET
+                || mKeyCode == KEYCODE_SEMICOLON
+                || mKeyCode == KEYCODE_SLASH
+                || mKeyCode == KEYCODE_STAR;
     }
 
     public final boolean isScrollLockOn() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isScrollLockOn()Z");
+        return (mMetaState & META_SCROLL_LOCK_ON) != 0;
     }
 
     public final boolean isShiftPressed() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isShiftPressed()Z");
+        return (mMetaState & META_SHIFT_ON) != 0;
     }
 
     public final boolean isSymPressed() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isSymPressed()Z");
+        return (mMetaState & META_SYM_ON) != 0;
     }
 
     public final boolean isSystem() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isSystem()Z");
+        switch (mKeyCode) {
+            case KEYCODE_HOME:
+            case KEYCODE_BACK:
+            case KEYCODE_MENU:
+            case KEYCODE_POWER:
+            case KEYCODE_VOLUME_UP:
+            case KEYCODE_VOLUME_DOWN:
+            case KEYCODE_VOLUME_MUTE:
+            case KEYCODE_MUTE:
+                return true;
+            default:
+                return false;
+        }
     }
 
     public final boolean isTracking() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->isTracking()Z");
+        return (mFlags & FLAG_TRACKING) != 0;
     }
 
     public static int keyCodeFromString(String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->keyCodeFromString(Ljava/lang/String;)I");
+        if (arg0 == null) {
+            return 0;
+        }
+        if (arg0.startsWith("KEYCODE_")) {
+            for (int code = 0; code <= getMaxKeyCode(); code++) {
+                if (arg0.equals(keyCodeToString(code))) {
+                    return code;
+                }
+            }
+            return 0;
+        }
+        try {
+            return Integer.parseInt(arg0);
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
     }
 
     public static String keyCodeToString(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->keyCodeToString(I)Ljava/lang/String;");
+        switch (arg0) {
+            case KEYCODE_BACK:
+                return "KEYCODE_BACK";
+            case KEYCODE_HOME:
+                return "KEYCODE_HOME";
+            case KEYCODE_MENU:
+                return "KEYCODE_MENU";
+            case KEYCODE_ENTER:
+                return "KEYCODE_ENTER";
+            case KEYCODE_DEL:
+                return "KEYCODE_DEL";
+            case KEYCODE_TAB:
+                return "KEYCODE_TAB";
+            case KEYCODE_SPACE:
+                return "KEYCODE_SPACE";
+            case KEYCODE_ESCAPE:
+                return "KEYCODE_ESCAPE";
+            case KEYCODE_DPAD_UP:
+                return "KEYCODE_DPAD_UP";
+            case KEYCODE_DPAD_DOWN:
+                return "KEYCODE_DPAD_DOWN";
+            case KEYCODE_DPAD_LEFT:
+                return "KEYCODE_DPAD_LEFT";
+            case KEYCODE_DPAD_RIGHT:
+                return "KEYCODE_DPAD_RIGHT";
+            case KEYCODE_DPAD_CENTER:
+                return "KEYCODE_DPAD_CENTER";
+            case KEYCODE_VOLUME_UP:
+                return "KEYCODE_VOLUME_UP";
+            case KEYCODE_VOLUME_DOWN:
+                return "KEYCODE_VOLUME_DOWN";
+            case KEYCODE_VOLUME_MUTE:
+                return "KEYCODE_VOLUME_MUTE";
+            default:
+                return Integer.toString(arg0);
+        }
     }
 
     public static boolean metaStateHasModifiers(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->metaStateHasModifiers(II)Z");
+        arg0 = normalizeMetaState(arg0);
+        return (arg0 & arg1) == arg1 && (arg0 & META_INVALID_MODIFIER_MASK) == 0;
     }
 
     public static boolean metaStateHasNoModifiers(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->metaStateHasNoModifiers(I)Z");
+        return (normalizeMetaState(arg0) & META_MODIFIER_MASK) == 0;
     }
 
     public static int normalizeMetaState(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->normalizeMetaState(I)I");
+        if ((arg0 & META_ALT_LEFT_ON) != 0) {
+            arg0 |= META_ALT_ON;
+        }
+        if ((arg0 & META_ALT_RIGHT_ON) != 0) {
+            arg0 |= META_ALT_ON;
+        }
+        if ((arg0 & META_SHIFT_LEFT_ON) != 0) {
+            arg0 |= META_SHIFT_ON;
+        }
+        if ((arg0 & META_SHIFT_RIGHT_ON) != 0) {
+            arg0 |= META_SHIFT_ON;
+        }
+        if ((arg0 & META_CTRL_LEFT_ON) != 0) {
+            arg0 |= META_CTRL_ON;
+        }
+        if ((arg0 & META_CTRL_RIGHT_ON) != 0) {
+            arg0 |= META_CTRL_ON;
+        }
+        if ((arg0 & META_META_LEFT_ON) != 0) {
+            arg0 |= META_META_ON;
+        }
+        if ((arg0 & META_META_RIGHT_ON) != 0) {
+            arg0 |= META_META_ON;
+        }
+        return arg0;
     }
 
+    private static final int META_MODIFIER_MASK = META_ALT_ON | META_SHIFT_ON
+            | META_SYM_ON | META_FUNCTION_ON | META_CTRL_ON | META_META_ON
+            | META_CAPS_LOCK_ON | META_NUM_LOCK_ON | META_SCROLL_LOCK_ON;
+
+    private static final int META_INVALID_MODIFIER_MASK = META_ALT_LEFT_ON
+            | META_ALT_RIGHT_ON | META_SHIFT_LEFT_ON | META_SHIFT_RIGHT_ON
+            | META_CTRL_LEFT_ON | META_CTRL_RIGHT_ON | META_META_LEFT_ON
+            | META_META_RIGHT_ON;
+
     public final void setSource(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->setSource(I)V");
+        mSource = arg0;
     }
 
     public final void startTracking() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->startTracking()V");
+        mFlags |= FLAG_TRACKING;
     }
 
+    private long mDownTime;
+    private long mEventTime;
+    private int mAction;
+    private int mKeyCode;
+    private int mRepeatCount;
+    private int mMetaState;
+    private int mScanCode;
+    private int mDeviceId;
+    private int mSource;
+    private int mFlags;
+    private String mCharacters;
+
     public String toString() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->toString()Ljava/lang/String;");
+        return "KeyEvent { action=" + actionToString(mAction) + ", keyCode="
+                + keyCodeToString(mKeyCode) + ", repeat=" + mRepeatCount
+                + ", meta=" + mMetaState + " }";
+    }
+
+    private static String actionToString(int action) {
+        switch (action) {
+            case ACTION_DOWN:
+                return "ACTION_DOWN";
+            case ACTION_UP:
+                return "ACTION_UP";
+            case ACTION_MULTIPLE:
+                return "ACTION_MULTIPLE";
+            default:
+                return Integer.toString(action);
+        }
     }
 
     public void writeToParcel(Parcel arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent;->writeToParcel(Landroid/os/Parcel;I)V");
+        throw new UnsupportedOperationException(
+                "Tartine: KeyEvent parceling is not used on the desktop host");
     }
 
         /** Scratch mirror constructor (SkeletonGen). */
@@ -660,32 +889,46 @@ import android.os.Parcelable;
         }
         public static class DispatcherState {
 
+        private int mKeyDownCode;
+        private long mKeyDownTime;
+        private Object mActiveObject;
+
         public DispatcherState() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;-><init>()V");
+            reset();
         }
 
         public void handleUpEvent(KeyEvent arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;->handleUpEvent(Landroid/view/KeyEvent;)V");
+            reset();
         }
 
         public boolean isTracking(KeyEvent arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;->isTracking(Landroid/view/KeyEvent;)Z");
+            return mKeyDownCode == arg0.getKeyCode()
+                    && mKeyDownTime == arg0.getDownTime();
         }
 
         public void performedLongPress(KeyEvent arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;->performedLongPress(Landroid/view/KeyEvent;)V");
+            arg0.mFlags |= FLAG_LONG_PRESS;
         }
 
         public void reset() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;->reset()V");
+            mKeyDownCode = 0;
+            mKeyDownTime = 0;
+            mActiveObject = null;
         }
 
         public void reset(Object arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;->reset(Ljava/lang/Object;)V");
+            if (mActiveObject == arg0) {
+                reset();
+            }
         }
 
         public void startTracking(KeyEvent arg0, Object arg1) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/KeyEvent$DispatcherState;->startTracking(Landroid/view/KeyEvent;Ljava/lang/Object;)V");
+            if (!arg0.isTracking()) {
+                mKeyDownCode = arg0.getKeyCode();
+                mKeyDownTime = arg0.getDownTime();
+                mActiveObject = arg1;
+                arg0.startTracking();
+            }
         }
         }
     }

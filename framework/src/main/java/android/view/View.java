@@ -412,7 +412,11 @@ import java.util.function.Consumer;
     }
 
     public final void cancelPendingInputEvents() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->cancelPendingInputEvents()V");
+        // AOSP View.cancelPendingInputEvents: flush the window root's input
+        // queue. The desktop shell delivers events synchronously on the
+        // guest thread (HostInput -> ViewRootImpl), so there is never a
+        // pending batch to cancel; the call is still reachable from
+        // androidx teardown paths and must not throw.
     }
 
     public boolean checkInputConnectionProxy(View arg0) {
@@ -424,7 +428,14 @@ import java.util.function.Consumer;
     }
 
     public void clearFocus() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->clearFocus()V");
+        if (mFocused) {
+            mFocused = false;
+            if (mOnFocusChangeListener != null) {
+                mOnFocusChangeListener.onFocusChange(this, false);
+            }
+            onFocusChanged(false, 0, null);
+            invalidate();
+        }
     }
 
     public void clearPendingCredentialRequest() {
@@ -540,11 +551,15 @@ import java.util.function.Consumer;
     }
 
     public boolean dispatchKeyEvent(KeyEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchKeyEvent(Landroid/view/KeyEvent;)Z");
+        if (mOnKeyListener != null && mEnabled
+                && mOnKeyListener.onKey(this, arg0.getKeyCode(), arg0)) {
+            return true;
+        }
+        return arg0.dispatch(this);
     }
 
     public boolean dispatchKeyEventPreIme(KeyEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchKeyEventPreIme(Landroid/view/KeyEvent;)Z");
+        return arg0.dispatch(this);
     }
 
     public boolean dispatchKeyShortcutEvent(KeyEvent arg0) {
@@ -620,7 +635,11 @@ import java.util.function.Consumer;
     }
 
     public boolean dispatchTouchEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchTouchEvent(Landroid/view/MotionEvent;)Z");
+        if (mOnTouchListener != null && mEnabled
+                && mOnTouchListener.onTouch(this, arg0)) {
+            return true;
+        }
+        return onTouchEvent(arg0);
     }
 
     public boolean dispatchTrackballEvent(MotionEvent arg0) {
@@ -636,7 +655,7 @@ import java.util.function.Consumer;
     }
 
     public void dispatchWindowFocusChanged(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchWindowFocusChanged(Z)V");
+        onWindowFocusChanged(arg0);
     }
 
     public void dispatchWindowInsetsAnimationEnd(WindowInsetsAnimation arg0) {
@@ -660,7 +679,7 @@ import java.util.function.Consumer;
     }
 
     public void dispatchWindowVisibilityChanged(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchWindowVisibilityChanged(I)V");
+        onWindowVisibilityChanged(arg0);
     }
 
     /**
@@ -769,7 +788,7 @@ import java.util.function.Consumer;
     }
 
     public View findFocus() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->findFocus()Landroid/view/View;");
+        return mFocused ? this : null;
     }
 
     public final OnBackInvokedDispatcher findOnBackInvokedDispatcher() {
@@ -816,7 +835,7 @@ import java.util.function.Consumer;
     }
 
     public void forceLayout() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->forceLayout()V");
+        mLayoutRequested = true;
     }
 
     public boolean gatherTransparentRegion(Region arg0) {
@@ -887,10 +906,9 @@ import java.util.function.Consumer;
     }
 
     public float getAlpha() {
-        // AOSP View.java getAlpha(): mTransformationInfo != null ? ... : 1.
-        // No transformation-info model yet, so the default-identity answer
-        // is the whole port; setAlpha lands with it.
-        return 1;
+        // AOSP View.getAlpha: the transformation-info alpha, identity when
+        // absent. The shell keeps the single store on the render node.
+        return mRenderNode.getAlpha();
     }
 
     public Animation getAnimation() {
@@ -905,7 +923,10 @@ import java.util.function.Consumer;
     }
 
     public IBinder getApplicationWindowToken() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getApplicationWindowToken()Landroid/os/IBinder;");
+        // AOSP View.getApplicationWindowToken: the window token's
+        // application token; the shell has no WindowManager binder, so the
+        // window token itself is the answer.
+        return getWindowToken();
     }
 
     public int[] getAttributeResolutionStack(int arg0) {
@@ -996,9 +1017,41 @@ import java.util.function.Consumer;
 
     protected int mPrivateFlags;
 
+    /**
+     * AOSP View.mLayerType: one of LAYER_TYPE_NONE/SOFTWARE/HARDWARE. The
+     * shell's raster pipeline has no layer compositing, so the value only
+     * round-trips through setLayerType/getLayerType (Compose's ViewLayer
+     * switches it per frame and reads it back for its draw strategy).
+     */
+    private int mLayerType = LAYER_TYPE_NONE;
+
     protected int mMeasuredWidth;
     protected int mMeasuredHeight;
     private static final int PFLAG_MEASURED_DIMENSION_SET = 0x80000000;
+
+    /** AOSP View.mOldWidthMeasureSpec / mOldHeightMeasureSpec: the specs the
+     *  last measure pass used, so an unchanged request can skip onMeasure. */
+    private int mOldWidthMeasureSpec = Integer.MIN_VALUE;
+    private int mOldHeightMeasureSpec = Integer.MIN_VALUE;
+
+    /** AOSP PFLAG_FORCE_LAYOUT surrogate, read by isLayoutRequested(). */
+    private boolean mLayoutRequested = true;
+
+    /** AOSP PFLAG_LAYOUT_REQUIRED surrogate: a measure pass ran, so the
+     *  next layout call must run onLayout even when bounds are unchanged. */
+    private boolean mLayoutRequired = true;
+
+    /** AOSP View.mPaddingLeft/Top/Right/Bottom (absolute storage; relative
+     *  setters write the same fields because the shell keeps one LTR
+     *  direction). */
+    protected int mPaddingLeft;
+    protected int mPaddingTop;
+    protected int mPaddingRight;
+    protected int mPaddingBottom;
+
+    /** AOSP View.mMinWidth / mMinHeight (setMinimumWidth/Height). */
+    private int mMinWidth;
+    private int mMinHeight;
 
     protected int mScrollX;
     protected int mScrollY;
@@ -1032,7 +1085,7 @@ import java.util.function.Consumer;
     }
 
     public CharSequence getContentDescription() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getContentDescription()Ljava/lang/CharSequence;");
+        return mContentDescription;
     }
 
     public final int getContentSensitivity() {
@@ -1053,7 +1106,14 @@ import java.util.function.Consumer;
     }
 
     public static int getDefaultSize(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDefaultSize(II)I");
+        int result = arg0;
+        int specMode = MeasureSpec.getMode(arg1);
+        int specSize = MeasureSpec.getSize(arg1);
+        if (specMode == MeasureSpec.MODE_AT_MOST
+                || specMode == MeasureSpec.MODE_EXACTLY) {
+            result = specSize;
+        }
+        return result;
     }
 
     public Display getDisplay() {
@@ -1086,9 +1146,8 @@ import java.util.function.Consumer;
 
     public long getDrawingTime() {
         // AOSP View.java:23414: mAttachInfo != null ? mAttachInfo.mDrawingTime
-        // : 0. Staging has no AttachInfo yet, so the unattached leg (0) is
-        // the whole port until a real ViewRootImpl-style attach exists.
-        return 0;
+        // : 0. ViewRootImpl stamps mDrawingTime before each draw.
+        return mAttachInfo != null ? mAttachInfo.mDrawingTime : 0;
     }
 
     /** Ported from AOSP {@code View#getElevation}: RenderNode read. */
@@ -1145,11 +1204,22 @@ import java.util.function.Consumer;
     }
 
     public final boolean getGlobalVisibleRect(Rect arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getGlobalVisibleRect(Landroid/graphics/Rect;)Z");
+        return getGlobalVisibleRect(arg0, null);
     }
 
     public boolean getGlobalVisibleRect(Rect arg0, Point arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getGlobalVisibleRect(Landroid/graphics/Rect;Landroid/graphics/Point;)Z");
+        if (!isShown()) {
+            return false;
+        }
+        int[] location = new int[2];
+        getLocationOnScreen(location);
+        arg0.set(location[0], location[1],
+                location[0] + mRight - mLeft, location[1] + mBottom - mTop);
+        if (arg1 != null) {
+            arg1.x = location[0];
+            arg1.y = location[1];
+        }
+        return true;
     }
 
     /**
@@ -1160,13 +1230,7 @@ import java.util.function.Consumer;
      * {@code attachInfo.mHandler}.
      */
     public Handler getHandler() {
-        if (mAttachInfo == null) {
-            return null;
-        }
-        if (mHandler == null) {
-            mHandler = new Handler(Looper.getMainLooper());
-        }
-        return mHandler;
+        return mAttachInfo != null ? mAttachInfo.mHandler : null;
     }
 
     public float getHandwritingBoundsOffsetBottom() {
@@ -1254,7 +1318,8 @@ import java.util.function.Consumer;
     }
 
     public int getLayerType() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLayerType()I");
+        // AOSP View.getLayerType: the staged mLayerType.
+        return mLayerType;
     }
 
     /**
@@ -1341,15 +1406,20 @@ import java.util.function.Consumer;
             throw new IllegalArgumentException(
                     "outLocation must be an array of two integers");
         }
-        // Unattached view: both coordinates zero (AOSP
-        // transformFromViewToWindowSpace early return).
-        arg0[0] = 0;
-        arg0[1] = 0;
+        getLocationOnScreen(arg0);
     }
 
     public void getLocationOnScreen(int[] arg0) {
-        getLocationInWindow(arg0);
-        // AttachInfo window offset leg pending the wm port; no-op here.
+        int x = mLeft;
+        int y = mTop;
+        ViewParent parent = mParent;
+        while (parent instanceof View view) {
+            x += view.mLeft - view.mScrollX;
+            y += view.mTop - view.mScrollY;
+            parent = view.mParent;
+        }
+        arg0[0] = x;
+        arg0[1] = y;
     }
 
     public Matrix getMatrix() {
@@ -1413,11 +1483,11 @@ import java.util.function.Consumer;
     }
 
     public int getOutlineAmbientShadowColor() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getOutlineAmbientShadowColor()I");
+        return mRenderNode.getAmbientShadowColor();
     }
 
     public int getOutlineSpotShadowColor() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getOutlineSpotShadowColor()I");
+        return mRenderNode.getSpotShadowColor();
     }
 
     public int getOverScrollMode() {
@@ -1429,27 +1499,27 @@ import java.util.function.Consumer;
     }
 
     public int getPaddingBottom() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingBottom()I");
+        return mPaddingBottom;
     }
 
     public int getPaddingEnd() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingEnd()I");
+        return mPaddingRight;
     }
 
     public int getPaddingLeft() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingLeft()I");
+        return mPaddingLeft;
     }
 
     public int getPaddingRight() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingRight()I");
+        return mPaddingRight;
     }
 
     public int getPaddingStart() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingStart()I");
+        return mPaddingLeft;
     }
 
     public int getPaddingTop() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getPaddingTop()I");
+        return mPaddingTop;
     }
 
     /** AOSP View.getParent (View.java:18873-18875) — final in AOSP; guests
@@ -1585,7 +1655,11 @@ import java.util.function.Consumer;
     }
 
     public View getRootView() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getRootView()Landroid/view/View;");
+        View root = this;
+        while (root.mParent instanceof View parent) {
+            root = parent;
+        }
+        return root;
     }
 
     public WindowInsets getRootWindowInsets() {
@@ -1669,11 +1743,11 @@ import java.util.function.Consumer;
     }
 
     protected int getSuggestedMinimumHeight() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getSuggestedMinimumHeight()I");
+        return mMinHeight;
     }
 
     protected int getSuggestedMinimumWidth() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getSuggestedMinimumWidth()I");
+        return mMinWidth;
     }
 
     public CharSequence getSupplementalDescription() {
@@ -1803,16 +1877,14 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getViewTranslationResponse()Landroid/view/translation/ViewTranslationResponse;");
     }
 
-    /** AOSP View.getViewTreeObserver (View.java:27442-27450). The device's
-     * attached branch returns mAttachInfo.mTreeObserver; our AttachInfo is
-     * still a bare null-or-present ref (window-attach chain not landed), so
-     * only the floating-observer path exists here — one lazily-created
-     * observer per view, which is exactly the pre-attach device behavior. */
+    /** AOSP View.getViewTreeObserver (View.java:27442-27450): the attach
+     * info's observer when attached, else a lazily-created floating one. */
     private ViewTreeObserver mFloatingTreeObserver;
 
     public ViewTreeObserver getViewTreeObserver() {
-        // The mAttachInfo branch (AOSP 27443-27445) lands with the real
-        // AttachInfo holder; the ref is always null until then.
+        if (mAttachInfo != null) {
+            return mAttachInfo.mTreeObserver;
+        }
         if (mFloatingTreeObserver == null) {
             mFloatingTreeObserver = new ViewTreeObserver(mContext);
         }
@@ -1837,8 +1909,9 @@ import java.util.function.Consumer;
         return mBottom - mTop;
     }
 
+    /** AOSP View.getWindowAttachCount: attach handshake bookkeeping. */
     protected int getWindowAttachCount() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getWindowAttachCount()I");
+        return mWindowAttachCount;
     }
 
     public WindowId getWindowId() {
@@ -1854,7 +1927,7 @@ import java.util.function.Consumer;
     }
 
     public IBinder getWindowToken() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getWindowToken()Landroid/os/IBinder;");
+        return mAttachInfo != null ? mAttachInfo.mWindowToken : null;
     }
 
     public int getWindowVisibility() {
@@ -1894,11 +1967,11 @@ import java.util.function.Consumer;
     }
 
     public boolean hasOnClickListeners() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasOnClickListeners()Z");
+        return mOnClickListener != null;
     }
 
     public boolean hasOnLongClickListeners() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->hasOnLongClickListeners()Z");
+        return mOnLongClickListener != null;
     }
 
     public boolean hasOverlappingRendering() {
@@ -1914,12 +1987,7 @@ import java.util.function.Consumer;
     }
 
     public boolean hasWindowFocus() {
-        // AOSP frameworks-base core/java/android/view/View.java:16960-16962
-        // hasWindowFocus: mAttachInfo != null && mAttachInfo.mHasWindowFocus.
-        // The shell's AttachInfo is an opaque marker with no focus flag; a
-        // marked window is the foreground window (matches the interpreter's
-        // focused-foreground builtin).
-        return mAttachInfo != null;
+        return mAttachInfo != null && mAttachInfo.mHasWindowFocus;
     }
 
     public static View inflate(Context arg0, int arg1, ViewGroup arg2) {
@@ -1957,18 +2025,23 @@ import java.util.function.Consumer;
 
     private void invalidateInternal(int l, int t, int r, int b,
             boolean invalidateCache, boolean fullInvalidate) {
-        // skipInvalidate() holds for every view here: no current animation,
-        // and visibility/attach state is untracked (treated not-visible),
-        // so the only observable effect is the dirty flag.
         mDirty = true;
+        if (mParent != null) {
+            mParent.onDescendantInvalidated(this, this);
+        }
     }
 
     public void invalidateDrawable(Drawable arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->invalidateDrawable(Landroid/graphics/drawable/Drawable;)V");
+        invalidate();
     }
 
     public void invalidateOutline() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->invalidateOutline()V");
+        // AOSP View.invalidateOutline: rebuild the outline from the provider,
+        // then invalidate. The shell's RenderNode carries no outline yet, so
+        // the rebuild is a no-op and the invalidation is the whole effect;
+        // androidx Compose calls this from OutlineResolver.updateOutlineResolver
+        // after replacing the provider.
+        invalidate();
     }
 
     public boolean isAccessibilityDataSensitive() {
@@ -1987,18 +2060,95 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isActivated()Z");
     }
 
-    /** AOSP View.java:14146-14148 — attach state == the ViewRootImpl's
-     * AttachInfo reference (null until the window attaches this view tree).
-     * The shell holds the same single ref; the window-attach chain sets it
-     * when that migration lands. Field is package-private so only framework
-     * classes flip it — guests never reference the hidden mAttachInfo. */
-    Object mAttachInfo;
+    /**
+     * AOSP View.java:14146-14148 — attach state is exactly the ViewRootImpl's
+     * {@link AttachInfo} reference (null until the window attaches this view
+     * tree). Package-private so only framework classes flip it.
+     */
+    AttachInfo mAttachInfo;
 
-    /** Stand-in for {@code AttachInfo.mHandler} until the holder lands (see
-     * {@link #getHandler()}). */
-    private Handler mHandler;
+    /**
+     * AOSP View.AttachInfo: window-scoped state shared by every view in one
+     * attached tree. The shell carries the members the desktop pipeline
+     * reads — handler, tree observer, root view, window token, focus and
+     * visibility — and omits the display-list/threaded-renderer members.
+     */
+    static final class AttachInfo {
 
-    /** AOSP View.isAttachedToWindow (View.java:14146-14148). */
+        final ViewRootImpl mViewRootImpl;
+        final ViewTreeObserver mTreeObserver;
+        final Handler mHandler;
+
+        View mRootView;
+        IBinder mWindowToken;
+        boolean mHasWindowFocus;
+        int mWindowVisibility = VISIBLE;
+        long mDrawingTime;
+
+        AttachInfo(ViewRootImpl viewRootImpl, ViewTreeObserver treeObserver) {
+            mViewRootImpl = viewRootImpl;
+            mTreeObserver = treeObserver;
+            mHandler = new Handler(Looper.getMainLooper());
+        }
+    }
+
+    /** AOSP View.mWindowAttachCount (attach/detach bookkeeping). */
+    private int mWindowAttachCount;
+
+    /** AOSP View.mFocused flag (single-focused-view model). */
+    private boolean mFocused;
+
+    /** AOSP View.mViewFlags reduced to the input/click state the shell
+     *  tracks (visibility lives in mVisibility below). */
+    private boolean mEnabled = true;
+    private boolean mClickable;
+    private boolean mLongClickable;
+    private boolean mPressed;
+    private boolean mSelected;
+    private int mFocusable;
+
+    private OnClickListener mOnClickListener;
+    private OnLongClickListener mOnLongClickListener;
+    private OnTouchListener mOnTouchListener;
+    private OnKeyListener mOnKeyListener;
+    private OnFocusChangeListener mOnFocusChangeListener;
+
+    /**
+     * AOSP View.dispatchAttachedToWindow: record the attach info, notify
+     * listeners, then run onAttachedToWindow. ViewGroup overrides to walk
+     * its children first.
+     */
+    void dispatchAttachedToWindow(AttachInfo info, int visibility) {
+        mAttachInfo = info;
+        mWindowAttachCount++;
+        if (mOnAttachStateChangeListeners != null) {
+            for (OnAttachStateChangeListener listener
+                    : mOnAttachStateChangeListeners) {
+                listener.onViewAttachedToWindow(this);
+            }
+        }
+        onAttachedToWindow();
+        if (visibility != VISIBLE) {
+            dispatchWindowVisibilityChanged(visibility);
+        }
+    }
+
+    /**
+     * AOSP View.dispatchDetachedFromWindow: run onDetachedFromWindow, notify
+     * listeners, then drop the attach info.
+     */
+    void dispatchDetachedFromWindow() {
+        onDetachedFromWindow();
+        if (mOnAttachStateChangeListeners != null) {
+            for (OnAttachStateChangeListener listener
+                    : mOnAttachStateChangeListeners) {
+                listener.onViewDetachedFromWindow(this);
+            }
+        }
+        mAttachInfo = null;
+        mWindowAttachCount--;
+    }
+
     public boolean isAttachedToWindow() {
         return mAttachInfo != null;
     }
@@ -2008,7 +2158,7 @@ import java.util.function.Consumer;
     }
 
     public boolean isClickable() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isClickable()Z");
+        return mClickable;
     }
 
     public final boolean isContentSensitive() {
@@ -2048,23 +2198,19 @@ import java.util.function.Consumer;
     }
 
     public boolean isEnabled() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isEnabled()Z");
+        return mEnabled;
     }
 
     public final boolean isFocusable() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isFocusable()Z");
+        return mFocusable == FOCUSABLE;
     }
 
     public final boolean isFocusableInTouchMode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isFocusableInTouchMode()Z");
+        return mFocusable == FOCUSABLE;
     }
 
     public boolean isFocused() {
-        // AOSP frameworks-base core/java/android/view/View.java: isFocused
-        // returns whether this view is focused. No input or focus subsystem
-        // runs headless, so always false (matches the interpreter's
-        // isFocused builtin).
-        return false;
+        return mFocused;
     }
 
     public final boolean isFocusedByDefault() {
@@ -2139,15 +2285,11 @@ import java.util.function.Consumer;
     }
 
     public boolean isLayoutRequested() {
-        // AOSP frameworks-base core/java/android/view/View.java#isLayoutRequested:
-        // returns mLayoutRequested != 0; no layout requests occur headless
-        // (matches the interpreter's builtin, which returns 0 when the field
-        // is absent).
-        return false;
+        return mLayoutRequested;
     }
 
     public boolean isLongClickable() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isLongClickable()Z");
+        return mLongClickable;
     }
 
     public boolean isNestedScrollingEnabled() {
@@ -2175,7 +2317,7 @@ import java.util.function.Consumer;
     }
 
     public boolean isPressed() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isPressed()Z");
+        return mPressed;
     }
 
     public boolean isSaveEnabled() {
@@ -2199,7 +2341,7 @@ import java.util.function.Consumer;
     }
 
     public boolean isSelected() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isSelected()Z");
+        return mSelected;
     }
 
     public final boolean isShowingLayoutBounds() {
@@ -2207,7 +2349,15 @@ import java.util.function.Consumer;
     }
 
     public boolean isShown() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isShown()Z");
+        View current = this;
+        while (current != null) {
+            if (current.getVisibility() != VISIBLE) {
+                return false;
+            }
+            ViewParent parent = current.mParent;
+            current = parent instanceof View view ? view : null;
+        }
+        return true;
     }
 
     public boolean isSoundEffectsEnabled() {
@@ -2263,8 +2413,9 @@ import java.util.function.Consumer;
 
         boolean changed = setFrame(arg0, arg1, arg2, arg3);
 
-        if (changed) {
+        if (changed || mLayoutRequired) {
             onLayout(changed, arg0, arg1, arg2, arg3);
+            mLayoutRequired = false;
         }
 
         // The rest of the AOSP body (PFLAG_FORCE_LAYOUT/PFLAG3_IS_LAID_OUT
@@ -2303,8 +2454,31 @@ import java.util.function.Consumer;
         return changed;
     }
 
+    /**
+     * Ported from AOSP View.measure with two shell deviations: the
+     * PFLAG_MEASURED_DIMENSION_SET contract is enforced leniently (an
+     * override that forgets setMeasuredDimension falls back to the default
+     * size instead of throwing), and the optical-bounds/skip-measure arms
+     * are absent because their models are not carried.
+     */
     public final void measure(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->measure(II)V");
+        boolean forceLayout = mLayoutRequested
+                || arg0 != mOldWidthMeasureSpec
+                || arg1 != mOldHeightMeasureSpec;
+        if (forceLayout) {
+            mPrivateFlags &= ~PFLAG_MEASURED_DIMENSION_SET;
+            onMeasure(arg0, arg1);
+            if ((mPrivateFlags & PFLAG_MEASURED_DIMENSION_SET)
+                    != PFLAG_MEASURED_DIMENSION_SET) {
+                setMeasuredDimension(
+                        getDefaultSize(getSuggestedMinimumWidth(), arg0),
+                        getDefaultSize(getSuggestedMinimumHeight(), arg1));
+            }
+            mOldWidthMeasureSpec = arg0;
+            mOldHeightMeasureSpec = arg1;
+            mLayoutRequired = true;
+        }
+        mLayoutRequested = false;
     }
 
     protected static int[] mergeDrawableStates(int[] arg0, int[] arg1) {
@@ -2399,7 +2573,9 @@ import java.util.function.Consumer;
     }
 
     protected void onDetachedFromWindow() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onDetachedFromWindow()V");
+        // AOSP View.onDetachedFromWindow: clears pressed state and stops
+        // animations; the shell tracks only the pressed flag.
+        setPressed(false);
     }
 
     protected void onDisplayHint(int arg0) {
@@ -2437,19 +2613,17 @@ import java.util.function.Consumer;
     }
 
     protected void onFocusChanged(boolean arg0, int arg1, Rect arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onFocusChanged(ZILandroid/graphics/Rect;)V");
     }
 
     public boolean onGenericMotionEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onGenericMotionEvent(Landroid/view/MotionEvent;)Z");
+        return false;
     }
 
     public void onHoverChanged(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onHoverChanged(Z)V");
     }
 
     public boolean onHoverEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onHoverEvent(Landroid/view/MotionEvent;)Z");
+        return false;
     }
 
     public void onInitializeAccessibilityEvent(AccessibilityEvent arg0) {
@@ -2461,27 +2635,32 @@ import java.util.function.Consumer;
     }
 
     public boolean onKeyDown(int arg0, KeyEvent arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onKeyDown(ILandroid/view/KeyEvent;)Z");
+        if (arg0 == KeyEvent.KEYCODE_DPAD_CENTER
+                || arg0 == KeyEvent.KEYCODE_ENTER
+                || arg0 == KeyEvent.KEYCODE_SPACE) {
+            return mClickable && performClick();
+        }
+        return false;
     }
 
     public boolean onKeyLongPress(int arg0, KeyEvent arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onKeyLongPress(ILandroid/view/KeyEvent;)Z");
+        return false;
     }
 
     public boolean onKeyMultiple(int arg0, int arg1, KeyEvent arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onKeyMultiple(IILandroid/view/KeyEvent;)Z");
+        return false;
     }
 
     public boolean onKeyPreIme(int arg0, KeyEvent arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onKeyPreIme(ILandroid/view/KeyEvent;)Z");
+        return false;
     }
 
     public boolean onKeyShortcut(int arg0, KeyEvent arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onKeyShortcut(ILandroid/view/KeyEvent;)Z");
+        return false;
     }
 
     public boolean onKeyUp(int arg0, KeyEvent arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onKeyUp(ILandroid/view/KeyEvent;)Z");
+        return false;
     }
 
     /**
@@ -2496,7 +2675,9 @@ import java.util.function.Consumer;
     }
 
     protected void onMeasure(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onMeasure(II)V");
+        setMeasuredDimension(
+                getDefaultSize(getSuggestedMinimumWidth(), arg0),
+                getDefaultSize(getSuggestedMinimumHeight(), arg1));
     }
 
     protected void onOverScrolled(int arg0, int arg1, boolean arg2, boolean arg3) {
@@ -2588,7 +2769,35 @@ import java.util.function.Consumer;
     }
 
     public boolean onTouchEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onTouchEvent(Landroid/view/MotionEvent;)Z");
+        final int action = arg0.getActionMasked();
+        if (!mEnabled) {
+            return mClickable || mLongClickable;
+        }
+        if (action == MotionEvent.ACTION_DOWN) {
+            if (mClickable || mLongClickable) {
+                setPressed(true);
+                return true;
+            }
+            return false;
+        }
+        if (action == MotionEvent.ACTION_UP) {
+            if (mPressed) {
+                setPressed(false);
+                if (mClickable) {
+                    performClick();
+                }
+                return true;
+            }
+            return false;
+        }
+        if (action == MotionEvent.ACTION_CANCEL) {
+            if (mPressed) {
+                setPressed(false);
+                return true;
+            }
+            return false;
+        }
+        return mClickable;
     }
 
     public boolean onTrackballEvent(MotionEvent arg0) {
@@ -2608,11 +2817,9 @@ import java.util.function.Consumer;
     }
 
     protected void onVisibilityChanged(View arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onVisibilityChanged(Landroid/view/View;I)V");
     }
 
     public void onWindowFocusChanged(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onWindowFocusChanged(Z)V");
     }
 
     public void onWindowSystemUiVisibilityChanged(int arg0) {
@@ -2620,7 +2827,6 @@ import java.util.function.Consumer;
     }
 
     protected void onWindowVisibilityChanged(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onWindowVisibilityChanged(I)V");
     }
 
     protected boolean overScrollBy(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, boolean arg8) {
@@ -2632,7 +2838,11 @@ import java.util.function.Consumer;
     }
 
     public boolean performClick() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->performClick()Z");
+        if (mOnClickListener != null) {
+            mOnClickListener.onClick(this);
+            return true;
+        }
+        return false;
     }
 
     public boolean performContextClick() {
@@ -2652,11 +2862,14 @@ import java.util.function.Consumer;
     }
 
     public boolean performLongClick() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->performLongClick()Z");
+        return performLongClick(0f, 0f);
     }
 
     public boolean performLongClick(float arg0, float arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->performLongClick(FF)Z");
+        if (mOnLongClickListener != null) {
+            return mOnLongClickListener.onLongClick(this);
+        }
+        return false;
     }
 
     public ContentInfo performReceiveContent(ContentInfo arg0) {
@@ -2667,44 +2880,71 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->playSoundEffect(I)V");
     }
 
-    public boolean post(Runnable arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->post(Ljava/lang/Runnable;)Z");
+    /**
+     * AOSP View.post: attached views post through the AttachInfo handler.
+     * The shell's Handler delivers inline (see Handler.java), and a view
+     * posted to before attach runs inline too instead of waiting in a
+     * run queue.
+     */
+    public boolean post(Runnable action) {
+        AttachInfo attachInfo = mAttachInfo;
+        if (attachInfo != null) {
+            return attachInfo.mHandler.post(action);
+        }
+        action.run();
+        return true;
     }
 
-    public boolean postDelayed(Runnable arg0, long arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postDelayed(Ljava/lang/Runnable;J)Z");
+    /** AOSP View.postDelayed: AttachInfo handler, inline in the shell. */
+    public boolean postDelayed(Runnable action, long delayMillis) {
+        AttachInfo attachInfo = mAttachInfo;
+        if (attachInfo != null) {
+            return attachInfo.mHandler.postDelayed(action, delayMillis);
+        }
+        action.run();
+        return true;
     }
 
     public void postInvalidate() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postInvalidate()V");
+        // AOSP posts a no-arg invalidate to the UI handler; delivery is
+        // inline in the shell, so invalidate directly.
+        invalidate();
     }
 
-    public void postInvalidate(int arg0, int arg1, int arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postInvalidate(IIII)V");
+    public void postInvalidate(int left, int top, int right, int bottom) {
+        invalidate(left, top, right, bottom);
     }
 
     public void postInvalidateDelayed(long arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postInvalidateDelayed(J)V");
+        invalidate();
     }
 
     public void postInvalidateDelayed(long arg0, int arg1, int arg2, int arg3, int arg4) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postInvalidateDelayed(JIIII)V");
+        invalidate(arg1, arg2, arg3, arg4);
     }
 
     public void postInvalidateOnAnimation() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postInvalidateOnAnimation()V");
+        invalidate();
     }
 
     public void postInvalidateOnAnimation(int arg0, int arg1, int arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postInvalidateOnAnimation(IIII)V");
+        invalidate(arg0, arg1, arg2, arg3);
     }
 
-    public void postOnAnimation(Runnable arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postOnAnimation(Ljava/lang/Runnable;)V");
+    /**
+     * AOSP View.postOnAnimation: deliver on the animation callback. The
+     * desktop Choreographer is pumped by the render loop, so the runnable
+     * runs on the next guest frame.
+     */
+    public void postOnAnimation(Runnable action) {
+        Choreographer.getInstance().postFrameCallback(
+                frameTimeNanos -> action.run());
     }
 
-    public void postOnAnimationDelayed(Runnable arg0, long arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->postOnAnimationDelayed(Ljava/lang/Runnable;J)V");
+    /** AOSP View.postOnAnimationDelayed: delayed animation callback. */
+    public void postOnAnimationDelayed(Runnable action, long delayMillis) {
+        Choreographer.getInstance().postFrameCallbackDelayed(
+                frameTimeNanos -> action.run(), delayMillis);
     }
 
     public void refreshDrawableState() {
@@ -2715,8 +2955,16 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->releasePointerCapture()V");
     }
 
-    public boolean removeCallbacks(Runnable arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->removeCallbacks(Ljava/lang/Runnable;)Z");
+    /**
+     * AOSP View.removeCallbacks: drop a pending post from the AttachInfo
+     * handler. The shell's handler delivers inline, so there is normally
+     * nothing queued, but the call must stay reachable from detach paths.
+     */
+    public boolean removeCallbacks(Runnable action) {
+        if (action != null && mAttachInfo != null) {
+            mAttachInfo.mHandler.removeCallbacks(action);
+        }
+        return true;
     }
 
     /** AOSP View.removeOnAttachStateChangeListener (lines 7842-7848). */
@@ -2740,31 +2988,56 @@ import java.util.function.Consumer;
     }
 
     public void requestApplyInsets() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestApplyInsets()V");
+        // AOSP View.requestApplyInsets: walk up to the window root, which
+        // re-dispatches insets on the next traversal. The shell models no
+        // insets (see setOnApplyWindowInsetsListener), so ViewRootImpl's
+        // end of the walk is the no-op; the walk itself is still the shape
+        // guests expect and keeps the listener plumbing reachable.
+        if (mParent != null) {
+            mParent.requestFitSystemWindows();
+        }
     }
 
     public void requestFitSystemWindows() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestFitSystemWindows()V");
+        // Deprecated AOSP alias for requestApplyInsets().
+        requestApplyInsets();
     }
 
     public final boolean requestFocus() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestFocus()Z");
+        return requestFocus(View.FOCUS_DOWN);
     }
 
     public final boolean requestFocus(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestFocus(I)Z");
+        return requestFocus(arg0, null);
     }
 
     public boolean requestFocus(int arg0, Rect arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestFocus(ILandroid/graphics/Rect;)Z");
+        if (!isFocusable() || !mEnabled) {
+            return false;
+        }
+        if (mFocused) {
+            return true;
+        }
+        mFocused = true;
+        if (mOnFocusChangeListener != null) {
+            mOnFocusChangeListener.onFocusChange(this, true);
+        }
+        onFocusChanged(true, arg0, arg1);
+        invalidate();
+        return true;
     }
 
     public final boolean requestFocusFromTouch() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestFocusFromTouch()Z");
+        return requestFocus(View.FOCUS_DOWN);
     }
 
     public void requestLayout() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->requestLayout()V");
+        mLayoutRequested = true;
+        mLayoutRequired = true;
+        mDirty = true;
+        if (mParent != null && !mParent.isLayoutRequested()) {
+            mParent.requestLayout();
+        }
     }
 
     public void requestPointerCapture() {
@@ -2886,7 +3159,14 @@ import java.util.function.Consumer;
     }
 
     public void setAlpha(float arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAlpha(F)V");
+        // AOSP View.setAlpha: the transformation info holds the value and
+        // syncs it to the render node. The shell has no transformation-info
+        // object; the node itself is the single store, and the host raster
+        // path does not consume node alpha yet (see RenderNode.mAlpha).
+        if (arg0 != getAlpha()) {
+            mRenderNode.setAlpha(arg0);
+            invalidate();
+        }
     }
 
     public void setAnimation(Animation arg0) {
@@ -2910,19 +3190,24 @@ import java.util.function.Consumer;
     }
 
     public void setBackground(Drawable arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V");
+        mBackground = arg0;
+        requestLayout();
+        invalidate();
     }
 
     public void setBackgroundColor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBackgroundColor(I)V");
+        // The shell's draw chain paints only a Drawable background; keep the
+        // call's invalidation observable and leave the color for the real
+        // Drawable model (no ColorDrawable skeleton yet).
+        invalidate();
     }
 
     public void setBackgroundDrawable(Drawable arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V");
+        setBackground(arg0);
     }
 
     public void setBackgroundResource(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setBackgroundResource(I)V");
+        invalidate();
     }
 
     public void setBackgroundTintBlendMode(BlendMode arg0) {
@@ -2959,7 +3244,7 @@ import java.util.function.Consumer;
     }
 
     public void setClickable(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setClickable(Z)V");
+        mClickable = arg0;
     }
 
     /**
@@ -3004,8 +3289,10 @@ import java.util.function.Consumer;
     }
 
     public void setContentDescription(CharSequence arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setContentDescription(Ljava/lang/CharSequence;)V");
+        mContentDescription = arg0;
     }
+
+    private CharSequence mContentDescription;
 
     public final void setContentSensitivity(int arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setContentSensitivity(I)V");
@@ -3048,7 +3335,13 @@ import java.util.function.Consumer;
     }
 
     public void setEnabled(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setEnabled(Z)V");
+        if (mEnabled != arg0) {
+            mEnabled = arg0;
+            if (!arg0) {
+                setPressed(false);
+            }
+            invalidate();
+        }
     }
 
     public void setFadingEdgeLength(int arg0) {
@@ -3064,21 +3357,17 @@ import java.util.function.Consumer;
     }
 
     public void setFocusable(boolean focusable) {
-        // AOSP frameworks-base core/java/android/view/View.java#setFocusable:
-        // focus management; no input focus exists headless → no-op
-        // (matches the interpreter's headless builtin).
+        setFocusable(focusable ? FOCUSABLE : NOT_FOCUSABLE);
     }
 
     public void setFocusable(int focusable) {
-        // AOSP frameworks-base core/java/android/view/View.java#setFocusable(int):
-        // focus flags; no input focus exists headless → no-op
-        // (matches the interpreter's headless builtin).
+        mFocusable = focusable;
     }
 
     public void setFocusableInTouchMode(boolean focusableInTouchMode) {
-        // AOSP frameworks-base core/java/android/view/View.java#setFocusableInTouchMode:
-        // touch-mode focus; no input focus headless → no-op
-        // (matches the interpreter's headless builtin).
+        if (focusableInTouchMode) {
+            mFocusable = FOCUSABLE;
+        }
     }
 
     public void setFocusedByDefault(boolean arg0) {
@@ -3209,7 +3498,17 @@ import java.util.function.Consumer;
     }
 
     public void setLayerType(int arg0, Paint arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setLayerType(ILandroid/graphics/Paint;)V");
+        // AOSP View.setLayerType: validates the enum and stores the paint;
+        // the shell has no layer compositing, so only the enum round-trips.
+        if (arg0 < LAYER_TYPE_NONE || arg0 > LAYER_TYPE_HARDWARE) {
+            throw new IllegalArgumentException(
+                    "Layer type must be LAYER_TYPE_NONE, LAYER_TYPE_SOFTWARE, "
+                            + "or LAYER_TYPE_HARDWARE");
+        }
+        if (mLayerType != arg0) {
+            mLayerType = arg0;
+            invalidate();
+        }
     }
 
     public void setLayoutDirection(int arg0) {
@@ -3241,20 +3540,23 @@ import java.util.function.Consumer;
     }
 
     public void setLongClickable(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setLongClickable(Z)V");
+        mLongClickable = arg0;
     }
 
     protected final void setMeasuredDimension(int measuredWidth, int measuredHeight) {
         mMeasuredWidth = measuredWidth;
         mMeasuredHeight = measuredHeight;
+        mPrivateFlags |= PFLAG_MEASURED_DIMENSION_SET;
     }
 
     public void setMinimumHeight(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setMinimumHeight(I)V");
+        mMinHeight = arg0;
+        requestLayout();
     }
 
     public void setMinimumWidth(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setMinimumWidth(I)V");
+        mMinWidth = arg0;
+        requestLayout();
     }
 
     public void setNestedScrollingEnabled(boolean arg0) {
@@ -3297,7 +3599,10 @@ import java.util.function.Consumer;
     }
 
     public void setOnClickListener(View.OnClickListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnClickListener(Landroid/view/View$OnClickListener;)V");
+        if (!mClickable) {
+            setClickable(true);
+        }
+        mOnClickListener = arg0;
     }
 
     public void setOnContextClickListener(View.OnContextClickListener arg0) {
@@ -3315,7 +3620,7 @@ import java.util.function.Consumer;
     }
 
     public void setOnFocusChangeListener(View.OnFocusChangeListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnFocusChangeListener(Landroid/view/View$OnFocusChangeListener;)V");
+        mOnFocusChangeListener = arg0;
     }
 
     public void setOnGenericMotionListener(View.OnGenericMotionListener arg0) {
@@ -3327,11 +3632,14 @@ import java.util.function.Consumer;
     }
 
     public void setOnKeyListener(View.OnKeyListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnKeyListener(Landroid/view/View$OnKeyListener;)V");
+        mOnKeyListener = arg0;
     }
 
     public void setOnLongClickListener(View.OnLongClickListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnLongClickListener(Landroid/view/View$OnLongClickListener;)V");
+        if (!mLongClickable) {
+            setLongClickable(true);
+        }
+        mOnLongClickListener = arg0;
     }
 
     public void setOnReceiveContentListener(String[] arg0, OnReceiveContentListener arg1) {
@@ -3347,15 +3655,23 @@ import java.util.function.Consumer;
     }
 
     public void setOnTouchListener(View.OnTouchListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnTouchListener(Landroid/view/View$OnTouchListener;)V");
+        mOnTouchListener = arg0;
     }
 
+    /** Ported from AOSP {@code View#setOutlineAmbientShadowColor} semantics. */
     public void setOutlineAmbientShadowColor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOutlineAmbientShadowColor(I)V");
+        if (arg0 != mRenderNode.getAmbientShadowColor()) {
+            mRenderNode.setAmbientShadowColor(arg0);
+            invalidate();
+        }
     }
 
+    /** Ported from AOSP {@code View#setOutlineSpotShadowColor} semantics. */
     public void setOutlineSpotShadowColor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOutlineSpotShadowColor(I)V");
+        if (arg0 != mRenderNode.getSpotShadowColor()) {
+            mRenderNode.setSpotShadowColor(arg0);
+            invalidate();
+        }
     }
 
     public void setOverScrollMode(int arg0) {
@@ -3363,11 +3679,16 @@ import java.util.function.Consumer;
     }
 
     public void setPadding(int arg0, int arg1, int arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setPadding(IIII)V");
+        mPaddingLeft = arg0;
+        mPaddingTop = arg1;
+        mPaddingRight = arg2;
+        mPaddingBottom = arg3;
+        requestLayout();
+        invalidate();
     }
 
     public void setPaddingRelative(int arg0, int arg1, int arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setPaddingRelative(IIII)V");
+        setPadding(arg0, arg1, arg2, arg3);
     }
 
     public void setPendingCredentialRequest(GetCredentialRequest arg0, OutcomeReceiver<GetCredentialResponse, GetCredentialException> arg1) {
@@ -3406,11 +3727,18 @@ import java.util.function.Consumer;
     }
 
     public void setPressed(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setPressed(Z)V");
+        if (mPressed != arg0) {
+            mPressed = arg0;
+            invalidate();
+        }
     }
 
+    /** Ported from AOSP {@code View#setRenderEffect} semantics. */
     public void setRenderEffect(RenderEffect arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setRenderEffect(Landroid/graphics/RenderEffect;)V");
+        if (arg0 != mRenderNode.getRenderEffect()) {
+            mRenderNode.setRenderEffect(arg0);
+            invalidate();
+        }
     }
 
     public void setRequestedFrameRate(float arg0) {
@@ -3538,7 +3866,10 @@ import java.util.function.Consumer;
     }
 
     public void setSelected(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setSelected(Z)V");
+        if (mSelected != arg0) {
+            mSelected = arg0;
+            invalidate();
+        }
     }
 
     public void setSoundEffectsEnabled(boolean arg0) {
@@ -3956,7 +4287,7 @@ import java.util.function.Consumer;
             /** MeasureSpec mode: the parent has not imposed any constraint on the child. */
             public static final int MODE_UNSPECIFIED = 0;
             /** MeasureSpec mode: the parent has determined an exact size for the child. */
-            public static final int MODE_EXACTLY = 0x3 << 30;
+            public static final int MODE_EXACTLY = 0x1 << 30;
             /** MeasureSpec mode: the child can be as large as it wants up to the specified size. */
             public static final int MODE_AT_MOST = 0x2 << 30;
 

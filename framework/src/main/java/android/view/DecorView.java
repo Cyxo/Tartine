@@ -27,6 +27,56 @@ public class DecorView extends ViewGroup {
     }
 
     /**
+     * FrameLayout-shaped decor measure: measure every visible child against
+     * the incoming specs, then resolve the decor's own size (EXACTLY wins,
+     * AT_MOST clamps to the largest child, UNSPECIFIED uses the child).
+     */
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int maxWidth = 0;
+        int maxHeight = 0;
+        final int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            View child = getChildAt(i);
+            if (child.getVisibility() == GONE) {
+                continue;
+            }
+            measureChild(child, widthMeasureSpec, heightMeasureSpec);
+            maxWidth = Math.max(maxWidth,
+                    child.getMeasuredWidth() + mPaddingLeft + mPaddingRight);
+            maxHeight = Math.max(maxHeight,
+                    child.getMeasuredHeight() + mPaddingTop + mPaddingBottom);
+        }
+        int width = View.MeasureSpec.getMode(widthMeasureSpec)
+                == View.MeasureSpec.MODE_EXACTLY
+                        ? View.MeasureSpec.getSize(widthMeasureSpec)
+                        : Math.max(maxWidth,
+                                View.MeasureSpec.getSize(widthMeasureSpec));
+        int height = View.MeasureSpec.getMode(heightMeasureSpec)
+                == View.MeasureSpec.MODE_EXACTLY
+                        ? View.MeasureSpec.getSize(heightMeasureSpec)
+                        : Math.max(maxHeight,
+                                View.MeasureSpec.getSize(heightMeasureSpec));
+        setMeasuredDimension(width, height);
+    }
+
+    /** FrameLayout-shaped decor layout: each visible child fills the frame. */
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right,
+            int bottom) {
+        final int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            View child = getChildAt(i);
+            if (child.getVisibility() == GONE) {
+                continue;
+            }
+            child.layout(mPaddingLeft, mPaddingTop,
+                    mPaddingLeft + child.getMeasuredWidth(),
+                    mPaddingTop + child.getMeasuredHeight());
+        }
+    }
+
+    /**
      * AOSP Window.ID_ANDROID_CONTENT (Window.java line 270 —
      * com.android.internal.R.id.content, the android.R.id.content int the
      * guests probe); inlined because the hidden internal R class does not

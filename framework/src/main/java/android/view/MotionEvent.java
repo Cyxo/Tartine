@@ -3,6 +3,8 @@ package android.view;
 import android.graphics.Matrix;
 import android.os.Parcel;
 import android.os.Parcelable;
+import java.util.ArrayList;
+import java.util.List;
 
     public class MotionEvent extends InputEvent implements Parcelable {
 
@@ -107,380 +109,712 @@ import android.os.Parcelable;
     public static final int TOOL_TYPE_STYLUS = 2;
     public static final int TOOL_TYPE_UNKNOWN = 0;
 
+    /** One historical sample: its event time and per-pointer coords. */
+    private static final class HistoricalSample {
+        final long time;
+        final PointerCoords[] coords;
+
+        HistoricalSample(long time, PointerCoords[] coords) {
+            this.time = time;
+            this.coords = coords;
+        }
+    }
+
+    private long mDownTime;
+    private long mEventTime;
+    private int mAction;
+    private int mEdgeFlags;
+    private int mMetaState;
+    private int mButtonState;
+    private int mFlags;
+    private int mDeviceId;
+    private int mSource;
+    private float mXOffset;
+    private float mYOffset;
+    private float mXPrecision = 1.0f;
+    private float mYPrecision = 1.0f;
+    private PointerProperties[] mPointerProperties;
+    private PointerCoords[] mPointerCoords;
+    private int mPointerCount;
+    private final List<HistoricalSample> mHistory = new ArrayList<>();
+
+    /** Pool-free constructions all funnel here (desktop host, no recycling). */
+    private MotionEvent() {
+    }
+
     public static String actionToString(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->actionToString(I)Ljava/lang/String;");
+        switch (arg0) {
+            case ACTION_DOWN:
+                return "ACTION_DOWN";
+            case ACTION_UP:
+                return "ACTION_UP";
+            case ACTION_CANCEL:
+                return "ACTION_CANCEL";
+            case ACTION_OUTSIDE:
+                return "ACTION_OUTSIDE";
+            case ACTION_MOVE:
+                return "ACTION_MOVE";
+            case ACTION_HOVER_MOVE:
+                return "ACTION_HOVER_MOVE";
+            case ACTION_HOVER_ENTER:
+                return "ACTION_HOVER_ENTER";
+            case ACTION_HOVER_EXIT:
+                return "ACTION_HOVER_EXIT";
+            case ACTION_SCROLL:
+                return "ACTION_SCROLL";
+            case ACTION_BUTTON_PRESS:
+                return "ACTION_BUTTON_PRESS";
+            case ACTION_BUTTON_RELEASE:
+                return "ACTION_BUTTON_RELEASE";
+            default:
+                int index = arg0 & ACTION_POINTER_INDEX_MASK;
+                int masked = arg0 & ACTION_MASK;
+                if (masked == ACTION_POINTER_DOWN) {
+                    return "ACTION_POINTER_DOWN("
+                            + (index >> ACTION_POINTER_INDEX_SHIFT) + ")";
+                }
+                if (masked == ACTION_POINTER_UP) {
+                    return "ACTION_POINTER_UP("
+                            + (index >> ACTION_POINTER_INDEX_SHIFT) + ")";
+                }
+                return Integer.toString(arg0);
+        }
     }
 
     public void addBatch(long arg0, MotionEvent.PointerCoords[] arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->addBatch(J[Landroid/view/MotionEvent$PointerCoords;I)V");
+        PointerCoords[] copy = new PointerCoords[mPointerCount];
+        for (int i = 0; i < mPointerCount; i++) {
+            copy[i] = new PointerCoords(arg1[i]);
+        }
+        mHistory.add(new HistoricalSample(arg0, copy));
     }
 
-    public void addBatch(long arg0, float arg1, float arg2, float arg3, float arg4, int arg5) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->addBatch(JFFFFI)V");
+    public void addBatch(long arg0, float arg1, float arg2, float arg3,
+            float arg4, int arg5) {
+        PointerCoords coords = new PointerCoords();
+        coords.x = arg1;
+        coords.y = arg2;
+        coords.pressure = arg3;
+        coords.size = arg4;
+        PointerCoords[] copy = new PointerCoords[mPointerCount];
+        for (int i = 0; i < mPointerCount; i++) {
+            copy[i] = new PointerCoords(coords);
+        }
+        mHistory.add(new HistoricalSample(arg0, copy));
     }
 
     public static int axisFromString(String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->axisFromString(Ljava/lang/String;)I");
+        if (arg0 == null) {
+            return -1;
+        }
+        switch (arg0) {
+            case "AXIS_X":
+                return AXIS_X;
+            case "AXIS_Y":
+                return AXIS_Y;
+            case "AXIS_PRESSURE":
+                return AXIS_PRESSURE;
+            case "AXIS_SIZE":
+                return AXIS_SIZE;
+            case "AXIS_TOUCH_MAJOR":
+                return AXIS_TOUCH_MAJOR;
+            case "AXIS_TOUCH_MINOR":
+                return AXIS_TOUCH_MINOR;
+            case "AXIS_TOOL_MAJOR":
+                return AXIS_TOOL_MAJOR;
+            case "AXIS_TOOL_MINOR":
+                return AXIS_TOOL_MINOR;
+            case "AXIS_ORIENTATION":
+                return AXIS_ORIENTATION;
+            case "AXIS_VSCROLL":
+                return AXIS_VSCROLL;
+            case "AXIS_HSCROLL":
+                return AXIS_HSCROLL;
+            case "AXIS_Z":
+                return AXIS_Z;
+            case "AXIS_RX":
+                return AXIS_RX;
+            case "AXIS_RY":
+                return AXIS_RY;
+            case "AXIS_RZ":
+                return AXIS_RZ;
+            case "AXIS_HAT_X":
+                return AXIS_HAT_X;
+            case "AXIS_HAT_Y":
+                return AXIS_HAT_Y;
+            case "AXIS_LTRIGGER":
+                return AXIS_LTRIGGER;
+            case "AXIS_RTRIGGER":
+                return AXIS_RTRIGGER;
+            case "AXIS_THROTTLE":
+                return AXIS_THROTTLE;
+            case "AXIS_RUDDER":
+                return AXIS_RUDDER;
+            case "AXIS_WHEEL":
+                return AXIS_WHEEL;
+            case "AXIS_GAS":
+                return AXIS_GAS;
+            case "AXIS_BRAKE":
+                return AXIS_BRAKE;
+            case "AXIS_DISTANCE":
+                return AXIS_DISTANCE;
+            case "AXIS_TILT":
+                return AXIS_TILT;
+            case "AXIS_SCROLL":
+                return AXIS_SCROLL;
+            case "AXIS_RELATIVE_X":
+                return AXIS_RELATIVE_X;
+            case "AXIS_RELATIVE_Y":
+                return AXIS_RELATIVE_Y;
+            default:
+                return -1;
+        }
     }
 
     public static String axisToString(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->axisToString(I)Ljava/lang/String;");
+        switch (arg0) {
+            case AXIS_X:
+                return "AXIS_X";
+            case AXIS_Y:
+                return "AXIS_Y";
+            case AXIS_PRESSURE:
+                return "AXIS_PRESSURE";
+            case AXIS_SIZE:
+                return "AXIS_SIZE";
+            case AXIS_TOUCH_MAJOR:
+                return "AXIS_TOUCH_MAJOR";
+            case AXIS_TOUCH_MINOR:
+                return "AXIS_TOUCH_MINOR";
+            case AXIS_TOOL_MAJOR:
+                return "AXIS_TOOL_MAJOR";
+            case AXIS_TOOL_MINOR:
+                return "AXIS_TOOL_MINOR";
+            case AXIS_ORIENTATION:
+                return "AXIS_ORIENTATION";
+            case AXIS_VSCROLL:
+                return "AXIS_VSCROLL";
+            case AXIS_HSCROLL:
+                return "AXIS_HSCROLL";
+            case AXIS_Z:
+                return "AXIS_Z";
+            case AXIS_RX:
+                return "AXIS_RX";
+            case AXIS_RY:
+                return "AXIS_RY";
+            case AXIS_RZ:
+                return "AXIS_RZ";
+            case AXIS_HAT_X:
+                return "AXIS_HAT_X";
+            case AXIS_HAT_Y:
+                return "AXIS_HAT_Y";
+            case AXIS_LTRIGGER:
+                return "AXIS_LTRIGGER";
+            case AXIS_RTRIGGER:
+                return "AXIS_RTRIGGER";
+            case AXIS_THROTTLE:
+                return "AXIS_THROTTLE";
+            case AXIS_RUDDER:
+                return "AXIS_RUDDER";
+            case AXIS_WHEEL:
+                return "AXIS_WHEEL";
+            case AXIS_GAS:
+                return "AXIS_GAS";
+            case AXIS_BRAKE:
+                return "AXIS_BRAKE";
+            case AXIS_DISTANCE:
+                return "AXIS_DISTANCE";
+            case AXIS_TILT:
+                return "AXIS_TILT";
+            case AXIS_SCROLL:
+                return "AXIS_SCROLL";
+            case AXIS_RELATIVE_X:
+                return "AXIS_RELATIVE_X";
+            case AXIS_RELATIVE_Y:
+                return "AXIS_RELATIVE_Y";
+            default:
+                return Integer.toString(arg0);
+        }
     }
 
     protected void finalize() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->finalize()V");
     }
 
     public int findPointerIndex(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->findPointerIndex(I)I");
+        for (int i = 0; i < mPointerCount; i++) {
+            if (mPointerProperties[i].id == arg0) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public int getAction() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getAction()I");
+        return mAction;
     }
 
     public int getActionButton() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getActionButton()I");
+        return 0;
     }
 
     public int getActionIndex() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getActionIndex()I");
+        return (mAction & ACTION_POINTER_INDEX_MASK)
+                >> ACTION_POINTER_INDEX_SHIFT;
     }
 
     public int getActionMasked() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getActionMasked()I");
+        return mAction & ACTION_MASK;
     }
 
     public float getAxisValue(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getAxisValue(I)F");
+        return getAxisValue(arg0, 0);
     }
 
     public float getAxisValue(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getAxisValue(II)F");
+        return mPointerCoords[arg1].getAxisValue(arg0);
     }
 
     public int getButtonState() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getButtonState()I");
+        return mButtonState;
     }
 
     public int getClassification() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getClassification()I");
+        return CLASSIFICATION_NONE;
     }
 
     public int getDeviceId() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getDeviceId()I");
+        return mDeviceId;
     }
 
     public long getDownTime() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getDownTime()J");
+        return mDownTime;
     }
 
     public int getEdgeFlags() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getEdgeFlags()I");
+        return mEdgeFlags;
     }
 
     public long getEventTime() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getEventTime()J");
+        return mEventTime;
     }
 
     public long getEventTimeNanos() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getEventTimeNanos()J");
+        return mEventTime * 1_000_000L;
     }
 
     public int getFlags() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getFlags()I");
+        return mFlags;
     }
 
     public float getHistoricalAxisValue(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalAxisValue(II)F");
+        return getHistoricalAxisValue(arg0, 0, arg1);
     }
 
     public float getHistoricalAxisValue(int arg0, int arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalAxisValue(III)F");
+        return mHistory.get(arg2).coords[arg1].getAxisValue(arg0);
     }
 
     public long getHistoricalEventTime(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalEventTime(I)J");
+        return mHistory.get(arg0).time;
     }
 
     public long getHistoricalEventTimeNanos(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalEventTimeNanos(I)J");
+        return mHistory.get(arg0).time * 1_000_000L;
     }
 
     public float getHistoricalOrientation(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalOrientation(I)F");
+        return getHistoricalOrientation(arg0, 0);
     }
 
     public float getHistoricalOrientation(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalOrientation(II)F");
+        return mHistory.get(arg0).coords[arg1].orientation;
     }
 
-    public void getHistoricalPointerCoords(int arg0, int arg1, MotionEvent.PointerCoords arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalPointerCoords(IILandroid/view/MotionEvent$PointerCoords;)V");
+    public void getHistoricalPointerCoords(int arg0, int arg1,
+            MotionEvent.PointerCoords arg2) {
+        arg2.copyFrom(mHistory.get(arg0).coords[arg1]);
     }
 
     public float getHistoricalPressure(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalPressure(I)F");
+        return getHistoricalPressure(arg0, 0);
     }
 
     public float getHistoricalPressure(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalPressure(II)F");
+        return mHistory.get(arg0).coords[arg1].pressure;
     }
 
     public float getHistoricalSize(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalSize(I)F");
+        return getHistoricalSize(arg0, 0);
     }
 
     public float getHistoricalSize(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalSize(II)F");
+        return mHistory.get(arg0).coords[arg1].size;
     }
 
     public float getHistoricalToolMajor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalToolMajor(I)F");
+        return getHistoricalToolMajor(arg0, 0);
     }
 
     public float getHistoricalToolMajor(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalToolMajor(II)F");
+        return mHistory.get(arg0).coords[arg1].toolMajor;
     }
 
     public float getHistoricalToolMinor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalToolMinor(I)F");
+        return getHistoricalToolMinor(arg0, 0);
     }
 
     public float getHistoricalToolMinor(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalToolMinor(II)F");
+        return mHistory.get(arg0).coords[arg1].toolMinor;
     }
 
     public float getHistoricalTouchMajor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalTouchMajor(I)F");
+        return getHistoricalTouchMajor(arg0, 0);
     }
 
     public float getHistoricalTouchMajor(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalTouchMajor(II)F");
+        return mHistory.get(arg0).coords[arg1].touchMajor;
     }
 
     public float getHistoricalTouchMinor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalTouchMinor(I)F");
+        return getHistoricalTouchMinor(arg0, 0);
     }
 
     public float getHistoricalTouchMinor(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalTouchMinor(II)F");
+        return mHistory.get(arg0).coords[arg1].touchMinor;
     }
 
     public float getHistoricalX(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalX(I)F");
+        return getHistoricalX(arg0, 0);
     }
 
     public float getHistoricalX(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalX(II)F");
+        return mHistory.get(arg0).coords[arg1].x;
     }
 
     public float getHistoricalY(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalY(I)F");
+        return getHistoricalY(arg0, 0);
     }
 
     public float getHistoricalY(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistoricalY(II)F");
+        return mHistory.get(arg0).coords[arg1].y;
     }
 
     public int getHistorySize() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getHistorySize()I");
+        return mHistory.size();
     }
 
     public int getMetaState() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getMetaState()I");
+        return mMetaState;
     }
 
     public float getOrientation() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getOrientation()F");
+        return getOrientation(0);
     }
 
     public float getOrientation(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getOrientation(I)F");
+        return mPointerCoords[arg0].orientation;
     }
 
     public void getPointerCoords(int arg0, MotionEvent.PointerCoords arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getPointerCoords(ILandroid/view/MotionEvent$PointerCoords;)V");
+        arg1.copyFrom(mPointerCoords[arg0]);
     }
 
     public int getPointerCount() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getPointerCount()I");
+        return mPointerCount;
     }
 
     public int getPointerId(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getPointerId(I)I");
+        return mPointerProperties[arg0].id;
     }
 
-    public void getPointerProperties(int arg0, MotionEvent.PointerProperties arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getPointerProperties(ILandroid/view/MotionEvent$PointerProperties;)V");
+    public void getPointerProperties(int arg0,
+            MotionEvent.PointerProperties arg1) {
+        arg1.copyFrom(mPointerProperties[arg0]);
     }
 
     public float getPressure() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getPressure()F");
+        return getPressure(0);
     }
 
     public float getPressure(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getPressure(I)F");
+        return mPointerCoords[arg0].pressure;
     }
 
     public float getRawX() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getRawX()F");
+        return getRawX(0);
     }
 
     public float getRawX(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getRawX(I)F");
+        // AOSP: the raw location is the pointer location before the
+        // containing-window/view adjustment offsetLocation applied. The
+        // coords already carry that adjustment, so undo the accumulator.
+        return mPointerCoords[arg0].x - mXOffset;
     }
 
     public float getRawY() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getRawY()F");
+        return getRawY(0);
     }
 
     public float getRawY(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getRawY(I)F");
+        return mPointerCoords[arg0].y - mYOffset;
     }
 
     public float getSize() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getSize()F");
+        return getSize(0);
     }
 
     public float getSize(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getSize(I)F");
+        return mPointerCoords[arg0].size;
     }
 
     public int getSource() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getSource()I");
+        return mSource;
     }
 
     public float getToolMajor() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getToolMajor()F");
+        return getToolMajor(0);
     }
 
     public float getToolMajor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getToolMajor(I)F");
+        return mPointerCoords[arg0].toolMajor;
     }
 
     public float getToolMinor() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getToolMinor()F");
+        return getToolMinor(0);
     }
 
     public float getToolMinor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getToolMinor(I)F");
+        return mPointerCoords[arg0].toolMinor;
     }
 
     public int getToolType(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getToolType(I)I");
+        return mPointerProperties[arg0].toolType;
     }
 
     public float getTouchMajor() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getTouchMajor()F");
+        return getTouchMajor(0);
     }
 
     public float getTouchMajor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getTouchMajor(I)F");
+        return mPointerCoords[arg0].touchMajor;
     }
 
     public float getTouchMinor() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getTouchMinor()F");
+        return getTouchMinor(0);
     }
 
     public float getTouchMinor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getTouchMinor(I)F");
+        return mPointerCoords[arg0].touchMinor;
     }
 
     public float getX() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getX()F");
+        return getX(0);
     }
 
     public float getX(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getX(I)F");
+        return mPointerCoords[arg0].x;
     }
 
     public float getXPrecision() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getXPrecision()F");
+        return mXPrecision;
     }
 
     public float getY() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getY()F");
+        return getY(0);
     }
 
     public float getY(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getY(I)F");
+        return mPointerCoords[arg0].y;
     }
 
     public float getYPrecision() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->getYPrecision()F");
+        return mYPrecision;
     }
 
     public boolean isButtonPressed(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->isButtonPressed(I)Z");
+        return arg0 != 0 && (mButtonState & arg0) == arg0;
     }
 
     public static MotionEvent obtain(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(Landroid/view/MotionEvent;)Landroid/view/MotionEvent;");
+        MotionEvent event = new MotionEvent();
+        event.mDownTime = arg0.mDownTime;
+        event.mEventTime = arg0.mEventTime;
+        event.mAction = arg0.mAction;
+        event.mEdgeFlags = arg0.mEdgeFlags;
+        event.mMetaState = arg0.mMetaState;
+        event.mButtonState = arg0.mButtonState;
+        event.mFlags = arg0.mFlags;
+        event.mDeviceId = arg0.mDeviceId;
+        event.mSource = arg0.mSource;
+        event.mXOffset = arg0.mXOffset;
+        event.mYOffset = arg0.mYOffset;
+        event.mXPrecision = arg0.mXPrecision;
+        event.mYPrecision = arg0.mYPrecision;
+        event.mPointerCount = arg0.mPointerCount;
+        event.mPointerProperties = new PointerProperties[event.mPointerCount];
+        event.mPointerCoords = new PointerCoords[event.mPointerCount];
+        for (int i = 0; i < event.mPointerCount; i++) {
+            event.mPointerProperties[i] =
+                    new PointerProperties(arg0.mPointerProperties[i]);
+            event.mPointerCoords[i] = new PointerCoords(arg0.mPointerCoords[i]);
+        }
+        event.mHistory.addAll(arg0.mHistory);
+        return event;
     }
 
-    public static MotionEvent obtain(long arg0, long arg1, int arg2, float arg3, float arg4, float arg5, float arg6, int arg7, float arg8, float arg9, int arg10, int arg11) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(JJIFFFFIFFII)Landroid/view/MotionEvent;");
+    public static MotionEvent obtain(long arg0, long arg1, int arg2, float arg3,
+            float arg4, float arg5, float arg6, int arg7, float arg8, float arg9,
+            int arg10, int arg11) {
+        MotionEvent event = obtain(arg0, arg1, arg2, arg3, arg4, arg11);
+        event.mMetaState = arg7;
+        event.mXPrecision = arg8;
+        event.mYPrecision = arg9;
+        event.mDeviceId = arg10;
+        event.mPointerCoords[0].pressure = arg5;
+        event.mPointerCoords[0].size = arg6;
+        return event;
     }
 
-    public static MotionEvent obtain(long arg0, long arg1, int arg2, float arg3, float arg4, int arg5) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(JJIFFI)Landroid/view/MotionEvent;");
+    public static MotionEvent obtain(long arg0, long arg1, int arg2, float arg3,
+            float arg4, int arg5) {
+        PointerProperties properties = new PointerProperties();
+        properties.id = 0;
+        properties.toolType = TOOL_TYPE_FINGER;
+        PointerCoords coords = new PointerCoords();
+        coords.x = arg3;
+        coords.y = arg4;
+        coords.pressure = 1.0f;
+        coords.size = 1.0f;
+        // AOSP: the trailing int is the meta state; the event always has one
+        // pointer (id 0). Passing arg5 as the pointer count produced an
+        // empty coordinate array and crashed every later getX/getY.
+        return obtain(arg0, arg1, arg2, 1,
+                new PointerProperties[] {properties},
+                new PointerCoords[] {coords}, arg5, 0, 1.0f, 1.0f, 0, 0, 0, 0);
     }
 
-    public static MotionEvent obtain(long arg0, long arg1, int arg2, int arg3, MotionEvent.PointerProperties[] arg4, MotionEvent.PointerCoords[] arg5, int arg6, int arg7, float arg8, float arg9, int arg10, int arg11, int arg12, int arg13) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(JJII[Landroid/view/MotionEvent$PointerProperties;[Landroid/view/MotionEvent$PointerCoords;IIFFIIII)Landroid/view/MotionEvent;");
+    public static MotionEvent obtain(long arg0, long arg1, int arg2, int arg3,
+            MotionEvent.PointerProperties[] arg4, MotionEvent.PointerCoords[] arg5,
+            int arg6, int arg7, float arg8, float arg9, int arg10, int arg11,
+            int arg12, int arg13) {
+        return obtain(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8,
+                arg9, arg10, arg11, arg12, arg13, 0, 0);
     }
 
-    public static MotionEvent obtain(long arg0, long arg1, int arg2, int arg3, MotionEvent.PointerProperties[] arg4, MotionEvent.PointerCoords[] arg5, int arg6, int arg7, float arg8, float arg9, int arg10, int arg11, int arg12, int arg13, int arg14, int arg15) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(JJII[Landroid/view/MotionEvent$PointerProperties;[Landroid/view/MotionEvent$PointerCoords;IIFFIIIIII)Landroid/view/MotionEvent;");
+    public static MotionEvent obtain(long arg0, long arg1, int arg2, int arg3,
+            MotionEvent.PointerProperties[] arg4, MotionEvent.PointerCoords[] arg5,
+            int arg6, int arg7, float arg8, float arg9, int arg10, int arg11,
+            int arg12, int arg13, int arg14, int arg15) {
+        MotionEvent event = new MotionEvent();
+        event.mDownTime = arg0;
+        event.mEventTime = arg1;
+        event.mAction = arg2;
+        event.mPointerCount = arg3;
+        event.mPointerProperties = new PointerProperties[arg3];
+        event.mPointerCoords = new PointerCoords[arg3];
+        for (int i = 0; i < arg3; i++) {
+            event.mPointerProperties[i] = new PointerProperties(arg4[i]);
+            event.mPointerCoords[i] = new PointerCoords(arg5[i]);
+        }
+        event.mMetaState = arg6;
+        event.mButtonState = arg7;
+        event.mXPrecision = arg8;
+        event.mYPrecision = arg9;
+        event.mDeviceId = arg10;
+        event.mEdgeFlags = arg11;
+        event.mSource = arg12;
+        event.mFlags = arg13;
+        return event;
     }
 
-    public static MotionEvent obtain(long arg0, long arg1, int arg2, int arg3, float arg4, float arg5, float arg6, float arg7, int arg8, float arg9, float arg10, int arg11, int arg12) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(JJIIFFFFIFFII)Landroid/view/MotionEvent;");
+    public static MotionEvent obtain(long arg0, long arg1, int arg2, int arg3,
+            float arg4, float arg5, float arg6, float arg7, int arg8, float arg9,
+            float arg10, int arg11, int arg12) {
+        MotionEvent event = obtain(arg0, arg1, arg3, arg4, arg5, arg12);
+        event.mAction = arg2;
+        event.mMetaState = arg8;
+        event.mXPrecision = arg9;
+        event.mYPrecision = arg10;
+        event.mDeviceId = arg11;
+        event.mPointerCoords[0].pressure = arg6;
+        event.mPointerCoords[0].size = arg7;
+        return event;
     }
 
-    public static MotionEvent obtain(long arg0, long arg1, int arg2, int arg3, int[] arg4, MotionEvent.PointerCoords[] arg5, int arg6, float arg7, float arg8, int arg9, int arg10, int arg11, int arg12) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtain(JJII[I[Landroid/view/MotionEvent$PointerCoords;IFFIIII)Landroid/view/MotionEvent;");
+    public static MotionEvent obtain(long arg0, long arg1, int arg2, int arg3,
+            int[] arg4, MotionEvent.PointerCoords[] arg5, int arg6, float arg7,
+            float arg8, int arg9, int arg10, int arg11, int arg12) {
+        PointerProperties[] properties = new PointerProperties[arg3];
+        for (int i = 0; i < arg3; i++) {
+            properties[i] = new PointerProperties();
+            properties[i].id = arg4[i];
+            properties[i].toolType = TOOL_TYPE_FINGER;
+        }
+        return obtain(arg0, arg1, arg2, arg3, properties, arg5, arg6, 0, arg7,
+                arg8, arg9, arg10, arg11, arg12, 0, 0);
     }
 
     public static MotionEvent obtainNoHistory(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->obtainNoHistory(Landroid/view/MotionEvent;)Landroid/view/MotionEvent;");
+        MotionEvent event = obtain(arg0);
+        event.mHistory.clear();
+        return event;
     }
 
     public void offsetLocation(float arg0, float arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->offsetLocation(FF)V");
+        mXOffset += arg0;
+        mYOffset += arg1;
+        for (int i = 0; i < mPointerCount; i++) {
+            mPointerCoords[i].x += arg0;
+            mPointerCoords[i].y += arg1;
+        }
     }
 
     public void recycle() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->recycle()V");
+        // No pool on the desktop host; let GC reclaim the event.
     }
 
     public void setAction(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->setAction(I)V");
+        mAction = arg0;
     }
 
     public void setEdgeFlags(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->setEdgeFlags(I)V");
+        mEdgeFlags = arg0;
     }
 
     public void setLocation(float arg0, float arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->setLocation(FF)V");
+        float dx = arg0 - mPointerCoords[0].x;
+        float dy = arg1 - mPointerCoords[0].y;
+        for (int i = 0; i < mPointerCount; i++) {
+            mPointerCoords[i].x += dx;
+            mPointerCoords[i].y += dy;
+        }
     }
 
     public void setSource(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->setSource(I)V");
+        mSource = arg0;
     }
 
     public String toString() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->toString()Ljava/lang/String;");
+        return "MotionEvent { action=" + actionToString(mAction)
+                + ", x=" + getX() + ", y=" + getY() + " }";
     }
 
     public void transform(Matrix arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->transform(Landroid/graphics/Matrix;)V");
+        if (arg0 == null) {
+            return;
+        }
+        float[] point = new float[2];
+        for (int i = 0; i < mPointerCount; i++) {
+            point[0] = mPointerCoords[i].x;
+            point[1] = mPointerCoords[i].y;
+            arg0.mapPoints(point);
+            mPointerCoords[i].x = point[0];
+            mPointerCoords[i].y = point[1];
+        }
     }
 
     public void writeToParcel(Parcel arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent;->writeToParcel(Landroid/os/Parcel;I)V");
+        throw new UnsupportedOperationException(
+                "Tartine: MotionEvent parceling is not used on the desktop host");
     }
         public static class PointerCoords {
 
@@ -495,31 +829,97 @@ import android.os.Parcelable;
         public float y;
 
         public PointerCoords() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerCoords;-><init>()V");
         }
 
         public PointerCoords(MotionEvent.PointerCoords arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerCoords;-><init>(Landroid/view/MotionEvent$PointerCoords;)V");
+            copyFrom(arg0);
         }
 
         public void clear() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerCoords;->clear()V");
+            orientation = 0;
+            pressure = 0;
+            size = 0;
+            toolMajor = 0;
+            toolMinor = 0;
+            touchMajor = 0;
+            touchMinor = 0;
+            x = 0;
+            y = 0;
         }
 
         public void copyFrom(MotionEvent.PointerCoords arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerCoords;->copyFrom(Landroid/view/MotionEvent$PointerCoords;)V");
+            orientation = arg0.orientation;
+            pressure = arg0.pressure;
+            size = arg0.size;
+            toolMajor = arg0.toolMajor;
+            toolMinor = arg0.toolMinor;
+            touchMajor = arg0.touchMajor;
+            touchMinor = arg0.touchMinor;
+            x = arg0.x;
+            y = arg0.y;
         }
 
         public float getAxisValue(int arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerCoords;->getAxisValue(I)F");
+            switch (arg0) {
+                case AXIS_X:
+                    return x;
+                case AXIS_Y:
+                    return y;
+                case AXIS_PRESSURE:
+                    return pressure;
+                case AXIS_SIZE:
+                    return size;
+                case AXIS_TOUCH_MAJOR:
+                    return touchMajor;
+                case AXIS_TOUCH_MINOR:
+                    return touchMinor;
+                case AXIS_TOOL_MAJOR:
+                    return toolMajor;
+                case AXIS_TOOL_MINOR:
+                    return toolMinor;
+                case AXIS_ORIENTATION:
+                    return orientation;
+                default:
+                    return 0;
+            }
         }
 
         public boolean isResampled() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerCoords;->isResampled()Z");
+            return false;
         }
 
         public void setAxisValue(int arg0, float arg1) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerCoords;->setAxisValue(IF)V");
+            switch (arg0) {
+                case AXIS_X:
+                    x = arg1;
+                    break;
+                case AXIS_Y:
+                    y = arg1;
+                    break;
+                case AXIS_PRESSURE:
+                    pressure = arg1;
+                    break;
+                case AXIS_SIZE:
+                    size = arg1;
+                    break;
+                case AXIS_TOUCH_MAJOR:
+                    touchMajor = arg1;
+                    break;
+                case AXIS_TOUCH_MINOR:
+                    touchMinor = arg1;
+                    break;
+                case AXIS_TOOL_MAJOR:
+                    toolMajor = arg1;
+                    break;
+                case AXIS_TOOL_MINOR:
+                    toolMinor = arg1;
+                    break;
+                case AXIS_ORIENTATION:
+                    orientation = arg1;
+                    break;
+                default:
+                    break;
+            }
         }
         }
         public static class PointerProperties {
@@ -528,27 +928,34 @@ import android.os.Parcelable;
         public int toolType;
 
         public PointerProperties() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerProperties;-><init>()V");
         }
 
         public PointerProperties(MotionEvent.PointerProperties arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerProperties;-><init>(Landroid/view/MotionEvent$PointerProperties;)V");
+            copyFrom(arg0);
         }
 
         public void clear() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerProperties;->clear()V");
+            id = 0;
+            toolType = TOOL_TYPE_UNKNOWN;
         }
 
         public void copyFrom(MotionEvent.PointerProperties arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerProperties;->copyFrom(Landroid/view/MotionEvent$PointerProperties;)V");
+            id = arg0.id;
+            toolType = arg0.toolType;
         }
 
         public boolean equals(Object arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerProperties;->equals(Ljava/lang/Object;)Z");
+            if (this == arg0) {
+                return true;
+            }
+            if (!(arg0 instanceof PointerProperties other)) {
+                return false;
+            }
+            return id == other.id && toolType == other.toolType;
         }
 
         public int hashCode() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MotionEvent$PointerProperties;->hashCode()I");
+            return 31 * id + toolType;
         }
         }
     }

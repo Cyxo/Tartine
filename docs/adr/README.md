@@ -15,3 +15,4 @@ Format: [Michael Nygard's ADR template](https://cognitect.com/blog/2011/11/15/do
 11. [ADR-0011 — Logging through java.util.logging and android.util.Log](0011-logging-jul-and-logcat.md)
 12. [ADR-0012 - Wine trust model: run apps you trust, not a security boundary](0012-trust-model.md)
 13. [ADR-0013 - Permission/consent layer with desktop prompts](0013-permission-consent.md)
+14. [ADR-0014 - View attach, lifecycle and input dispatch path](0014-view-attach-lifecycle-input.md)
