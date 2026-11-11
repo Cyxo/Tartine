@@ -77,6 +77,27 @@ class MotionEventTest {
     }
 
     @Test
+    void scrollAxesRoundTripThroughPointerCoords() {
+        MotionEvent.PointerProperties properties =
+                new MotionEvent.PointerProperties();
+        properties.id = 0;
+        MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
+        coords.setAxisValue(MotionEvent.AXIS_HSCROLL, 3f);
+        coords.setAxisValue(MotionEvent.AXIS_VSCROLL, -5f);
+
+        MotionEvent event = MotionEvent.obtain(0L, 0L,
+                MotionEvent.ACTION_SCROLL, 1,
+                new MotionEvent.PointerProperties[] {properties},
+                new MotionEvent.PointerCoords[] {coords}, 0, 0, 1f, 1f, 0, 0,
+                InputDevice.SOURCE_MOUSE, 0);
+
+        assertEquals(3f, event.getAxisValue(MotionEvent.AXIS_HSCROLL));
+        assertEquals(-5f, event.getAxisValue(MotionEvent.AXIS_VSCROLL));
+        MotionEvent copy = MotionEvent.obtain(event);
+        assertEquals(-5f, copy.getAxisValue(MotionEvent.AXIS_VSCROLL));
+    }
+
+    @Test
     void isFromSourceMatchesEverySourceBit() {
         MotionEvent.PointerProperties properties =
                 new MotionEvent.PointerProperties();

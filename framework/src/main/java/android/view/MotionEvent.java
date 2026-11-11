@@ -828,6 +828,16 @@ import java.util.List;
         public float x;
         public float y;
 
+        /**
+         * Shell extension: {@code AXIS_HSCROLL}/{@code AXIS_VSCROLL} have no
+         * fields in AOSP's {@code PointerCoords} (the native event carries
+         * them), so a Java-built scroll event could not express a wheel
+         * delta. The host input path needs those two axes, so they get
+         * explicit fields here.
+         */
+        public float hscroll;
+        public float vscroll;
+
         public PointerCoords() {
         }
 
@@ -845,6 +855,8 @@ import java.util.List;
             touchMinor = 0;
             x = 0;
             y = 0;
+            hscroll = 0;
+            vscroll = 0;
         }
 
         public void copyFrom(MotionEvent.PointerCoords arg0) {
@@ -857,6 +869,8 @@ import java.util.List;
             touchMinor = arg0.touchMinor;
             x = arg0.x;
             y = arg0.y;
+            hscroll = arg0.hscroll;
+            vscroll = arg0.vscroll;
         }
 
         public float getAxisValue(int arg0) {
@@ -879,6 +893,10 @@ import java.util.List;
                     return toolMinor;
                 case AXIS_ORIENTATION:
                     return orientation;
+                case AXIS_HSCROLL:
+                    return hscroll;
+                case AXIS_VSCROLL:
+                    return vscroll;
                 default:
                     return 0;
             }
@@ -916,6 +934,12 @@ import java.util.List;
                     break;
                 case AXIS_ORIENTATION:
                     orientation = arg1;
+                    break;
+                case AXIS_HSCROLL:
+                    hscroll = arg1;
+                    break;
+                case AXIS_VSCROLL:
+                    vscroll = arg1;
                     break;
                 default:
                     break;
