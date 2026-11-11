@@ -1422,8 +1422,19 @@ import java.util.function.Consumer;
         arg0[1] = y;
     }
 
+    /**
+     * Ported from AOSP core/java/android/view/View.java#getMatrix: the
+     * view's local-to-parent transform, read from its RenderNode (AOSP caches
+     * it in mTransformationInfo; the shell recomposes it into a fresh Matrix
+     * per call). Callers must not modify the result - Compose's
+     * LayerMatrixCache copies it, matching the AOSP contract.
+     */
     public Matrix getMatrix() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMatrix()Landroid/graphics/Matrix;");
+        Matrix matrix = new Matrix();
+        if (!mRenderNode.hasIdentityMatrix()) {
+            mRenderNode.getMatrix(matrix);
+        }
+        return matrix;
     }
 
     public final int getMeasuredHeight() {
@@ -2740,8 +2751,11 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onScrollCaptureSearch(Landroid/graphics/Rect;Landroid/graphics/Point;Ljava/util/function/Consumer;)V");
     }
 
+    /**
+     * Ported from AOSP core/java/android/view/View.java#onScrollChanged: a
+     * no-op hook that subclasses override to react to a scroll.
+     */
     protected void onScrollChanged(int arg0, int arg1, int arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onScrollChanged(IIII)V");
     }
 
     protected boolean onSetAlpha(int arg0) {
@@ -3096,12 +3110,30 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->scheduleDrawable(Landroid/graphics/drawable/Drawable;Ljava/lang/Runnable;J)V");
     }
 
+    /**
+     * Ported from AOSP core/java/android/view/View.java#scrollBy: relative
+     * scroll by (dx, dy) over the current position.
+     */
     public void scrollBy(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->scrollBy(II)V");
+        scrollTo(mScrollX + arg0, mScrollY + arg1);
     }
 
+    /**
+     * Ported from AOSP core/java/android/view/View.java#scrollTo: offset the
+     * view's drawing origin and notify the scroll-changed hook. The AOSP
+     * invalidate/scrollbar legs (invalidateParentCaches, awakenScrollBars,
+     * postInvalidateOnAnimation) are unported invalidation machinery; the
+     * scroll offsets themselves are the observable state (input transforms,
+     * getLocationOnScreen and draw all read them).
+     */
     public void scrollTo(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->scrollTo(II)V");
+        if (mScrollX != arg0 || mScrollY != arg1) {
+            int oldX = mScrollX;
+            int oldY = mScrollY;
+            mScrollX = arg0;
+            mScrollY = arg1;
+            onScrollChanged(mScrollX, mScrollY, oldX, oldY);
+        }
     }
 
     public void sendAccessibilityEvent(int arg0) {
@@ -4094,24 +4126,40 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->toString()Ljava/lang/String;");
     }
 
+    /**
+     * Ported from AOSP core/java/android/view/View.java#transformMatrixToGlobal:
+     * recurse to the parent, subtract the parent's scroll, then add this
+     * view's position and pre-concat its own RenderNode transform, so the
+     * result maps local points into window coordinates. A non-View parent
+     * (the framework ViewRootImpl) ends the walk, matching the desktop window
+     * root having no extra transform.
+     */
     public void transformMatrixToGlobal(Matrix arg0) {
-        // AOSP View.transformMatrixToGlobal: walk up to the root premultiplying
-        // each level's position, so the result maps this view's local points
-        // into root/window coordinates. The desktop window root has no extra
-        // transform, so a non-View parent stops the walk.
+        if (mParent instanceof View parent) {
+            parent.transformMatrixToGlobal(arg0);
+            arg0.preTranslate(-parent.mScrollX, -parent.mScrollY);
+        }
         arg0.preTranslate(mLeft, mTop);
-        if (mParent instanceof View) {
-            ((View) mParent).transformMatrixToGlobal(arg0);
+        if (!hasIdentityMatrix()) {
+            arg0.preConcat(getMatrix());
         }
     }
 
+    /**
+     * Ported from AOSP core/java/android/view/View.java#transformMatrixToLocal:
+     * the inverse walk - undo this view's transform and position, then add
+     * the parent's scroll and recurse up.
+     */
     public void transformMatrixToLocal(Matrix arg0) {
-        // AOSP View.transformMatrixToLocal: the inverse walk, post-multiplying
-        // each level's negative position so the result maps window points back
-        // into this view's local coordinates.
+        if (!hasIdentityMatrix()) {
+            Matrix inverse = new Matrix();
+            mRenderNode.getInverseMatrix(inverse);
+            arg0.postConcat(inverse);
+        }
         arg0.postTranslate(-mLeft, -mTop);
-        if (mParent instanceof View) {
-            ((View) mParent).transformMatrixToLocal(arg0);
+        if (mParent instanceof View parent) {
+            arg0.postTranslate(parent.mScrollX, parent.mScrollY);
+            parent.transformMatrixToLocal(arg0);
         }
     }
 

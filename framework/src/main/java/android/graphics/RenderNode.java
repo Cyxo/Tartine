@@ -191,17 +191,48 @@ import tartine.gfx.GfxPicture;
         return mBottom - mTop;
     }
 
+    /**
+     * Ported from AOSP frameworks-base graphics/java/android/graphics/
+     * RenderNode.java + RenderProperties::updateMatrix: the 2D leg composes
+     * {@code T(translation) * T(pivot) * R(rotationZ) * S(scale) *
+     * T(-pivot)} (Skia pre-concat order). The 3D rotationX/rotationY leg is
+     * not modelled by the shell's 3x3 Matrix, so those components are
+     * ignored (identity-axis), which matches a view with no 3D rotation.
+     */
+    public void getMatrix(Matrix arg0) {
+        arg0.reset();
+        arg0.setTranslate(mTranslationX, mTranslationY);
+        arg0.preTranslate(mPivotX, mPivotY);
+        arg0.preRotate(mRotationZ);
+        arg0.preScale(mScaleX, mScaleY);
+        arg0.preTranslate(-mPivotX, -mPivotY);
+    }
+
+    /**
+     * Ported from AOSP {@code RenderNode#hasIdentityMatrix}: the transform is
+     * the identity when nothing but the default scale (1) is set.
+     */
+    public boolean hasIdentityMatrix() {
+        return mTranslationX == 0f && mTranslationY == 0f
+                && mRotationX == 0f && mRotationY == 0f && mRotationZ == 0f
+                && mScaleX == 1f && mScaleY == 1f;
+    }
+
+    /**
+     * Ported from AOSP {@code RenderNode#getInverseMatrix}: the inverse of
+     * {@link #getMatrix}. The shell writes the identity when the matrix is
+     * singular (AOSP leaves the argument untouched only for a degenerate
+     * transform, which the shell never builds).
+     */
     public void getInverseMatrix(Matrix arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->getInverseMatrix(Landroid/graphics/Matrix;)V");
+        Matrix forward = new Matrix();
+        getMatrix(forward);
+        forward.invert(arg0);
     }
 
     /** Ported from AOSP {@code RenderNode#getLeft} (native-backed there). */
     public int getLeft() {
         return mLeft;
-    }
-
-    public void getMatrix(Matrix arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->getMatrix(Landroid/graphics/Matrix;)V");
     }
 
     /** Ported from AOSP {@code RenderNode#getPivotX} (same file). */
@@ -283,10 +314,6 @@ import tartine.gfx.GfxPicture;
         // AOSP RenderNode.java:573-575 (nIsValid): a valid picture marks the
         // display list.
         return tartinePicture != null;
-    }
-
-    public boolean hasIdentityMatrix() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RenderNode;->hasIdentityMatrix()Z");
     }
 
     public boolean hasOverlappingRendering() {
