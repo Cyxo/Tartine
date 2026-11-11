@@ -104,10 +104,13 @@ import java.util.Arrays;
     }
 
     public float mapRadius(float arg0) {
+        // Skia SkMatrix::mapRadius: the geometric mean of the mapped radius
+        // vectors (vec[0] = (r,0), vec[1] = (0,r)).
         float[] vec = {arg0, 0f, 0f, arg0};
         mapVectors(vec);
-        return (float) ((Math.hypot(vec[0], vec[1])
-                + Math.hypot(vec[2], vec[3])) * 0.5);
+        double d0 = Math.hypot(vec[0], vec[1]);
+        double d1 = Math.hypot(vec[2], vec[3]);
+        return (float) Math.sqrt(d0 * d1);
     }
 
     public boolean mapRect(RectF arg0) {
@@ -150,8 +153,16 @@ import java.util.Arrays;
         }
     }
 
+    // The pre*/post* families mirror Skia's SkMatrix naming exactly, which is
+    // the opposite of the textbook convention:
+    //   preConcat(other)  -> this = this * other   (multiplyOnRight)
+    //   postConcat(other) -> this = other * this   (multiplyOnLeft)
+    // With column-vector point mapping (p' = M * [x y 1]), "pre" operations
+    // therefore act in the source space (applied before the existing
+    // transform) and "post" operations in the destination space.
+
     public boolean postConcat(Matrix arg0) {
-        postConcatValues(arg0.mValues);
+        multiplyOnLeft(arg0.mValues);
         return true;
     }
 
@@ -160,50 +171,46 @@ import java.util.Arrays;
     }
 
     public boolean postRotate(float arg0, float arg1, float arg2) {
-        float radians = (float) (arg0 * Math.PI / 180.0);
-        float sin = (float) Math.sin(radians);
-        float cos = (float) Math.cos(radians);
-        float[] rotate = {cos, -sin, arg1 - arg1 * cos + arg2 * sin,
-                sin, cos, arg2 - arg1 * sin - arg2 * cos, 0f, 0f, 1f};
-        postConcatValues(rotate);
+        multiplyOnLeft(rotationValues(arg0, arg1, arg2));
         return true;
     }
 
     public boolean postScale(float arg0, float arg1) {
-        float[] scale = {arg0, 0f, 0f, 0f, arg1, 0f, 0f, 0f, 1f};
-        postConcatValues(scale);
+        multiplyOnLeft(scaleValues(arg0, arg1, 0f, 0f));
         return true;
     }
 
     public boolean postScale(float arg0, float arg1, float arg2, float arg3) {
-        float[] scale = {arg0, 0f, arg2 - arg2 * arg0, 0f, arg1,
-                arg3 - arg3 * arg1, 0f, 0f, 1f};
-        postConcatValues(scale);
+        multiplyOnLeft(scaleValues(arg0, arg1, arg2, arg3));
         return true;
     }
 
     public boolean postSkew(float arg0, float arg1) {
         float[] skew = {1f, arg0, 0f, arg1, 1f, 0f, 0f, 0f, 1f};
-        postConcatValues(skew);
+        multiplyOnLeft(skew);
         return true;
     }
 
     public boolean postSkew(float arg0, float arg1, float arg2, float arg3) {
         float[] skew = {1f, arg0, -arg0 * arg3, arg1, 1f, -arg1 * arg2,
                 0f, 0f, 1f};
-        postConcatValues(skew);
+        multiplyOnLeft(skew);
         return true;
     }
 
+    /**
+     * Skia {@code SkMatrix::postTranslate}: {@code this = T(dx, dy) * this},
+     * the translation in the destination space (a plain add for an affine
+     * matrix).
+     */
     public boolean postTranslate(float arg0, float arg1) {
-        mValues[MTRANS_X] += mValues[MSCALE_X] * arg0 + mValues[MSKEW_X] * arg1;
-        mValues[MTRANS_Y] += mValues[MSKEW_Y] * arg0 + mValues[MSCALE_Y] * arg1;
-        mValues[MPERSP_2] += mValues[MPERSP_0] * arg0 + mValues[MPERSP_1] * arg1;
+        float[] translate = {1f, 0f, arg0, 0f, 1f, arg1, 0f, 0f, 1f};
+        multiplyOnLeft(translate);
         return true;
     }
 
     public boolean preConcat(Matrix arg0) {
-        preConcatValues(arg0.mValues);
+        multiplyOnRight(arg0.mValues);
         return true;
     }
 
@@ -212,49 +219,57 @@ import java.util.Arrays;
     }
 
     public boolean preRotate(float arg0, float arg1, float arg2) {
-        float radians = (float) (arg0 * Math.PI / 180.0);
-        float sin = (float) Math.sin(radians);
-        float cos = (float) Math.cos(radians);
-        float[] rotate = {cos, -sin, arg1 - arg1 * cos + arg2 * sin,
-                sin, cos, arg2 - arg1 * sin - arg2 * cos, 0f, 0f, 1f};
-        preConcatValues(rotate);
+        multiplyOnRight(rotationValues(arg0, arg1, arg2));
         return true;
     }
 
     public boolean preScale(float arg0, float arg1) {
-        float[] scale = {arg0, 0f, 0f, 0f, arg1, 0f, 0f, 0f, 1f};
-        preConcatValues(scale);
+        multiplyOnRight(scaleValues(arg0, arg1, 0f, 0f));
         return true;
     }
 
     public boolean preScale(float arg0, float arg1, float arg2, float arg3) {
-        float[] scale = {arg0, 0f, arg2 - arg2 * arg0, 0f, arg1,
-                arg3 - arg3 * arg1, 0f, 0f, 1f};
-        preConcatValues(scale);
+        multiplyOnRight(scaleValues(arg0, arg1, arg2, arg3));
         return true;
     }
 
     public boolean preSkew(float arg0, float arg1) {
         float[] skew = {1f, arg0, 0f, arg1, 1f, 0f, 0f, 0f, 1f};
-        preConcatValues(skew);
+        multiplyOnRight(skew);
         return true;
     }
 
     public boolean preSkew(float arg0, float arg1, float arg2, float arg3) {
         float[] skew = {1f, arg0, -arg0 * arg3, arg1, 1f, -arg1 * arg2,
                 0f, 0f, 1f};
-        preConcatValues(skew);
+        multiplyOnRight(skew);
         return true;
     }
 
+    /**
+     * Skia {@code SkMatrix::preTranslate}: {@code this = this * T(dx, dy)},
+     * the translation in the matrix's source space (weighted by the current
+     * scale/skew for an affine matrix).
+     */
     public boolean preTranslate(float arg0, float arg1) {
-        mValues[MSCALE_X] += arg0 * mValues[MPERSP_0];
-        mValues[MSKEW_X] += arg0 * mValues[MPERSP_1];
-        mValues[MTRANS_X] += arg0 * mValues[MPERSP_2];
-        mValues[MSKEW_Y] += arg1 * mValues[MPERSP_0];
-        mValues[MSCALE_Y] += arg1 * mValues[MPERSP_1];
-        mValues[MTRANS_Y] += arg1 * mValues[MPERSP_2];
+        float[] translate = {1f, 0f, arg0, 0f, 1f, arg1, 0f, 0f, 1f};
+        multiplyOnRight(translate);
         return true;
+    }
+
+    /** Row-major {@code R(degrees, px, py)} as Skia's setRotate builds it. */
+    private static float[] rotationValues(float degrees, float px, float py) {
+        float radians = (float) (degrees * Math.PI / 180.0);
+        float sin = (float) Math.sin(radians);
+        float cos = (float) Math.cos(radians);
+        return new float[] {cos, -sin, px - px * cos + py * sin,
+                sin, cos, py - px * sin - py * cos, 0f, 0f, 1f};
+    }
+
+    /** Row-major {@code S(sx, sy, px, py)} as Skia's setScale builds it. */
+    private static float[] scaleValues(float sx, float sy, float px, float py) {
+        return new float[] {sx, 0f, px - px * sx, 0f, sy, py - py * sy,
+                0f, 0f, 1f};
     }
 
     public boolean rectStaysRect() {
@@ -424,15 +439,21 @@ import java.util.Arrays;
         }
     }
 
-    /** {@code this = this * rhs}; a copy keeps an in-place product safe. */
-    private void postConcatValues(float[] rhs) {
+    /**
+     * {@code this = this * rhs} (Skia's {@code preConcat}); a copy keeps an
+     * in-place product safe.
+     */
+    private void multiplyOnRight(float[] rhs) {
         float[] out = new float[9];
         multiply(mValues, rhs, out);
         System.arraycopy(out, 0, mValues, 0, 9);
     }
 
-    /** {@code this = lhs * this}; a copy keeps an in-place product safe. */
-    private void preConcatValues(float[] lhs) {
+    /**
+     * {@code this = lhs * this} (Skia's {@code postConcat}); a copy keeps an
+     * in-place product safe.
+     */
+    private void multiplyOnLeft(float[] lhs) {
         float[] out = new float[9];
         multiply(lhs, mValues, out);
         System.arraycopy(out, 0, mValues, 0, 9);

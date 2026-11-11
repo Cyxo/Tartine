@@ -35,7 +35,7 @@ class MatrixTest {
     }
 
     @Test
-    void postTranslateAppliesBeforeTheExistingTransform() {
+    void postTranslateAddsInDestinationSpace() {
         Matrix matrix = new Matrix();
         matrix.setScale(2f, 2f);
         matrix.postTranslate(1f, 1f);
@@ -43,13 +43,13 @@ class MatrixTest {
 
         matrix.mapPoints(point);
 
-        // postTranslate acts in the pre-existing input space: (1,0) is
-        // shifted by (1,1) and only then scaled by 2 -> (4,2).
-        assertArrayEquals(new float[] {4f, 2f}, point, 0f);
+        // Skia postTranslate = T * M: scale first, then shift in the
+        // destination space -> (1,0) scales to (2,0) and shifts to (3,1).
+        assertArrayEquals(new float[] {3f, 1f}, point, 0f);
     }
 
     @Test
-    void preTranslateAppliesAfterTheExistingTransform() {
+    void preTranslateAddsInSourceSpace() {
         Matrix matrix = new Matrix();
         matrix.setScale(2f, 2f);
         matrix.preTranslate(1f, 1f);
@@ -57,7 +57,9 @@ class MatrixTest {
 
         matrix.mapPoints(point);
 
-        assertArrayEquals(new float[] {3f, 1f}, point, 0f);
+        // Skia preTranslate = M * T: shift first, then scale -> (2,1) scales
+        // to (4,2).
+        assertArrayEquals(new float[] {4f, 2f}, point, 0f);
     }
 
     @Test
