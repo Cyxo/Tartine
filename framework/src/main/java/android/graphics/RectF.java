@@ -12,19 +12,18 @@ import android.os.Parcelable;
     public float top;
 
     public RectF() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RectF;-><init>()V");
     }
 
     public RectF(Rect arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RectF;-><init>(Landroid/graphics/Rect;)V");
+        set(arg0);
     }
 
     public RectF(RectF arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RectF;-><init>(Landroid/graphics/RectF;)V");
+        set(arg0);
     }
 
     public RectF(float arg0, float arg1, float arg2, float arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RectF;-><init>(FFFF)V");
+        set(arg0, arg1, arg2, arg3);
     }
 
     public final float centerX() {
@@ -108,15 +107,24 @@ import android.os.Parcelable;
     }
 
     public void set(Rect arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RectF;->set(Landroid/graphics/Rect;)V");
+        left = arg0.left;
+        top = arg0.top;
+        right = arg0.right;
+        bottom = arg0.bottom;
     }
 
     public void set(RectF arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RectF;->set(Landroid/graphics/RectF;)V");
+        left = arg0.left;
+        top = arg0.top;
+        right = arg0.right;
+        bottom = arg0.bottom;
     }
 
     public void set(float arg0, float arg1, float arg2, float arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/RectF;->set(FFFF)V");
+        left = arg0;
+        top = arg1;
+        right = arg2;
+        bottom = arg3;
     }
 
     public void setEmpty() {

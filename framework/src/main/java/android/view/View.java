@@ -4095,11 +4095,24 @@ import java.util.function.Consumer;
     }
 
     public void transformMatrixToGlobal(Matrix arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->transformMatrixToGlobal(Landroid/graphics/Matrix;)V");
+        // AOSP View.transformMatrixToGlobal: walk up to the root premultiplying
+        // each level's position, so the result maps this view's local points
+        // into root/window coordinates. The desktop window root has no extra
+        // transform, so a non-View parent stops the walk.
+        arg0.preTranslate(mLeft, mTop);
+        if (mParent instanceof View) {
+            ((View) mParent).transformMatrixToGlobal(arg0);
+        }
     }
 
     public void transformMatrixToLocal(Matrix arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->transformMatrixToLocal(Landroid/graphics/Matrix;)V");
+        // AOSP View.transformMatrixToLocal: the inverse walk, post-multiplying
+        // each level's negative position so the result maps window points back
+        // into this view's local coordinates.
+        arg0.postTranslate(-mLeft, -mTop);
+        if (mParent instanceof View) {
+            ((View) mParent).transformMatrixToLocal(arg0);
+        }
     }
 
     public void unscheduleDrawable(Drawable arg0) {
