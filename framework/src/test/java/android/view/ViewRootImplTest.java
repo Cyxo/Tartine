@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import android.os.Looper;
+import android.view.animation.AnimationUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +30,7 @@ class ViewRootImplTest {
     }
 
     /** Counts the tree-side callbacks a real attach must fire. */
-    private static final class RecordingView extends View {
+    private static class RecordingView extends View {
         int attached;
         int detached;
         int focusChanges;
@@ -78,6 +79,23 @@ class ViewRootImplTest {
             setMeasuredDimension(
                     MeasureSpec.getSize(widthMeasureSpec),
                     MeasureSpec.getSize(heightMeasureSpec));
+        }
+    }
+
+    /**
+     * Compose's {@code AndroidComposeView} overrides {@code
+     * dispatchHoverEvent} and reads the animation clock from it; mirror that
+     * shape so a missing framework symbol fails this test instead of the
+     * first real hover.
+     */
+    private static final class HoverView extends RecordingView {
+        int hovers;
+
+        @Override
+        protected boolean dispatchHoverEvent(MotionEvent event) {
+            AnimationUtils.currentAnimationTimeMillis();
+            hovers++;
+            return true;
         }
     }
 
@@ -163,5 +181,36 @@ class ViewRootImplTest {
                 KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A, 0, 0, 0, 30, 0,
                 InputDevice.SOURCE_KEYBOARD)));
         assertEquals(1, child.keys);
+    }
+
+    @Test
+    void hoverEntersThroughTheWindowRoot() {
+        ViewRootImpl root = new ViewRootImpl(null);
+        DecorView decor = new DecorView(null);
+        HoverView child = new HoverView();
+        decor.addView(child);
+        root.setView(decor);
+        decor.measure(View.MeasureSpec.makeMeasureSpec(100,
+                View.MeasureSpec.MODE_EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(100,
+                View.MeasureSpec.MODE_EXACTLY));
+        decor.layout(0, 0, 100, 100);
+
+        MotionEvent.PointerProperties properties =
+                new MotionEvent.PointerProperties();
+        properties.id = 0;
+        MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
+        coords.x = 10;
+        coords.y = 10;
+        long now = 1_000L;
+        MotionEvent hover = MotionEvent.obtain(now, now,
+                MotionEvent.ACTION_HOVER_MOVE, 1,
+                new MotionEvent.PointerProperties[] {properties},
+                new MotionEvent.PointerCoords[] {coords}, 0, 0, 1.0f, 1.0f,
+                0, 0, InputDevice.SOURCE_MOUSE, 0);
+
+        assertTrue(root.dispatchHoverEvent(hover));
+        assertEquals(1, child.hovers);
+        hover.recycle();
     }
 }
