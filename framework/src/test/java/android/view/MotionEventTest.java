@@ -1,6 +1,8 @@
 package android.view;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -72,5 +74,26 @@ class MotionEventTest {
         assertEquals(MotionEvent.ACTION_DOWN, event.getActionMasked());
         assertEquals(MotionEvent.BUTTON_PRIMARY, event.getButtonState());
         assertEquals(0, event.getPointerId(0));
+    }
+
+    @Test
+    void isFromSourceMatchesEverySourceBit() {
+        MotionEvent.PointerProperties properties =
+                new MotionEvent.PointerProperties();
+        properties.id = 0;
+        properties.toolType = MotionEvent.TOOL_TYPE_MOUSE;
+        MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
+        MotionEvent event = MotionEvent.obtain(0L, 0L,
+                MotionEvent.ACTION_SCROLL, 1,
+                new MotionEvent.PointerProperties[] {properties},
+                new MotionEvent.PointerCoords[] {coords}, 0, 0, 1f, 1f, 0, 0,
+                InputDevice.SOURCE_MOUSE, 0);
+
+        assertTrue(
+                event.isFromSource(InputDevice.SOURCE_MOUSE));
+        assertTrue(
+                event.isFromSource(InputDevice.SOURCE_CLASS_POINTER));
+        assertFalse(
+                event.isFromSource(InputDevice.SOURCE_KEYBOARD));
     }
 }

@@ -30,7 +30,13 @@ import android.os.Parcelable;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputEvent;->getSource()I");
     }
 
-    public boolean isFromSource(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/InputEvent;->isFromSource(I)Z");
+    /**
+     * Ported from AOSP core/java/android/view/InputEvent.java#isFromSource:
+     * a source matches when all of its bits are present in this event's
+     * source, so {@code SOURCE_CLASS_POINTER} matches a mouse or touch event
+     * but not a keyboard one.
+     */
+    public final boolean isFromSource(int arg0) {
+        return (getSource() & arg0) == arg0;
     }
     }
