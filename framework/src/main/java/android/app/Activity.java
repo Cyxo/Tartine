@@ -2,9 +2,17 @@ package android.app;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.ActionMode;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.SearchEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowManager;
+import android.view.accessibility.AccessibilityEvent;
 import java.util.ArrayList;
 import tartine.fw.PermissionManager;
 
@@ -12,8 +20,13 @@ import tartine.fw.PermissionManager;
  * Tartine: minimal skeleton for the translation spike. The fw-gen closure
  * for the real class drags ActionBar/Fragment (whose nested types cannot
  * merge into existing parent files yet); grows when a wall demands members.
+ *
+ * <p>AOSP {@code Activity} implements {@link Window.Callback} and installs
+ * itself as the window's callback in {@code attach}; AppCompat's window
+ * wrapper delegates every callback method back to that activity, so the
+ * shell declares the same interface.
  */
-public class Activity extends ContextThemeWrapper {
+public class Activity extends ContextThemeWrapper implements Window.Callback {
 
     public Activity() {
     }
@@ -111,6 +124,23 @@ public class Activity extends ContextThemeWrapper {
     public void onContentChanged() {
     }
 
+    /**
+     * AOSP Activity.invalidateOptionsMenu: the activity's options menu needs
+     * rebuilding. androidx calls this through ComponentActivity's menu host;
+     * the desktop shell has no options-menu presenter yet, so the body is
+     * inert until a menu wall needs the dispatch.
+     */
+    public void invalidateOptionsMenu() {
+    }
+
+    /** AOSP Activity.openOptionsMenu: no options-menu presenter yet. */
+    public void openOptionsMenu() {
+    }
+
+    /** AOSP Activity.closeOptionsMenu: no options-menu presenter yet. */
+    public void closeOptionsMenu() {
+    }
+
     /** AOSP Activity.onAttachedToWindow default. */
     public void onAttachedToWindow() {
     }
@@ -118,6 +148,148 @@ public class Activity extends ContextThemeWrapper {
     /** AOSP Activity.onDetachedFromWindow default. */
     public void onDetachedFromWindow() {
     }
+
+    /**
+     * AOSP Activity.dispatchKeyEvent: the window's decor gets the first
+     * chance, then the activity's {@code onKeyDown}/{@code onKeyUp} run. The
+     * shell's decor consumes nothing yet, so the events fall through.
+     */
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (getWindow().superDispatchKeyEvent(event)) {
+            return true;
+        }
+        int keyCode = event.getKeyCode();
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            return onKeyDown(keyCode, event);
+        }
+        return onKeyUp(keyCode, event);
+    }
+
+    /** AOSP Activity.onKeyDown default: not handled by the activity. */
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        return false;
+    }
+
+    /** AOSP Activity.onKeyUp default: not handled by the activity. */
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        return false;
+    }
+
+    /** AOSP Activity.dispatchKeyShortcutEvent: no shortcut layer yet. */
+    public boolean dispatchKeyShortcutEvent(KeyEvent event) {
+        return false;
+    }
+
+    /** AOSP Activity.dispatchTouchEvent: the window decor dispatches. */
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        return getWindow().superDispatchTouchEvent(event);
+    }
+
+    /** AOSP Activity.dispatchTrackballEvent. */
+    public boolean dispatchTrackballEvent(MotionEvent event) {
+        return getWindow().superDispatchTrackballEvent(event);
+    }
+
+    /** AOSP Activity.dispatchGenericMotionEvent. */
+    public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        return getWindow().superDispatchGenericMotionEvent(event);
+    }
+
+    /** AOSP Activity.dispatchPopulateAccessibilityEvent. */
+    public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent event) {
+        return false;
+    }
+
+    /** AOSP Activity.onCreatePanelView default: no panel view. */
+    public View onCreatePanelView(int featureId) {
+        return null;
+    }
+
+    /** AOSP Activity.onCreatePanelMenu default: no menu created. */
+    public boolean onCreatePanelMenu(int featureId, Menu menu) {
+        return false;
+    }
+
+    /** AOSP Activity.onPreparePanel default: nothing to prepare. */
+    public boolean onPreparePanel(int featureId, View view, Menu menu) {
+        return false;
+    }
+
+    /** AOSP Activity.onMenuOpened default: the menu is accepted. */
+    public boolean onMenuOpened(int featureId, Menu menu) {
+        return false;
+    }
+
+    /** AOSP Activity.onMenuItemSelected default: nothing selected. */
+    public boolean onMenuItemSelected(int featureId, MenuItem item) {
+        return false;
+    }
+
+    /** AOSP Activity.onWindowAttributesChanged default. */
+    public void onWindowAttributesChanged(WindowManager.LayoutParams attrs) {
+    }
+
+    /** AOSP Activity.onPanelClosed default. */
+    public void onPanelClosed(int featureId, Menu menu) {
+    }
+
+    /** AOSP Activity.onSearchRequested default: not handled. */
+    public boolean onSearchRequested() {
+        return false;
+    }
+
+    /** AOSP Activity.onSearchRequested(SearchEvent) default: not handled. */
+    public boolean onSearchRequested(SearchEvent searchEvent) {
+        return false;
+    }
+
+    /** AOSP Activity.onWindowStartingActionMode default: no action mode. */
+    public ActionMode onWindowStartingActionMode(ActionMode.Callback callback) {
+        return null;
+    }
+
+    /** AOSP Activity.onWindowStartingActionMode(Callback, int) default. */
+    public ActionMode onWindowStartingActionMode(ActionMode.Callback callback, int type) {
+        return null;
+    }
+
+    /** AOSP Activity.onActionModeStarted default. */
+    public void onActionModeStarted(ActionMode mode) {
+    }
+
+    /** AOSP Activity.onActionModeFinished default. */
+    public void onActionModeFinished(ActionMode mode) {
+    }
+
+    /**
+     * AOSP Activity.getComponentName (line 1367): the activity's own
+     * component. The device seeds {@code mComponent} in attach; the shell
+     * derives it from the running class, which is the same component the host
+     * launched.
+     */
+    public android.content.ComponentName getComponentName() {
+        if (mComponent == null) {
+            mComponent = new android.content.ComponentName(this, getClass());
+        }
+        return mComponent;
+    }
+
+    private android.content.ComponentName mComponent;
+
+    /**
+     * AOSP Activity.getOnBackInvokedDispatcher (line 4052): the per-activity
+     * dispatcher AOSP seeds from the window. The shell lazily owns one; it
+     * carries the registrations guests make and answers a back dispatch only
+     * when the host sends one.
+     */
+    public android.window.OnBackInvokedDispatcher getOnBackInvokedDispatcher() {
+        if (mOnBackInvokedDispatcher == null) {
+            mOnBackInvokedDispatcher = new android.window.WindowOnBackInvokedDispatcher();
+        }
+        return mOnBackInvokedDispatcher;
+    }
+
+    private android.window.WindowOnBackInvokedDispatcher mOnBackInvokedDispatcher;
 
     /**
      * AOSP Activity.performCreate: pre-created callbacks, onCreate, created
@@ -458,6 +630,9 @@ public class Activity extends ContextThemeWrapper {
     public Window getWindow() {
         if (mWindow == null) {
             mWindow = new Window(this);
+            // AOSP Activity.attach installs the activity as the window's
+            // callback (mWindow.setCallback(this)); AppCompat wraps it.
+            mWindow.setCallback(this);
         }
         return mWindow;
     }

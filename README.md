@@ -32,7 +32,7 @@ The native window, events and rendering pipeline are handled by GLFW, and requir
 
 ## Features
 
-Tartine can currently parse **pure-Kotlin/Java APKs** (no XML layouts or images) and keep their Compose UI animating in a live render loop.
+Tartine can currently parse **pure-Kotlin/Java APKs** and keep their Compose UI animating in a live render loop. Compiled resources and XML layouts are parsed and inflated up to the first unported widget class; rendering an XML layout still awaits the platform widget toolkit.
 
 <p align="center">
   <img src="./docs/assets/current.gif" />
@@ -48,13 +48,14 @@ Here's a list of currently working features:
 - **Full 60 Hz render loop for pure-Compose apps, configurable via `display.refresh_hz` (1–1000, fractional OK)** - `tartine.graphics.RenderLoop` drains host events, pumps `Choreographer`, redraws only when a callback ran or a view is dirty, reuses one readback buffer, and presents the newest frame through `HostDisplay`; idle screens cost a blit. The guest viewport is the window framebuffer and guest density is the window content scale (a 2x window keeps the same dp layout), with live window resize replacing the surface and forcing a redraw at the new size. A failed draw is logged once and stops the loop (the partial raster is not presented), instead of retrying a wedged traversal such as Compose's "layout state is not idle" on every VSync; `display.debug_frames` adds per-frame hash/painted stats. *Limitation: pacing is the guest render loop only; the window still presents at the desktop monitor's VSync (`glfwSwapInterval(1)`); if a frame's draw+readback costs more than the period, the effective rate is capped by draw speed. A resize does not deliver an activity configuration-change callback; the running app keeps its startup `Configuration` until relaunch.*
 - **Real desktop window rendering via Skia on LWJGL** - `Canvas` ops rasterized with Skija, read back as ARGB, uploaded as a GL texture and letterboxed per frame; window stays hidden until the first posted frame, then timeout starts. The window opens at 480x960 by default and its actual framebuffer size/resizes drive the guest viewport. *Limitation: software raster path only; no GLES/Vulkan-native UI or `ANativeWindow` path yet (architectural seam exists, not wired).*
 - **App icon extraction** - manifest `android:icon`/`roundIcon` resolves through `resources.arsc`; bitmaps decode through the renderer; adaptive/vector icons convert to SVG (aapt2 inline gradients and group transforms) rendered at 16/32/48 px; unconverted sources log an `icon:` gap and fall back to the OS default.
+- **Compiled resources and XML layout inflation** - `resources.arsc` bags/styles/themes and AXML layouts decode on the host and cross into the framework through `tartine.fw.AppResourceHost` (ADR-0015); `Resources`/`Theme`/`TypedArray` handle value and styled-attribute lookup, `LayoutInflater` builds the view tree (factories, parent-generated `LayoutParams`, `onFinishInflate`), and `Activity` carries the manifest theme via `ContextThemeWrapper`. *Limitation: the platform `android.widget` toolkit is not ported, so inflation stops at the first unported element with `RuntimeException("Unable to inflate view: <name>")` (for `apks/app-debug-layout-xml.apk`: `android/widget/LinearLayout`), and `Resources.getDrawable` is still a named gap (no drawable/selector XML loader).*
 - **Host display threading + event channel** - one host UI thread owns GLFW/GL and a separate guest looper thread; input/resize/focus/close events publish on the display thread, buffer until registration, replay, and post to the guest `Looper` `MessageQueue`; `postFrame` returns `false` on close. `tartine.HostInput` maps GLFW keys/modifiers/buttons/cursor into `KeyEvent`/`MotionEvent` and delivers them through `ViewRootImpl` into the normal `View` dispatch chain (touch targets, focus, key and hover), including window-focus changes ([ADR-0014](docs/adr/0014-view-attach-lifecycle-input.md)).
 - **Virtual filesystem** - guest paths (`/data/data/<pkg>`, `/sdcard`) map under the Tartine root; default private card with seeded Download/Documents/Pictures/DCIM/Music/Movies; optional shared host mount (`sdcard.mount`, read-only by default, validated for safety); `TARTINE_SDCARD` env fallback.
 - **Permissions and consent** - manifest `<uses-permission>` parsing, `Context.checkSelfPermission`, `Activity.requestPermissions`/`onRequestPermissionsResult`, and `PackageManager` permission queries backed by `tartine.fw.PermissionManager`; dangerous permissions prompt through a desktop dialog in `gui` and decisions persist under `<root>/permissions/<package>.properties`; shared `/sdcard` reads/writes need a granted storage permission at the file bridge. Consent, not enforcement ([ADR-0013](docs/adr/0013-permission-consent.md), [ADR-0012](docs/adr/0012-trust-model.md)).
 - **Guest sandbox** - restricted classloader + SDK-free runtime; a ported File bridge and `Class.forName` helper; translation-time gating of blocked members; sandbox policy surfaced as `tartine.tx.SandboxPolicy`. A compatibility/accident boundary, not a security sandbox ([ADR-0012](docs/adr/0012-trust-model.md)).
 - **Host configuration** (`config.properties`): per-color overrides, font families, `theme.mode` (`auto`/`light`/`dark`), sdcard mount + read-only flag, `display.refresh_hz`, `display.debug_frames`; host theme auto-probes the Windows registry, macOS `defaults`, GNOME/KDE.
 
-*Global limits: no XML layouts or non-icon images; no ARM `.so` native libraries; no IPC/intents; no IME/`InputConnection` text editing (key events and a raw typed-text fallback only); no window-insets model; graphics are software-raster only for now and do not yet apply view transforms/alpha/layers/shadows.*
+*Global limits: XML layouts parse and inflate but cannot render yet (no `android.widget` toolkit or drawable/selector XML loader); no images beyond the app icon; no ARM `.so` native libraries; no IPC/intents; no IME/`InputConnection` text editing (key events and a raw typed-text fallback only); no window-insets model; graphics are software-raster only for now and do not yet apply view transforms/alpha/layers/shadows.*
 
 ### Upcoming features
 
@@ -112,8 +113,8 @@ skeletons are excluded from all three.
 
 ```sh
 mise run apk [apks/app-debug.apk]              # manifest, code, and library summary
-mise run run [apks/app-debug.apk]              # translated headless probe: onCreate until the first gap
-mise run gui [apks/app-debug.apk] [timeout]    # translated GUI probe: show the activity window (Compose frames animate)
+mise run run [apks/app-debug.apk] [activity]   # translated headless probe: onCreate until the first gap
+mise run gui [apks/app-debug.apk] [timeout] [activity]  # translated GUI probe: show the activity window
 mise run coverage                               # estimate framework method coverage (logic vs. auto-generated stubs)
 mise run coverage:api                           # exact Android API coverage: implemented android.jar methods vs the compiled framework
 mise run dump <file.dex>                       # instruction dump of one dex file
@@ -124,6 +125,13 @@ mise run strict [apks/app-debug.apk] [filter]  # translator-gap gate over every 
 `run` and `gui` execute the launcher as real JVM bytecode through the
 translation loader (`tartine.tx`), the only VM. `txrun`/`txgui`/`txdump`
 remain as aliases for `run`/`gui`/`dump`.
+
+Both accept `--activity <name>` (`-a`) to launch an activity other than the
+manifest launcher; the mise tasks take it as the trailing `[activity]`
+argument. Non-exported probe activities are reached this way when the real
+launcher trips an unrelated wall first (the fixture launcher builds an
+`OkHttpClient` field, denied by the network sandbox, so its
+`DebugConsoleActivity` is the useful target for layout work).
 
 `refs` is the probe-wall companion: run it when `run`/`gui` stops at a
 `Tartine: not implemented` gap, or before porting a framework family. It
@@ -252,6 +260,14 @@ Environment knobs:
   read-only default.
 - `TARTINE_FONT_FAMILIES` - same family list as `font.families` (the
   config file wins).
+
+Command-line flags (host-side, anywhere on the command line):
+
+- `--log-level <level>` / `-l <level>` - same levels as `log.level`; the
+  flag takes precedence over the config key.
+- `--activity <name>` / `-a <name>` - launch this activity class instead of
+  the manifest launcher (`run`/`gui`, including the `txrun`/`txgui`
+  aliases).
 
 Every configuration knob is documented here in the same commit that lands it.
 

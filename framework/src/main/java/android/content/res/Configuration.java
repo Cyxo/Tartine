@@ -109,6 +109,14 @@ import java.util.Locale;
     public int uiMode;
 
     /**
+     * AOSP's modern locale carrier ({@code locale} is the deprecated
+     * first-locale mirror). The shell keeps it here so
+     * {@code getLocales()} answers a non-null list for AppCompat's
+     * configuration merge.
+     */
+    private LocaleList mLocaleList;
+
+    /**
      * AOSP Configuration ctor runs {@code unset()} (= setToDefaults(), then
      * {@code fontScale = 0}), so a bare {@code new Configuration()} is the
      * "completely undefined" merge delta: every modeled field stays zero.
@@ -135,6 +143,7 @@ import java.util.Locale;
         keyboard = arg0.keyboard;
         keyboardHidden = arg0.keyboardHidden;
         locale = arg0.locale;
+        mLocaleList = arg0.mLocaleList;
         mcc = arg0.mcc;
         mnc = arg0.mnc;
         navigation = arg0.navigation;
@@ -184,7 +193,13 @@ import java.util.Locale;
     }
 
     public LocaleList getLocales() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->getLocales()Landroid/os/LocaleList;");
+        if (mLocaleList != null) {
+            return mLocaleList;
+        }
+        // The deprecated single-locale field is the fallback for a config
+        // built through public fields; a fully undefined config answers the
+        // host's default list rather than null.
+        return locale != null ? new LocaleList(locale) : LocaleList.getDefault();
     }
 
     public int hashCode() {
@@ -272,12 +287,15 @@ import java.util.Locale;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->setLayoutDirection(Ljava/util/Locale;)V");
     }
 
+    /** AOSP Configuration.setLocale: sets both the list and the legacy mirror. */
     public void setLocale(Locale arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->setLocale(Ljava/util/Locale;)V");
+        setLocales(arg0 == null ? null : new LocaleList(arg0));
     }
 
+    /** AOSP Configuration.setLocales: list wins, legacy locale mirrors first. */
     public void setLocales(LocaleList arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->setLocales(Landroid/os/LocaleList;)V");
+        mLocaleList = arg0;
+        locale = (arg0 == null || arg0.isEmpty()) ? null : arg0.get(0);
     }
 
     public void setTo(Configuration arg0) {
@@ -296,6 +314,7 @@ import java.util.Locale;
         keyboard = arg0.keyboard;
         keyboardHidden = arg0.keyboardHidden;
         locale = arg0.locale;
+        mLocaleList = arg0.mLocaleList;
         mcc = arg0.mcc;
         mnc = arg0.mnc;
         navigation = arg0.navigation;

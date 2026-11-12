@@ -97,7 +97,6 @@ import java.util.Set;
     public ActivityInfo.WindowLayout windowLayout;
 
     public ActivityInfo() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ActivityInfo;-><init>()V");
     }
 
     public ActivityInfo(ActivityInfo arg0) {

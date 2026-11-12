@@ -29,11 +29,14 @@ import tartine.apk.Abi;
 import tartine.apk.ApkReader;
 import tartine.apk.AppIcon;
 import tartine.apk.BinaryXml;
+import tartine.apk.ResourceHostAdapter;
+import tartine.apk.ResourceTable;
 import tartine.config.HostConfig;
 import tartine.dex.Dex;
 import tartine.dex.DexClass;
 import tartine.dex.DexDump;
 import tartine.dex.DexSet;
+import tartine.fw.AppResources;
 import tartine.fw.DisplayConfig;
 import tartine.fw.PermissionManager;
 import tartine.fw.PermissionPrompt;
@@ -75,12 +78,16 @@ import tartine.tx.TxTranslator;
 public final class Main {
     private static final Logger log = Logger.getLogger(Main.class.getName());
 
+    /** Optional {@code --activity <name>} override, resolved in txLaunch. */
+    private static String activityOverrideName;
+
     private Main() {
     }
 
     /** Runs the CLI subcommand named by the first argument. */
     public static void main(String[] args) {
         final String cliLogLevel = parseLogLevelArg(args);
+        final String activityOverride = parseActivityArg(args);
         java.util.List<String> kept = new java.util.ArrayList<>();
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -88,12 +95,17 @@ public final class Main {
                 i++; // skip the value already captured
             } else if (arg.startsWith("--log-level=")) {
                 // value attached; already captured
+            } else if (arg.equals("--activity") || arg.equals("-a")) {
+                i++; // skip the value already captured
+            } else if (arg.startsWith("--activity=")) {
+                // value attached; already captured
             } else {
                 kept.add(arg);
             }
         }
         String[] parsed = kept.toArray(new String[0]);
         args = parsed;
+        activityOverrideName = activityOverride;
         if (args.length == 0) {
             usage();
             return;
@@ -184,8 +196,24 @@ public final class Main {
         return null;
     }
 
+    /** Pulls {@code --activity/-a} from argv before command dispatch. */
+    private static String parseActivityArg(String[] args) {
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i];
+            if (arg.equals("--activity") || arg.equals("-a")) {
+                if (i + 1 < args.length) {
+                    return args[i + 1];
+                }
+            } else if (arg.startsWith("--activity=")) {
+                return arg.substring("--activity=".length());
+            }
+        }
+        return null;
+    }
+
     private static void usage() {
-        printResult("Usage: tartine.Main (apk|run|gui|strict|dump|refs) <file>");
+        printResult("Usage: tartine.Main (apk|run|gui|strict|dump|refs) <file>"
+                + " [--activity <name>]");
     }
 
     /**
@@ -380,7 +408,11 @@ public final class Main {
         BinaryXml.Element manifest = reader.manifest();
         String packageName = manifest.attr("package");
         configurePermissions(reader, packageName);
+        installAppResources(reader);
         String activity = findLauncher(manifest);
+        if (activityOverrideName != null) {
+            activity = activityOverrideName;
+        }
         if (activity == null) {
             log.info("no launcher activity in manifest");
             return new TxApp(reader, null, null);
@@ -413,7 +445,88 @@ public final class Main {
             printRootFrames(e);
             return new TxApp(reader, loader, null);
         }
+        applyManifestTheme(manifest, receiver, activity);
         return new TxApp(reader, loader, receiver);
+    }
+
+    /**
+     * Parses the APK's {@code resources.arsc} and installs it as the
+     * framework's app-resource host, so {@code Resources}, themes and the
+     * layout inflater resolve the installed app's values. Absent or
+     * unreadable tables clear the seam (framework-only behaviour).
+     */
+    private static void installAppResources(ApkReader reader) {
+        try {
+            if (!reader.hasResources()) {
+                AppResources.install(null);
+                return;
+            }
+            ResourceTable table =
+                    ResourceTable.parse(reader.readEntry("resources.arsc"));
+            ResourceTable.DeviceConfig device = new ResourceTable.DeviceConfig(
+                    DisplayConfig.densityDpi(), reader.targetSdk());
+            AppResources.install(new ResourceHostAdapter(table, reader, device));
+            log.info("resources: " + table.packageName()
+                    + " (density " + device.densityDpi() + ")");
+        } catch (IOException e) {
+            log.info("resources.arsc: " + sanitize(e));
+            AppResources.install(null);
+        }
+    }
+
+    /**
+     * Applies the manifest's theme reference (activity first, then
+     * application) to the receiver before {@code onCreate}, matching how
+     * ActivityThread seeds an activity's base theme from the manifest.
+     */
+    private static void applyManifestTheme(BinaryXml.Element manifest,
+            Activity receiver, String activityName) {
+        int theme = themeReference(manifest, activityName);
+        if (theme == 0) {
+            theme = themeReference(manifest, null);
+        }
+        if (theme != 0) {
+            receiver.setTheme(theme);
+            log.info("theme: 0x" + Integer.toHexString(theme));
+        }
+    }
+
+    /** The {@code android:theme} reference on {@code <activity name=...>}
+     * or, with a null name, on {@code <application>}; 0 when absent. */
+    private static int themeReference(BinaryXml.Element manifest, String activityName) {
+        if (activityName == null) {
+            BinaryXml.Element application = manifest.child("application");
+            return application == null ? 0 : themeFrom(application);
+        }
+        for (BinaryXml.Element child : manifest.children) {
+            if (!"activity".equals(child.name)
+                    && !"activity-alias".equals(child.name)) {
+                continue;
+            }
+            String declared = child.attr("name");
+            if (matchesActivity(activityName, declared)) {
+                int theme = themeFrom(child);
+                if (theme != 0) {
+                    return theme;
+                }
+            }
+        }
+        return 0;
+    }
+
+    /** A manifest activity name may be relative; match both spellings. */
+    private static boolean matchesActivity(String qualified, String declared) {
+        if (declared == null) {
+            return false;
+        }
+        return declared.equals(qualified)
+                || (declared.startsWith(".") && qualified.endsWith(declared))
+                || qualified.endsWith("." + declared);
+    }
+
+    private static int themeFrom(BinaryXml.Element element) {
+        BinaryXml.Attribute theme = element.typed("theme");
+        return theme == null ? 0 : theme.data;
     }
 
     /**

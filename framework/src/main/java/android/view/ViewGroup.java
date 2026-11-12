@@ -743,12 +743,20 @@ import java.util.function.Consumer;
                 ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
+    /**
+     * AOSP ViewGroup.generateLayoutParams(AttributeSet) is abstract; the
+     * shell falls back to the container's default params so inflation of a
+     * plain container whose override has not ported still builds a tree.
+     * Containers that override it (guest widgets like ConstraintLayout, or
+     * ported platform containers) win.
+     */
     public ViewGroup.LayoutParams generateLayoutParams(AttributeSet arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->generateLayoutParams(Landroid/util/AttributeSet;)Landroid/view/ViewGroup$LayoutParams;");
+        return generateDefaultLayoutParams();
     }
 
+    /** AOSP ViewGroup.generateLayoutParams(LayoutParams): copies by default. */
     protected ViewGroup.LayoutParams generateLayoutParams(ViewGroup.LayoutParams arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->generateLayoutParams(Landroid/view/ViewGroup$LayoutParams;)Landroid/view/ViewGroup$LayoutParams;");
+        return new ViewGroup.LayoutParams(arg0);
     }
 
     public CharSequence getAccessibilityClassName() {
@@ -1333,12 +1341,21 @@ import java.util.function.Consumer;
         public int width;
 
         public LayoutParams(Context arg0, AttributeSet arg1) {
-            // Real Android inflates width/height from XML attrs; nothing
-            // reads XML layouts yet, so the default pair applies until
-            // attribute parsing ports.
-            width = WRAP_CONTENT;
-            height = WRAP_CONTENT;
+            // AOSP LayoutParams(Context, AttributeSet) reads layout_width /
+            // layout_height through the theme; both accept an enum
+            // (match_parent/wrap_content) or a dimension.
+            android.content.res.TypedArray a = arg0.obtainStyledAttributes(arg1,
+                    new int[] {ATTR_LAYOUT_WIDTH, ATTR_LAYOUT_HEIGHT});
+            try {
+                setBaseAttributes(a, 0, 1);
+            } finally {
+                a.close();
+            }
         }
+
+        /** android.R.attr.layout_width / layout_height, packed ids. */
+        static final int ATTR_LAYOUT_WIDTH = 0x010100F4;
+        static final int ATTR_LAYOUT_HEIGHT = 0x010100F5;
 
         public LayoutParams(ViewGroup.LayoutParams arg0) {
             width = arg0.width;
@@ -1354,8 +1371,13 @@ import java.util.function.Consumer;
             throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup$LayoutParams;->resolveLayoutDirection(I)V");
         }
 
+        /**
+         * Ported from AOSP ViewGroup.LayoutParams.setBaseAttributes: pulls
+         * the width/height dimension values out of the styled array.
+         */
         protected void setBaseAttributes(TypedArray arg0, int arg1, int arg2) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup$LayoutParams;->setBaseAttributes(Landroid/content/res/TypedArray;II)V");
+            width = arg0.getLayoutDimension(arg1, "layout_width");
+            height = arg0.getLayoutDimension(arg2, "layout_height");
         }
 
             /** Scratch mirror constructor (SkeletonGen). */

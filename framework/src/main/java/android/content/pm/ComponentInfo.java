@@ -15,7 +15,6 @@ import android.util.Printer;
     public String splitName;
 
     public ComponentInfo() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ComponentInfo;-><init>()V");
     }
 
     public ComponentInfo(ComponentInfo arg0) {

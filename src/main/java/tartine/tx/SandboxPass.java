@@ -241,6 +241,19 @@ final class SandboxPass extends ClassVisitor {
                     classLoaderCall(delegate, name, descriptor);
                     return;
                 }
+                if (owner.equals("android/content/Context")
+                        && name.equals("getClassLoader")
+                        && descriptor.equals("()Ljava/lang/ClassLoader;")) {
+                    // The framework Context is host code, so its own
+                    // getClassLoader would answer the host loader. Drop the
+                    // receiver and answer the calling guest class's sandboxed
+                    // loader instead.
+                    delegate.visitInsn(Opcodes.POP);
+                    staticCall(delegate, "tartine/guest/GuestSandbox",
+                            "classLoader",
+                            "()Ltartine/guest/GuestClassLoader;");
+                    return;
+                }
                 if (owner.equals("java/lang/Runtime")) {
                     runtimeCall(delegate, name, descriptor);
                     return;

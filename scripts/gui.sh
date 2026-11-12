@@ -29,6 +29,7 @@ esac
 JARS=$(tr '\n' "$SEP" < "$CP_FILE" | sed "s/${SEP}*$//")
 TARGET="${usage_apk:-${1:-apks/app-debug.apk}}"
 TIMEOUT="${usage_timeout:-${2:-0}}"
+ACTIVITY="${usage_activity:-}"
 
 # JVM flags (mise-pinned JDK, needs >= 23 for the last one): grant LWJGL native
 # access (JEP 472); steer LWJGL to its jdk.internal.misc memory backend instead
@@ -44,6 +45,10 @@ case "$(uname -s)" in
     Darwin*) JVM_FLAGS+=(-XstartOnFirstThread) ;;
 esac
 
+EXTRA=()
+if [ -n "$ACTIVITY" ]; then
+    EXTRA=(--activity "$ACTIVITY")
+fi
 exec java \
     "${JVM_FLAGS[@]}" \
-    -cp "${CLASSES}${SEP}${JARS}" tartine.Main gui "$TARGET" "$TIMEOUT"
+    -cp "${CLASSES}${SEP}${JARS}" tartine.Main gui "$TARGET" "$TIMEOUT" "${EXTRA[@]}"

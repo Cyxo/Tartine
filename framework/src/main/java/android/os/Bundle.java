@@ -161,12 +161,28 @@ import java.util.List;
         }
     }
 
-    public <T> T getParcelable(String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getParcelable(Ljava/lang/String;)Landroid/os/Parcelable;");
+    /**
+     * AOSP Bundle.getParcelable(key): the type variable is Parcelable-bounded,
+     * so the erased descriptor returns {@code Landroid/os/Parcelable;}. Guest
+     * call sites compiled against the SDK link that exact signature.
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends Parcelable> T getParcelable(String arg0) {
+        Object value = mMap.get(arg0);
+        try {
+            return (T) value;
+        } catch (ClassCastException e) {
+            return null;
+        }
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T getParcelable(String arg0, Class<T> arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getParcelable(Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;");
+        Object value = mMap.get(arg0);
+        if (value == null || (arg1 != null && !arg1.isInstance(value))) {
+            return null;
+        }
+        return (T) value;
     }
 
     public Parcelable[] getParcelableArray(String arg0) {
@@ -201,8 +217,18 @@ import java.util.List;
         }
     }
 
-    public <T> T getSerializable(String arg0, Class<T> arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/os/Bundle;->getSerializable(Ljava/lang/String;Ljava/lang/Class;)Ljava/io/Serializable;");
+    /** AOSP getSerializable(key, clazz): Serializable-bounded type variable. */
+    @SuppressWarnings("unchecked")
+    public <T extends Serializable> T getSerializable(String arg0, Class<T> arg1) {
+        Object value = mMap.get(arg0);
+        if (value == null || (arg1 != null && !arg1.isInstance(value))) {
+            return null;
+        }
+        try {
+            return (T) value;
+        } catch (ClassCastException e) {
+            return null;
+        }
     }
 
     public short getShort(String arg0) {

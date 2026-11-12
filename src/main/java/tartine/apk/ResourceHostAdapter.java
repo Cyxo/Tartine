@@ -113,6 +113,27 @@ public final class ResourceHostAdapter implements AppResourceHost {
     }
 
     @Override
+    public List<ResValue> arrayValues(int resId) {
+        if (resId <= 0) {
+            return null;
+        }
+        ResourceTable.Bag bag = table.bag(resId & 0xFFFFFFFFL, device);
+        if (bag == null) {
+            return null;
+        }
+        List<ResourceTable.MapValue> maps = new ArrayList<>(bag.values());
+        // Array items are keyed by their index; plurals by their quantity
+        // constant. Sorting by key restores document order for arrays and
+        // groups plurals predictably.
+        maps.sort((left, right) -> Integer.compare(left.key(), right.key()));
+        List<ResValue> values = new ArrayList<>(maps.size());
+        for (ResourceTable.MapValue map : maps) {
+            values.add(materialize(map.dataType(), map.data(), map.string(), resId));
+        }
+        return values;
+    }
+
+    @Override
     public XmlNode xml(int resId) {
         ResourceTable.ConfValue conf = table.value(resId & 0xFFFFFFFFL, device);
         if (conf == null || conf.dataType() != TYPE_STRING) {

@@ -9,8 +9,14 @@ import android.os.Bundle;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import tartine.fw.AppResourceHost;
+import tartine.fw.AppResources;
 import tartine.fw.DisplayConfig;
+import tartine.fw.ResValue;
 import tartine.fw.SystemColors;
 import tartine.fw.ThemeMode;
 
@@ -35,55 +41,411 @@ import tartine.fw.ThemeMode;
     }
 
     public XmlResourceParser getAnimation(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getAnimation(I)Landroid/content/res/XmlResourceParser;");
+        return getXml(arg0);
     }
 
+    /**
+     * The shell answers its own {@link AssetManager}, reading APK assets
+     * through the installed {@link AppResourceHost} (a real device routes this
+     * through its native asset manager).
+     */
     public final AssetManager getAssets() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getAssets()Landroid/content/res/AssetManager;");
+        return mAssets;
     }
+
+    private final AssetManager mAssets = new AssetManager();
 
     public static int getAttributeSetSourceResId(AttributeSet arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getAttributeSetSourceResId(Landroid/util/AttributeSet;)I");
+        return 0;
     }
 
     public boolean getBoolean(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getBoolean(I)Z");
+        ResValue value = hostValue(arg0);
+        if (value != null && value.type == TypedValue.TYPE_INT_BOOLEAN) {
+            return value.data != 0;
+        }
+        throw gap("getBoolean(I)Z", arg0);
     }
 
     /**
      * Ported behavior. AOSP: {@code Resources.getColor(int)} returns
-     * {@code getColorStateList(id).getDefaultColor()} (frameworks/base
-     * core/java/android/content/res/Resources.java). Only android-package
-     * system color ids carry a baseline here (see {@link SystemColors});
-     * app-package resources would need the guest {@code resources.arsc},
-     * still an explicit gap.
+     * {@code getColorStateList(id).getDefaultColor()}
+     * (frameworks/base core/java/android/content/res/Resources.java). The
+     * installed app's table answers first; the generated android-package
+     * baseline ({@link SystemColors}) backs system color ids.
      */
     public int getColor(int arg0) {
-        Integer value = SystemColors.get(arg0);
-        if (value == null) {
-            throw new UnsupportedOperationException(
-                    "Tartine: not implemented: Landroid/content/res/Resources;->getColor(I)I"
-                            + " (id=" + Integer.toHexString(arg0) + ")");
+        ResValue value = hostValue(arg0);
+        if (value != null) {
+            if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
+                    && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
+                return value.data;
+            }
+            if (value.type == TypedValue.TYPE_STRING && value.string != null) {
+                return parseColor(value.string);
+            }
+            return value.data;
         }
-        return value;
+        Integer fallback = SystemColors.get(arg0);
+        if (fallback == null) {
+            throw gap("getColor(I)I", arg0);
+        }
+        return fallback;
     }
 
     /**
-     * Ported behavior. AOSP: {@code Resources.getColor(int, Theme)} resolves
-     * through theme-based getValue; the system palette entries below are not
-     * theme-resolved (no RRO/theme overlay runs here), so both overloads read
-     * the same baseline table. App-package resources remain a gap.
+     * AOSP: {@code Resources.getColor(int, Theme)} resolves through theme-based
+     * getValue; the installed table already resolves references, so both
+     * overloads read the same value.
      */
     public int getColor(int arg0, Resources.Theme arg1) {
         return getColor(arg0);
     }
 
     public ColorStateList getColorStateList(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getColorStateList(I)Landroid/content/res/ColorStateList;");
+        return ColorStateList.valueOf(getColor(arg0));
     }
 
     public ColorStateList getColorStateList(int arg0, Resources.Theme arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getColorStateList(ILandroid/content/res/Resources$Theme;)Landroid/content/res/ColorStateList;");
+        return getColorStateList(arg0);
+    }
+
+    /** Parses {@code #rgb}/{@code #argb}/{@code #rrggbb}/{@code #aarrggbb}. */
+    private static int parseColor(String text) {
+        if (text == null || text.isEmpty() || text.charAt(0) != '#') {
+            return 0;
+        }
+        try {
+            String digits = text.substring(1);
+            if (digits.length() == 3 || digits.length() == 4) {
+                StringBuilder expanded = new StringBuilder();
+                for (int i = 0; i < digits.length(); i++) {
+                    expanded.append(digits.charAt(i)).append(digits.charAt(i));
+                }
+                digits = expanded.toString();
+            }
+            if (digits.length() == 6) {
+                digits = "ff" + digits;
+            }
+            return (int) Long.parseLong(digits, 16);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * AOSP Resources.getDisplayMetrics (Resources.java:2238-2240) returns the
+     * ResourcesImpl metrics; the desktop shell has no ResourcesImpl, so the
+     * host window's metrics are owned here.
+     */
+    private static DisplayMetrics probeDisplayMetrics(
+            float fontScale) {
+        DisplayMetrics metrics = new DisplayMetrics();
+        metrics.widthPixels = DisplayConfig.widthPixels();
+        metrics.heightPixels = DisplayConfig.heightPixels();
+        metrics.density = DisplayConfig.density();
+        metrics.densityDpi = DisplayConfig.densityDpi();
+        metrics.scaledDensity = metrics.density * fontScale;
+        metrics.xdpi = metrics.densityDpi;
+        metrics.ydpi = metrics.densityDpi;
+        return metrics;
+    }
+
+    public Configuration getConfiguration() {
+        return mConfiguration;
+    }
+
+    public float getDimension(int arg0) {
+        ResValue value = requireValue("getDimension(I)F", arg0);
+        return TypedValue.complexToDimension(value.data, mMetrics);
+    }
+
+    public int getDimensionPixelOffset(int arg0) {
+        ResValue value = requireValue("getDimensionPixelOffset(I)I", arg0);
+        return TypedValue.complexToDimensionPixelOffset(value.data, mMetrics);
+    }
+
+    public int getDimensionPixelSize(int arg0) {
+        ResValue value = requireValue("getDimensionPixelSize(I)I", arg0);
+        return TypedValue.complexToDimensionPixelSize(value.data, mMetrics);
+    }
+
+    public DisplayMetrics getDisplayMetrics() {
+        return mMetrics;
+    }
+
+    public Drawable getDrawable(int arg0) {
+        throw gap("getDrawable(I)Landroid/graphics/drawable/Drawable;", arg0);
+    }
+
+    public Drawable getDrawable(int arg0, Resources.Theme arg1) {
+        return getDrawable(arg0);
+    }
+
+    public Drawable getDrawableForDensity(int arg0, int arg1) {
+        return getDrawable(arg0);
+    }
+
+    public Drawable getDrawableForDensity(int arg0, int arg1, Resources.Theme arg2) {
+        return getDrawable(arg0);
+    }
+
+    public float getFloat(int arg0) {
+        ResValue value = requireValue("getFloat(I)F", arg0);
+        return Float.intBitsToFloat(value.data);
+    }
+
+    public Typeface getFont(int arg0) {
+        throw gap("getFont(I)Landroid/graphics/Typeface;", arg0);
+    }
+
+    public float getFraction(int arg0, int arg1, int arg2) {
+        ResValue value = requireValue("getFraction(III)F", arg0);
+        return TypedValue.complexToFraction(value.data, arg1, arg2);
+    }
+
+    public int getIdentifier(String arg0, String arg1, String arg2) {
+        AppResourceHost host = AppResources.host();
+        return host == null ? 0 : host.identifier(arg0, arg1, arg2);
+    }
+
+    public int[] getIntArray(int arg0) {
+        List<ResValue> values = hostArray(arg0);
+        if (values == null) {
+            throw gap("getIntArray(I)[I", arg0);
+        }
+        int[] result = new int[values.size()];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = values.get(i).data;
+        }
+        return result;
+    }
+
+    public int getInteger(int arg0) {
+        return (int) getFloat(arg0);
+    }
+
+    public XmlResourceParser getLayout(int arg0) {
+        return getXml(arg0);
+    }
+
+    public Movie getMovie(int arg0) {
+        throw gap("getMovie(I)Landroid/graphics/Movie;", arg0);
+    }
+
+    public String getQuantityString(int arg0, int arg1) {
+        return getString(arg0);
+    }
+
+    public String getQuantityString(int arg0, int arg1, Object[] arg2) {
+        return getString(arg0, arg2);
+    }
+
+    public CharSequence getQuantityText(int arg0, int arg1) {
+        return getText(arg0);
+    }
+
+    public String getResourceEntryName(int arg0) {
+        return resourceNamePart(arg0, 2);
+    }
+
+    public String getResourceName(int arg0) {
+        String pkg = resourceNamePart(arg0, 0);
+        String type = resourceNamePart(arg0, 1);
+        String entry = resourceNamePart(arg0, 2);
+        if (pkg == null || type == null || entry == null) {
+            throw gap("getResourceName(I)Ljava/lang/String;", arg0);
+        }
+        return pkg + ":" + type + "/" + entry;
+    }
+
+    public String getResourcePackageName(int arg0) {
+        return resourceNamePart(arg0, 0);
+    }
+
+    public String getResourceTypeName(int arg0) {
+        return resourceNamePart(arg0, 1);
+    }
+
+    private String resourceNamePart(int arg0, int part) {
+        AppResourceHost host = AppResources.host();
+        if (host == null) {
+            throw gap("getResourceName(I)Ljava/lang/String;", arg0);
+        }
+        return host.resourceName(arg0, part);
+    }
+
+    public String getString(int arg0) {
+        ResValue value = requireValue("getString(I)Ljava/lang/String;", arg0);
+        if (value.string != null) {
+            return value.string;
+        }
+        String text = TypedValue.coerceToString(value.type, value.data);
+        return text == null ? "" : text;
+    }
+
+    public String getString(int arg0, Object[] arg1) {
+        return String.format(getString(arg0), arg1);
+    }
+
+    public String[] getStringArray(int arg0) {
+        List<ResValue> values = hostArray(arg0);
+        if (values == null) {
+            throw gap("getStringArray(I)[Ljava/lang/String;", arg0);
+        }
+        String[] result = new String[values.size()];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = values.get(i).string;
+        }
+        return result;
+    }
+
+    public static Resources getSystem() {
+        throw new UnsupportedOperationException(
+                "Tartine: not implemented: Resources.getSystem");
+    }
+
+    public CharSequence getText(int arg0) {
+        return getString(arg0);
+    }
+
+    public CharSequence getText(int arg0, CharSequence arg1) {
+        ResValue value = hostValue(arg0);
+        if (value == null) {
+            return arg1;
+        }
+        return value.string != null ? value.string
+                : TypedValue.coerceToString(value.type, value.data);
+    }
+
+    public CharSequence[] getTextArray(int arg0) {
+        return getStringArray(arg0);
+    }
+
+    public void getValue(int arg0, TypedValue arg1, boolean arg2) {
+        ResValue value = requireValue("getValue(ILandroid/util/TypedValue;Z)V", arg0);
+        arg1.type = value.type;
+        arg1.data = value.data;
+        arg1.string = value.string;
+        arg1.resourceId = value.sourceId;
+    }
+
+    public void getValue(String arg0, TypedValue arg1, boolean arg2) {
+        throw new UnsupportedOperationException(
+                "Tartine: not implemented: Resources.getValue(String, TypedValue, boolean)");
+    }
+
+    public void getValueForDensity(int arg0, int arg1, TypedValue arg2, boolean arg3) {
+        getValue(arg0, arg2, arg3);
+    }
+
+    /**
+     * AOSP Resources.getXml reads the compiled XML resource as a pull parser;
+     * the host decodes the app's AXML into {@code tartine.fw.XmlNode} and the
+     * shell replays it.
+     */
+    public XmlResourceParser getXml(int arg0) {
+        AppResourceHost host = AppResources.host();
+        if (host != null) {
+            tartine.fw.XmlNode node = host.xml(arg0);
+            if (node != null) {
+                return new XmlResourceParserImpl(node);
+            }
+        }
+        throw gap("getXml(I)Landroid/content/res/XmlResourceParser;", arg0);
+    }
+
+    public final Resources.Theme newTheme() {
+        return new Theme(this);
+    }
+
+    public TypedArray obtainAttributes(AttributeSet arg0, int[] arg1) {
+        return Theme.readAttributes(this, null, arg0, arg1);
+    }
+
+    public TypedArray obtainTypedArray(int arg0) {
+        List<ResValue> values = hostArray(arg0);
+        if (values == null) {
+            throw gap("obtainTypedArray(I)Landroid/content/res/TypedArray;", arg0);
+        }
+        ResValue[] array = values.toArray(new ResValue[0]);
+        return new TypedArray(this, null, new int[array.length], array);
+    }
+
+    public InputStream openRawResource(int arg0) {
+        return openRawResource(arg0, new TypedValue());
+    }
+
+    public InputStream openRawResource(int arg0, TypedValue arg1) {
+        ResValue value = hostValue(arg0);
+        AppResourceHost host = AppResources.host();
+        if (value != null && value.type == TypedValue.TYPE_STRING
+                && value.string != null && host != null) {
+            byte[] bytes = host.asset(value.string);
+            if (bytes != null) {
+                arg1.type = value.type;
+                arg1.data = value.data;
+                arg1.string = value.string;
+                return new ByteArrayInputStream(bytes);
+            }
+        }
+        throw gap("openRawResource(I)Ljava/io/InputStream;", arg0);
+    }
+
+    public AssetFileDescriptor openRawResourceFd(int arg0) {
+        throw gap("openRawResourceFd(I)Landroid/content/res/AssetFileDescriptor;", arg0);
+    }
+
+    public void parseBundleExtra(String arg0, AttributeSet arg1, Bundle arg2) {
+        throw new UnsupportedOperationException(
+                "Tartine: not implemented: Resources.parseBundleExtra");
+    }
+
+    public void parseBundleExtras(XmlResourceParser arg0, Bundle arg1) {
+        throw new UnsupportedOperationException(
+                "Tartine: not implemented: Resources.parseBundleExtras");
+    }
+
+    public static void registerResourcePaths(String arg0, ApplicationInfo arg1) {
+        throw new UnsupportedOperationException(
+                "Tartine: not implemented: Resources.registerResourcePaths");
+    }
+
+    public void removeLoaders(ResourcesLoader[] arg0) {
+        throw new UnsupportedOperationException(
+                "Tartine: not implemented: Resources.removeLoaders");
+    }
+
+    public void updateConfiguration(Configuration arg0, DisplayMetrics arg1) {
+        throw new UnsupportedOperationException(
+                "Tartine: not implemented: Resources.updateConfiguration");
+    }
+
+    // ---- host value helpers ---------------------------------------------
+
+    private ResValue hostValue(int resId) {
+        AppResourceHost host = AppResources.host();
+        return host == null ? null : host.value(resId);
+    }
+
+    private ResValue requireValue(String signature, int resId) {
+        ResValue value = hostValue(resId);
+        if (value == null) {
+            throw gap(signature, resId);
+        }
+        return value;
+    }
+
+    /** Bag values (arrays, plurals) as an ordered value list, or null. */
+    private List<ResValue> hostArray(int resId) {
+        AppResourceHost host = AppResources.host();
+        return host == null ? null : host.arrayValues(resId);
+    }
+
+    private UnsupportedOperationException gap(String signature, int resId) {
+        return new UnsupportedOperationException(
+                "Tartine: not implemented: Landroid/content/res/Resources;->"
+                        + signature + " (id=" + Integer.toHexString(resId) + ")");
     }
 
     /**
@@ -103,6 +465,15 @@ import tartine.fw.ThemeMode;
      */
     private final Configuration mConfiguration =
             probeConfiguration();
+
+    /**
+     * AOSP Resources.getDisplayMetrics (Resources.java:2238-2240) returns the
+     * ResourcesImpl metrics; the desktop shell has no ResourcesImpl, so the
+     * host window's metrics are owned here. Declared after {@code mConfiguration}
+     * because the metrics scale with the configuration's font scale.
+     */
+    private final DisplayMetrics mMetrics =
+            probeDisplayMetrics(mConfiguration.fontScale);
 
     /**
      * Desktop device configuration built from the host window metrics.
@@ -154,285 +525,196 @@ import tartine.fw.ThemeMode;
         return config;
     }
 
-    /**
-     * AOSP Resources.getDisplayMetrics (Resources.java:2238-2240) returns the
-     * ResourcesImpl metrics; the desktop shell has no ResourcesImpl, so the
-     * host window's metrics are owned here.
-     */
-    private final DisplayMetrics mMetrics =
-            probeDisplayMetrics(mConfiguration.fontScale);
-
-    /** AOSP DisplayMetrics field contract: {@code scaledDensity} is the
-     *  density multiplied by the configuration font scale (the legacy
-     *  text-size path; Compose reads density + fontScale directly). */
-    private static DisplayMetrics probeDisplayMetrics(
-            float fontScale) {
-        DisplayMetrics metrics = new DisplayMetrics();
-        metrics.widthPixels = DisplayConfig.widthPixels();
-        metrics.heightPixels = DisplayConfig.heightPixels();
-        metrics.density = DisplayConfig.density();
-        metrics.densityDpi = DisplayConfig.densityDpi();
-        metrics.scaledDensity = metrics.density * fontScale;
-        metrics.xdpi = metrics.densityDpi;
-        metrics.ydpi = metrics.densityDpi;
-        return metrics;
-    }
-
-    public Configuration getConfiguration() {
-        return mConfiguration;
-    }
-
-    public float getDimension(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDimension(I)F");
-    }
-
-    public int getDimensionPixelOffset(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDimensionPixelOffset(I)I");
-    }
-
-    public int getDimensionPixelSize(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDimensionPixelSize(I)I");
-    }
-
-    public DisplayMetrics getDisplayMetrics() {
-        return mMetrics;
-    }
-
-    public Drawable getDrawable(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDrawable(I)Landroid/graphics/drawable/Drawable;");
-    }
-
-    public Drawable getDrawable(int arg0, Resources.Theme arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDrawable(ILandroid/content/res/Resources$Theme;)Landroid/graphics/drawable/Drawable;");
-    }
-
-    public Drawable getDrawableForDensity(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDrawableForDensity(II)Landroid/graphics/drawable/Drawable;");
-    }
-
-    public Drawable getDrawableForDensity(int arg0, int arg1, Resources.Theme arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getDrawableForDensity(IILandroid/content/res/Resources$Theme;)Landroid/graphics/drawable/Drawable;");
-    }
-
-    public float getFloat(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getFloat(I)F");
-    }
-
-    public Typeface getFont(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getFont(I)Landroid/graphics/Typeface;");
-    }
-
-    public float getFraction(int arg0, int arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getFraction(III)F");
-    }
-
-    public int getIdentifier(String arg0, String arg1, String arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getIdentifier(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I");
-    }
-
-    public int[] getIntArray(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getIntArray(I)[I");
-    }
-
-    public int getInteger(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getInteger(I)I");
-    }
-
-    public XmlResourceParser getLayout(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getLayout(I)Landroid/content/res/XmlResourceParser;");
-    }
-
-    public Movie getMovie(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getMovie(I)Landroid/graphics/Movie;");
-    }
-
-    public String getQuantityString(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getQuantityString(II)Ljava/lang/String;");
-    }
-
-    public String getQuantityString(int arg0, int arg1, Object[] arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getQuantityString(II[Ljava/lang/Object;)Ljava/lang/String;");
-    }
-
-    public CharSequence getQuantityText(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getQuantityText(II)Ljava/lang/CharSequence;");
-    }
-
-    public String getResourceEntryName(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getResourceEntryName(I)Ljava/lang/String;");
-    }
-
-    public String getResourceName(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getResourceName(I)Ljava/lang/String;");
-    }
-
-    public String getResourcePackageName(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getResourcePackageName(I)Ljava/lang/String;");
-    }
-
-    public String getResourceTypeName(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getResourceTypeName(I)Ljava/lang/String;");
-    }
-
-    public String getString(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getString(I)Ljava/lang/String;");
-    }
-
-    public String getString(int arg0, Object[] arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getString(I[Ljava/lang/Object;)Ljava/lang/String;");
-    }
-
-    public String[] getStringArray(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getStringArray(I)[Ljava/lang/String;");
-    }
-
-    public static Resources getSystem() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getSystem()Landroid/content/res/Resources;");
-    }
-
-    public CharSequence getText(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getText(I)Ljava/lang/CharSequence;");
-    }
-
-    public CharSequence getText(int arg0, CharSequence arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getText(ILjava/lang/CharSequence;)Ljava/lang/CharSequence;");
-    }
-
-    public CharSequence[] getTextArray(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getTextArray(I)[Ljava/lang/CharSequence;");
-    }
-
-    public void getValue(int arg0, TypedValue arg1, boolean arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getValue(ILandroid/util/TypedValue;Z)V");
-    }
-
-    public void getValue(String arg0, TypedValue arg1, boolean arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getValue(Ljava/lang/String;Landroid/util/TypedValue;Z)V");
-    }
-
-    public void getValueForDensity(int arg0, int arg1, TypedValue arg2, boolean arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getValueForDensity(IILandroid/util/TypedValue;Z)V");
-    }
-
-    public XmlResourceParser getXml(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->getXml(I)Landroid/content/res/XmlResourceParser;");
-    }
-
-    public final Resources.Theme newTheme() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->newTheme()Landroid/content/res/Resources$Theme;");
-    }
-
-    public TypedArray obtainAttributes(AttributeSet arg0, int[] arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->obtainAttributes(Landroid/util/AttributeSet;[I)Landroid/content/res/TypedArray;");
-    }
-
-    public TypedArray obtainTypedArray(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->obtainTypedArray(I)Landroid/content/res/TypedArray;");
-    }
-
-    public InputStream openRawResource(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->openRawResource(I)Ljava/io/InputStream;");
-    }
-
-    public InputStream openRawResource(int arg0, TypedValue arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->openRawResource(ILandroid/util/TypedValue;)Ljava/io/InputStream;");
-    }
-
-    public AssetFileDescriptor openRawResourceFd(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->openRawResourceFd(I)Landroid/content/res/AssetFileDescriptor;");
-    }
-
-    public void parseBundleExtra(String arg0, AttributeSet arg1, Bundle arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->parseBundleExtra(Ljava/lang/String;Landroid/util/AttributeSet;Landroid/os/Bundle;)V");
-    }
-
-    public void parseBundleExtras(XmlResourceParser arg0, Bundle arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->parseBundleExtras(Landroid/content/res/XmlResourceParser;Landroid/os/Bundle;)V");
-    }
-
-    public static void registerResourcePaths(String arg0, ApplicationInfo arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->registerResourcePaths(Ljava/lang/String;Landroid/content/pm/ApplicationInfo;)V");
-    }
-
-    public void removeLoaders(ResourcesLoader[] arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->removeLoaders([Landroid/content/res/loader/ResourcesLoader;)V");
-    }
-
-    public void updateConfiguration(Configuration arg0, DisplayMetrics arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources;->updateConfiguration(Landroid/content/res/Configuration;Landroid/util/DisplayMetrics;)V");
-    }
-
-        /** Scratch mirror constructor (SkeletonGen). */
+    /** Scratch mirror constructor (SkeletonGen). */
         public Resources() {
         }
+
+        /**
+         * Tartine: a resource theme, mirroring AOSP
+         * {@code android.content.res.Resources.Theme}. Holds the ordered list
+         * of style/theme resource ids applied to it (later ones win) and
+         * resolves attributes through the installed {@link AppResourceHost}.
+         */
         public static class Theme {
 
+        private final Resources mResources;
+        private final List<Integer> mStyles = new ArrayList<>();
+
+        Theme(Resources resources) {
+            mResources = resources;
+        }
+
+        /** Scratch mirror constructor (SkeletonGen). */
+        public Theme() {
+            this(null);
+        }
+
         public void applyStyle(int arg0, boolean arg1) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->applyStyle(IZ)V");
+            if (arg0 == 0) {
+                return;
+            }
+            if (arg1 || !mStyles.contains(arg0)) {
+                mStyles.add(arg0);
+            }
         }
 
         public void dump(int arg0, String arg1, String arg2) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->dump(ILjava/lang/String;Ljava/lang/String;)V");
+            // diagnostic only; nothing to dump in the shell
         }
 
         public boolean equals(Object arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->equals(Ljava/lang/Object;)Z");
+            return this == arg0;
         }
 
         public int[] getAttributeResolutionStack(int arg0, int arg1, int arg2) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->getAttributeResolutionStack(III)[I");
+            return new int[0];
         }
 
         public int getChangingConfigurations() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->getChangingConfigurations()I");
+            return 0;
         }
 
         public Drawable getDrawable(int arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->getDrawable(I)Landroid/graphics/drawable/Drawable;");
+            return mResources == null ? null : mResources.getDrawable(arg0, this);
         }
 
         public int getExplicitStyle(AttributeSet arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->getExplicitStyle(Landroid/util/AttributeSet;)I");
+            return 0;
         }
 
         public Resources getResources() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->getResources()Landroid/content/res/Resources;");
+            return mResources;
         }
 
         public int hashCode() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->hashCode()I");
+            return System.identityHashCode(this);
         }
 
         public TypedArray obtainStyledAttributes(AttributeSet arg0, int[] arg1, int arg2, int arg3) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->obtainStyledAttributes(Landroid/util/AttributeSet;[III)Landroid/content/res/TypedArray;");
+            return readAttributes(mResources, this, arg0, arg1, arg2, arg3);
         }
 
         public TypedArray obtainStyledAttributes(int arg0, int[] arg1) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->obtainStyledAttributes(I[I)Landroid/content/res/TypedArray;");
+            return readAttributes(mResources, this, null, arg1, 0, arg0);
         }
 
         public TypedArray obtainStyledAttributes(int[] arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->obtainStyledAttributes([I)Landroid/content/res/TypedArray;");
+            return readAttributes(mResources, this, null, arg0, 0, 0);
         }
 
         public void rebase() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->rebase()V");
+            // no resource overlays in the shell
         }
 
         public boolean resolveAttribute(int arg0, TypedValue arg1, boolean arg2) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->resolveAttribute(ILandroid/util/TypedValue;Z)Z");
+            ResValue value = resolve(arg0);
+            if (value == null) {
+                return false;
+            }
+            arg1.type = value.type;
+            arg1.data = value.data;
+            arg1.string = value.string;
+            arg1.resourceId = value.sourceId;
+            return true;
+        }
+
+        private ResValue resolve(int attrId) {
+            AppResourceHost host = AppResources.host();
+            return host == null ? null : host.attribute(attrId, styleIds());
+        }
+
+        private int[] styleIds() {
+            int[] ids = new int[mStyles.size()];
+            for (int i = 0; i < ids.length; i++) {
+                ids[i] = mStyles.get(i);
+            }
+            return ids;
+        }
+
+        void addStyles(List<Integer> extra) {
+            mStyles.addAll(extra);
+        }
+
+        List<Integer> styles() {
+            return mStyles;
         }
 
         public void setTo(Resources.Theme arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->setTo(Landroid/content/res/Resources$Theme;)V");
+            mStyles.clear();
+            mStyles.addAll(arg0.mStyles);
         }
 
         public String toString() {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Resources$Theme;->toString()Ljava/lang/String;");
+            return "Theme{styles=" + mStyles + "}";
         }
 
-            /** Scratch mirror constructor (SkeletonGen). */
-            public Theme() {
+        // ---- styled-attribute reading -----------------------------------
+
+        /** Non-themed {@code Resources.obtainAttributes}: XML attributes only. */
+        static TypedArray readAttributes(Resources resources, Resources.Theme theme,
+                AttributeSet set, int[] attrs) {
+            return readAttributes(resources, theme, set, attrs, 0, 0);
+        }
+
+        /**
+         * AOSP {@code Theme.obtainStyledAttributes}: resolve each requested
+         * attribute from the element's own attributes first, then through the
+         * order of styles (theme, {@code defStyleAttr}, {@code defStyleRes},
+         * element {@code style}), then follow {@code ?attr} indirection.
+         */
+        static TypedArray readAttributes(Resources resources, Resources.Theme theme,
+                AttributeSet set, int[] attrs, int defStyleAttr, int defStyleRes) {
+            AppResourceHost host = AppResources.host();
+            List<Integer> styles = new ArrayList<>();
+            if (defStyleRes != 0) {
+                styles.add(defStyleRes);
             }
+            if (defStyleAttr != 0 && host != null) {
+                ResValue defStyle = host.attribute(defStyleAttr,
+                        theme == null ? new int[0] : theme.styleIds());
+                if (defStyle != null && defStyle.type == TypedValue.TYPE_REFERENCE) {
+                    styles.add(defStyle.data);
+                }
+            }
+            if (theme != null) {
+                styles.addAll(theme.styles());
+            }
+            if (set instanceof XmlResourceParserImpl) {
+                int elementStyle = ((XmlResourceParserImpl) set).getStyleAttribute();
+                if (elementStyle != 0) {
+                    styles.add(elementStyle);
+                }
+            }
+            int[] styleIds = new int[styles.size()];
+            for (int i = 0; i < styleIds.length; i++) {
+                styleIds[i] = styles.get(i);
+            }
+            ResValue[] values = new ResValue[attrs.length];
+            for (int i = 0; i < attrs.length; i++) {
+                values[i] = resolveAttribute(host, set, attrs[i], styleIds);
+            }
+            return new TypedArray(resources, theme, attrs, values);
+        }
+
+        private static ResValue resolveAttribute(AppResourceHost host,
+                AttributeSet set, int attrId, int[] styleIds) {
+            if (attrId == 0) {
+                return null;
+            }
+            if (set instanceof XmlResourceParserImpl) {
+                ResValue fromSet = ((XmlResourceParserImpl) set).valueForAttribute(attrId);
+                if (fromSet != null) {
+                    return fromSet;
+                }
+            }
+            if (host == null) {
+                return null;
+            }
+            ResValue value = host.attribute(attrId, styleIds);
+            if (value != null && value.type == TypedValue.TYPE_ATTRIBUTE) {
+                value = host.attribute(value.data, styleIds);
+            }
+            return value;
+        }
         }
     }

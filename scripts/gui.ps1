@@ -35,4 +35,7 @@ $jvm = @(
     "--sun-misc-unsafe-memory-access=allow"
 )
 if ($IsMacOS) { $jvm += "-XstartOnFirstThread" }
-& java @jvm -cp ($classes + $sep + $jars) tartine.Main gui $target $timeout
+$activity = $env:usage_activity
+$extra = @()
+if ($activity) { $extra = @("--activity", $activity) }
+& java @jvm -cp ($classes + $sep + $jars) tartine.Main gui $target $timeout @extra

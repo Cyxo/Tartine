@@ -335,8 +335,28 @@ import tartine.fw.PermissionManager;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getActivityInfo(Landroid/content/ComponentName;Landroid/content/pm/PackageManager$ComponentInfoFlags;)Landroid/content/pm/ActivityInfo;");
     }
 
-    public ActivityInfo getActivityInfo(ComponentName arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/PackageManager;->getActivityInfo(Landroid/content/ComponentName;I)Landroid/content/pm/ActivityInfo;");
+    /**
+     * AOSP PackageManager.getActivityInfo(ComponentName, int): the installed
+     * package's activity record. The shell knows the launched component (its
+     * package is the installed app) but carries no manifest {@code
+     * configChanges} bits, so the record reports zero — AppCompat then treats
+     * the activity as handling no configuration changes, which matches a
+     * shell that never recreates the activity for them.
+     */
+    public ActivityInfo getActivityInfo(ComponentName arg0, int arg1)
+            throws PackageManager.NameNotFoundException {
+        if (arg0 == null || !PermissionManager.isConfigured()
+                || !arg0.getPackageName().equals(PermissionManager.packageName())) {
+            throw new NameNotFoundException(arg0 == null ? null : arg0.flattenToString());
+        }
+        ActivityInfo info = new ActivityInfo();
+        info.packageName = arg0.getPackageName();
+        info.name = arg0.getClassName();
+        info.applicationInfo = currentPackageInfo(0).applicationInfo;
+        info.enabled = true;
+        info.exported = true;
+        info.configChanges = 0;
+        return info;
     }
 
     public Drawable getActivityLogo(ComponentName arg0) {

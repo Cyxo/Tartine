@@ -17,6 +17,19 @@ GitLab `android_translation_layer/android_translation_layer`
 - APK is a signed ZIP: `AndroidManifest.xml` (binary XML, use
   `aapt2 dump`/`apktool`), `classes.dex` (+`classes2.dex`… multidex),
   `resources.arsc`, `res/`, `assets/`, `lib/<abi>/*.so`, `META-INF/`.
+- Compiled resources are decoded host-side by the same readers as the
+  manifest (ADR-0015): `BinaryXml` carries each attribute's `android`
+  resource id, `ResourceTable` reads bags (styles/themes) and selects
+  values by density and platform level, and `Main` installs the app table
+  behind `tartine.fw.AppResourceHost`. The framework consumes that seam,
+  never raw AXML: `Resources`/`Theme`/`TypedArray` resolve values and
+  styled attributes, `XmlResourceParserImpl` replays a layout as the
+  pull-parser + `AttributeSet` contract, and `LayoutInflater` builds the
+  view tree (factories, parent-generated `LayoutParams`,
+  `onFinishInflate`). The `android.widget` toolkit is not ported, so a
+  real layout inflates up to the first unported element and then names it
+  (`Unable to inflate view: LinearLayout` for the layout probe); rendering
+  XML layouts and drawable/selector XML wait on that family.
 - DEX != JVM bytecode, never load it directly: register-based (frames
   fixed at creation, up to v65535, typically <16), 16-bit code units,
   whole-app shared pools (string/type/proto/field/method); JVM is

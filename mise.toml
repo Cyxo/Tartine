@@ -36,7 +36,8 @@ run_windows = "pwsh -File scripts/apk.ps1"
 [tasks.run]
 description = "Headless probe: run launcher onCreate as translated bytecode until the first gap"
 depends = ["build"]
-usage = 'arg "[apk]" default="apks/app-debug.apk" help="APK file to probe"'
+usage = '''arg "[apk]" default="apks/app-debug.apk" help="APK file to probe"
+  arg "[activity]" default="" help="Activity class to launch instead of the manifest launcher"'''
 run = "bash scripts/run.sh"
 run_windows = "pwsh -File scripts/run.ps1"
 
@@ -44,7 +45,8 @@ run_windows = "pwsh -File scripts/run.ps1"
 description = "GUI probe: headless onCreate as translated bytecode, then show the activity window"
 depends = ["build"]
 usage = '''arg "[apk]" default="apks/app-debug.apk" help="APK file to show"
-  arg "[timeout]" default="0" help="Auto-close after N seconds (0 = stay open)"'''
+  arg "[timeout]" default="0" help="Auto-close after N seconds (0 = stay open)"
+  arg "[activity]" default="" help="Activity class to launch instead of the manifest launcher"'''
 run = "bash scripts/gui.sh"
 run_windows = "pwsh -File scripts/gui.ps1"
 

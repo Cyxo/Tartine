@@ -1,5 +1,7 @@
 package tartine.fw;
 
+import java.util.List;
+
 /**
  * Host seam over the installed APK's compiled resources.
  *
@@ -35,6 +37,13 @@ public interface AppResourceHost {
 
     /** Parsed compiled XML for a layout/xml/... resource id, or null. */
     XmlNode xml(int resId);
+
+    /**
+     * The item values of an array/plural resource, in table order, or
+     * {@code null} when the id is not a bag. References inside the bag are
+     * resolved the same way {@link #value(int)} resolves them.
+     */
+    List<ResValue> arrayValues(int resId);
 
     /**
      * Raw asset bytes for an APK path (for example {@code assets/app.js} or a

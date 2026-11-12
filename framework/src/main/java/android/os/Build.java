@@ -12,11 +12,28 @@ package android.os;
  */
 public class Build {
 
+    public static final String BOARD = "tartine";
+    public static final String BOOTLOADER = "unknown";
     public static final String BRAND = "Tartine";
     public static final String DEVICE = "tartine";
+    public static final String DISPLAY = "TARTINE.1";
+    /**
+     * AOSP {@code Build.FINGERPRINT}: the {@code brand/product/device:release/
+     * id/incremental:type/tags} identity string apps fingerprint the platform
+     * by. AppCompat's SDK guards read it at class-initialization time.
+     */
+    public static final String FINGERPRINT = "Tartine/tartine/tartine:16/TARTINE/1:user/release-keys";
+    public static final String HARDWARE = "tartine";
+    public static final String HOST = "tartine";
+    public static final String ID = "TARTINE";
     public static final String MANUFACTURER = "Tartine";
     public static final String MODEL = "Tartine";
     public static final String PRODUCT = "tartine";
+    public static final String TAGS = "release-keys";
+    public static final long TIME = 0L;
+    public static final String TYPE = "user";
+    public static final String USER = "tartine";
+    public static final String UNKNOWN = "unknown";
 
     private Build() {
     }

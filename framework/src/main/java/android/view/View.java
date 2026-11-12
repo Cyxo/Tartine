@@ -2670,7 +2670,8 @@ import java.util.function.Consumer;
     }
 
     protected void onFinishInflate() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onFinishInflate()V");
+        // AOSP View.onFinishInflate is empty; subclasses that override it
+        // run through the guest translator when the inflater calls this.
     }
 
     public void onFinishTemporaryDetach() {

@@ -29,4 +29,7 @@ $jvm = @(
     "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED"
     "--sun-misc-unsafe-memory-access=allow"
 )
-& java @jvm -cp ($classes + $sep + $jars) tartine.Main run $target
+$activity = $env:usage_activity
+$extra = @()
+if ($activity) { $extra = @("--activity", $activity) }
+& java @jvm -cp ($classes + $sep + $jars) tartine.Main run $target @extra

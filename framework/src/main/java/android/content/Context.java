@@ -366,7 +366,7 @@ import tartine.fw.PermissionManager;
     }
 
     public AssetManager getAssets() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getAssets()Landroid/content/res/AssetManager;");
+        return getResources().getAssets();
     }
 
     public AttributionSource getAttributionSource() {
@@ -518,11 +518,14 @@ import tartine.fw.PermissionManager;
     }
 
     public final String getString(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getString(I)Ljava/lang/String;");
+        return getResources().getString(arg0);
     }
 
     public final String getString(int arg0, Object[] arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getString(I[Ljava/lang/Object;)Ljava/lang/String;");
+        if (arg1 != null) {
+            return String.format(getResources().getString(arg0), arg1);
+        }
+        return getResources().getString(arg0);
     }
 
     public final <T> T getSystemService(Class<T> arg0) {
@@ -554,8 +557,26 @@ import tartine.fw.PermissionManager;
         if ("clipboard".equals(name)) {
             return new ClipboardManager(this);
         }
+        if (LAYOUT_INFLATER_SERVICE.equals(name)) {
+            return getLayoutInflater();
+        }
         return null;
     }
+
+    /**
+     * AOSP's {@code SystemServiceRegistry} caches one
+     * {@code PhoneLayoutInflater} per context; the shell owns the same cache
+     * here. Creating it through {@link android.view.LayoutInflater#from}
+     * would recurse back into {@link #getSystemService(String)}.
+     */
+    private android.view.LayoutInflater getLayoutInflater() {
+        if (mLayoutInflater == null) {
+            mLayoutInflater = new android.view.LayoutInflater(this);
+        }
+        return mLayoutInflater;
+    }
+
+    private android.view.LayoutInflater mLayoutInflater;
 
     /**
      * AOSP frameworks-base core/java/android/content/Context.java#
@@ -567,6 +588,9 @@ import tartine.fw.PermissionManager;
     public String getSystemServiceName(Class<?> serviceClass) {
         if (serviceClass == null) {
             return null;
+        }
+        if (serviceClass.getName().equals("android.view.LayoutInflater")) {
+            return LAYOUT_INFLATER_SERVICE;
         }
         if (serviceClass.getName().equals(
                 "android.view.autofill.AutofillManager")) {
@@ -580,12 +604,17 @@ import tartine.fw.PermissionManager;
     }
 
     public final CharSequence getText(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getText(I)Ljava/lang/CharSequence;");
+        return getResources().getText(arg0);
     }
 
     public Resources.Theme getTheme() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getTheme()Landroid/content/res/Resources$Theme;");
+        if (mTheme == null) {
+            mTheme = getResources().newTheme();
+        }
+        return mTheme;
     }
+
+    private Resources.Theme mTheme;
 
     public Drawable getWallpaper() {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getWallpaper()Landroid/graphics/drawable/Drawable;");
@@ -624,19 +653,19 @@ import tartine.fw.PermissionManager;
     }
 
     public final TypedArray obtainStyledAttributes(AttributeSet arg0, int[] arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->obtainStyledAttributes(Landroid/util/AttributeSet;[I)Landroid/content/res/TypedArray;");
+        return getTheme().obtainStyledAttributes(arg0, arg1, 0, 0);
     }
 
     public final TypedArray obtainStyledAttributes(AttributeSet arg0, int[] arg1, int arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->obtainStyledAttributes(Landroid/util/AttributeSet;[III)Landroid/content/res/TypedArray;");
+        return getTheme().obtainStyledAttributes(arg0, arg1, arg2, arg3);
     }
 
     public final TypedArray obtainStyledAttributes(int arg0, int[] arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->obtainStyledAttributes(I[I)Landroid/content/res/TypedArray;");
+        return getTheme().obtainStyledAttributes(arg0, arg1);
     }
 
     public final TypedArray obtainStyledAttributes(int[] arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->obtainStyledAttributes([I)Landroid/content/res/TypedArray;");
+        return getTheme().obtainStyledAttributes(arg0);
     }
 
     public FileInputStream openFileInput(String arg0) {

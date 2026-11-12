@@ -18,6 +18,27 @@ public final class GuestSandbox {
     private GuestSandbox() {
     }
 
+    /**
+     * Translator entry for {@code Context.getClassLoader()}.
+     *
+     * <p>The framework's {@code android.content.Context} is host code, so the
+     * loader it could answer would be the host application loader, not the
+     * guest one. The translator therefore drops the receiver and answers the
+     * calling guest class's sandboxed loader instead: the thread the
+     * translated call runs on carries the {@link TranslatedLoader} it was
+     * loaded by, and wrapping it in {@link GuestClassLoader} keeps the value
+     * assignable where translated signatures expect a {@code ClassLoader}
+     * while every lookup stays behind the guest allowlist.
+     */
+    public static GuestClassLoader classLoader() {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (!(loader instanceof TranslatedLoader translated)) {
+            throw new SandboxDenied("Tartine: sandbox denied: "
+                    + "Context.getClassLoader outside the guest loader");
+        }
+        return new GuestClassLoader(translated);
+    }
+
     /** Mirrors {@code Class.forName}; only the guest loader is accepted. */
     public static Class<?> forName(String name, boolean initialize,
             Object loader) throws ClassNotFoundException {

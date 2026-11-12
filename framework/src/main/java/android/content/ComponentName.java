@@ -3,99 +3,180 @@ package android.content;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-    public class ComponentName implements Cloneable, Comparable<ComponentName>, Parcelable {
+/**
+ * Tartine: the component identifier, ported from AOSP
+ * {@code android.content.ComponentName}. It is a pure value type (package +
+ * class), so the shell ports it completely: androidx, AppCompat and package
+ * queries construct and compare these freely.
+ */
+public class ComponentName implements Cloneable, Comparable<ComponentName>, Parcelable {
 
-    public static Parcelable.Creator CREATOR;
+    /** The package part of the component. */
+    private final String mPackage;
 
-    public ComponentName(Context arg0, Class arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;-><init>(Landroid/content/Context;Ljava/lang/Class;)V");
+    /** The fully-qualified class part of the component. */
+    private final String mClass;
+
+    /**
+     * AOSP ComponentName(String, String): a class name that starts with '.'
+     * is relative to the package.
+     */
+    public ComponentName(String pkg, String cls) {
+        if (pkg == null) {
+            throw new NullPointerException("package name is null");
+        }
+        if (cls == null) {
+            throw new NullPointerException("class name is null");
+        }
+        mPackage = pkg;
+        mClass = cls.startsWith(".") ? pkg + cls : cls;
     }
 
-    public ComponentName(Context arg0, String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;-><init>(Landroid/content/Context;Ljava/lang/String;)V");
+    /** AOSP ComponentName(Context, String). */
+    public ComponentName(Context pkg, String cls) {
+        this(pkg.getPackageName(), cls);
     }
 
-    public ComponentName(Parcel arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;-><init>(Landroid/os/Parcel;)V");
+    /** AOSP ComponentName(Context, Class). */
+    public ComponentName(Context pkg, Class<?> cls) {
+        this(pkg.getPackageName(), cls.getName());
     }
 
-    public ComponentName(String arg0, String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;-><init>(Ljava/lang/String;Ljava/lang/String;)V");
+    /** AOSP ComponentName(Parcel). */
+    public ComponentName(Parcel in) {
+        mPackage = in.readString();
+        mClass = in.readString();
     }
 
-    public ComponentName clone() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->clone()Landroid/content/ComponentName;");
+    /** AOSP ComponentName.createRelative(Context, String). */
+    public static ComponentName createRelative(Context pkg, String cls) {
+        return new ComponentName(pkg.getPackageName(), cls);
     }
 
-    public int compareTo(ComponentName arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->compareTo(Landroid/content/ComponentName;)I");
-    }
-
-    public static ComponentName createRelative(Context arg0, String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->createRelative(Landroid/content/Context;Ljava/lang/String;)Landroid/content/ComponentName;");
-    }
-
-    public static ComponentName createRelative(String arg0, String arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->createRelative(Ljava/lang/String;Ljava/lang/String;)Landroid/content/ComponentName;");
-    }
-
-    public int describeContents() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->describeContents()I");
-    }
-
-    public boolean equals(Object arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->equals(Ljava/lang/Object;)Z");
-    }
-
-    public String flattenToShortString() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->flattenToShortString()Ljava/lang/String;");
-    }
-
-    public String flattenToString() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->flattenToString()Ljava/lang/String;");
-    }
-
-    public String getClassName() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->getClassName()Ljava/lang/String;");
+    /** AOSP ComponentName.createRelative(String, String). */
+    public static ComponentName createRelative(String pkg, String cls) {
+        return new ComponentName(pkg, cls);
     }
 
     public String getPackageName() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->getPackageName()Ljava/lang/String;");
+        return mPackage;
     }
 
+    public String getClassName() {
+        return mClass;
+    }
+
+    /**
+     * AOSP ComponentName.getShortClassName: strips the package prefix when the
+     * class lives in the component's own package.
+     */
     public String getShortClassName() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->getShortClassName()Ljava/lang/String;");
+        String prefix = mPackage + ".";
+        return mClass.startsWith(prefix) ? "." + mClass.substring(prefix.length()) : mClass;
     }
 
-    public int hashCode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->hashCode()I");
+    /** AOSP ComponentName.flattenToString: {@code package/class}. */
+    public String flattenToString() {
+        return mPackage + "/" + mClass;
     }
 
-    public static ComponentName readFromParcel(Parcel arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->readFromParcel(Landroid/os/Parcel;)Landroid/content/ComponentName;");
+    /** AOSP ComponentName.flattenToShortString: {@code package/.Class}. */
+    public String flattenToShortString() {
+        return mPackage + "/" + getShortClassName();
     }
 
+    /** AOSP ComponentName.unflattenFromString: parses {@code package/class}. */
+    public static ComponentName unflattenFromString(String str) {
+        if (str == null) {
+            return null;
+        }
+        int sep = str.indexOf('/');
+        if (sep < 0 || sep + 1 >= str.length()) {
+            return null;
+        }
+        String pkg = str.substring(0, sep);
+        String cls = str.substring(sep + 1);
+        return new ComponentName(pkg, cls);
+    }
+
+    /** AOSP ComponentName.toShortString. */
     public String toShortString() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->toShortString()Ljava/lang/String;");
+        return "ComponentInfo{" + mPackage + "/" + mClass + "}";
     }
 
+    @Override
     public String toString() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->toString()Ljava/lang/String;");
+        return "ComponentInfo{" + mPackage + "/" + mClass + "}";
     }
 
-    public static ComponentName unflattenFromString(String arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->unflattenFromString(Ljava/lang/String;)Landroid/content/ComponentName;");
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ComponentName)) {
+            return false;
+        }
+        ComponentName other = (ComponentName) obj;
+        return mPackage.equals(other.mPackage) && mClass.equals(other.mClass);
     }
 
-    public static void writeToParcel(ComponentName arg0, Parcel arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->writeToParcel(Landroid/content/ComponentName;Landroid/os/Parcel;)V");
+    @Override
+    public int hashCode() {
+        return mPackage.hashCode() + mClass.hashCode();
     }
 
-    public void writeToParcel(Parcel arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ComponentName;->writeToParcel(Landroid/os/Parcel;I)V");
+    @Override
+    public ComponentName clone() {
+        return new ComponentName(mPackage, mClass);
     }
 
-        /** Scratch mirror constructor (SkeletonGen). */
-        public ComponentName() {
+    public int compareTo(ComponentName that) {
+        int v = mPackage.compareTo(that.mPackage);
+        return v != 0 ? v : mClass.compareTo(that.mClass);
+    }
+
+    public int describeContents() {
+        return 0;
+    }
+
+    public void writeToParcel(Parcel out, int flags) {
+        out.writeString(mPackage);
+        out.writeString(mClass);
+    }
+
+    /** AOSP ComponentName.writeToParcel(ComponentName, Parcel). */
+    public static void writeToParcel(ComponentName c, Parcel out) {
+        if (c != null) {
+            c.writeToParcel(out, 0);
+        } else {
+            out.writeString(null);
         }
     }
+
+    /** AOSP ComponentName.readFromParcel(Parcel). */
+    public static ComponentName readFromParcel(Parcel in) {
+        String pkg = in.readString();
+        if (pkg == null) {
+            return null;
+        }
+        String cls = in.readString();
+        return new ComponentName(pkg, cls);
+    }
+
+    public static final Parcelable.Creator<ComponentName> CREATOR =
+            new Parcelable.Creator<ComponentName>() {
+                @Override
+                public ComponentName createFromParcel(Parcel in) {
+                    return new ComponentName(in);
+                }
+
+                @Override
+                public ComponentName[] newArray(int size) {
+                    return new ComponentName[size];
+                }
+            };
+
+    /** Scratch mirror constructor (SkeletonGen). */
+    public ComponentName() {
+        mPackage = null;
+        mClass = null;
+    }
+}

@@ -1,6 +1,7 @@
 package android.view;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 
 /**
  * Tartine: minimal shell window. The device concrete is PhoneWindow,
@@ -38,6 +39,113 @@ public class Window {
     /** AOSP Window.getDecorView(). */
     public View getDecorView() {
         return mDecor;
+    }
+
+    /**
+     * AOSP {@code Window.Callback}: the interface the window hands input and
+     * lifecycle events to. An activity implements it (AOSP
+     * {@code Activity implements Window.Callback}) and AppCompat wraps it to
+     * intercept menu/action-mode traffic, so the full method set must be
+     * declared even where the shell's bodies are inert.
+     */
+    public interface Callback {
+
+        boolean dispatchKeyEvent(KeyEvent event);
+
+        boolean dispatchKeyShortcutEvent(KeyEvent event);
+
+        boolean dispatchTouchEvent(MotionEvent event);
+
+        boolean dispatchTrackballEvent(MotionEvent event);
+
+        boolean dispatchGenericMotionEvent(MotionEvent event);
+
+        boolean dispatchPopulateAccessibilityEvent(
+                android.view.accessibility.AccessibilityEvent event);
+
+        View onCreatePanelView(int featureId);
+
+        boolean onCreatePanelMenu(int featureId, Menu menu);
+
+        boolean onPreparePanel(int featureId, View view, Menu menu);
+
+        boolean onMenuOpened(int featureId, Menu menu);
+
+        boolean onMenuItemSelected(int featureId, MenuItem item);
+
+        void onWindowAttributesChanged(WindowManager.LayoutParams attrs);
+
+        void onContentChanged();
+
+        void onWindowFocusChanged(boolean hasFocus);
+
+        void onAttachedToWindow();
+
+        void onDetachedFromWindow();
+
+        void onPanelClosed(int featureId, Menu menu);
+
+        boolean onSearchRequested();
+
+        boolean onSearchRequested(SearchEvent searchEvent);
+
+        ActionMode onWindowStartingActionMode(ActionMode.Callback callback);
+
+        ActionMode onWindowStartingActionMode(ActionMode.Callback callback, int type);
+
+        void onActionModeStarted(ActionMode mode);
+
+        void onActionModeFinished(ActionMode mode);
+
+        default void onPointerCaptureChanged(boolean hasCapture) {
+        }
+    }
+
+    /** AOSP Window.setCallback: the window's event target. */
+    public void setCallback(Callback callback) {
+        mCallback = callback;
+    }
+
+    /** AOSP Window.getCallback. */
+    public final Callback getCallback() {
+        return mCallback;
+    }
+
+    private Callback mCallback;
+
+    /**
+     * AOSP Window.setBackgroundDrawable stores the decor background; the
+     * shell's decor draws it once the graphics layer paints view backgrounds.
+     */
+    public void setBackgroundDrawable(Drawable drawable) {
+        mBackgroundDrawable = drawable;
+    }
+
+    /** The background set through {@link #setBackgroundDrawable}. */
+    public Drawable getBackgroundDrawable() {
+        return mBackgroundDrawable;
+    }
+
+    private Drawable mBackgroundDrawable;
+
+    /** AOSP Window.superDispatchKeyEvent: the decor's dispatch (false: inert). */
+    public boolean superDispatchKeyEvent(KeyEvent event) {
+        return false;
+    }
+
+    /** AOSP Window.superDispatchTouchEvent (false: inert). */
+    public boolean superDispatchTouchEvent(MotionEvent event) {
+        return false;
+    }
+
+    /** AOSP Window.superDispatchTrackballEvent (false: inert). */
+    public boolean superDispatchTrackballEvent(MotionEvent event) {
+        return false;
+    }
+
+    /** AOSP Window.superDispatchGenericMotionEvent (false: inert). */
+    public boolean superDispatchGenericMotionEvent(MotionEvent event) {
+        return false;
     }
 
     /**

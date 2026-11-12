@@ -247,7 +247,10 @@ import java.util.function.IntConsumer;
     }
 
     public AssetManager getAssets() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getAssets()Landroid/content/res/AssetManager;");
+        if (mBase != null) {
+            return mBase.getAssets();
+        }
+        return super.getAssets();
     }
 
     public AttributionSource getAttributionSource() {
@@ -413,12 +416,13 @@ import java.util.function.IntConsumer;
     }
 
     public Resources.Theme getTheme() {
-        // AOSP ContextWrapper.getTheme: delegates to mBase.getTheme();
-        // the shell has no base context theming, so it lazily owns one
-        // Theme per context (matches the interpreter's per-context cached
-        // placeholder).
+        // AOSP ContextWrapper.getTheme: delegates to mBase.getTheme(); a
+        // root wrapper lazily owns one Theme per context.
+        if (mBase != null) {
+            return mBase.getTheme();
+        }
         if (mTheme == null) {
-            mTheme = new Resources.Theme();
+            mTheme = getResources().newTheme();
         }
         return mTheme;
     }
