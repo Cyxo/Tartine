@@ -14,16 +14,18 @@ import java.util.Map;
  *
  * <p>Model follows androidfw/ResourceTypes.h: one table chunk, one global
  * string pool, then one package chunk per package id (0x7f for the app).
- * Every package lists its types ({@code mipmap}, {@code drawable}, ...)
- * and entry names in per-package string pools, followed by one
+ * Every package lists its types ({@code mipmap}, {@code drawable}, ...) and
+ * entry names in per-package string pools, followed by one
  * {@code ResTable_type} chunk per (type, configuration) pair holding the
- * entry values (file paths, inline colors, or references). This gives
- * manifest references like {@code 0x7f080000} (package, type index, entry
- * index) a name-based {@code (@mipmap/ic_launcher)} and value-based view.
+ * entry values (file paths, inline colors, or references) — dense values
+ * ({@code Res_value}) and complex bags ({@code ResTable_map_entry}, i.e.
+ * styles, arrays and plurals). This gives manifest references like
+ * {@code 0x7f080000} (package, type index, entry index) a name-based
+ * {@code (@mipmap/ic_launcher)} and value-based view.
  *
- * <p>Configurations are reduced to the fields the icon picker needs
- * (density, declared version) — locale etc. are ignored, same as aapt2's
- * dump when read with --settings.
+ * <p>Configurations are reduced to the fields the desktop needs (density,
+ * declared version) — locale etc. are ignored, same as aapt2's dump when read
+ * with --settings.
  */
 public final class ResourceTable {
     // Chunk types (androidfw/ResourceTypes.h).
@@ -39,6 +41,12 @@ public final class ResourceTable {
     // ResTable_type flags.
     private static final int FLAG_SPARSE = 0x0001;
     private static final int FLAG_OFFSET16 = 0x0002;
+    // Res_value data type for string values (matches BinaryXml.TYPE_STRING).
+    private static final int TYPE_STRING = 0x03;
+    // ResTable_map_entry is ResTable_entry (8) + parent (4) + count (4).
+    private static final int MAP_ENTRY_HEADER = 16;
+    // ResTable_map is ResTable_ref (4) + Res_value (8).
+    private static final int MAP_SIZE = 12;
 
     // ResTable_config density constants.
     static final int DENSITY_DEFAULT = 0;
@@ -47,7 +55,12 @@ public final class ResourceTable {
     private final List<String> globalStrings = new ArrayList<>();
     private final Map<Long, List<ConfValue>> byId = new LinkedHashMap<>();
     private final Map<String, List<ConfValue>> byName = new LinkedHashMap<>();
+    private final Map<Long, List<Bag>> bagById = new LinkedHashMap<>();
+    private final Map<String, List<Bag>> bagByName = new LinkedHashMap<>();
+    private final Map<Long, String[]> namesById = new LinkedHashMap<>();
+    private final Map<String, Long> idsByName = new LinkedHashMap<>();
     private String packageName = "";
+    private int packageId = 0x7f;
 
     /**
      * One (type, entry) value under one configuration.
@@ -57,7 +70,7 @@ public final class ResourceTable {
      * @param density configuration density (0 = default/any)
      * @param sdkVersion declared version (0 = none)
      * @param dataType Res_value dataType (raw)
-     * @param data Res_value data word (raw)
+     * @param data data word (raw string-pool index for string values)
      */
     public record ConfValue(
             String type,
@@ -66,6 +79,50 @@ public final class ResourceTable {
             int sdkVersion,
             int dataType,
             int data) {
+    }
+
+    /**
+     * One key/value pair inside a bag: a style attribute id and its value, or
+     * an array/plural item index and its value.
+     *
+     * @param key attribute resource id, or array/plural item key
+     * @param dataType Res_value dataType (raw)
+     * @param data data word (raw)
+     * @param string resolved text for string values, else {@code null}
+     */
+    public record MapValue(int key, int dataType, int data, String string) {
+    }
+
+    /**
+     * One (type, entry) complex entry (style, array, plural) under one
+     * configuration.
+     *
+     * @param density configuration density (0 = default/any)
+     * @param sdkVersion declared version (0 = none)
+     * @param parent parent style/theme resource id, or 0
+     * @param values the bag's key/value pairs in table order
+     */
+    public record Bag(int density, int sdkVersion, long parent,
+            List<MapValue> values) {
+
+        /** Defensive copy keeps the resolved bag immutable. */
+        public Bag {
+            values = List.copyOf(values);
+        }
+    }
+
+    /**
+     * Device configuration the host resolves resources against.
+     *
+     * @param densityDpi display density (0 = any/preferred)
+     * @param sdkVersion device API level
+     */
+    public record DeviceConfig(int densityDpi, int sdkVersion) {
+
+        /** A permissive default: any density, oldest platform. */
+        public static DeviceConfig any() {
+            return new DeviceConfig(0, 0);
+        }
     }
 
     private ResourceTable() {
@@ -122,6 +179,7 @@ public final class ResourceTable {
         if (typeStringsOff >= end - start || keyStringsOff >= end - start) {
             throw new IOException("bad package string pool offsets");
         }
+        packageId = id;
         packageName = utf16Ascii(nameBytes);
         int headerSize = u16(data, start + 2);
         if (headerSize <= 0 || start + headerSize > end) {
@@ -214,13 +272,18 @@ public final class ResourceTable {
             int entrySize = u16(data, entryStart);
             int entryFlags = u16(data, entryStart + 2);
             int key = (int) u32(data, entryStart + 4);
-            if ((entryFlags & FLAG_COMPLEX) != 0 || entrySize < 8) {
-                continue; // bag entries: not addressable by name/value here
-            }
-            if (key < 0 || key >= keyNames.size()) {
-                throw new IOException("bad key index " + key);
+            if (entrySize < 8 || key < 0 || key >= keyNames.size()) {
+                throw new IOException("bad entry header");
             }
             String entryName = keyNames.get(key);
+            long packedId = ((long) (packageId & 0xFF) << 24)
+                    | ((long) typeId << 16) | entryIndex;
+            registerName(packedId, typeName, entryName);
+            if ((entryFlags & FLAG_COMPLEX) != 0) {
+                readBag(data, entryStart, entrySize, end, typeName, entryName,
+                        packedId, density, sdkVersion);
+                continue;
+            }
             // Res_value follows the entry header.
             int valuePos = entryStart + entrySize;
             if (valuePos + 8 > end) {
@@ -230,12 +293,42 @@ public final class ResourceTable {
             int valueData = (int) u32(data, valuePos + 4);
             ConfValue value = new ConfValue(typeName, entryName,
                     normalizeDensity(density), sdkVersion, dataType, valueData);
-            long packedId = ((long) (packageId & 0xFF) << 24)
-                    | ((long) typeId << 16) | entryIndex;
             byId.computeIfAbsent(packedId, k -> new ArrayList<>()).add(value);
             byName.computeIfAbsent(typeName + "/" + entryName, k -> new ArrayList<>())
                     .add(value);
         }
+    }
+
+    private void readBag(byte[] data, int entryStart, int entrySize, int end,
+            String typeName, String entryName, long packedId, int density,
+            int sdkVersion) throws IOException {
+        if (entrySize < MAP_ENTRY_HEADER) {
+            throw new IOException("bad bag header");
+        }
+        long parent = u32(data, entryStart + 8);
+        int count = (int) u32(data, entryStart + 12);
+        List<MapValue> values = new ArrayList<>(Math.max(0, count));
+        int mapPos = entryStart + entrySize;
+        for (int i = 0; i < count; i++) {
+            if (mapPos + MAP_SIZE > end) {
+                throw new IOException("bag overruns type chunk");
+            }
+            int name = (int) u32(data, mapPos);
+            int dataType = data[mapPos + 7] & 0xFF;
+            int valueData = (int) u32(data, mapPos + 8);
+            String text = dataType == TYPE_STRING ? string(valueData) : null;
+            values.add(new MapValue(name, dataType, valueData, text));
+            mapPos += MAP_SIZE;
+        }
+        Bag bag = new Bag(normalizeDensity(density), sdkVersion, parent, values);
+        bagById.computeIfAbsent(packedId, k -> new ArrayList<>()).add(bag);
+        bagByName.computeIfAbsent(typeName + "/" + entryName, k -> new ArrayList<>())
+                .add(bag);
+    }
+
+    private void registerName(long packedId, String typeName, String entryName) {
+        namesById.putIfAbsent(packedId, new String[] {typeName, entryName});
+        idsByName.putIfAbsent(typeName + "/" + entryName, packedId);
     }
 
     private static int normalizeDensity(int density) {
@@ -271,6 +364,51 @@ public final class ResourceTable {
         return byName(type, entry);
     }
 
+    /** The bag (style/array/plural) variants for a packed id, any config. */
+    public List<Bag> bags(long packedId) {
+        List<Bag> bags = bagById.get(packedId);
+        return bags == null ? List.of() : bags;
+    }
+
+    /** The bag variants for a type/entry name pair, any config. */
+    public List<Bag> bags(String type, String entry) {
+        List<Bag> bags = bagByName.get(type + "/" + entry);
+        return bags == null ? List.of() : bags;
+    }
+
+    /** Best-matching value for an id under {@code device}, or {@code null}. */
+    public ConfValue value(long packedId, DeviceConfig device) {
+        return best(byId(packedId), device, ConfValue::density, ConfValue::sdkVersion);
+    }
+
+    /** Best-matching bag for an id under {@code device}, or {@code null}. */
+    public Bag bag(long packedId, DeviceConfig device) {
+        return best(bags(packedId), device, Bag::density, Bag::sdkVersion);
+    }
+
+    /** Best-matching bag for a name pair under {@code device}, or {@code null}. */
+    public Bag bag(String type, String entry, DeviceConfig device) {
+        return best(bags(type, entry), device, Bag::density, Bag::sdkVersion);
+    }
+
+    /** Enclosing type name for a packed id, or {@code null} when unknown. */
+    public String typeName(long packedId) {
+        String[] name = namesById.get(packedId);
+        return name == null ? null : name[0];
+    }
+
+    /** Entry name for a packed id, or {@code null} when unknown. */
+    public String entryName(long packedId) {
+        String[] name = namesById.get(packedId);
+        return name == null ? null : name[1];
+    }
+
+    /** Packed id for a type/entry name pair, or 0 when unknown. */
+    public long idFor(String type, String entry) {
+        Long id = idsByName.get(type + "/" + entry);
+        return id == null ? 0 : id;
+    }
+
     /** Global string pool entry (file paths and names). */
     public String string(int index) {
         if (index < 0 || index >= globalStrings.size()) {
@@ -281,6 +419,57 @@ public final class ResourceTable {
 
     public String packageName() {
         return packageName;
+    }
+
+    /** Package id this table's package chunk declares (0x7f for an app). */
+    public int packageId() {
+        return packageId;
+    }
+
+    // ---- configuration matching -----------------------------------------
+
+    private interface ToInt<T> {
+        int apply(T value);
+    }
+
+    /** Highest-scoring candidate under {@code device}, or {@code null}. */
+    private static <T> T best(List<T> candidates, DeviceConfig device,
+            ToInt<T> densityOf, ToInt<T> sdkOf) {
+        T winner = null;
+        int bestScore = -1;
+        for (T candidate : candidates) {
+            int score = configScore(densityOf.apply(candidate),
+                    sdkOf.apply(candidate), device);
+            if (score >= 0 && score > bestScore) {
+                bestScore = score;
+                winner = candidate;
+            }
+        }
+        return winner;
+    }
+
+    /**
+     * Match rank for one config against the device: higher wins, {@code -1}
+     * rejects (config requires a newer platform, or a density the device is
+     * not meant to serve). Density prefers an exact bucket, then the nearest
+     * higher bucket (downscale), then the nearest lower one; the declared
+     * version breaks ties toward the newest config the device supports.
+     */
+    private static int configScore(int density, int sdkVersion, DeviceConfig device) {
+        if (sdkVersion > device.sdkVersion()) {
+            return -1;
+        }
+        int densityScore;
+        if (density == DENSITY_DEFAULT || device.densityDpi() == 0) {
+            densityScore = 0;
+        } else if (density == device.densityDpi()) {
+            densityScore = 300;
+        } else if (density > device.densityDpi()) {
+            densityScore = 200 - Math.min(199, (density - device.densityDpi()) / 8);
+        } else {
+            densityScore = 100 - Math.min(99, (device.densityDpi() - density) / 8);
+        }
+        return densityScore * 1000 + Math.min(sdkVersion, 999);
     }
 
     // ---- chunk readers shared with BinaryXml ----------------------------
@@ -375,8 +564,8 @@ public final class ResourceTable {
             return 0;
         }
         return ((long) (data[pos + 3] & 0xFF) << 24)
-                | ((data[pos + 2] & 0xFF) << 16)
-                | ((data[pos + 1] & 0xFF) << 8)
+                | ((long) (data[pos + 2] & 0xFF) << 16)
+                | ((long) (data[pos + 1] & 0xFF) << 8)
                 | (data[pos] & 0xFF);
     }
 

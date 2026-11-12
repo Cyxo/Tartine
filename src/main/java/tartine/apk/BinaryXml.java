@@ -23,6 +23,7 @@ public final class BinaryXml {
     private static final int RES_XML_TYPE = 0x0003;
     private static final int RES_XML_START_ELEMENT_TYPE = 0x0102;
     private static final int RES_XML_END_ELEMENT_TYPE = 0x0103;
+    private static final int RES_XML_RESOURCE_MAP_TYPE = 0x0180;
 
     private static final int UTF8_FLAG = 1 << 8;
     private static final int NO_INDEX = -1;
@@ -57,14 +58,21 @@ public final class BinaryXml {
         public final int dataType;
         /** Res_value raw data word. */
         public final int data;
+        /**
+         * aapt2-assigned resource id from the document's resource-map chunk
+         * ({@code android:layout_width} becomes {@code 0x0101...}), or 0
+         * when the attribute name is not a resource.
+         */
+        public final int resourceId;
 
         Attribute(String namespaceUri, String name, String value,
-                int dataType, int data) {
+                int dataType, int data, int resourceId) {
             this.namespaceUri = namespaceUri;
             this.name = name;
             this.value = value;
             this.dataType = dataType;
             this.data = data;
+            this.resourceId = resourceId;
         }
     }
 
@@ -122,6 +130,7 @@ public final class BinaryXml {
         }
         size(buf); // total size, informational
         List<String> pool = new ArrayList<>();
+        List<Integer> resourceMap = new ArrayList<>();
         Element root = null;
         Deque<Element> stack = new ArrayDeque<>();
         while (buf.remaining() >= 8) {
@@ -137,8 +146,11 @@ public final class BinaryXml {
                 case RES_STRING_POOL_TYPE:
                     pool = readStringPool(data, buf, chunkStart, chunkEnd);
                     break;
+                case RES_XML_RESOURCE_MAP_TYPE:
+                    resourceMap = readResourceMap(buf, chunkStart, chunkEnd);
+                    break;
                 case RES_XML_START_ELEMENT_TYPE:
-                    Element element = readStartElement(buf, pool);
+                    Element element = readStartElement(buf, pool, resourceMap);
                     if (stack.isEmpty()) {
                         if (root != null) {
                             throw new IOException("multiple root elements");
@@ -153,7 +165,7 @@ public final class BinaryXml {
                     readEndElement(buf, pool, stack);
                     break;
                 default:
-                    break; // namespaces, resource map, CDATA: skip by size
+                    break; // namespaces, CDATA: skip by size
             }
             buf.position(chunkEnd);
         }
@@ -194,6 +206,18 @@ public final class BinaryXml {
             pool.add(readString(data, pos, utf8));
         }
         return pool;
+    }
+
+    private static List<Integer> readResourceMap(ByteBuffer buf, int chunkStart,
+            int chunkEnd) throws IOException {
+        // The payload is one u32 per string-pool entry: the aapt2-assigned
+        // resource id for attribute-name strings, 0 for everything else.
+        int count = (chunkEnd - chunkStart - 8) / 4;
+        List<Integer> ids = new ArrayList<>(Math.max(0, count));
+        for (int i = 0; i < count; i++) {
+            ids.add(buf.getInt());
+        }
+        return ids;
     }
 
     private static String readString(byte[] data, int pos, boolean utf8) throws IOException {
@@ -266,7 +290,8 @@ public final class BinaryXml {
         return out.toString();
     }
 
-    private static Element readStartElement(ByteBuffer buf, List<String> pool) throws IOException {
+    private static Element readStartElement(ByteBuffer buf, List<String> pool,
+            List<Integer> resourceMap) throws IOException {
         size(buf); // lineNumber
         buf.getInt(); // comment
         final int ns = buf.getInt();
@@ -296,7 +321,9 @@ public final class BinaryXml {
             buf.position(attrStart + attributeSize);
             element.attributes.add(new Attribute(
                     poolString(pool, attrNs, ""), poolName(pool, attrName),
-                    resolveValue(pool, rawValue, dataType, data), dataType, data));
+                    resolveValue(pool, rawValue, dataType, data), dataType, data,
+                    attrName >= 0 && attrName < resourceMap.size()
+                            ? resourceMap.get(attrName) : 0));
         }
         return element;
     }

@@ -66,8 +66,16 @@ final class Fixtures {
         }
     }
 
-    /** Encodes one element tree as binary XML (no text/comment chunks). */
+    /**
+     * Encodes one element tree as binary XML (no text/comment chunks) plus a
+     * resource-map chunk matching {@code attrResourceIds} by attribute name.
+     */
     static byte[] axml(AxNode root) {
+        return axml(root, Map.of());
+    }
+
+    /** Encodes one element tree as binary XML, with an attribute resource map. */
+    static byte[] axml(AxNode root, Map<String, Integer> attrResourceIds) {
         LinkedHashSet<String> strings = new LinkedHashSet<>();
         strings.add(ANDROID_NS);
         collectStrings(root, strings);
@@ -76,13 +84,26 @@ final class Fixtures {
         putU16(out, 8);
         final int fileSizePos = out.position();
         putU32(out, 0);
-        writeUtf16Pool(out, new ArrayList<>(strings));
+        List<String> pool = new ArrayList<>(strings);
+        writeUtf16Pool(out, pool);
+        writeResourceMap(out, pool, attrResourceIds);
         emitElement(out, strings, root);
         out.putInt(fileSizePos, out.position());
         byte[] result = new byte[out.position()];
         out.flip();
         out.get(result);
         return result;
+    }
+
+    /** Emits the RES_XML_RESOURCE_MAP chunk: one u32 per pool string. */
+    private static void writeResourceMap(ByteBuffer out, List<String> pool,
+            Map<String, Integer> attrResourceIds) {
+        putU16(out, 0x0180);
+        putU16(out, 8);
+        putU32(out, 8 + pool.size() * 4);
+        for (String name : pool) {
+            putU32(out, attrResourceIds.getOrDefault(name, 0));
+        }
     }
 
     private static void collectStrings(AxNode node, LinkedHashSet<String> strings) {
@@ -164,22 +185,46 @@ final class Fixtures {
 
     // ---- resources.arsc --------------------------------------------------
 
-    /** One typed value under one configuration. */
+    /** One key/value pair inside a bag fixture. */
+    record MapRow(int key, int dataType, int data, String path) {
+
+        static MapRow ref(int key, int resourceId) {
+            return new MapRow(key, BinaryXml.TYPE_REFERENCE, resourceId, null);
+        }
+
+        static MapRow value(int key, int dataType, int data) {
+            return new MapRow(key, dataType, data, null);
+        }
+
+        static MapRow text(int key, String path) {
+            return new MapRow(key, BinaryXml.TYPE_STRING, -1, path);
+        }
+    }
+
+    /**
+     * One typed value under one configuration; when {@code maps} is non-null
+     * the row is a complex (bag) entry (style/array/plural) with that parent.
+     */
     record Row(int density, int sdkVersion, int dataType, int data,
-            String path) {
+            String path, int parent, List<MapRow> maps) {
 
         /** Inline typed value (color, reference, ...). */
         static Row typed(int density, int dataType, int data) {
-            return new Row(density, 0, dataType, data, null);
+            return new Row(density, 0, dataType, data, null, 0, null);
         }
 
         /** File-path string value backed by the global pool. */
         static Row file(int density, String path) {
-            return new Row(density, 0, BinaryXml.TYPE_STRING, -1, path);
+            return new Row(density, 0, BinaryXml.TYPE_STRING, -1, path, 0, null);
         }
 
         static Row fileSdk(int density, int sdkVersion, String path) {
-            return new Row(density, sdkVersion, BinaryXml.TYPE_STRING, -1, path);
+            return new Row(density, sdkVersion, BinaryXml.TYPE_STRING, -1, path, 0, null);
+        }
+
+        /** A style/array/plural bag under one configuration. */
+        static Row bag(int density, int parent, List<MapRow> maps) {
+            return new Row(density, 0, 0, 0, null, parent, List.copyOf(maps));
         }
     }
 
@@ -203,6 +248,13 @@ final class Fixtures {
                 for (Row row : entry.rows()) {
                     if (row.path() != null) {
                         globalStrings.add(row.path());
+                    }
+                    if (row.maps() != null) {
+                        for (MapRow map : row.maps()) {
+                            if (map.path() != null) {
+                                globalStrings.add(map.path());
+                            }
+                        }
                     }
                 }
             }
@@ -299,7 +351,7 @@ final class Fixtures {
             out.putShort(structStart + 24, (short) sdkVersion);
             int[] offsets = new int[entryCount];
             Arrays.fill(offsets, NO_ENTRY);
-            ByteBuffer entriesBuf = ByteBuffer.allocate(entryCount * 16 + 16)
+            ByteBuffer entriesBuf = ByteBuffer.allocate(entryCount * 128 + 64)
                     .order(ByteOrder.LITTLE_ENDIAN);
             for (int index = 0; index < entryCount; index++) {
                 Row row = matchingRow(entries.get(index), density, sdkVersion);
@@ -307,14 +359,19 @@ final class Fixtures {
                     continue;
                 }
                 offsets[index] = entriesBuf.position();
-                entriesBuf.putShort((short) 8); // entry size
-                entriesBuf.putShort((short) 0); // entry flags: not complex
-                entriesBuf.putInt(keyNames.indexOf(entries.get(index).name()));
-                entriesBuf.putShort((short) 8); // Res_value size
-                entriesBuf.put((byte) 0); // res0
-                entriesBuf.put((byte) row.dataType());
-                entriesBuf.putInt(row.path() == null
-                        ? row.data() : globalIds.get(row.path()));
+                if (row.maps() != null) {
+                    writeBagRow(entriesBuf, row, keyNames.indexOf(entries.get(index).name()),
+                            globalIds);
+                } else {
+                    entriesBuf.putShort((short) 8); // entry size
+                    entriesBuf.putShort((short) 0); // entry flags: not complex
+                    entriesBuf.putInt(keyNames.indexOf(entries.get(index).name()));
+                    entriesBuf.putShort((short) 8); // Res_value size
+                    entriesBuf.put((byte) 0); // res0
+                    entriesBuf.put((byte) row.dataType());
+                    entriesBuf.putInt(row.path() == null
+                            ? row.data() : globalIds.get(row.path()));
+                }
             }
             int entriesStart = 48 + entryCount * 4; // chunk-relative
             out.putInt(chunkStart + 16, entriesStart);
@@ -326,6 +383,24 @@ final class Fixtures {
             entriesBuf.get(body);
             out.put(body);
             out.putInt(sizePos, out.position() - chunkStart);
+        }
+    }
+
+    /** Writes a complex (bag) entry: ResTable_map_entry + ResTable_map[]. */
+    private static void writeBagRow(ByteBuffer entriesBuf, Row row, int key,
+            Map<String, Integer> globalIds) {
+        entriesBuf.putShort((short) 16); // ResTable_map_entry size
+        entriesBuf.putShort((short) 1); // entry flags: complex
+        entriesBuf.putInt(key);
+        entriesBuf.putInt(row.parent());
+        entriesBuf.putInt(row.maps().size());
+        for (MapRow map : row.maps()) {
+            entriesBuf.putInt(map.key());
+            entriesBuf.putShort((short) 8); // Res_value size
+            entriesBuf.put((byte) 0); // res0
+            entriesBuf.put((byte) map.dataType());
+            entriesBuf.putInt(map.path() == null
+                    ? map.data() : globalIds.get(map.path()));
         }
     }
 
