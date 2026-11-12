@@ -546,12 +546,34 @@ final class SandboxPolicy {
             }
         }
         for (DexClass.DexField field : cls.fields) {
+            if (inertMetadataType(field.type)) {
+                continue;
+            }
             String denial = typeDenial(field.type, isGuest);
             if (denial != null) {
                 return "field " + field.name + ": " + denial;
             }
         }
         return null;
+    }
+
+    /**
+     * Storage-only types a guest class may declare but never operate on.
+     *
+     * <p>{@code java.lang.ClassLoader} is denied as a live host object
+     * because every guest-reachable loader operation is rewritten to
+     * {@code GuestClassLoader}. Appcompat nevertheless stores a loader in
+     * private fields (for example {@code FragmentTransaction.mClassLoader})
+     * that only carry {@code GuestClassLoader} values or null. Allowing the
+     * descriptor keeps that metadata loadable; value uses still meet the
+     * class and member denials.
+     */
+    static boolean inertMetadataType(String descriptor) {
+        String desc = descriptor;
+        while (desc != null && desc.startsWith("[")) {
+            desc = desc.substring(1);
+        }
+        return "Ljava/lang/ClassLoader;".equals(desc);
     }
 
     /** Denial for a JVM type descriptor, or {@code null} when allowed. */

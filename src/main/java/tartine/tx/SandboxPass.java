@@ -76,9 +76,11 @@ final class SandboxPass extends ClassVisitor {
     @Override
     public FieldVisitor visitField(int access, String name, String descriptor,
             String signature, Object value) {
-        String denial = SandboxPolicy.typeDenial(descriptor, isGuest);
-        if (denial != null) {
-            throw denied("field " + name + ": " + denial);
+        if (!SandboxPolicy.inertMetadataType(descriptor)) {
+            String denial = SandboxPolicy.typeDenial(descriptor, isGuest);
+            if (denial != null) {
+                throw denied("field " + name + ": " + denial);
+            }
         }
         return super.visitField(access, name, descriptor, signature, value);
     }
@@ -86,9 +88,11 @@ final class SandboxPass extends ClassVisitor {
     @Override
     public RecordComponentVisitor visitRecordComponent(String name,
             String descriptor, String signature) {
-        String denial = SandboxPolicy.typeDenial(descriptor, isGuest);
-        if (denial != null) {
-            throw denied("record component " + name + ": " + denial);
+        if (!SandboxPolicy.inertMetadataType(descriptor)) {
+            String denial = SandboxPolicy.typeDenial(descriptor, isGuest);
+            if (denial != null) {
+                throw denied("record component " + name + ": " + denial);
+            }
         }
         return super.visitRecordComponent(name, descriptor, signature);
     }
