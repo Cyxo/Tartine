@@ -68,7 +68,7 @@ public interface HostDisplay extends AutoCloseable {
      * space until the framework maps them to Android key and motion codes.
      */
     sealed interface Event permits Closed, Resized, FocusChanged, Key,
-            Text, CursorMoved, Button, Scrolled {
+            Text, CursorMoved, CursorEntered, Button, Scrolled {
     }
 
     /** The window is gone; no further frames or events will arrive. */
@@ -105,6 +105,13 @@ public interface HostDisplay extends AutoCloseable {
 
     /** Cursor position in window coordinates. */
     record CursorMoved(double x, double y) implements Event {
+    }
+
+    /**
+     * The cursor entered ({@code true}) or left ({@code false}) the window
+     * content area. Leaves end the guest hover session with HOVER_EXIT.
+     */
+    record CursorEntered(boolean entered) implements Event {
     }
 
     /** A mouse button transition; button/modifiers are GLFW values. */

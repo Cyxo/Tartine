@@ -39,11 +39,25 @@ final class HostInput {
     /** Translates one host event. Runs on the guest main-looper thread. */
     void handle(HostDisplay.Event event) {
         if (event instanceof HostDisplay.FocusChanged focus) {
-            hovering = false;
             if (!focus.focused()) {
+                if (hovering && buttonState == 0) {
+                    dispatchHoverExit();
+                }
+                hovering = false;
                 buttonState = 0;
             }
             root.windowFocusChanged(focus.focused());
+            return;
+        }
+        if (event instanceof HostDisplay.CursorEntered entered) {
+            if (!entered.entered()) {
+                if (hovering && buttonState == 0) {
+                    dispatchHoverExit();
+                }
+                // A drag can leave the window with a button held; the touch
+                // stream continues, but the hover session is over.
+                hovering = false;
+            }
             return;
         }
         if (event instanceof HostDisplay.CursorMoved moved) {
@@ -101,6 +115,12 @@ final class HostInput {
                 : MotionEvent.ACTION_HOVER_ENTER;
         hovering = true;
         root.dispatchHoverEvent(motionEvent(action, 0, 0));
+    }
+
+    private void dispatchHoverExit() {
+        hovering = false;
+        root.dispatchHoverEvent(
+                motionEvent(MotionEvent.ACTION_HOVER_EXIT, 0, 0));
     }
 
     private void dispatchTouch(int action) {

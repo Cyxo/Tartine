@@ -13,6 +13,7 @@ import static org.lwjgl.glfw.GLFW.glfwInit;
 import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwSetCharCallback;
+import static org.lwjgl.glfw.GLFW.glfwSetCursorEnterCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback;
@@ -387,6 +388,8 @@ final class GlfwHostDisplay implements DisplayLoop {
                 events.publish(new HostDisplay.Text(codepoint)));
         glfwSetCursorPosCallback(window, (win, x, y) ->
                 events.publish(new HostDisplay.CursorMoved(x, y)));
+        glfwSetCursorEnterCallback(window, (win, entered) ->
+                events.publish(new HostDisplay.CursorEntered(entered)));
         glfwSetMouseButtonCallback(window, (win, button, action, mods) ->
                 events.publish(new HostDisplay.Button(button, action(action),
                         mods)));

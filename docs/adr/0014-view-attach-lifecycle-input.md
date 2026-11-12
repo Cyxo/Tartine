@@ -116,7 +116,9 @@ framework lifecycle, creates the `ViewRootImpl`, attaches the decor, wires
   leaf `View` (and its `OnGenericMotionListener`/`OnHoverListener`) instead
   of stopping at a named gap. `ViewGroup` tracks one hovered child (the
   shell has a single mouse pointer) and synthesizes ENTER/EXIT transfers
-  when hover focus moves. The host still emits no window-leave EXIT.
+  when hover focus moves. `HostInput` ends the session with
+  `ACTION_HOVER_EXIT` when the cursor leaves the window content area or
+  the window loses focus, so hover state does not stay stuck.
 - Guest `View` subclass overrides are reached by framework mirror bodies
   through ordinary JVM virtual dispatch: a translated guest class is a real
   subclass of the host-loaded `android.view.*` class, and
