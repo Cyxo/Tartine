@@ -258,8 +258,8 @@ final class TxMethodWriter implements Opcodes {
         if (method.name.equals("<clinit>") && !staticSeeds.isEmpty()) {
             for (DexClass.DexField f : staticSeeds) {
                 mv.visitLdcInsn(f.initialValue);
-                mv.visitFieldInsn(Opcodes.PUTSTATIC, method.owner,
-                        f.name, f.type);
+                mv.visitFieldInsn(Opcodes.PUTSTATIC,
+                        TxDescriptors.internal(method.owner), f.name, f.type);
             }
         }
         // Pre-register every branch target before the emission pass: inline
