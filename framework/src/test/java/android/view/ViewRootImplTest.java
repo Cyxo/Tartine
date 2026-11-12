@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import android.os.Looper;
 import android.view.animation.AnimationUtils;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -86,15 +88,16 @@ class ViewRootImplTest {
      * Compose's {@code AndroidComposeView} overrides {@code
      * dispatchHoverEvent} and reads the animation clock from it; mirror that
      * shape so a missing framework symbol fails this test instead of the
-     * first real hover.
+     * first real hover. The action list pins AOSP's hover hand-off: entering
+     * on a MOVE synthesizes HOVER_ENTER before delivering the MOVE.
      */
     private static final class HoverView extends RecordingView {
-        int hovers;
+        final List<Integer> hoverActions = new ArrayList<>();
 
         @Override
         protected boolean dispatchHoverEvent(MotionEvent event) {
             AnimationUtils.currentAnimationTimeMillis();
-            hovers++;
+            hoverActions.add(event.getAction());
             return true;
         }
     }
@@ -210,7 +213,8 @@ class ViewRootImplTest {
                 0, 0, InputDevice.SOURCE_MOUSE, 0);
 
         assertTrue(root.dispatchHoverEvent(hover));
-        assertEquals(1, child.hovers);
+        assertEquals(List.of(MotionEvent.ACTION_HOVER_ENTER,
+                MotionEvent.ACTION_HOVER_MOVE), child.hoverActions);
         hover.recycle();
     }
 }

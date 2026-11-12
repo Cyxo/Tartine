@@ -10,8 +10,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import android.graphics.Paint;
+import android.os.SystemClock;
 import android.text.TextDirectionHeuristics;
 import android.text.TextPaint;
+import android.view.InputDevice;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -379,6 +384,57 @@ final class TranslatedVmTest {
         assertEquals(0, (int) (Integer) call("layoutDirDemo"));
         assertNull(call("missFind"));
         assertNull(call("tagMiss"));
+    }
+
+    /**
+     * A translated guest View subclass is a real JVM subclass, so a
+     * framework mirror body that invokes a View hook must land on the guest
+     * override. The three arms are the dispatch entry points the input path
+     * uses: hover, touch, and non-hover generic motion (wheel).
+     */
+    @Test
+    void guestViewOverridesAreReachableFromFrameworkDispatch() throws Exception {
+        ViewGroup parent = newGuestViewGroup();
+        View child = newGuestViewGroup();
+        child.layout(0, 0, 10, 10);
+        parent.addView(child);
+        long now = SystemClock.uptimeMillis();
+
+        MotionEvent hover = MotionEvent.obtain(now, now,
+                MotionEvent.ACTION_HOVER_MOVE, 5f, 5f, 0);
+        hover.setSource(InputDevice.SOURCE_MOUSE);
+        try {
+            assertTrue(parent.dispatchGenericMotionEvent(hover),
+                    "guest onHoverEvent must be reachable through the hover chain");
+        } finally {
+            hover.recycle();
+        }
+
+        MotionEvent down = MotionEvent.obtain(now, now,
+                MotionEvent.ACTION_DOWN, 5f, 5f, 0);
+        down.setSource(InputDevice.SOURCE_MOUSE);
+        try {
+            assertTrue(parent.dispatchTouchEvent(down),
+                    "guest onTouchEvent must be reachable through the touch chain");
+        } finally {
+            down.recycle();
+        }
+
+        MotionEvent scroll = MotionEvent.obtain(now, now,
+                MotionEvent.ACTION_SCROLL, 5f, 5f, 0);
+        scroll.setSource(InputDevice.SOURCE_MOUSE);
+        try {
+            assertTrue(parent.dispatchGenericMotionEvent(scroll),
+                    "guest onGenericMotionEvent must be reachable through the scroll chain");
+        } finally {
+            scroll.recycle();
+        }
+    }
+
+    /** Instantiates the fixture's dex-defined ViewGroup subclass. */
+    private ViewGroup newGuestViewGroup() throws Exception {
+        return (ViewGroup) loader.loadClass("test.Vg")
+                .getDeclaredConstructor().newInstance();
     }
 
     @Test

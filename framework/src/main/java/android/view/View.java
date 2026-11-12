@@ -534,20 +534,72 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchFinishTemporaryDetach()V");
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/View.java (dispatchGenericFocusedEvent): the
+     * base view has no focused child, so it never handles the event here.
+     */
     protected boolean dispatchGenericFocusedEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchGenericFocusedEvent(Landroid/view/MotionEvent;)Z");
+        return false;
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/View.java (dispatchGenericMotionEvent): pointer
+     * events route hover actions to {@link #dispatchHoverEvent} and every
+     * other action to {@link #dispatchGenericPointerEvent}; non-pointer
+     * events go through {@link #dispatchGenericFocusedEvent}. The
+     * listener/onGenericMotionEvent arm is AOSP's
+     * dispatchGenericMotionEventInternal. Omitted legs, all unmodelled
+     * subsystems: the input-event consistency verifier (no verifier on the
+     * shell), rotary-encoder haptics (no haptics), and the context-click
+     * button arm (context click is not ported yet).
+     */
     public boolean dispatchGenericMotionEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchGenericMotionEvent(Landroid/view/MotionEvent;)Z");
+        final int source = arg0.getSource();
+        if ((source & InputDevice.SOURCE_CLASS_POINTER) != 0) {
+            final int action = arg0.getAction();
+            if (action == MotionEvent.ACTION_HOVER_ENTER
+                    || action == MotionEvent.ACTION_HOVER_MOVE
+                    || action == MotionEvent.ACTION_HOVER_EXIT) {
+                if (dispatchHoverEvent(arg0)) {
+                    return true;
+                }
+            } else if (dispatchGenericPointerEvent(arg0)) {
+                return true;
+            }
+        } else if (dispatchGenericFocusedEvent(arg0)) {
+            return true;
+        }
+        if (mOnGenericMotionListener != null && mEnabled
+                && mOnGenericMotionListener.onGenericMotion(this, arg0)) {
+            return true;
+        }
+        return onGenericMotionEvent(arg0);
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/View.java (dispatchGenericPointerEvent): a leaf
+     * view has no child under the pointer, so it never handles it here.
+     */
     protected boolean dispatchGenericPointerEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchGenericPointerEvent(Landroid/view/MotionEvent;)Z");
+        return false;
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/View.java (dispatchHoverEvent): an enabled
+     * hover listener gets first refusal, then the view's onHoverEvent hook.
+     * ViewGroup overrides this to route hover to the child under the pointer
+     * before falling back here.
+     */
     protected boolean dispatchHoverEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->dispatchHoverEvent(Landroid/view/MotionEvent;)Z");
+        if (mOnHoverListener != null && mEnabled
+                && mOnHoverListener.onHover(this, arg0)) {
+            return true;
+        }
+        return onHoverEvent(arg0);
     }
 
     public boolean dispatchKeyEvent(KeyEvent arg0) {
@@ -2123,6 +2175,8 @@ import java.util.function.Consumer;
     private OnTouchListener mOnTouchListener;
     private OnKeyListener mOnKeyListener;
     private OnFocusChangeListener mOnFocusChangeListener;
+    private OnHoverListener mOnHoverListener;
+    private OnGenericMotionListener mOnGenericMotionListener;
 
     /**
      * AOSP View.dispatchAttachedToWindow: record the attach info, notify
@@ -2677,10 +2731,10 @@ import java.util.function.Consumer;
     /**
      * Ported from aosp-mirror/platform_frameworks_base
      * core/java/android/view/View.java (onLayout): empty on device; View
-     * subclasses with children override. NOTE: guest overrides of View
-     * subclasses are not yet reachable from mirror-body virtual calls
-     * (pending the generated-peer migration); guest-override-first applies
-     * only at frameworkDispatch ref entry points so far.
+     * subclasses with children override. A translated guest subclass is a
+     * real JVM subclass, so this mirror-body callback reaches its override
+     * through ordinary virtual dispatch (pinned by
+     * TranslatedVmTest.guestViewOverridesAreReachableFromFrameworkDispatch).
      */
     protected void onLayout(boolean arg0, int arg1, int arg2, int arg3, int arg4) {
     }
@@ -3656,11 +3710,11 @@ import java.util.function.Consumer;
     }
 
     public void setOnGenericMotionListener(View.OnGenericMotionListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnGenericMotionListener(Landroid/view/View$OnGenericMotionListener;)V");
+        mOnGenericMotionListener = arg0;
     }
 
     public void setOnHoverListener(View.OnHoverListener arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOnHoverListener(Landroid/view/View$OnHoverListener;)V");
+        mOnHoverListener = arg0;
     }
 
     public void setOnKeyListener(View.OnKeyListener arg0) {

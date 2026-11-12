@@ -361,30 +361,28 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchFreezeSelfOnly(Landroid/util/SparseArray;)V");
     }
 
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/ViewGroup.java (dispatchGenericFocusedEvent):
+     * route a non-pointer generic-motion event to the focused child, or fall
+     * through to this group when the group itself owns focus.
+     */
     protected boolean dispatchGenericFocusedEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchGenericFocusedEvent(Landroid/view/MotionEvent;)Z");
-    }
-
-    protected boolean dispatchGenericPointerEvent(MotionEvent arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->dispatchGenericPointerEvent(Landroid/view/MotionEvent;)Z");
-    }
-
-    protected boolean dispatchHoverEvent(MotionEvent arg0) {
-        View target = findTouchTarget((int) arg0.getX(), (int) arg0.getY());
-        if (target != null) {
-            MotionEvent childEvent = MotionEvent.obtain(arg0);
-            childEvent.offsetLocation(-(target.getLeft() - getScrollX()),
-                    -(target.getTop() - getScrollY()));
-            boolean handled = target.dispatchHoverEvent(childEvent);
-            childEvent.recycle();
-            if (handled) {
-                return true;
-            }
+        View focused = getFocusedChild();
+        if (focused != null) {
+            return focused.dispatchGenericMotionEvent(arg0);
         }
-        return super.onHoverEvent(arg0);
+        return super.dispatchGenericFocusedEvent(arg0);
     }
 
-    public boolean dispatchGenericMotionEvent(MotionEvent arg0) {
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/ViewGroup.java (dispatchGenericPointerEvent):
+     * send a non-hover pointer event to the child under the pointer, then to
+     * this group. View.dispatchGenericMotionEvent calls this arm for scroll
+     * and button actions; hover actions use dispatchHoverEvent instead.
+     */
+    protected boolean dispatchGenericPointerEvent(MotionEvent arg0) {
         View target = findTouchTarget((int) arg0.getX(), (int) arg0.getY());
         if (target != null) {
             MotionEvent childEvent = MotionEvent.obtain(arg0);
@@ -396,7 +394,86 @@ import java.util.function.Consumer;
                 return true;
             }
         }
-        return super.onGenericMotionEvent(arg0);
+        return super.dispatchGenericPointerEvent(arg0);
+    }
+
+    /**
+     * Ported from aosp-mirror/platform_frameworks_base
+     * core/java/android/view/ViewGroup.java (dispatchHoverEvent), simplified
+     * to the shell's single-pointer model: AOSP keeps a list of HoverTargets
+     * because one batched event can touch several children, while a mouse
+     * produces one position, so one hovered child is enough. Hover focus
+     * still transfers with synthesized ENTER/EXIT events, and the group only
+     * enters itself when no child handled the event.
+     */
+    protected boolean dispatchHoverEvent(MotionEvent arg0) {
+        final int action = arg0.getAction();
+        final boolean intercept = onInterceptHoverEvent(arg0);
+        boolean handled = false;
+        View target = action == MotionEvent.ACTION_HOVER_EXIT || intercept
+                ? null
+                : findTouchTarget((int) arg0.getX(), (int) arg0.getY());
+
+        // Hover focus moved (or left): the previous child sees one EXIT.
+        if (mHoveredChild != null && mHoveredChild != target) {
+            dispatchHoverToChild(mHoveredChild, MotionEvent.ACTION_HOVER_EXIT, arg0);
+            mHoveredChild = null;
+        }
+        if (target != null) {
+            if (mHoveredChild != target) {
+                // Enter this child first; AOSP synthesizes the ENTER when the
+                // pointer arrived with a MOVE instead of a window ENTER.
+                handled |= dispatchHoverToChild(target,
+                        MotionEvent.ACTION_HOVER_ENTER, arg0);
+                mHoveredChild = target;
+            }
+            if (action == MotionEvent.ACTION_HOVER_MOVE) {
+                handled |= dispatchHoverToChild(target, action, arg0);
+            }
+        }
+
+        // No child handled it: hover this group itself, transferring focus
+        // with the same synthesized enter/exit contract.
+        final boolean newHoveredSelf = !handled
+                && action != MotionEvent.ACTION_HOVER_EXIT;
+        if (newHoveredSelf != mHoveredSelf) {
+            if (mHoveredSelf) {
+                MotionEvent exit = MotionEvent.obtain(arg0);
+                exit.setAction(MotionEvent.ACTION_HOVER_EXIT);
+                handled |= super.dispatchHoverEvent(exit);
+                exit.recycle();
+                mHoveredSelf = false;
+            }
+            if (newHoveredSelf) {
+                if (action != MotionEvent.ACTION_HOVER_ENTER) {
+                    MotionEvent enter = MotionEvent.obtain(arg0);
+                    enter.setAction(MotionEvent.ACTION_HOVER_ENTER);
+                    handled |= super.dispatchHoverEvent(enter);
+                    enter.recycle();
+                }
+                handled |= super.dispatchHoverEvent(arg0);
+                mHoveredSelf = true;
+            }
+        } else if (newHoveredSelf) {
+            handled |= super.dispatchHoverEvent(arg0);
+        }
+        return handled;
+    }
+
+    /** The child that currently owns hover focus, or null. */
+    private View mHoveredChild;
+    /** Whether this group itself currently owns hover focus. */
+    private boolean mHoveredSelf;
+
+    private boolean dispatchHoverToChild(View child, int action,
+            MotionEvent event) {
+        MotionEvent childEvent = MotionEvent.obtain(event);
+        childEvent.setAction(action);
+        childEvent.offsetLocation(-(child.getLeft() - getScrollX()),
+                -(child.getTop() - getScrollY()));
+        boolean handled = child.dispatchHoverEvent(childEvent);
+        childEvent.recycle();
+        return handled;
     }
 
     public boolean dispatchKeyEvent(KeyEvent arg0) {

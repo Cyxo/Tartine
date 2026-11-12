@@ -110,6 +110,20 @@ framework lifecycle, creates the `ViewRootImpl`, attaches the decor, wires
   the guest view tree through `ViewRootImpl`, so apps that gate behavior on
   click/key/focus now work; text input still uses key events plus a raw
   typed-text fallback, not `InputConnection`/IME.
+- Generic motion follows AOSP's split: `View.dispatchGenericMotionEvent`
+  routes hover actions to `dispatchHoverEvent` and other pointer actions to
+  `dispatchGenericPointerEvent`, so a wheel event and a hover both reach a
+  leaf `View` (and its `OnGenericMotionListener`/`OnHoverListener`) instead
+  of stopping at a named gap. `ViewGroup` tracks one hovered child (the
+  shell has a single mouse pointer) and synthesizes ENTER/EXIT transfers
+  when hover focus moves. The host still emits no window-leave EXIT.
+- Guest `View` subclass overrides are reached by framework mirror bodies
+  through ordinary JVM virtual dispatch: a translated guest class is a real
+  subclass of the host-loaded `android.view.*` class, and
+  `TranslatedVmTest.guestViewOverridesAreReachableFromFrameworkDispatch`
+  pins the touch, hover and generic-motion arms. The former
+  interpreter-era "pending generated-peer migration" limit no longer
+  applies.
 - The traversal seam is explicit: `tartineNeedsTraversal()` is the only
   redraw predicate, which keeps the idle screen at one blit and makes a
   wedged draw fail once instead of every VSync.

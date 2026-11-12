@@ -2484,9 +2484,19 @@ class DexFrontendTest {
         expected.append("  3: move-result v0\n");
         expected.append("  4: return v0\n");
         expected.append("class Ltest/Vg;\n");
-        expected.append("method <init>()V regs=1\n");
-        expected.append("  0: invoke-direct v0, Ljava/lang/Object;-><init>()V\n");
-        expected.append("  3: return-void\n");
+        expected.append("method <init>()V regs=2\n");
+        expected.append("  0: const-4 v0, #0\n");
+        expected.append("  1: invoke-direct v1, v0, Landroid/view/ViewGroup;-><init>(Landroid/content/Context;)V\n");
+        expected.append("  4: return-void\n");
+        expected.append("method onGenericMotionEvent(Landroid/view/MotionEvent;)Z regs=2\n");
+        expected.append("  0: const-4 v0, #1\n");
+        expected.append("  1: return v0\n");
+        expected.append("method onHoverEvent(Landroid/view/MotionEvent;)Z regs=2\n");
+        expected.append("  0: const-4 v0, #1\n");
+        expected.append("  1: return v0\n");
+        expected.append("method onTouchEvent(Landroid/view/MotionEvent;)Z regs=2\n");
+        expected.append("  0: const-4 v0, #1\n");
+        expected.append("  1: return v0\n");
         StringBuilder actual = new StringBuilder();
         for (DexClass cls : dex.classes()) {
             actual.append(DexDump.dump(cls));

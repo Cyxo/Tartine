@@ -139,21 +139,36 @@ public final class FixtureDex {
                 Collections.singletonList(orphanInit));
 
         // Vg: a dex-defined ViewGroup subclass for mirror-bridging probes.
-        // The init skips the framework super chain (sub2Init convention).
-        MutableMethodImplementation vgInitImpl = new MutableMethodImplementation(1);
-        vgInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1, 0, 0, 0, 0,
-                0, objectInit));
+        // It chains the real framework constructor (null Context) so the
+        // inherited View/ViewGroup field seeds exist for dispatch.
+        BuilderMethodReference vgSuperInit = builder.internMethodReference(
+                new ImmutableMethodReference("Landroid/view/ViewGroup;", "<init>",
+                        Collections.singletonList("Landroid/content/Context;"), "V"));
+        MutableMethodImplementation vgInitImpl = new MutableMethodImplementation(2);
+        vgInitImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 0));
+        vgInitImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 2,
+                1, 0, 0, 0, 0, vgSuperInit));
         vgInitImpl.addInstruction(new BuilderInstruction10x(Opcode.RETURN_VOID));
         BuilderMethod vgInit = builder.internMethod(VG, "<init>",
                 Collections.<ImmutableMethodParameter>emptyList(), "V",
                 AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(),
                 Collections.emptySet(), Collections.emptySet(), vgInitImpl);
+        // Guest overrides of framework View hooks. A translated subclass is a
+        // real JVM subclass, so the framework's mirror body must reach these
+        // through ordinary invoke-virtual dispatch; returning true makes the
+        // hand-off observable from the host side.
+        BuilderMethod vgTouch = vgOverride(builder,
+                "onTouchEvent", "Landroid/view/MotionEvent;");
+        BuilderMethod vgHover = vgOverride(builder,
+                "onHoverEvent", "Landroid/view/MotionEvent;");
+        BuilderMethod vgGeneric = vgOverride(builder,
+                "onGenericMotionEvent", "Landroid/view/MotionEvent;");
         builder.internClassDef(VG, AccessFlags.PUBLIC.getValue(),
                 "Landroid/view/ViewGroup;",
                 Collections.<String>emptyList(), "Vg.java",
                 Collections.emptySet(),
                 Collections.<BuilderField>emptyList(),
-                Collections.singletonList(vgInit));
+                Arrays.asList(vgInit, vgTouch, vgHover, vgGeneric));
 
         // Boom: a dex-defined throwable (stays a model object, unlike
         // java.lang throwables which allocate as host exceptions).
@@ -6867,6 +6882,20 @@ public final class FixtureDex {
         return demos;
     }
 
+
+    /** A public guest override of a one-argument View hook that returns true. */
+    private static BuilderMethod vgOverride(DexBuilder builder, String name,
+            String parameter) {
+        MutableMethodImplementation impl = new MutableMethodImplementation(2);
+        impl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 1));
+        impl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        return builder.internMethod(VG, name,
+                Collections.singletonList(new ImmutableMethodParameter(parameter,
+                        Collections.emptySet(), null)),
+                "Z",
+                AccessFlags.PUBLIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), impl);
+    }
 
     private static BuilderMethod trivialInit(DexBuilder builder, BuilderMethodReference objectInit,
             String type, String superclass) {
