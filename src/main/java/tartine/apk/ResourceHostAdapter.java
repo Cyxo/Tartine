@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.TreeSet;
 import tartine.fw.AppResourceHost;
 import tartine.fw.ResValue;
+import tartine.fw.SystemColors;
 import tartine.fw.XmlNode;
 
 /**
@@ -54,7 +55,7 @@ public final class ResourceHostAdapter implements AppResourceHost {
         }
         ResourceTable.ConfValue conf = table.value(resId & 0xFFFFFFFFL, device);
         if (conf == null) {
-            return null;
+            return systemColor(resId);
         }
         int type = conf.dataType();
         int data = conf.data();
@@ -63,6 +64,22 @@ public final class ResourceHostAdapter implements AppResourceHost {
         }
         String text = type == TYPE_STRING ? table.string(data) : null;
         return new ResValue(type, data, text, resId);
+    }
+
+    /**
+     * The {@code android} package ({@code 0x01}) is not part of the installed
+     * APK's table. The generated {@link SystemColors} baseline answers its
+     * flat color ids, which framework themes (and androidx theme readers)
+     * reference directly; every other android-package id stays absent so it
+     * surfaces as the framework's named gap instead of a silent zero.
+     */
+    private static ResValue systemColor(int resId) {
+        if ((resId >>> 24) != 0x01) {
+            return null;
+        }
+        Integer argb = SystemColors.get(resId);
+        return argb == null ? null
+                : new ResValue(BinaryXml.TYPE_COLOR_ARGB8, argb, null, resId);
     }
 
     @Override
@@ -101,15 +118,25 @@ public final class ResourceHostAdapter implements AppResourceHost {
     /** Turn a bag map value into a {@link ResValue}, following references. */
     private ResValue materialize(int type, int data, String text, int sourceId) {
         if (type == TYPE_REFERENCE) {
+            // A reference to a style/array bag has no simple value to
+            // resolve: hand the reference back, naming the bag as its
+            // source, so TypedArray.getResourceId can answer the style id
+            // (Materials' text-appearance readers inflate it by id).
+            if (table.bag(data & 0xFFFFFFFFL, device) != null) {
+                return new ResValue(type, data, null, data);
+            }
             return resolve(data, 0);
         }
         if (type == TYPE_ATTRIBUTE) {
             // ?attr indirection: the framework resolves it against the live
             // theme; hand back the raw attribute reference.
-            return new ResValue(type, data, null, sourceId);
+            return new ResValue(type, data, null, 0);
         }
+        // Inline value (a color/dimension/boolean literal). AOSP leaves
+        // TypedValue.resourceId at 0 for inline values; only a reference
+        // names a resource, and resolve() already reports that target id.
         String resolved = type == TYPE_STRING && text == null ? table.string(data) : text;
-        return new ResValue(type, data, resolved, sourceId);
+        return new ResValue(type, data, resolved, 0);
     }
 
     @Override

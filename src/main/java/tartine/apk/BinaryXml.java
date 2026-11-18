@@ -39,10 +39,14 @@ public final class BinaryXml {
     public static final int TYPE_INT_DEC = 0x10;
     public static final int TYPE_INT_HEX = 0x11;
     public static final int TYPE_INT_BOOLEAN = 0x12;
-    public static final int TYPE_COLOR_ARGB4 = 0x1c;
-    public static final int TYPE_COLOR_RGB4 = 0x1d;
-    public static final int TYPE_COLOR_ARGB8 = 0x1e;
-    public static final int TYPE_COLOR_RGB8 = 0x1f;
+    // The four color tags must line up one-for-one with
+    // androidfw/ResourceTypes.h Res_value (ARGB8=0x1c ... RGB4=0x1f):
+    // TypedValue answers the same tags, so a shuffled mapping here would
+    // mislabel every parsed color.
+    public static final int TYPE_COLOR_ARGB8 = 0x1c;
+    public static final int TYPE_COLOR_RGB8 = 0x1d;
+    public static final int TYPE_COLOR_ARGB4 = 0x1e;
+    public static final int TYPE_COLOR_RGB4 = 0x1f;
 
     /**
      * A decoded attribute with its value resolved to text and, when the

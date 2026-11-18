@@ -28,6 +28,9 @@ class ResourceHostAdapterTest {
     private static final int LAYOUT_MAIN = 0x7F030000;
     private static final int ATTR_TEXT = 0x0101014F;
     private static final int ATTR_LAYOUT_WIDTH = 0x010100F4;
+    private static final int ATTR_BACKGROUND = 0x01010031;
+    private static final int FRAMEWORK_WHITE = 0x0106000B;
+    private static final int FRAMEWORK_BACKGROUND_DARK = 0x0106000E;
 
     @TempDir
     Path dir;
@@ -41,7 +44,9 @@ class ResourceHostAdapterTest {
                 new Fixtures.ArscType("style", List.of(
                         new Fixtures.ArscEntry("AppTheme", List.of(
                                 Fixtures.Row.bag(0, 0, List.of(
-                                        Fixtures.MapRow.ref(ATTR_TEXT, COLOR_PRIMARY))))))),
+                                        Fixtures.MapRow.ref(ATTR_TEXT, COLOR_PRIMARY),
+                                        Fixtures.MapRow.ref(ATTR_BACKGROUND,
+                                                FRAMEWORK_BACKGROUND_DARK))))))),
                 new Fixtures.ArscType("color", List.of(
                         new Fixtures.ArscEntry("primary", List.of(
                                 Fixtures.Row.typed(0, BinaryXml.TYPE_COLOR_ARGB8,
@@ -87,6 +92,33 @@ class ResourceHostAdapterTest {
         assertEquals(0xFF00FF00, value.data);
         assertNull(adapter.attribute(0x01010099, new int[] {STYLE_APP}));
         assertNull(adapter.attribute(ATTR_TEXT, new int[0]));
+    }
+
+    @Test
+    void frameworkColorsAnswerFromTheSystemBaseline() {
+        // android.R.color.white (0x0106000b) is not in the APK table; the
+        // android-package baseline answers it as an ARGB8 color value, so
+        // androidx's isColorInt() check succeeds instead of hitting a gap.
+        ResValue white = adapter.value(FRAMEWORK_WHITE);
+        assertNotNull(white);
+        assertEquals(BinaryXml.TYPE_COLOR_ARGB8, white.type);
+        assertEquals(0xFFFFFFFF, white.data);
+        assertEquals(FRAMEWORK_WHITE, white.sourceId);
+        // Non-color framework ids stay absent (named-gap boundary).
+        assertNull(adapter.value(ATTR_TEXT));
+        // App-package misses are untouched by the baseline.
+        assertNull(adapter.value(0x7F0200FF));
+    }
+
+    @Test
+    void themedAttributeFollowsReferenceIntoTheFrameworkBaseline() {
+        // App style value -> @android:color/background_dark: the host
+        // resolves the indirection through both tables.
+        ResValue value = adapter.attribute(ATTR_BACKGROUND, new int[] {STYLE_APP});
+        assertNotNull(value);
+        assertEquals(BinaryXml.TYPE_COLOR_ARGB8, value.type);
+        assertEquals(0xFF000000, value.data);
+        assertEquals(FRAMEWORK_BACKGROUND_DARK, value.sourceId);
     }
 
     @Test

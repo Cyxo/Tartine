@@ -21,6 +21,26 @@ class SystemColorsTest {
     }
 
     @Test
+    void classicPlatformColorsAreInTheBaseline() {
+        // android.R.color.white / black / transparent ids from the LOCAL
+        // android-36 android.jar stub constants; values from AOSP
+        // frameworks/base core/res/res/values/colors.xml, cross-checked
+        // against the API-36 platform package dump.
+        assertEquals(0xFFFFFFFF, SystemColors.get(17170443).intValue());
+        assertEquals(0xFF000000, SystemColors.get(17170444).intValue());
+        assertEquals(0x00000000, SystemColors.get(17170445).intValue());
+        assertEquals(0xFF33B5E5, SystemColors.get(17170450).intValue());
+    }
+
+    @Test
+    void stateListColorsAreNotFlatBaselineRows() {
+        // primary_text_dark (0x01060001) is a res/color selector, not an
+        // ARGB literal: it must stay absent so callers see the named gap
+        // rather than an invented single color.
+        assertNull(SystemColors.get(17170433));
+    }
+
+    @Test
     void unknownIdReadsNull() {
         // 0x7f-prefixed ids are app-package resources: never baseline rows.
         assertNull(SystemColors.get(0x7f010203));

@@ -1,11 +1,15 @@
 // Generated table: android-package system color resources as flat ARGB ints.
 // Sources: `android.R$color` stub constants (ConstantValue attributes) read from
-// the LOCAL SDK android-36 android.jar, joined with the fallback values of
+// the LOCAL SDK android-36 android.jar, joined with the literal values of
 // AOSP frameworks/base core/res/res/values/colors.xml ("Colors used in Android
 // system, from design system"; aosp-mirror/platform_frameworks_base, fetched
-// 2026-10-19). A real OS overlays these at runtime via OverlayManager RROs
-// (e.g. wallpaper-derived Material You palettes); this translation layer runs
-// no RROs, so the platform baseline values are served as-is.
+// 2026-10-19) and cross-checked against the platform package dump of the same
+// android-36 SDK. State-list resources (primary_text_*, tab_indicator_text,
+// widget_edittext_dark, ...) are deliberately absent: they have no single ARGB
+// value, so guests asking for one keep the named gap until framework XML
+// resources are served. A real OS overlays these at runtime via OverlayManager
+// RROs (e.g. wallpaper-derived Material You palettes); this translation layer
+// runs no RROs, so the platform baseline values are served as-is.
 package tartine.fw;
 
 import java.util.HashMap;
@@ -16,6 +20,26 @@ public final class SystemColors {
     private static final Map<Integer, Integer> VALUES = new HashMap<>();
 
     static {
+        // Classic platform palette (android.R.color, 0x0106xxxx). These are
+        // the ids framework themes and app styles reference directly; the
+        // values are the literal colors.xml rows of the API-36 platform.
+        VALUES.put(17170432, (int) 0xFFAAAAAA); // darker_gray
+        VALUES.put(17170443, (int) 0xFFFFFFFF); // white
+        VALUES.put(17170444, (int) 0xFF000000); // black
+        VALUES.put(17170445, (int) 0x00000000); // transparent
+        VALUES.put(17170446, (int) 0xFF000000); // background_dark
+        VALUES.put(17170447, (int) 0xFFFFFFFF); // background_light
+        VALUES.put(17170450, (int) 0xFF33B5E5); // holo_blue_light
+        VALUES.put(17170451, (int) 0xFF0099CC); // holo_blue_dark
+        VALUES.put(17170452, (int) 0xFF99CC00); // holo_green_light
+        VALUES.put(17170453, (int) 0xFF669900); // holo_green_dark
+        VALUES.put(17170454, (int) 0xFFFF4444); // holo_red_light
+        VALUES.put(17170455, (int) 0xFFCC0000); // holo_red_dark
+        VALUES.put(17170456, (int) 0xFFFFBB33); // holo_orange_light
+        VALUES.put(17170457, (int) 0xFFFF8800); // holo_orange_dark
+        VALUES.put(17170458, (int) 0xFFAA66CC); // holo_purple
+        VALUES.put(17170459, (int) 0xFF00DDFF); // holo_blue_bright
+        VALUES.put(17170460, (int) 0x00000000); // system_notification_accent_color
         VALUES.put(17170461, (int) 0xFFFFFFFF);
         VALUES.put(17170462, (int) 0xFFFEFBFF);
         VALUES.put(17170463, (int) 0xFFF1F0F7);
