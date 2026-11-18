@@ -117,6 +117,14 @@ import java.util.Locale;
     private LocaleList mLocaleList;
 
     /**
+     * AOSP's grammatical-gender selector ({@code getGrammaticalGender});
+     * rolled into {@code compareTo}/{@code hashCode} like the platform
+     * field. {@code assetsSeq} and {@code WindowConfiguration} have no
+     * shell carrier yet and are omitted from those comparisons.
+     */
+    private int mGrammaticalGender = GRAMMATICAL_GENDER_NOT_SPECIFIED;
+
+    /**
      * AOSP Configuration ctor runs {@code unset()} (= setToDefaults(), then
      * {@code fontScale = 0}), so a bare {@code new Configuration()} is the
      * "completely undefined" merge delta: every modeled field stays zero.
@@ -143,6 +151,7 @@ import java.util.Locale;
         keyboard = arg0.keyboard;
         keyboardHidden = arg0.keyboardHidden;
         locale = arg0.locale;
+        mGrammaticalGender = arg0.mGrammaticalGender;
         mLocaleList = arg0.mLocaleList;
         mcc = arg0.mcc;
         mnc = arg0.mnc;
@@ -157,8 +166,152 @@ import java.util.Locale;
         uiMode = arg0.uiMode;
     }
 
-    public int compareTo(Configuration arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->compareTo(Landroid/content/res/Configuration;)I");
+    /**
+     * AOSP {@code Configuration.fixUpLocaleList}: keeps {@code mLocaleList} in
+     * sync with the deprecated {@code locale} field when an older caller has
+     * written it directly. The shell tolerates a null list (a bare config)
+     * where the platform's setToDefaults installs the empty list.
+     */
+    private void fixUpLocaleList() {
+        if (locale == null) {
+            if (mLocaleList == null || !mLocaleList.isEmpty()) {
+                mLocaleList = LocaleList.getEmptyLocaleList();
+            }
+        } else if (mLocaleList == null || mLocaleList.isEmpty()
+                || !locale.equals(mLocaleList.get(0))) {
+            mLocaleList = new LocaleList(locale);
+        }
+    }
+
+    /**
+     * AOSP frameworks-base
+     * core/java/android/content/res/Configuration.java:compareTo (lines
+     * 2186-2259), in the same field order. The shell has no
+     * {@code assetsSeq} or {@code WindowConfiguration} carrier yet, so those
+     * two comparison legs are omitted; every other leg is faithful.
+     */
+    public int compareTo(Configuration that) {
+        int n;
+        float a = this.fontScale;
+        float b = that.fontScale;
+        if (a < b) {
+            return -1;
+        }
+        if (a > b) {
+            return 1;
+        }
+        n = this.mcc - that.mcc;
+        if (n != 0) {
+            return n;
+        }
+        n = this.mnc - that.mnc;
+        if (n != 0) {
+            return n;
+        }
+
+        fixUpLocaleList();
+        that.fixUpLocaleList();
+        // For backward compatibility, an empty locale list is considered
+        // greater than any non-empty locale list.
+        if (this.mLocaleList.isEmpty()) {
+            if (!that.mLocaleList.isEmpty()) {
+                return 1;
+            }
+        } else if (that.mLocaleList.isEmpty()) {
+            return -1;
+        } else {
+            final int minSize = Math.min(this.mLocaleList.size(),
+                    that.mLocaleList.size());
+            for (int i = 0; i < minSize; ++i) {
+                final Locale thisLocale = this.mLocaleList.get(i);
+                final Locale thatLocale = that.mLocaleList.get(i);
+                n = thisLocale.getLanguage().compareTo(
+                        thatLocale.getLanguage());
+                if (n != 0) {
+                    return n;
+                }
+                n = thisLocale.getCountry().compareTo(thatLocale.getCountry());
+                if (n != 0) {
+                    return n;
+                }
+                n = thisLocale.getVariant().compareTo(thatLocale.getVariant());
+                if (n != 0) {
+                    return n;
+                }
+                n = thisLocale.toLanguageTag().compareTo(
+                        thatLocale.toLanguageTag());
+                if (n != 0) {
+                    return n;
+                }
+            }
+            n = this.mLocaleList.size() - that.mLocaleList.size();
+            if (n != 0) {
+                return n;
+            }
+        }
+
+        n = this.mGrammaticalGender - that.mGrammaticalGender;
+        if (n != 0) {
+            return n;
+        }
+        n = this.touchscreen - that.touchscreen;
+        if (n != 0) {
+            return n;
+        }
+        n = this.keyboard - that.keyboard;
+        if (n != 0) {
+            return n;
+        }
+        n = this.keyboardHidden - that.keyboardHidden;
+        if (n != 0) {
+            return n;
+        }
+        n = this.hardKeyboardHidden - that.hardKeyboardHidden;
+        if (n != 0) {
+            return n;
+        }
+        n = this.navigation - that.navigation;
+        if (n != 0) {
+            return n;
+        }
+        n = this.navigationHidden - that.navigationHidden;
+        if (n != 0) {
+            return n;
+        }
+        n = this.orientation - that.orientation;
+        if (n != 0) {
+            return n;
+        }
+        n = this.colorMode - that.colorMode;
+        if (n != 0) {
+            return n;
+        }
+        n = this.screenLayout - that.screenLayout;
+        if (n != 0) {
+            return n;
+        }
+        n = this.uiMode - that.uiMode;
+        if (n != 0) {
+            return n;
+        }
+        n = this.screenWidthDp - that.screenWidthDp;
+        if (n != 0) {
+            return n;
+        }
+        n = this.screenHeightDp - that.screenHeightDp;
+        if (n != 0) {
+            return n;
+        }
+        n = this.smallestScreenWidthDp - that.smallestScreenWidthDp;
+        if (n != 0) {
+            return n;
+        }
+        n = this.densityDpi - that.densityDpi;
+        if (n != 0) {
+            return n;
+        }
+        n = this.fontWeightAdjustment - that.fontWeightAdjustment;
+        return n;
     }
 
     public int describeContents() {
@@ -170,11 +323,22 @@ import java.util.Locale;
     }
 
     public boolean equals(Configuration arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->equals(Landroid/content/res/Configuration;)Z");
+        if (arg0 == null) {
+            return false;
+        }
+        if (arg0 == this) {
+            return true;
+        }
+        return this.compareTo(arg0) == 0;
     }
 
     public boolean equals(Object arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->equals(Ljava/lang/Object;)Z");
+        try {
+            return equals((Configuration) arg0);
+        } catch (ClassCastException e) {
+            // AOSP: an object of another type is simply not equal.
+        }
+        return false;
     }
 
     public static Configuration generateDelta(Configuration arg0, Configuration arg1) {
@@ -182,7 +346,9 @@ import java.util.Locale;
     }
 
     public int getGrammaticalGender() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->getGrammaticalGender()I");
+        // AOSP Configuration.getGrammaticalGender reads the private field
+        // stored by setGrammaticalGender / the resource configuration.
+        return mGrammaticalGender;
     }
 
     public int getLayoutDirection() {
@@ -202,8 +368,36 @@ import java.util.Locale;
         return locale != null ? new LocaleList(locale) : LocaleList.getDefault();
     }
 
+    /**
+     * AOSP Configuration.hashCode, in the platform's field order. The absent
+     * {@code assetsSeq} leg is omitted (see {@link #compareTo}), which keeps
+     * the hash consistent with {@code compareTo == 0}.
+     */
+    @Override
     public int hashCode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/res/Configuration;->hashCode()I");
+        fixUpLocaleList();
+        int result = 17;
+        result = 31 * result + Float.floatToIntBits(fontScale);
+        result = 31 * result + mcc;
+        result = 31 * result + mnc;
+        result = 31 * result + mLocaleList.hashCode();
+        result = 31 * result + touchscreen;
+        result = 31 * result + keyboard;
+        result = 31 * result + keyboardHidden;
+        result = 31 * result + hardKeyboardHidden;
+        result = 31 * result + navigation;
+        result = 31 * result + navigationHidden;
+        result = 31 * result + orientation;
+        result = 31 * result + screenLayout;
+        result = 31 * result + colorMode;
+        result = 31 * result + uiMode;
+        result = 31 * result + screenWidthDp;
+        result = 31 * result + screenHeightDp;
+        result = 31 * result + smallestScreenWidthDp;
+        result = 31 * result + densityDpi;
+        result = 31 * result + fontWeightAdjustment;
+        result = 31 * result + mGrammaticalGender;
+        return result;
     }
 
     public boolean isLayoutSizeAtLeast(int arg0) {
@@ -314,6 +508,7 @@ import java.util.Locale;
         keyboard = arg0.keyboard;
         keyboardHidden = arg0.keyboardHidden;
         locale = arg0.locale;
+        mGrammaticalGender = arg0.mGrammaticalGender;
         mLocaleList = arg0.mLocaleList;
         mcc = arg0.mcc;
         mnc = arg0.mnc;
@@ -359,6 +554,7 @@ import java.util.Locale;
         smallestScreenWidthDp = SMALLEST_SCREEN_WIDTH_DP_UNDEFINED;
         densityDpi = DENSITY_DPI_UNDEFINED;
         fontWeightAdjustment = FONT_WEIGHT_ADJUSTMENT_UNDEFINED;
+        mGrammaticalGender = GRAMMATICAL_GENDER_NOT_SPECIFIED;
     }
 
     public String toString() {

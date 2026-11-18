@@ -42,6 +42,15 @@ public class Window {
     }
 
     /**
+     * AOSP {@code Window.findViewById} is abstract; PhoneWindow delegates to
+     * {@code getDecorView().findViewById(id)}, which is the flow the shell
+     * keeps on its flattened decor.
+     */
+    public <T extends View> T findViewById(int id) {
+        return mDecor.findViewById(id);
+    }
+
+    /**
      * AOSP {@code Window.Callback}: the interface the window hands input and
      * lifecycle events to. An activity implements it (AOSP
      * {@code Activity implements Window.Callback}) and AppCompat wraps it to

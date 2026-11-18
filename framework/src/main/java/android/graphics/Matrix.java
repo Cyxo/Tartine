@@ -1,5 +1,6 @@
 package android.graphics;
 
+import java.awt.geom.AffineTransform;
 import java.io.PrintWriter;
 import java.util.Arrays;
 
@@ -45,6 +46,18 @@ import java.util.Arrays;
 
     public void getValues(float[] arg0) {
         System.arraycopy(mValues, 0, arg0, 0, 9);
+    }
+
+    /**
+     * Host geometry bridge for {@link Path}: the affine part of this matrix
+     * as a Java2D transform. The perspective row is dropped (AOSP's path
+     * transform is affine in every framework caller; a perspective path
+     * transform would need the native Skia leg).
+     */
+    AffineTransform affineTransform() {
+        return new AffineTransform(mValues[MSCALE_X], mValues[MSKEW_Y],
+                mValues[MSKEW_X], mValues[MSCALE_Y], mValues[MTRANS_X],
+                mValues[MTRANS_Y]);
     }
 
     public int hashCode() {

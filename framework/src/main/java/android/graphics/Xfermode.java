@@ -1,8 +1,16 @@
 package android.graphics;
 
-    public class Xfermode {
+/**
+ * AOSP {@code android.graphics.Xfermode}: the base tag for paint transfer
+ * modes. It carries no state of its own; a concrete mode
+ * ({@link PorterDuffXfermode}, {@code BlendModeColorFilter} neighbors) holds
+ * the actual operator. The software seam keeps the object for
+ * {@link Paint#getXfermode()} round-trips and for a future renderer to
+ * inspect.
+ */
+public class Xfermode {
 
+    /** AOSP has an implicit no-argument constructor. */
     public Xfermode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Xfermode;-><init>()V");
     }
-    }
+}

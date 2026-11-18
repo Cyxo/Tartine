@@ -641,6 +641,8 @@ public final class Main {
         HostDisplay.WindowMetrics metrics = display.awaitMetrics();
         DisplayConfig.set(metrics.width(), metrics.height(),
                 metrics.contentScale());
+        DisplayConfig.setRefreshHz((float) (1_000_000_000.0
+                / HostConfig.framePeriodNanos()));
         log.info("gui: viewport " + metrics.width() + "x"
                 + metrics.height() + " px @ " + metrics.contentScale()
                 + "x scale (" + DisplayConfig.screenWidthDp() + "x"

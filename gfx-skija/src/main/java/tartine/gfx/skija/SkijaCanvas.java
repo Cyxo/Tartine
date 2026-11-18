@@ -2,12 +2,16 @@ package tartine.gfx.skija;
 
 import io.github.humbleui.skija.Canvas;
 import io.github.humbleui.skija.ClipMode;
+import io.github.humbleui.skija.Path;
+import io.github.humbleui.skija.PathBuilder;
+import io.github.humbleui.skija.PathFillMode;
 import io.github.humbleui.types.IRect;
 import io.github.humbleui.types.Rect;
 import tartine.gfx.GfxCanvas;
 import tartine.gfx.GfxClipMode;
 import tartine.gfx.GfxFont;
 import tartine.gfx.GfxPaint;
+import tartine.gfx.GfxPath;
 import tartine.gfx.GfxPicture;
 import tartine.gfx.GfxRect;
 
@@ -109,6 +113,63 @@ final class SkijaCanvas implements GfxCanvas {
             canvas.drawRRect(
                     SkijaMappings.rrect(left, top, right, bottom, rx, ry),
                     skijaPaint.paint());
+        }
+    }
+
+    @Override
+    public void drawPath(GfxPath path, GfxPaint paint) {
+        if (path.verbs.length == 0) {
+            return;
+        }
+        try (PathBuilder builder = new PathBuilder(fillMode(path.fillMode))) {
+            int at = 0;
+            for (int verb : path.verbs) {
+                switch (verb) {
+                    case GfxPath.MOVE:
+                        builder.moveTo(path.points[at], path.points[at + 1]);
+                        at += 2;
+                        break;
+                    case GfxPath.LINE:
+                        builder.lineTo(path.points[at], path.points[at + 1]);
+                        at += 2;
+                        break;
+                    case GfxPath.QUAD:
+                        builder.quadTo(path.points[at], path.points[at + 1],
+                                path.points[at + 2], path.points[at + 3]);
+                        at += 4;
+                        break;
+                    case GfxPath.CUBIC:
+                        builder.cubicTo(path.points[at], path.points[at + 1],
+                                path.points[at + 2], path.points[at + 3],
+                                path.points[at + 4], path.points[at + 5]);
+                        at += 6;
+                        break;
+                    case GfxPath.CLOSE:
+                        builder.closePath();
+                        break;
+                    default:
+                        throw new IllegalArgumentException(
+                                "Tartine: unknown path verb " + verb);
+                }
+            }
+            try (Path skijaPath = builder.snapshot();
+                    SkijaPaint skijaPaint = new SkijaPaint(paint)) {
+                canvas.drawPath(skijaPath, skijaPaint.paint());
+            }
+        }
+    }
+
+    /** Maps the seam fill rule onto Skia's path fill mode. */
+    private static PathFillMode fillMode(GfxPath.FillMode mode) {
+        switch (mode) {
+            case EVEN_ODD:
+                return PathFillMode.EVEN_ODD;
+            case INVERSE_WINDING:
+                return PathFillMode.INVERSE_WINDING;
+            case INVERSE_EVEN_ODD:
+                return PathFillMode.INVERSE_EVEN_ODD;
+            default:
+                return PathFillMode.WINDING;
         }
     }
 

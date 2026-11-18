@@ -283,11 +283,22 @@ import tartine.gfx.GfxRect;
     }
 
     public void drawOval(RectF arg0, Paint arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawOval(Landroid/graphics/RectF;Landroid/graphics/Paint;)V");
+        // AOSP Canvas.drawOval(RectF, Paint). The renderer seam exposes
+        // path fills rather than an oval primitive, so build the equivalent
+        // closed oval contour and replay it as a path.
+        drawOval(arg0.left, arg0.top, arg0.right, arg0.bottom, arg1);
     }
 
-    public void drawOval(float arg0, float arg1, float arg2, float arg3, Paint arg4) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawOval(FFFFLandroid/graphics/Paint;)V");
+    public void drawOval(float arg0, float arg1, float arg2, float arg3,
+            Paint arg4) {
+        // AOSP Canvas.drawOval(FFFF, Paint): native oval fill/stroke. Route
+        // through Path so the same paint (fill or stroke) applies.
+        if (gfx == null) {
+            return;
+        }
+        Path oval = new Path();
+        oval.addOval(arg0, arg1, arg2, arg3, Path.Direction.CW);
+        drawPath(oval, arg4);
     }
 
     public void drawPaint(Paint arg0) {
@@ -303,7 +314,11 @@ import tartine.gfx.GfxRect;
     }
 
     public void drawPath(Path arg0, Paint arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Canvas;->drawPath(Landroid/graphics/Path;Landroid/graphics/Paint;)V");
+        // AOSP Canvas.drawPath: replay the geometry through the renderer
+        // seam (fill/stroke and fill rule ride on the snapshot).
+        if (gfx != null && arg0 != null) {
+            gfx.drawPath(arg0.tartineGfx(), paintOf(arg1));
+        }
     }
 
     public void drawPicture(Picture arg0) {

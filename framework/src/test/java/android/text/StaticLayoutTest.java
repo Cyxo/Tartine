@@ -172,7 +172,7 @@ class StaticLayoutTest {
         assertEquals(15, baseline);
         assertEquals(0, bounds.left);
         assertEquals(0, bounds.top);
-        assertEquals(0, bounds.right);                  // LTR start
+        assertEquals(12, bounds.right);                 // line width ("hi" × 6)
         assertEquals(19, bounds.bottom);
     }
 

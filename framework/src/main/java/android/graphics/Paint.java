@@ -66,9 +66,20 @@ import tartine.gfx.GfxTypeface;
     private float mLetterSpacing = 0.0f;
     private float mWordSpacing = 0.0f;
     private int mHinting = HINTING_OFF;
+    private boolean mElegantTextHeight;
     private Typeface mTypeface;
     private Shader mShader;
+    private Xfermode mXfermode;
+    private ColorFilter mColorFilter;
     private String mFontFeatureSettings;
+    // AOSP Paint.java keeps a ColorLong shadow color; here the packed long
+    // plus the geometry. Drawing shadows stays a renderer boundary (the
+    // seam has no shadow command yet), so the state round-trips but does
+    // not paint.
+    private float mShadowLayerRadius;
+    private float mShadowLayerDx;
+    private float mShadowLayerDy;
+    private long mShadowLayerColor = Color.pack(0);
     // AOSP Paint.java:356-357: HIDDEN_DEFAULT_PAINT_FLAGS (all set on new/reset).
     private static final int HOST_HIDDEN_DEFAULT_PAINT_FLAGS =
             DEV_KERN_TEXT_FLAG | EMBEDDED_BITMAP_TEXT_FLAG | FILTER_BITMAP_FLAG;
@@ -105,6 +116,12 @@ import tartine.gfx.GfxTypeface;
         mStyle = arg0.mStyle;
         mStrokeWidth = arg0.mStrokeWidth;
         mTextSize = arg0.mTextSize;
+        mXfermode = arg0.mXfermode;
+        mColorFilter = arg0.mColorFilter;
+        mShadowLayerRadius = arg0.mShadowLayerRadius;
+        mShadowLayerDx = arg0.mShadowLayerDx;
+        mShadowLayerDy = arg0.mShadowLayerDy;
+        mShadowLayerColor = arg0.mShadowLayerColor;
     }
 
     public Paint(int arg0) {
@@ -133,11 +150,14 @@ import tartine.gfx.GfxTypeface;
     }
 
     public void clearShadowLayer() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->clearShadowLayer()V");
+        // AOSP Paint.java:1846-1848: setShadowLayer(0, 0, 0, 0).
+        setShadowLayer(0.0f, 0.0f, 0.0f, 0);
     }
 
     public float descent() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->descent()F");
+        // AOSP Paint.java:2302 (nDescent native there; positive y-down value).
+        // Read the seam metrics of the paint's cached font.
+        return tartineGfxFont().getMetrics().descent;
     }
 
     public boolean equalsForTextMeasurement(Paint arg0) {
@@ -159,7 +179,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public ColorFilter getColorFilter() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getColorFilter()Landroid/graphics/ColorFilter;");
+        return mColorFilter;
     }
 
     public long getColorLong() {
@@ -195,7 +215,18 @@ import tartine.gfx.GfxTypeface;
     }
 
     public float getFontMetrics(Paint.FontMetrics arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getFontMetrics(Landroid/graphics/Paint$FontMetrics;)F");
+        // AOSP Paint.java:2227 getFontMetrics(FontMetrics): fill the holder
+        // and return the font spacing (descent - ascent).
+        if (arg0 == null) {
+            return 0.0f;
+        }
+        GfxFontMetrics m = tartineGfxFont().getMetrics();
+        arg0.top = m.top;
+        arg0.ascent = m.ascent;
+        arg0.descent = m.descent;
+        arg0.bottom = m.bottom;
+        arg0.leading = m.leading;
+        return m.descent - m.ascent;
     }
 
     public void getFontMetricsForLocale(Paint.FontMetrics arg0) {
@@ -233,8 +264,13 @@ import tartine.gfx.GfxTypeface;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getFontMetricsIntForLocale(Landroid/graphics/Paint$FontMetricsInt;)V");
     }
 
+    /**
+     * AOSP Paint.java getFontSpacing: the native font's line spacing
+     * (descent - ascent, positive y-down).
+     */
     public float getFontSpacing() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getFontSpacing()F");
+        GfxFontMetrics m = tartineGfxFont().getMetrics();
+        return m.descent - m.ascent;
     }
 
     public String getFontVariationSettings() {
@@ -286,23 +322,24 @@ import tartine.gfx.GfxTypeface;
     }
 
     public int getShadowLayerColor() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getShadowLayerColor()I");
+        // AOSP Paint.java:1727-1729: the ARGB view of the stored color long.
+        return Color.toArgb(mShadowLayerColor);
     }
 
     public long getShadowLayerColorLong() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getShadowLayerColorLong()J");
+        return mShadowLayerColor;
     }
 
     public float getShadowLayerDx() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getShadowLayerDx()F");
+        return mShadowLayerDx;
     }
 
     public float getShadowLayerDy() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getShadowLayerDy()F");
+        return mShadowLayerDy;
     }
 
     public float getShadowLayerRadius() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getShadowLayerRadius()F");
+        return mShadowLayerRadius;
     }
 
     public int getStartHyphenEdit() {
@@ -569,7 +606,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public Xfermode getXfermode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->getXfermode()Landroid/graphics/Xfermode;");
+        return mXfermode;
     }
 
     public boolean hasGlyph(String arg0) {
@@ -577,19 +614,20 @@ import tartine.gfx.GfxTypeface;
     }
 
     public final boolean isAntiAlias() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->isAntiAlias()Z");
+        // AOSP Paint.isAntiAlias: flag-bit read.
+        return (mFlags & ANTI_ALIAS_FLAG) != 0;
     }
 
     public final boolean isDither() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->isDither()Z");
+        return (mFlags & DITHER_FLAG) != 0;
     }
 
     public boolean isElegantTextHeight() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->isElegantTextHeight()Z");
+        return mElegantTextHeight;
     }
 
     public final boolean isFakeBoldText() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->isFakeBoldText()Z");
+        return (mFlags & FAKE_BOLD_TEXT_FLAG) != 0;
     }
 
     public final boolean isFilterBitmap() {
@@ -597,11 +635,11 @@ import tartine.gfx.GfxTypeface;
     }
 
     public final boolean isLinearText() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->isLinearText()Z");
+        return (mFlags & LINEAR_TEXT_FLAG) != 0;
     }
 
     public final boolean isStrikeThruText() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->isStrikeThruText()Z");
+        return (mFlags & STRIKE_THRU_TEXT_FLAG) != 0;
     }
 
     public final boolean isSubpixelText() {
@@ -610,7 +648,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public final boolean isUnderlineText() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->isUnderlineText()Z");
+        return (mFlags & UNDERLINE_TEXT_FLAG) != 0;
     }
 
     /**
@@ -671,6 +709,8 @@ import tartine.gfx.GfxTypeface;
         mColor = 0xFF000000;
         mStyle = null;
         mStrokeWidth = 0.0f;
+        mXfermode = null;
+        mColorFilter = null;
     }
 
     public void set(Paint arg0) {
@@ -683,6 +723,8 @@ import tartine.gfx.GfxTypeface;
             mStyle = arg0.mStyle;
             mStrokeWidth = arg0.mStrokeWidth;
             mTextSize = arg0.mTextSize;
+            mXfermode = arg0.mXfermode;
+            mColorFilter = arg0.mColorFilter;
         }
     }
 
@@ -698,11 +740,12 @@ import tartine.gfx.GfxTypeface;
 
     public void setAntiAlias(boolean arg0) {
         // AOSP Paint.java:929-946: helper setting or clearing the flag bit.
-        if (arg0) {
-            setFlags(getFlags() | ANTI_ALIAS_FLAG);
-        } else {
-            setFlags(getFlags() & ~ANTI_ALIAS_FLAG);
-        }
+        setTextFlag(ANTI_ALIAS_FLAG, arg0);
+    }
+
+    /** AOSP Paint.setFlag: set or clear one flag bit (stacked here). */
+    private void setTextFlag(int flag, boolean value) {
+        setFlags(value ? getFlags() | flag : getFlags() & ~flag);
     }
 
     public void setBlendMode(BlendMode arg0) {
@@ -719,15 +762,19 @@ import tartine.gfx.GfxTypeface;
     }
 
     public ColorFilter setColorFilter(ColorFilter arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setColorFilter(Landroid/graphics/ColorFilter;)Landroid/graphics/ColorFilter;");
+        // AOSP Paint.java:1421-1423: swap the filter and answer the old one.
+        ColorFilter previous = mColorFilter;
+        mColorFilter = arg0;
+        return previous;
     }
 
     public void setDither(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setDither(Z)V");
+        // AOSP Paint.setDither: DITHER_FLAG bit.
+        setTextFlag(DITHER_FLAG, arg0);
     }
 
     public void setElegantTextHeight(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setElegantTextHeight(Z)V");
+        mElegantTextHeight = arg0;
     }
 
     public void setEndHyphenEdit(int arg0) {
@@ -735,7 +782,8 @@ import tartine.gfx.GfxTypeface;
     }
 
     public void setFakeBoldText(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setFakeBoldText(Z)V");
+        // AOSP Paint.setFakeBoldText: FAKE_BOLD_TEXT_FLAG bit.
+        setTextFlag(FAKE_BOLD_TEXT_FLAG, arg0);
     }
 
     public void setFilterBitmap(boolean arg0) {
@@ -764,7 +812,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public void setLinearText(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setLinearText(Z)V");
+        setTextFlag(LINEAR_TEXT_FLAG, arg0);
     }
 
     public MaskFilter setMaskFilter(MaskFilter arg0) {
@@ -782,11 +830,15 @@ import tartine.gfx.GfxTypeface;
     }
 
     public void setShadowLayer(float arg0, float arg1, float arg2, int arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setShadowLayer(FFFI)V");
+        // AOSP Paint.java:1585-1587: pack the ARGB word into a color long.
+        setShadowLayer(arg0, arg1, arg2, Color.pack(arg3));
     }
 
     public void setShadowLayer(float arg0, float arg1, float arg2, long arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setShadowLayer(FFFJ)V");
+        mShadowLayerRadius = arg0;
+        mShadowLayerDx = arg1;
+        mShadowLayerDy = arg2;
+        mShadowLayerColor = arg3;
     }
 
     public void setStartHyphenEdit(int arg0) {
@@ -794,7 +846,7 @@ import tartine.gfx.GfxTypeface;
     }
 
     public void setStrikeThruText(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setStrikeThruText(Z)V");
+        setTextFlag(STRIKE_THRU_TEXT_FLAG, arg0);
     }
 
     public void setStrokeCap(Paint.Cap arg0) {
@@ -861,7 +913,7 @@ import tartine.gfx.GfxTypeface;
      }
 
     public void setUnderlineText(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setUnderlineText(Z)V");
+        setTextFlag(UNDERLINE_TEXT_FLAG, arg0);
     }
 
     public void setWordSpacing(float arg0) {
@@ -869,7 +921,10 @@ import tartine.gfx.GfxTypeface;
     }
 
     public Xfermode setXfermode(Xfermode arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Paint;->setXfermode(Landroid/graphics/Xfermode;)Landroid/graphics/Xfermode;");
+        // AOSP Paint.java:1390-1392: swap the transfer mode, answer the old.
+        Xfermode previous = mXfermode;
+        mXfermode = arg0;
+        return previous;
     }
         public static enum Align {
             CENTER, LEFT, RIGHT;

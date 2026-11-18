@@ -67,6 +67,29 @@ class DisplayConfigTest {
     }
 
     @Test
+    void refreshRateDefaultsAndResetsToSixtyHertz() {
+        assertEquals(60.0f, DisplayConfig.refreshHz());
+
+        DisplayConfig.setRefreshHz(90.5f);
+        assertEquals(90.5f, DisplayConfig.refreshHz());
+
+        DisplayConfig.reset();
+        assertEquals(60.0f, DisplayConfig.refreshHz());
+    }
+
+    @Test
+    void rejectsInvalidRefreshRates() {
+        assertThrows(IllegalArgumentException.class,
+                () -> DisplayConfig.setRefreshHz(0.0f));
+        assertThrows(IllegalArgumentException.class,
+                () -> DisplayConfig.setRefreshHz(-60.0f));
+        assertThrows(IllegalArgumentException.class,
+                () -> DisplayConfig.setRefreshHz(Float.NaN));
+        assertThrows(IllegalArgumentException.class,
+                () -> DisplayConfig.setRefreshHz(Float.POSITIVE_INFINITY));
+    }
+
+    @Test
     void rejectsInvalidMetrics() {
         assertThrows(IllegalArgumentException.class,
                 () -> DisplayConfig.set(0, 960, 1.0f));

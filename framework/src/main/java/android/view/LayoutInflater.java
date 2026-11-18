@@ -195,8 +195,7 @@ public class LayoutInflater {
                 continue;
             }
             if ("include".equals(name)) {
-                // Include handling requires resolving the layout attribute;
-                // left to a later step, the include contributes no children.
+                inflateInclude(parent, asAttributes(parser));
                 continue;
             }
             if ("merge".equals(name)) {
@@ -220,6 +219,44 @@ public class LayoutInflater {
     }
 
     /**
+     * AOSP {@code LayoutInflater.parseInclude}: resolves the include's
+     * {@code android:layout} resource and splices that document into the
+     * current parent. A {@code <merge>} root contributes its children
+     * directly; any other root is created as one child whose layout params
+     * come from the include element.
+     */
+    private void inflateInclude(View parent, AttributeSet attrs)
+            throws Exception {
+        if (attrs == null || !(parent instanceof ViewGroup)) {
+            return;
+        }
+        int layoutId = attrs.getAttributeResourceValue(null, "layout", 0);
+        if (layoutId == 0) {
+            throw new RuntimeException("Unable to resolve an <include> layout"
+                    + " attribute");
+        }
+        XmlPullParser parser = mContext.getResources().getXml(layoutId);
+        int type;
+        do {
+            type = parser.next();
+        } while (type != XmlPullParser.START_TAG
+                && type != XmlPullParser.END_DOCUMENT);
+        if (type != XmlPullParser.START_TAG) {
+            return;
+        }
+        String name = parser.getName();
+        if ("merge".equals(name)) {
+            rInflate(parser, parent, asAttributes(parser), false);
+            return;
+        }
+        View view = createViewFromTag(parent, name, asAttributes(parser));
+        ViewGroup group = (ViewGroup) parent;
+        ViewGroup.LayoutParams params = group.generateLayoutParams(attrs);
+        rInflateChildren(parser, view, asAttributes(parser), true);
+        group.addView(view, params);
+    }
+
+    /**
      * AOSP {@code LayoutInflater.createViewFromTag}: a factory gets first
      * refusal, then the platform {@code onCreateView} resolution runs.
      */
@@ -228,9 +265,9 @@ public class LayoutInflater {
         if ("view".equals(viewName)) {
             viewName = attrs == null ? null
                     : attrs.getAttributeValue(null, "class");
-        }
-        if (viewName == null) {
-            throw new RuntimeException("Unable to inflate a <view> without a class attribute");
+            if (viewName == null) {
+                viewName = "android.view.View";
+            }
         }
         if (mFactory2 != null) {
             View view = mFactory2.onCreateView(parent, viewName, mContext, attrs);
@@ -275,6 +312,11 @@ public class LayoutInflater {
      * name loaded through the guest class loader.
      */
     protected View onCreateView(View parent, String name, AttributeSet attrs) {
+        // AOSP: a bare <View> tag names android.view.View (layout XML written
+        // with the platform base class rather than a widget).
+        if ("View".equals(name)) {
+            name = "android.view.View";
+        }
         if (name.indexOf('.') == -1) {
             for (String prefix : CLASS_PREFIXES) {
                 View view = tryCreate(prefix + name, attrs);

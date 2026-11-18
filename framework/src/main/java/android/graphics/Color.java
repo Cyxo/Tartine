@@ -22,15 +22,27 @@ import java.util.Locale;
     }
 
     public static int HSVToColor(float[] arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->HSVToColor([F)I");
+        return HSVToColor(0xFF, arg0);
     }
 
     public static int HSVToColor(int arg0, float[] arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->HSVToColor(I[F)I");
+        if (arg1 == null || arg1.length < 3) {
+            throw new RuntimeException("3 components required for hsv");
+        }
+        // AOSP delegates to Skia's SkHSVToColor. Java2D's HSB is the same
+        // model (hue in [0,360), saturation and value in [0,1]).
+        int rgb = java.awt.Color.HSBtoRGB(arg1[0] / 360.0f, arg1[1], arg1[2]);
+        return (arg0 << 24) | (rgb & 0x00FFFFFF);
     }
 
     public static void RGBToHSV(int arg0, int arg1, int arg2, float[] arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->RGBToHSV(III[F)V");
+        if (arg3 == null || arg3.length < 3) {
+            throw new RuntimeException("3 components required for hsv");
+        }
+        float[] hsb = java.awt.Color.RGBtoHSB(arg0, arg1, arg2, null);
+        arg3[0] = hsb[0] * 360.0f;
+        arg3[1] = hsb[1];
+        arg3[2] = hsb[2];
     }
 
     public float alpha() {
@@ -38,15 +50,25 @@ import java.util.Locale;
     }
 
     public static int alpha(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->alpha(I)I");
+        // AOSP Color.alpha(int): the high byte.
+        return arg0 >>> 24;
     }
 
     public static float alpha(long arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->alpha(J)F");
+        // AOSP Color.alpha(long): a color long in sRGB carries 8-bit
+        // channels (Color.java:782); other color spaces use a 10-bit
+        // float alpha. Both branches are pure bit math, no color space
+        // lookup needed.
+        if ((arg0 & 0x3fL) == 0L) {
+            return ((arg0 >> 56) & 0xFF) / 255.0f;
+        }
+        return ((arg0 >> 6) & 0x3FF) / 1023.0f;
     }
 
     public static int argb(float arg0, float arg1, float arg2, float arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->argb(FFFF)I");
+        // AOSP Color.argb(float,float,float,float): 8-bit components.
+        return (to8bit(arg0) << 24) | (to8bit(arg1) << 16)
+                | (to8bit(arg2) << 8) | to8bit(arg3);
     }
 
     /** AOSP graphics/java/android/graphics/Color.java line 1326
@@ -60,11 +82,16 @@ import java.util.Locale;
     }
 
     public static int blue(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->blue(I)I");
+        // AOSP Color.blue(int): low byte.
+        return arg0 & 0xFF;
     }
 
     public static float blue(long arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->blue(J)F");
+        // AOSP Color.blue(long): sRGB channel byte, else half float.
+        if ((arg0 & 0x3fL) == 0L) {
+            return ((arg0 >> 32) & 0xFF) / 255.0f;
+        }
+        return Float.float16ToFloat((short) ((arg0 >> 16) & 0xFFFF));
     }
 
     public static ColorSpace colorSpace(long arg0) {
@@ -72,7 +99,7 @@ import java.util.Locale;
     }
 
     public static void colorToHSV(int arg0, float[] arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->colorToHSV(I[F)V");
+        RGBToHSV((arg0 >> 16) & 0xFF, (arg0 >> 8) & 0xFF, arg0 & 0xFF, arg1);
     }
 
     public Color convert(ColorSpace arg0) {
@@ -132,11 +159,16 @@ import java.util.Locale;
     }
 
     public static int green(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->green(I)I");
+        // AOSP Color.green(int): second byte.
+        return (arg0 >> 8) & 0xFF;
     }
 
     public static float green(long arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->green(J)F");
+        // AOSP Color.green(long): sRGB channel byte, else half float.
+        if ((arg0 & 0x3fL) == 0L) {
+            return ((arg0 >> 40) & 0xFF) / 255.0f;
+        }
+        return Float.float16ToFloat((short) ((arg0 >> 32) & 0xFFFF));
     }
 
     public int hashCode() {
@@ -144,7 +176,8 @@ import java.util.Locale;
     }
 
     public static boolean isInColorSpace(long arg0, ColorSpace arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->isInColorSpace(JLandroid/graphics/ColorSpace;)Z");
+        // AOSP Color.java:828: the low 6 bits carry the color space id.
+        return (int) (arg0 & 0x3fL) == arg1.getId();
     }
 
     public boolean isSrgb() {
@@ -152,7 +185,9 @@ import java.util.Locale;
     }
 
     public static boolean isSrgb(long arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->isSrgb(J)Z");
+        // sRGB is id 0, so an sRGB long leaves the low 6 bits clear
+        // (Color.java:842).
+        return (arg0 & 0x3fL) == 0L;
     }
 
     public boolean isWideGamut() {
@@ -160,7 +195,13 @@ import java.util.Locale;
     }
 
     public static boolean isWideGamut(long arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->isWideGamut(J)Z");
+        // AOSP asks the encoded color space; only sRGB longs exist until
+        // the ColorSpace port.
+        if ((arg0 & 0x3fL) == 0L) {
+            return false;
+        }
+        throw new UnsupportedOperationException(
+                "Tartine: not implemented: wide-gamut color space lookup");
     }
 
     public float luminance() {
@@ -168,11 +209,21 @@ import java.util.Locale;
     }
 
     public static float luminance(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->luminance(I)F");
+        // AOSP Color.luminance(int): relative luminance of the sRGB color
+        // (WCAG coefficients over linear-light components).
+        return (float) (0.2126 * linearize(red(arg0))
+                + 0.7152 * linearize(green(arg0))
+                + 0.0722 * linearize(blue(arg0)));
     }
 
     public static float luminance(long arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->luminance(J)F");
+        // An sRGB long is the ARGB word in its high half; wider spaces need
+        // the ColorSpace EOTF and wait on that port.
+        if ((arg0 & 0x3fL) == 0L) {
+            return luminance((int) (arg0 >> 32));
+        }
+        throw new UnsupportedOperationException(
+                "Tartine: not implemented: wide-gamut luminance");
     }
 
     public long pack() {
@@ -180,11 +231,14 @@ import java.util.Locale;
     }
 
     public static long pack(float arg0, float arg1, float arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->pack(FFF)J");
+        return pack(argb(1.0f, arg0, arg1, arg2));
     }
 
     public static long pack(float arg0, float arg1, float arg2, float arg3) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->pack(FFFF)J");
+        // AOSP pack(FFFF) routes through the sRGB color space, which only
+        // re-quantizes to 8-bit channels and shifts them up (Color.java:
+        // 1044-1050).
+        return pack(argb(arg3, arg0, arg1, arg2));
     }
 
     public static long pack(float arg0, float arg1, float arg2, float arg3, ColorSpace arg4) {
@@ -192,7 +246,9 @@ import java.util.Locale;
     }
 
     public static long pack(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->pack(I)J");
+        // AOSP Color.pack(int) (Color.java:984): the ARGB word as the high
+        // 32 bits of an sRGB color long.
+        return (arg0 & 0xFFFFFFFFL) << 32;
     }
 
     public static int parseColor(String arg0) {
@@ -232,19 +288,25 @@ import java.util.Locale;
     }
 
     public static int red(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->red(I)I");
+        // AOSP Color.red(int): second-highest byte.
+        return (arg0 >> 16) & 0xFF;
     }
 
     public static float red(long arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->red(J)F");
+        // AOSP Color.red(long): sRGB channel byte, else half float.
+        if ((arg0 & 0x3fL) == 0L) {
+            return ((arg0 >> 48) & 0xFF) / 255.0f;
+        }
+        return Float.float16ToFloat((short) ((arg0 >> 48) & 0xFFFF));
     }
 
     public static int rgb(float arg0, float arg1, float arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->rgb(FFF)I");
+        return 0xFF000000 | (to8bit(arg0) << 16) | (to8bit(arg1) << 8)
+                | to8bit(arg2);
     }
 
     public static int rgb(int arg0, int arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->rgb(III)I");
+        return 0xFF000000 | (arg0 << 16) | (arg1 << 8) | arg2;
     }
 
     public int toArgb() {
@@ -252,7 +314,14 @@ import java.util.Locale;
     }
 
     public static int toArgb(long arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->toArgb(J)I");
+        // AOSP Color.toArgb(long) (Color.java:841): an sRGB long carries
+        // the ARGB word outright; anything else first needs a color space
+        // conversion, which waits on the ColorSpace port.
+        if ((arg0 & 0x3fL) == 0L) {
+            return (int) (arg0 >> 32);
+        }
+        throw new UnsupportedOperationException(
+                "Tartine: not implemented: wide-gamut color conversion");
     }
 
     public String toString() {
@@ -281,5 +350,18 @@ import java.util.Locale;
 
     public static Color valueOf(long arg0) {
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Color;->valueOf(J)Landroid/graphics/Color;");
+    }
+
+    /** AOSP Color.to8bit: a [0..1] component to an 8-bit channel. */
+    private static int to8bit(float value) {
+        return (int) (value * 255.0f + 0.5f);
+    }
+
+    /** sRGB 8-bit channel to relative linear light (WCAG definition). */
+    private static double linearize(int channel) {
+        double value = channel / 255.0;
+        return value <= 0.04045
+                ? value / 12.92
+                : Math.pow((value + 0.055) / 1.055, 2.4);
     }
     }

@@ -100,8 +100,9 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addKeyboardNavigationClusters(Ljava/util/Collection;I)V");
     }
 
+    /** AOSP addStatesFromChildren: FLAG_ADD_STATES_FROM_CHILDREN. */
     public boolean addStatesFromChildren() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->addStatesFromChildren()Z");
+        return mAddStatesFromChildren;
     }
 
     public void addTouchables(ArrayList<View> arg0) {
@@ -150,6 +151,19 @@ import java.util.function.Consumer;
     private List<View> mChildren =
             new ArrayList<View>();
 
+    /** AOSP FLAG_ADD_STATES_FROM_CHILDREN, as a plain boolean. */
+    private boolean mAddStatesFromChildren;
+
+    /**
+     * AOSP FLAG_NOTIFY_CHILDREN_ON_DRAWABLE_STATE_CHANGE (0x10000), staged
+     * as a plain boolean: mGroupFlags keeps only the two draw bits and is
+     * lazily seeded, so a new bit there would defeat that seeding.
+     */
+    private boolean mNotifyChildrenOnDrawableStateChange;
+
+    /** AOSP FOCUS_*_DESCENDANTS bits, staged as a plain field. */
+    private int mDescendantFocusability = FOCUS_BEFORE_DESCENDANTS;
+
     /**
      * Attach child during an inflight layout pass. Composition attaches the
      * content root here; the params walk through the child's own
@@ -177,11 +191,47 @@ import java.util.function.Consumer;
         } else {
             children.add(arg0);
         }
+        // AOSP ViewGroup.java:5343-5345 (addViewInner): a child that
+        // duplicates its parent's state makes the group push state changes
+        // down to it.
+        if (arg0.isDuplicateParentStateEnabled()) {
+            mNotifyChildrenOnDrawableStateChange = true;
+        }
         if (mAttachInfo != null) {
             arg0.dispatchAttachedToWindow(mAttachInfo,
                     mAttachInfo.mWindowVisibility);
         }
         return true;
+    }
+
+    /**
+     * AOSP ViewGroup.findViewTraversal: a depth-first walk over the visible
+     * children, answering the first view whose id matches (the container
+     * itself first, then each child subtree).
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    protected <T extends View> T findViewTraversal(int arg0) {
+        if (getId() == arg0) {
+            return (T) this;
+        }
+        final List<View> children = mChildren;
+        for (int i = 0; i < children.size(); i++) {
+            final View child = children.get(i);
+            if (child.getVisibility() != VISIBLE) {
+                continue;
+            }
+            if (child.getId() == arg0) {
+                return (T) child;
+            }
+            if (child instanceof ViewGroup) {
+                T found = ((ViewGroup) child).findViewTraversal(arg0);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
     }
 
     @Override
@@ -232,7 +282,7 @@ import java.util.function.Consumer;
     }
 
     public void childDrawableStateChanged(View arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->childDrawableStateChanged(Landroid/view/View;)V");
+        refreshDrawableState();
     }
 
     public void childHasTransientStateChanged(View arg0, boolean arg1) {
@@ -342,6 +392,9 @@ import java.util.function.Consumer;
         final long drawingTime = getDrawingTime();
         for (int i = 0; i < childrenCount; i++) {
             final View child = children.get(i);
+            if (child.getVisibility() != VISIBLE) {
+                continue;
+            }
             more |= drawChild(arg0, child, drawingTime);
         }
         // AOSP:4371-4376 FLAG_INVALIDATE_REQUIRED/animation-listener legs and
@@ -689,8 +742,30 @@ import java.util.function.Consumer;
         return arg1.draw(arg0, this, arg2);
     }
 
+    /**
+     * AOSP ViewGroup.java:7750-7770 drawableStateChanged: forward a state
+     * change to every child that duplicates its parent's state (the
+     * notify-children bit is recorded when such a child is added).
+     */
+    @Override
     protected void drawableStateChanged() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->drawableStateChanged()V");
+        super.drawableStateChanged();
+
+        if (mNotifyChildrenOnDrawableStateChange) {
+            if (mAddStatesFromChildren) {
+                throw new IllegalStateException("addStateFromChildren cannot be enabled if a"
+                        + " child has duplicateParentState set to true");
+            }
+
+            final List<View> children = mChildren;
+            final int count = children.size();
+            for (int i = 0; i < count; i++) {
+                final View child = children.get(i);
+                if (child.isDuplicateParentStateEnabled()) {
+                    child.refreshDrawableState();
+                }
+            }
+        }
     }
 
     public void endViewTransition(View arg0) {
@@ -711,8 +786,15 @@ import java.util.function.Consumer;
         return null;
     }
 
-    public OnBackInvokedDispatcher findOnBackInvokedDispatcherForChild(View arg0, View arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->findOnBackInvokedDispatcherForChild(Landroid/view/View;Landroid/view/View;)Landroid/window/OnBackInvokedDispatcher;");
+    public OnBackInvokedDispatcher findOnBackInvokedDispatcherForChild(
+            View arg0, View arg1) {
+        // AOSP ViewGroup.java:findOnBackInvokedDispatcherForChild continues
+        // the walk up the parent chain.
+        ViewParent parent = getParent();
+        if (parent != null) {
+            return parent.findOnBackInvokedDispatcherForChild(this, arg1);
+        }
+        return null;
     }
 
     public void findViewsWithText(ArrayList<View> arg0, CharSequence arg1, int arg2) {
@@ -842,7 +924,9 @@ import java.util.function.Consumer;
     }
 
     public int getDescendantFocusability() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getDescendantFocusability()I");
+        // AOSP ViewGroup.java:getDescendantFocusability reads the
+        // FOCUS_*_DESCENDANTS bits; staged as a plain field.
+        return mDescendantFocusability;
     }
 
     public View getFocusedChild() {
@@ -961,13 +1045,19 @@ import java.util.function.Consumer;
     }
 
     protected void measureChildWithMargins(View arg0, int arg1, int arg2, int arg3, int arg4) {
-        // The shell carries no MarginLayoutParams skeleton yet, so margins
-        // are zero (the base LayoutParams shape).
-        ViewGroup.LayoutParams lp = arg0.getLayoutParams();
+        final ViewGroup.LayoutParams params = arg0.getLayoutParams();
+        final MarginLayoutParams lp = params instanceof MarginLayoutParams
+                ? (MarginLayoutParams) params : null;
+        final int leftMargin = lp == null ? 0 : lp.leftMargin;
+        final int rightMargin = lp == null ? 0 : lp.rightMargin;
+        final int topMargin = lp == null ? 0 : lp.topMargin;
+        final int bottomMargin = lp == null ? 0 : lp.bottomMargin;
         int childWidthMeasureSpec = getChildMeasureSpec(arg1,
-                mPaddingLeft + mPaddingRight + arg2, lp.width);
+                mPaddingLeft + mPaddingRight + leftMargin + rightMargin
+                        + arg2, params.width);
         int childHeightMeasureSpec = getChildMeasureSpec(arg3,
-                mPaddingTop + mPaddingBottom + arg4, lp.height);
+                mPaddingTop + mPaddingBottom + topMargin + bottomMargin
+                        + arg4, params.height);
         arg0.measure(childWidthMeasureSpec, childHeightMeasureSpec);
     }
 
@@ -997,8 +1087,33 @@ import java.util.function.Consumer;
         super.onAttachedToWindow();
     }
 
+    /**
+     * AOSP ViewGroup.onCreateDrawableState: with
+     * {@code addStatesFromChildren} the container merges every child's
+     * drawable state into its own, which is how a whole form enables its
+     * submit button.
+     */
+    @Override
     protected int[] onCreateDrawableState(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->onCreateDrawableState(I)[I");
+        if (!mAddStatesFromChildren) {
+            return super.onCreateDrawableState(arg0);
+        }
+        int need = 0;
+        final int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            int[] childState = getChildAt(i).getDrawableState();
+            if (childState != null) {
+                need += childState.length;
+            }
+        }
+        int[] state = super.onCreateDrawableState(arg0 + need);
+        for (int i = 0; i < count; i++) {
+            int[] childState = getChildAt(i).getDrawableState();
+            if (childState != null) {
+                state = mergeDrawableStates(state, childState);
+            }
+        }
+        return state;
     }
 
     public void onDescendantInvalidated(View arg0, View arg1) {
@@ -1180,8 +1295,12 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->scheduleLayoutAnimation()V");
     }
 
+    /** AOSP setAddStatesFromChildren: records the flag and republishes. */
     public void setAddStatesFromChildren(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setAddStatesFromChildren(Z)V");
+        if (mAddStatesFromChildren != arg0) {
+            mAddStatesFromChildren = arg0;
+            refreshDrawableState();
+        }
     }
 
     public void setAlwaysDrawnWithCacheEnabled(boolean arg0) {
@@ -1239,7 +1358,16 @@ import java.util.function.Consumer;
     }
 
     public void setDescendantFocusability(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->setDescendantFocusability(I)V");
+        // AOSP ViewGroup.java:setDescendantFocusability validates the mode
+        // and writes the FOCUS_*_DESCENDANTS bits.
+        if (arg0 != FOCUS_AFTER_DESCENDANTS
+                && arg0 != FOCUS_BEFORE_DESCENDANTS
+                && arg0 != FOCUS_BLOCK_DESCENDANTS) {
+            throw new IllegalArgumentException(
+                    "must be one of FOCUS_BEFORE_DESCENDANTS, "
+                    + "FOCUS_AFTER_DESCENDANTS, FOCUS_BLOCK_DESCENDANTS");
+        }
+        mDescendantFocusability = arg0;
     }
 
     public void setLayoutAnimation(LayoutAnimationController arg0) {
@@ -1382,6 +1510,175 @@ import java.util.function.Consumer;
 
             /** Scratch mirror constructor (SkeletonGen). */
             public LayoutParams() {
+            }
+        }
+        public static class MarginLayoutParams extends ViewGroup.LayoutParams {
+
+            /** AOSP MarginLayoutParams.DEFAULT_MARGIN_RELATIVE. */
+            public static final int DEFAULT_MARGIN_RELATIVE = Integer.MIN_VALUE;
+
+            /** android.R.attr.layout_margin* packed ids. */
+            private static final int ATTR_LAYOUT_MARGIN = 0x010100F6;
+            private static final int ATTR_LAYOUT_MARGIN_LEFT = 0x010100F7;
+            private static final int ATTR_LAYOUT_MARGIN_TOP = 0x010100F8;
+            private static final int ATTR_LAYOUT_MARGIN_RIGHT = 0x010100F9;
+            private static final int ATTR_LAYOUT_MARGIN_BOTTOM = 0x010100FA;
+            private static final int ATTR_LAYOUT_MARGIN_START = 0x010103B5;
+            private static final int ATTR_LAYOUT_MARGIN_END = 0x010103B6;
+            private static final int ATTR_LAYOUT_MARGIN_HORIZONTAL = 0x0101053B;
+            private static final int ATTR_LAYOUT_MARGIN_VERTICAL = 0x0101053C;
+
+            public int bottomMargin;
+            public int leftMargin;
+            public int rightMargin;
+            public int topMargin;
+
+            private int mMarginStart = DEFAULT_MARGIN_RELATIVE;
+            private int mMarginEnd = DEFAULT_MARGIN_RELATIVE;
+            private boolean mNeedsResolve;
+
+            public MarginLayoutParams(Context arg0, AttributeSet arg1) {
+                super(arg0, arg1);
+                TypedArray a = arg0.obtainStyledAttributes(arg1, new int[] {
+                        ATTR_LAYOUT_MARGIN, ATTR_LAYOUT_MARGIN_LEFT,
+                        ATTR_LAYOUT_MARGIN_TOP, ATTR_LAYOUT_MARGIN_RIGHT,
+                        ATTR_LAYOUT_MARGIN_BOTTOM, ATTR_LAYOUT_MARGIN_START,
+                        ATTR_LAYOUT_MARGIN_END, ATTR_LAYOUT_MARGIN_HORIZONTAL,
+                        ATTR_LAYOUT_MARGIN_VERTICAL});
+                try {
+                    int margin = a.getDimensionPixelSize(0,
+                            DEFAULT_MARGIN_RELATIVE);
+                    if (margin != DEFAULT_MARGIN_RELATIVE) {
+                        leftMargin = margin;
+                        topMargin = margin;
+                        rightMargin = margin;
+                        bottomMargin = margin;
+                        mMarginStart = margin;
+                        mMarginEnd = margin;
+                    }
+                    leftMargin = a.getDimensionPixelSize(1, leftMargin);
+                    topMargin = a.getDimensionPixelSize(2, topMargin);
+                    rightMargin = a.getDimensionPixelSize(3, rightMargin);
+                    bottomMargin = a.getDimensionPixelSize(4, bottomMargin);
+                    int marginStart = a.getDimensionPixelSize(5,
+                            DEFAULT_MARGIN_RELATIVE);
+                    if (marginStart != DEFAULT_MARGIN_RELATIVE) {
+                        mMarginStart = marginStart;
+                    } else if (mMarginStart == DEFAULT_MARGIN_RELATIVE
+                            && margin != DEFAULT_MARGIN_RELATIVE) {
+                        mMarginStart = margin;
+                    }
+                    int marginEnd = a.getDimensionPixelSize(6,
+                            DEFAULT_MARGIN_RELATIVE);
+                    if (marginEnd != DEFAULT_MARGIN_RELATIVE) {
+                        mMarginEnd = marginEnd;
+                    } else if (mMarginEnd == DEFAULT_MARGIN_RELATIVE
+                            && margin != DEFAULT_MARGIN_RELATIVE) {
+                        mMarginEnd = margin;
+                    }
+                    int horizontal = a.getDimensionPixelSize(7,
+                            DEFAULT_MARGIN_RELATIVE);
+                    if (horizontal != DEFAULT_MARGIN_RELATIVE) {
+                        leftMargin = horizontal;
+                        rightMargin = horizontal;
+                    }
+                    int vertical = a.getDimensionPixelSize(8,
+                            DEFAULT_MARGIN_RELATIVE);
+                    if (vertical != DEFAULT_MARGIN_RELATIVE) {
+                        topMargin = vertical;
+                        bottomMargin = vertical;
+                    }
+                    mNeedsResolve = mMarginStart != DEFAULT_MARGIN_RELATIVE
+                            || mMarginEnd != DEFAULT_MARGIN_RELATIVE;
+                } finally {
+                    a.recycle();
+                }
+            }
+
+            public MarginLayoutParams(int arg0, int arg1) {
+                super(arg0, arg1);
+            }
+
+            public MarginLayoutParams(MarginLayoutParams arg0) {
+                super(arg0);
+                leftMargin = arg0.leftMargin;
+                topMargin = arg0.topMargin;
+                rightMargin = arg0.rightMargin;
+                bottomMargin = arg0.bottomMargin;
+                mMarginStart = arg0.mMarginStart;
+                mMarginEnd = arg0.mMarginEnd;
+                mNeedsResolve = arg0.mNeedsResolve;
+            }
+
+            public MarginLayoutParams(ViewGroup.LayoutParams arg0) {
+                super(arg0);
+            }
+
+            public int getLayoutDirection() {
+                return LAYOUT_DIRECTION_LTR;
+            }
+
+            public int getMarginEnd() {
+                if (mMarginEnd != DEFAULT_MARGIN_RELATIVE) {
+                    return mMarginEnd;
+                }
+                return rightMargin;
+            }
+
+            public int getMarginStart() {
+                if (mMarginStart != DEFAULT_MARGIN_RELATIVE) {
+                    return mMarginStart;
+                }
+                return leftMargin;
+            }
+
+            public boolean isMarginRelative() {
+                return mMarginStart != DEFAULT_MARGIN_RELATIVE
+                        || mMarginEnd != DEFAULT_MARGIN_RELATIVE;
+            }
+
+            public void resolveLayoutDirection(int arg0) {
+                if (!isMarginRelative()) {
+                    return;
+                }
+                final boolean rtl = arg0 == LAYOUT_DIRECTION_RTL;
+                if (rtl) {
+                    leftMargin = getMarginEnd();
+                    rightMargin = getMarginStart();
+                } else {
+                    leftMargin = getMarginStart();
+                    rightMargin = getMarginEnd();
+                }
+                mNeedsResolve = false;
+            }
+
+            public void setMarginEnd(int arg0) {
+                mMarginEnd = arg0;
+                rightMargin = arg0;
+                mNeedsResolve = true;
+            }
+
+            public void setMarginStart(int arg0) {
+                mMarginStart = arg0;
+                leftMargin = arg0;
+                mNeedsResolve = true;
+            }
+
+            public void setMargins(int arg0, int arg1, int arg2, int arg3) {
+                leftMargin = arg0;
+                topMargin = arg1;
+                rightMargin = arg2;
+                bottomMargin = arg3;
+                mNeedsResolve = isMarginRelative();
+            }
+
+            /** AOSP ViewGroup.LayoutParams.resolveLayoutDirection entry. */
+            boolean needsResolve() {
+                return mNeedsResolve;
+            }
+
+            /** Scratch mirror constructor (SkeletonGen). */
+            public MarginLayoutParams() {
             }
         }
         public static interface OnHierarchyChangeListener {

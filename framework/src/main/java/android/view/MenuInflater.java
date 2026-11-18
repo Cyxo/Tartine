@@ -4,8 +4,10 @@ import android.content.Context;
 
     public class MenuInflater {
 
+    private final Context mContext;
+
     public MenuInflater(Context arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/MenuInflater;-><init>(Landroid/content/Context;)V");
+        mContext = arg0;
     }
 
     public void inflate(int arg0, Menu arg1) {
@@ -14,5 +16,6 @@ import android.content.Context;
 
         /** Scratch mirror constructor (SkeletonGen). */
         public MenuInflater() {
+        this(null);
         }
     }

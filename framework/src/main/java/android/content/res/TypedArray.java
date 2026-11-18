@@ -55,6 +55,7 @@ public class TypedArray implements AutoCloseable {
         return mValues.length;
     }
 
+    /** AOSP hasValue: the attribute resolved anywhere in the lookup chain. */
     public boolean hasValue(int at) {
         return valueAt(at) != null;
     }
@@ -172,10 +173,16 @@ public class TypedArray implements AutoCloseable {
 
     public int getResourceId(int at, int defaultValue) {
         ResValue value = valueAt(at);
-        if (value != null && value.type == TypedValue.TYPE_REFERENCE) {
+        if (value == null) {
+            return defaultValue;
+        }
+        // A raw ?attr/reference answers its target word; a value the host
+        // already followed reports that target id as its source.
+        if (value.type == TypedValue.TYPE_REFERENCE
+                || value.type == TypedValue.TYPE_ATTRIBUTE) {
             return value.data;
         }
-        return defaultValue;
+        return value.sourceId != 0 ? value.sourceId : defaultValue;
     }
 
     public int getSourceResourceId(int at, int defaultValue) {
@@ -221,8 +228,18 @@ public class TypedArray implements AutoCloseable {
 
     public Drawable getDrawable(int at) {
         ResValue value = valueAt(at);
-        if (value != null && value.type == TypedValue.TYPE_REFERENCE && mResources != null) {
+        if (value == null || mResources == null) {
+            return null;
+        }
+        if (value.type == TypedValue.TYPE_REFERENCE) {
             return mResources.getDrawable(value.data, mTheme);
+        }
+        if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
+                && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
+            return new android.graphics.drawable.ColorDrawable(value.data);
+        }
+        if (value.type == TypedValue.TYPE_STRING && value.sourceId != 0) {
+            return mResources.getDrawable(value.sourceId, mTheme);
         }
         return null;
     }

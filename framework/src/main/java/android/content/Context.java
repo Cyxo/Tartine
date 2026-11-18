@@ -390,11 +390,13 @@ import tartine.fw.PermissionManager;
     }
 
     public final int getColor(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getColor(I)I");
+        // AOSP Context.getColor: Resources.getColor(id, theme), so a themed
+        // color reference resolves against this context's theme.
+        return getResources().getColor(arg0, getTheme());
     }
 
     public final ColorStateList getColorStateList(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getColorStateList(I)Landroid/content/res/ColorStateList;");
+        return getResources().getColorStateList(arg0, getTheme());
     }
 
     public ContentResolver getContentResolver() {
@@ -421,8 +423,13 @@ import tartine.fw.PermissionManager;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getDisplay()Landroid/view/Display;");
     }
 
+    /**
+     * AOSP {@code Context.getDrawable}: resolve through the context's
+     * resources with its theme, so theme attributes inside the drawable
+     * resolve against the same theme the view was inflated with.
+     */
     public final Drawable getDrawable(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getDrawable(I)Landroid/graphics/drawable/Drawable;");
+        return getResources().getDrawable(arg0, getTheme());
     }
 
     public File getExternalCacheDir() {
@@ -637,7 +644,9 @@ import tartine.fw.PermissionManager;
     }
 
     public boolean isRestricted() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->isRestricted()Z");
+        // AOSP Context.isRestricted: a plain Context is unrestricted; only
+        // a restricted ContextImpl profile reports true.
+        return false;
     }
 
     public boolean isUiContext() {

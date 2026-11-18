@@ -21,11 +21,13 @@ public final class DisplayConfig {
     public static final int DEFAULT_WIDTH_PIXELS = 480;
     public static final int DEFAULT_HEIGHT_PIXELS = 960;
     public static final float DEFAULT_CONTENT_SCALE = 1.0f;
+    public static final float DEFAULT_REFRESH_HZ = 60.0f;
 
     private static volatile int widthPixels = DEFAULT_WIDTH_PIXELS;
     private static volatile int heightPixels = DEFAULT_HEIGHT_PIXELS;
     private static volatile int densityDpi =
             Math.round(DEFAULT_CONTENT_SCALE * 160f);
+    private static volatile float refreshHz = DEFAULT_REFRESH_HZ;
 
     private DisplayConfig() {
     }
@@ -63,6 +65,24 @@ public final class DisplayConfig {
         DisplayConfig.heightPixels = heightPixels;
     }
 
+    /**
+     * Sets the display refresh rate the host render loop paces at
+     * ({@code display.refresh_hz}, default 60). Guests read it through
+     * {@code Display.getRefreshRate()}; the value is frame pacing, not a
+     * resource qualifier, so it does not rebuild {@code Resources}.
+     */
+    public static void setRefreshHz(float hz) {
+        if (!(hz > 0) || !Float.isFinite(hz)) {
+            throw new IllegalArgumentException(
+                    "refresh rate must be positive and finite: " + hz);
+        }
+        refreshHz = hz;
+    }
+
+    public static float refreshHz() {
+        return refreshHz;
+    }
+
     public static int widthPixels() {
         return widthPixels;
     }
@@ -97,5 +117,6 @@ public final class DisplayConfig {
         widthPixels = DEFAULT_WIDTH_PIXELS;
         heightPixels = DEFAULT_HEIGHT_PIXELS;
         densityDpi = Math.round(DEFAULT_CONTENT_SCALE * 160f);
+        refreshHz = DEFAULT_REFRESH_HZ;
     }
 }

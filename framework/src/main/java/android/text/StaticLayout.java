@@ -19,7 +19,8 @@ public class StaticLayout extends Layout {
 
     private StaticLayout(CharSequence source, TextPaint paint, int width,
             Layout.Alignment align, float spacingMult, float spacingAdd,
-            boolean includePad, boolean fallbackLineSpacing) {
+            boolean includePad, boolean fallbackLineSpacing, int maxLines,
+            TextUtils.TruncateAt ellipsize, int ellipsizedWidth) {
         super(source == null ? "" : source, paint == null ? new TextPaint() : paint,
                 width, align == null ? Layout.Alignment.ALIGN_NORMAL : align,
                 spacingMult, spacingAdd, includePad);
@@ -27,6 +28,13 @@ public class StaticLayout extends Layout {
         this.mPaint = (paint == null ? new TextPaint() : paint);
         this.mWidth = (width <= 0 ? 480 : width);
         this.mFallbackLineSpacing = fallbackLineSpacing;
+        this.maxLines = maxLines > 0 ? maxLines : Integer.MAX_VALUE;
+        this.ellipsize = ellipsize;
+        this.ellipsizedWidth = ellipsizedWidth;
+        // The superclass constructor ran the line algebra before the
+        // max-lines/ellipsis policy was known; rerun it now that the limits
+        // are set.
+        recomputeLineMetrics();
         int lines = getLineCount();
         this.mLineCount = lines;
         if (lines <= 0) {
@@ -59,6 +67,8 @@ public class StaticLayout extends Layout {
         private float spacingMul = Layout.DEFAULT_LINESPACING_MULTIPLIER;
         private float spacingAdd = Layout.DEFAULT_LINESPACING_ADDITION;
         private int maxLines = Integer.MAX_VALUE;
+        private TextUtils.TruncateAt ellipsize;
+        private int ellipsizedWidth = -1;
         // AOSP StaticLayout.Builder defaults includePad to true, so a layout
         // built without setIncludePad uses top/bottom on the outer edges.
         private boolean includePad = true;
@@ -79,8 +89,8 @@ public class StaticLayout extends Layout {
 
         public Builder setAlignment(Layout.Alignment align) { if (align != null) this.alignment = align; return this; }
         public Builder setBreakStrategy(int breakStrategy) { return this; }
-        public Builder setEllipsize(TextUtils.TruncateAt where) { return this; }
-        public Builder setEllipsizedWidth(int where) { return this; }
+        public Builder setEllipsize(TextUtils.TruncateAt where) { this.ellipsize = where; return this; }
+        public Builder setEllipsizedWidth(int where) { this.ellipsizedWidth = where; return this; }
         public Builder setHyphenationFrequency(int frequency) { return this; }
         public Builder setIncludePad(boolean includepad) { this.includePad = includepad; return this; }
         public Builder setIndents(int[] first, int[] rest) { return this; }
@@ -95,6 +105,6 @@ public class StaticLayout extends Layout {
         public Builder setUseBoundsForWidth(boolean v) { return this; }
         public Builder setUseLineSpacingFromFallbacks(boolean v) { this.fallbackLineSpacing = v; return this; }
 
-        public StaticLayout build() { CharSequence cut = source.subSequence(start, Math.min(source.length(), end)); return new StaticLayout(cut, paint, width, alignment, spacingMul, spacingAdd, includePad, fallbackLineSpacing); }
+        public StaticLayout build() { CharSequence cut = source.subSequence(start, Math.min(source.length(), end)); return new StaticLayout(cut, paint, width, alignment, spacingMul, spacingAdd, includePad, fallbackLineSpacing, maxLines, ellipsize, ellipsizedWidth); }
     }
 }

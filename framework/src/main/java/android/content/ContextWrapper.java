@@ -450,7 +450,8 @@ import java.util.function.IntConsumer;
     }
 
     public boolean isRestricted() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->isRestricted()Z");
+        // AOSP ContextWrapper: delegate to the base context.
+        return mBase == null ? super.isRestricted() : mBase.isRestricted();
     }
 
     public boolean isUiContext() {

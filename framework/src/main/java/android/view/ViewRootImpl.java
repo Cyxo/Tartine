@@ -39,7 +39,8 @@ public final class ViewRootImpl implements ViewParent {
      */
     public ViewRootImpl(Context context) {
         ViewTreeObserver observer = new ViewTreeObserver(context);
-        mAttachInfo = new View.AttachInfo(this, observer);
+        Display display = new Display();
+        mAttachInfo = new View.AttachInfo(this, observer, display);
         mAttachInfo.mWindowToken = mWindowToken;
     }
 

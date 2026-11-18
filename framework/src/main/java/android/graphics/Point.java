@@ -3,61 +3,93 @@ package android.graphics;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-    public class Point implements Parcelable {
+/**
+ * AOSP {@code android.graphics.Point}: a mutable point with integer
+ * coordinates.
+ */
+public class Point implements Parcelable {
 
-    public static Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR = new Parcelable.Creator<Point>() {
+        @Override
+        public Point createFromParcel(Parcel source) {
+            Point point = new Point();
+            point.readFromParcel(source);
+            return point;
+        }
+
+        @Override
+        public Point[] newArray(int size) {
+            return new Point[size];
+        }
+    };
     public int x;
     public int y;
 
     public Point() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;-><init>()V");
     }
 
     public Point(Point arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;-><init>(Landroid/graphics/Point;)V");
+        x = arg0.x;
+        y = arg0.y;
     }
 
     public Point(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;-><init>(II)V");
+        x = arg0;
+        y = arg1;
     }
 
     public int describeContents() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;->describeContents()I");
+        return 0;
     }
 
     public final boolean equals(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;->equals(II)Z");
+        return x == arg0 && y == arg1;
     }
 
+    @Override
     public boolean equals(Object arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;->equals(Ljava/lang/Object;)Z");
+        if (this == arg0) {
+            return true;
+        }
+        if (!(arg0 instanceof Point)) {
+            return false;
+        }
+        Point other = (Point) arg0;
+        return x == other.x && y == other.y;
     }
 
+    @Override
     public int hashCode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;->hashCode()I");
+        return 31 * x + y;
     }
 
     public final void negate() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;->negate()V");
+        x = -x;
+        y = -y;
     }
 
     public final void offset(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;->offset(II)V");
+        x += arg0;
+        y += arg1;
     }
 
     public void readFromParcel(Parcel arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;->readFromParcel(Landroid/os/Parcel;)V");
+        x = arg0.readInt();
+        y = arg0.readInt();
     }
 
     public void set(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;->set(II)V");
+        x = arg0;
+        y = arg1;
     }
 
+    @Override
     public String toString() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;->toString()Ljava/lang/String;");
+        return "Point(" + x + ", " + y + ")";
     }
 
     public void writeToParcel(Parcel arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/Point;->writeToParcel(Landroid/os/Parcel;I)V");
+        arg0.writeInt(x);
+        arg0.writeInt(y);
     }
-    }
+}

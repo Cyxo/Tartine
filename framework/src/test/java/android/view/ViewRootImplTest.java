@@ -2,6 +2,7 @@ package android.view;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -123,6 +124,36 @@ class ViewRootImplTest {
         assertNull(decor.getParent());
         assertFalse(decor.isAttachedToWindow());
         assertFalse(child.isAttachedToWindow());
+    }
+
+    /**
+     * androidx reads {@code View.getDisplay()} during attach (ViewCompat's
+     * RecyclerView refresh-rate probe). The window root owns the shell's one
+     * display, every attached view reports it, and an unattached view has
+     * none.
+     */
+    @Test
+    void attachedViewsReportTheWindowDisplay() {
+        View unattached = new View(null);
+        assertNull(unattached.getDisplay());
+
+        ViewRootImpl root = new ViewRootImpl(null);
+        DecorView decor = new DecorView(null);
+        RecordingView child = new RecordingView();
+        decor.addView(child);
+
+        root.setView(decor);
+
+        Display display = decor.getDisplay();
+        assertNotNull(display);
+        assertSame(display, child.getDisplay());
+        assertEquals(60.0f, display.getRefreshRate());
+        assertEquals(480, display.getWidth());
+        assertEquals(960, display.getHeight());
+
+        root.die(false);
+        assertNull(child.getDisplay());
+        assertNull(decor.getDisplay());
     }
 
     @Test

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.ActionMode;
 import android.view.KeyEvent;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.SearchEvent;
@@ -28,7 +29,22 @@ import tartine.fw.PermissionManager;
  */
 public class Activity extends ContextThemeWrapper implements Window.Callback {
 
+    private MenuInflater mMenuInflater;
+
     public Activity() {
+    }
+
+    /**
+     * AOSP Activity.getMenuInflater (Activity.java): the activity scopes the
+     * inflater to its application context, falling back to itself before the
+     * application is attached.
+     */
+    public MenuInflater getMenuInflater() {
+        if (mMenuInflater == null) {
+            mMenuInflater = new MenuInflater(
+                    getApplication() != null ? getApplication() : this);
+        }
+        return mMenuInflater;
     }
 
     /**
@@ -638,6 +654,51 @@ public class Activity extends ContextThemeWrapper implements Window.Callback {
     }
 
     private Window mWindow;
+
+    /**
+     * AOSP Activity.setTitle(CharSequence): records the title and notifies
+     * the window title hooks. AppCompat reads it while building the
+     * sub-decor and the action bar.
+     */
+    public void setTitle(CharSequence arg0) {
+        mTitle = arg0;
+        onTitleChanged(arg0, mTitleColor);
+    }
+
+    /** AOSP Activity.setTitle(int): resolves the resource and forwards. */
+    public void setTitle(int arg0) {
+        setTitle(getText(arg0));
+    }
+
+    /**
+     * AOSP Activity.setTitleColor(int), deprecated but still called by old
+     * themes: records the color and republishes the title.
+     */
+    public void setTitleColor(int arg0) {
+        mTitleColor = arg0;
+        onTitleChanged(mTitle, arg0);
+    }
+
+    /** AOSP Activity.getTitle(): the recorded title, null until set. */
+    public final CharSequence getTitle() {
+        return mTitle;
+    }
+
+    /** AOSP Activity.getTitleColor(): 0 until a theme publishes one. */
+    public final int getTitleColor() {
+        return mTitleColor;
+    }
+
+    /** AOSP Activity.onTitleChanged default: subclasses react to titles. */
+    protected void onTitleChanged(CharSequence arg0, int arg1) {
+    }
+
+    /** AOSP Activity.onChildTitleChanged default. */
+    protected void onChildTitleChanged(Activity arg0, CharSequence arg1) {
+    }
+
+    private CharSequence mTitle;
+    private int mTitleColor;
 
     /**
      * AOSP Activity.getFragmentManager() (line 3582 — the device delegates

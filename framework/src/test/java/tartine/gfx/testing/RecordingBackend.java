@@ -10,6 +10,7 @@ import tartine.gfx.GfxFont;
 import tartine.gfx.GfxFontMetrics;
 import tartine.gfx.GfxImage;
 import tartine.gfx.GfxPaint;
+import tartine.gfx.GfxPath;
 import tartine.gfx.GfxPicture;
 import tartine.gfx.GfxPictureRecorder;
 import tartine.gfx.GfxRect;
@@ -273,6 +274,13 @@ public final class RecordingBackend implements GfxBackend {
                 GfxPaint paint) {
             record("drawText(" + text + "," + x + "," + y + "," + font + ","
                     + paint + ")");
+        }
+
+        @Override
+        public void drawPath(GfxPath path, GfxPaint paint) {
+            record("drawPath(verbs=" + java.util.Arrays.toString(path.verbs)
+                    + ",points=" + java.util.Arrays.toString(path.points)
+                    + ",fill=" + path.fillMode + "," + paint + ")");
         }
 
         @Override

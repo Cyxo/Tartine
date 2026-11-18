@@ -6,6 +6,7 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.text.LineBreakConfig;
+import java.util.ArrayList;
 import java.util.List;
 
     public class Layout {
@@ -49,6 +50,18 @@ import java.util.List;
      *  top and the last line's bottom use the font's {@code top}/{@code bottom}
      *  (extra vertical padding) instead of {@code ascent}/{@code descent}. */
     protected boolean includePad;
+    /** Maximum number of lines; {@code Integer.MAX_VALUE} means unbounded. */
+    protected int maxLines = Integer.MAX_VALUE;
+    /** Ellipsis policy for the last line, or null to clip instead. */
+    protected TextUtils.TruncateAt ellipsize;
+    /** Width the ellipsis is measured against, or -1 for the layout width. */
+    protected int ellipsizedWidth = -1;
+    /** Ellipsized line index, or -1 when no line is ellipsized. */
+    protected int ellipsisLine = -1;
+    /** Offset where the ellipsis replaces text on {@link #ellipsisLine}. */
+    protected int ellipsisOffset = -1;
+    /** Line alignment requested by the builder/constructor. */
+    protected Layout.Alignment alignment = Layout.Alignment.ALIGN_NORMAL;
 
     protected Layout(CharSequence arg0, TextPaint arg1, int arg2, Layout.Alignment arg3, float arg4, float arg5) {
         this(arg0, arg1, arg2, arg3, arg4, arg5, false);
@@ -59,6 +72,7 @@ import java.util.List;
         if (arg1 == null) this.paint = new TextPaint();
         else this.paint = arg1;
         this.width = (arg2 <= 0) ? 480 : arg2;
+        this.alignment = arg3 == null ? Layout.Alignment.ALIGN_NORMAL : arg3;
         this.spacingMul = arg4;
         this.spacingAdd = arg5;
         this.includePad = arg6;
@@ -87,8 +101,10 @@ import java.util.List;
      * last line too (AOSP skips it unless {@code addLastLineLineSpacing} is
      * set).
      *
-     * <p>Only explicit newlines break here; width-based word wrapping is still
-     * outside this baseline.
+     * <p>Lines break on explicit newlines and, for a paragraph wider than the
+     * layout width, at the last fitting space (or between characters when a
+     * single word exceeds the width). Alignment is applied at draw time from
+     * {@link #getLineLeft}.
      */
     protected void recomputeLineMetrics() {
         if (this.paint == null) this.paint = new TextPaint();
@@ -120,9 +136,53 @@ import java.util.List;
             return;
         }
 
-        int lines = 1;
-        for (int i = 0; i < body.length(); i++) {
-            if (body.charAt(i) == '\n') lines++;
+        // Paragraph splitting plus greedy width wrapping. Each entry is
+        // {lineStart, visibleTextEnd, lineEnd}: visibleTextEnd drops trailing
+        // spaces (getLineVisibleEnd), lineEnd includes them and the paragraph
+        // newline (getLineEnd).
+        ArrayList<int[]> lineTable = new ArrayList<>();
+        int paraStart = 0;
+        while (true) {
+            int newline = body.indexOf('\n', paraStart);
+            int paraEnd = newline < 0 ? body.length() : newline;
+            int paragraphEnd = newline < 0 ? body.length() : newline + 1;
+            wrapParagraph(body, paraStart, paraEnd, paragraphEnd, lineTable);
+            if (newline < 0) {
+                break;
+            }
+            paraStart = newline + 1;
+            if (paraStart == body.length()) {
+                lineTable.add(new int[] {paraStart, paraStart, paraStart});
+                break;
+            }
+        }
+
+        int lines = lineTable.size();
+        int generatedLines = lines;
+        if (maxLines > 0 && lines > maxLines) {
+            while (lineTable.size() > maxLines) {
+                lineTable.remove(lineTable.size() - 1);
+            }
+            lines = lineTable.size();
+        }
+        this.ellipsisLine = -1;
+        this.ellipsisOffset = -1;
+        if (ellipsize != null && lines > 0 && lines == maxLines
+                && generatedLines > lines) {
+            int[] last = lineTable.get(lines - 1);
+            int available = ellipsizedWidth > 0 ? ellipsizedWidth : this.width;
+            String ellipsis = "\u2026";
+            float ellipsisWidth = this.paint.measureText(ellipsis);
+            int fit = last[0];
+            while (fit < last[1]
+                    && this.paint.measureText(body.substring(last[0], fit + 1))
+                            + ellipsisWidth <= available) {
+                fit++;
+            }
+            last[1] = fit;
+            last[2] = fit;
+            this.ellipsisLine = lines - 1;
+            this.ellipsisOffset = fit;
         }
         int[] starts = new int[lines];
         int[] textEnds = new int[lines];
@@ -130,17 +190,9 @@ import java.util.List;
         int[] tops = new int[lines + 1];
         int[] descents = new int[lines];
         int[] extras = new int[lines];
-        int start = 0;
         int v = 0;
         for (int line = 0; line < lines; line++) {
-            int newline = body.indexOf('\n', start);
-            int textEnd = newline < 0 ? body.length() : newline;
-            // Deviation from AOSP: drop the '\r' of a CRLF break from the
-            // drawn line. Minikin gives it zero advance; Skia would draw a
-            // missing-glyph box, so it never reaches the backend.
-            if (textEnd > start && body.charAt(textEnd - 1) == '\r') {
-                textEnd--;
-            }
+            int[] entry = lineTable.get(line);
             // AOSP StaticLayout.generate: includePad only replaces the first
             // line's above (top) and the last line's below (bottom).
             int above = ascent;
@@ -152,14 +204,13 @@ import java.util.List;
             int extra = ex >= 0.0
                     ? (int) (ex + 0.5) : -(int) (-ex + 0.5);
 
-            starts[line] = start;
-            textEnds[line] = textEnd;
-            ends[line] = newline < 0 ? body.length() : newline + 1;
+            starts[line] = entry[0];
+            textEnds[line] = entry[1];
+            ends[line] = entry[2];
             tops[line] = v;
             descents[line] = below + extra;
             extras[line] = extra;
             v += (below - above) + extra;
-            start = newline < 0 ? body.length() : newline + 1;
         }
         tops[lines] = v;
         this.height = v;
@@ -169,6 +220,73 @@ import java.util.List;
         this.lineTops = tops;
         this.lineDescents = descents;
         this.lineExtras = extras;
+    }
+
+    /**
+     * Greedy word wrap for one paragraph: break after the last space whose
+     * prefix still fits {@link #width}; when a single word is wider than the
+     * line, break between characters so the paragraph always makes progress.
+     * Trailing spaces are excluded from the visible line.
+     */
+    private void wrapParagraph(String body, int start, int end,
+            int paragraphEnd, List<int[]> lines) {
+        if (start >= end) {
+            lines.add(new int[] {start, start, paragraphEnd});
+            return;
+        }
+        int lineStart = start;
+        while (lineStart < end) {
+            int lineEnd = findLineBreak(body, lineStart, end);
+            int visibleEnd = lineEnd;
+            // Deviation from AOSP: drop the '\r' of a CRLF break from the
+            // drawn line. Minikin gives it zero advance; Skia would draw a
+            // missing-glyph box, so it never reaches the backend.
+            if (visibleEnd > lineStart && body.charAt(visibleEnd - 1) == '\r') {
+                visibleEnd--;
+            }
+            while (visibleEnd > lineStart && body.charAt(visibleEnd - 1) == ' ') {
+                visibleEnd--;
+            }
+            lines.add(new int[] {lineStart, visibleEnd,
+                    lineEnd < end ? lineEnd : paragraphEnd});
+            lineStart = lineEnd;
+            while (lineStart < end && body.charAt(lineStart) == ' ') {
+                lineStart++;
+            }
+        }
+    }
+
+    /** First offset at or before {@code limit} whose prefix fits the width. */
+    private int findLineBreak(String body, int start, int limit) {
+        if (this.paint.measureText(body.substring(start, limit))
+                <= this.width) {
+            return limit;
+        }
+        int lastSpace = -1;
+        for (int i = start + 1; i < limit; i++) {
+            if (body.charAt(i) != ' ') {
+                continue;
+            }
+            if (this.paint.measureText(body.substring(start, i))
+                    <= this.width) {
+                lastSpace = i;
+            } else {
+                break;
+            }
+        }
+        if (lastSpace > start) {
+            return lastSpace;
+        }
+        int fit = start + 1;
+        for (int i = start + 1; i <= limit; i++) {
+            if (this.paint.measureText(body.substring(start, i))
+                    <= this.width) {
+                fit = i;
+            } else {
+                break;
+            }
+        }
+        return fit;
     }
 
     public RectF computeDrawingBoundingBox() {
@@ -192,8 +310,18 @@ import java.util.List;
         for (int line = 0; line < getLineCount(); line++) {
             int start = lineStarts[line];
             int end = lineTextEnds[line];
-            if (end > start) {
-                canvas.drawText(s.substring(start, end), 0.0f,
+            if (line == ellipsisLine && ellipsisOffset >= 0) {
+                end = Math.min(end, ellipsisOffset);
+                if (end > start) {
+                    canvas.drawText(s.substring(start, end), getLineLeft(line),
+                            (float) getLineBaseline(line), pnt);
+                }
+                String prefix = s.substring(start, Math.max(start, end));
+                canvas.drawText("\u2026",
+                        getLineLeft(line) + pnt.measureText(prefix),
+                        (float) getLineBaseline(line), pnt);
+            } else if (end > start) {
+                canvas.drawText(s.substring(start, end), getLineLeft(line),
                         (float) getLineBaseline(line), pnt);
             }
         }
@@ -220,7 +348,7 @@ import java.util.List;
     }
 
     public final Layout.Alignment getAlignment() {
-        return null;
+        return alignment;
     }
 
     public int getBottomPadding() {
@@ -282,11 +410,11 @@ import java.util.List;
     }
 
     public int getEllipsisCount(int arg0) {
-        return 0;
+        return arg0 == ellipsisLine ? 1 : 0;
     }
 
     public int getEllipsisStart(int arg0) {
-        return 0;
+        return arg0 == ellipsisLine ? ellipsisOffset : 0;
     }
 
     public final TextUtils.TruncateAt getEllipsize() {
@@ -385,14 +513,47 @@ import java.util.List;
     }
 
     public int getLineForOffset(int arg0) {
-        return 0;
+        if (lineStarts.length == 0) {
+            return 0;
+        }
+        int length = text == null ? 0 : text.length();
+        int offset = Math.max(0, Math.min(arg0, length));
+        int line = 0;
+        for (int i = 0; i < lineStarts.length; i++) {
+            if (lineStarts[i] <= offset) {
+                line = i;
+            } else {
+                break;
+            }
+        }
+        return line;
     }
 
     public int getLineForVertical(int arg0) {
-        return 0;
+        if (lineStarts.length == 0) {
+            return 0;
+        }
+        for (int line = 0; line < lineStarts.length; line++) {
+            if (arg0 < lineTops[line + 1]) {
+                return line;
+            }
+        }
+        return lineStarts.length - 1;
     }
 
     public float getLineLeft(int arg0) {
+        if (lineStarts.length == 0) {
+            return 0.0f;
+        }
+        int line = Math.max(0, Math.min(arg0, lineStarts.length - 1));
+        float lineWidth = getLineMax(line);
+        float max = Math.max(0.0f, this.width - lineWidth);
+        if (alignment == Layout.Alignment.ALIGN_CENTER) {
+            return max / 2.0f;
+        }
+        if (alignment == Layout.Alignment.ALIGN_OPPOSITE) {
+            return max;
+        }
         return 0.0f;
     }
 
@@ -410,7 +571,11 @@ import java.util.List;
     }
 
     public float getLineRight(int arg0) {
-        return 0.0f;
+        if (lineStarts.length == 0) {
+            return 0.0f;
+        }
+        int line = Math.max(0, Math.min(arg0, lineStarts.length - 1));
+        return getLineLeft(line) + getLineMax(line);
     }
 
     public final float getLineSpacingAmount() {
@@ -456,7 +621,24 @@ import java.util.List;
     }
 
     public int getOffsetForHorizontal(int arg0, float arg1) {
-        return 0;
+        if (lineStarts.length == 0) {
+            return 0;
+        }
+        int line = Math.max(0, Math.min(arg0, lineStarts.length - 1));
+        int start = lineStarts[line];
+        int end = lineTextEnds[line];
+        float relative = Math.max(0.0f, arg1 - getLineLeft(line));
+        int count = end - start;
+        int best = 0;
+        for (int i = 1; i <= count; i++) {
+            if (paint.measureText(text.subSequence(start, start + i).toString())
+                    <= relative) {
+                best = i;
+            } else {
+                break;
+            }
+        }
+        return start + best;
     }
 
     public int getOffsetToLeftOf(int arg0) {
@@ -473,11 +655,11 @@ import java.util.List;
     }
 
     public final Layout.Alignment getParagraphAlignment(int arg0) {
-        return null;
+        return alignment;
     }
 
     public int getParagraphDirection(int arg0) {
-        return 0;
+        return DIR_LEFT_TO_RIGHT;
     }
 
     public final int getParagraphLeft(int arg0) {
@@ -485,11 +667,16 @@ import java.util.List;
     }
 
     public final int getParagraphRight(int arg0) {
-        return 0;
+        return width;
     }
 
     public float getPrimaryHorizontal(int arg0) {
-        return 0.0f;
+        int line = getLineForOffset(arg0);
+        int start = getLineStart(line);
+        int end = getLineVisibleEnd(line);
+        int offset = Math.max(start, Math.min(arg0, end));
+        return getLineLeft(line) + paint.measureText(
+                text.subSequence(start, offset).toString());
     }
 
     public int[] getRangeForRect(RectF arg0, SegmentFinder arg1, Layout.TextInclusionStrategy arg2) {

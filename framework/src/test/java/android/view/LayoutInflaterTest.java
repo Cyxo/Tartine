@@ -103,12 +103,14 @@ class LayoutInflaterTest {
     @Test
     void unportedWidgetReportsTheBoundary() {
         host.putDocument(LAYOUT,
-                new XmlNode(null, "LinearLayout", List.of(), List.of()));
+                new XmlNode(null, "android.widget.Spinner", List.of(),
+                        List.of()));
 
         RuntimeException error = assertThrows(RuntimeException.class,
                 () -> new LayoutInflater(new Context()).inflate(LAYOUT, null));
 
-        assertTrue(error.getMessage().contains("Unable to inflate view: LinearLayout"),
+        assertTrue(error.getMessage().contains(
+                "Unable to inflate view: android.widget.Spinner"),
                 error.getMessage());
     }
 

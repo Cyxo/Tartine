@@ -24,8 +24,13 @@ import android.window.OnBackInvokedDispatcher;
 
     public abstract void createContextMenu(ContextMenu arg0);
 
-    public default OnBackInvokedDispatcher findOnBackInvokedDispatcherForChild(View arg0, View arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewParent;->findOnBackInvokedDispatcherForChild(Landroid/view/View;Landroid/view/View;)Landroid/window/OnBackInvokedDispatcher;");
+    /**
+     * AOSP ViewParent default: an ancestor that does not own a dispatcher
+     * answers null (a parent may override, e.g. the ViewRootImpl).
+     */
+    public default OnBackInvokedDispatcher findOnBackInvokedDispatcherForChild(
+            View arg0, View arg1) {
+        return null;
     }
 
     public abstract View focusSearch(View arg0, int arg1);

@@ -174,12 +174,52 @@ import tartine.fw.ThemeMode;
         return mMetrics;
     }
 
+    /**
+     * AOSP Resources.getDrawable: a color resource becomes a
+     * {@link android.graphics.drawable.ColorDrawable}, an XML drawable is
+     * inflated through {@link Drawable#createFromXml}, and a bitmap asset is
+     * decoded through {@code BitmapFactory} (still a named gap until image
+     * transport lands). A missing host value keeps the named-gap boundary so
+     * the unresolved id stays visible in the probe output.
+     */
     public Drawable getDrawable(int arg0) {
-        throw gap("getDrawable(I)Landroid/graphics/drawable/Drawable;", arg0);
+        return getDrawable(arg0, null);
     }
 
     public Drawable getDrawable(int arg0, Resources.Theme arg1) {
-        return getDrawable(arg0);
+        if (arg0 == 0) {
+            return null;
+        }
+        ResValue value = hostValue(arg0);
+        if (value == null) {
+            if (isSystemResource(arg0)) {
+                // Framework assets are not bundled (bitmap rendering is a
+                // documented boundary); AndroidX tolerates a null drawable
+                // from a referenced system icon, so skip it visibly.
+                android.util.Log.w("Tartine", "framework drawable unavailable"
+                        + " (bitmap boundary): 0x"
+                        + Integer.toHexString(arg0));
+                return null;
+            }
+            throw gap("getDrawable(I)Landroid/graphics/drawable/Drawable;", arg0);
+        }
+        if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
+                && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
+            return new android.graphics.drawable.ColorDrawable(value.data);
+        }
+        if (value.type == TypedValue.TYPE_STRING && value.string != null) {
+            if (value.string.endsWith(".xml")) {
+                return Drawable.createFromXml(this, getXml(arg0), arg1);
+            }
+            android.graphics.Bitmap bitmap = android.graphics.BitmapFactory
+                    .decodeStream(openRawResource(arg0));
+            if (bitmap == null) {
+                throw gap("getDrawable(I)Landroid/graphics/drawable/Drawable;",
+                        arg0);
+            }
+            return new android.graphics.drawable.BitmapDrawable(this, bitmap);
+        }
+        throw gap("getDrawable(I)Landroid/graphics/drawable/Drawable;", arg0);
     }
 
     public Drawable getDrawableForDensity(int arg0, int arg1) {
@@ -323,7 +363,22 @@ import tartine.fw.ThemeMode;
     }
 
     public void getValue(int arg0, TypedValue arg1, boolean arg2) {
-        ResValue value = requireValue("getValue(ILandroid/util/TypedValue;Z)V", arg0);
+        ResValue value = hostValue(arg0);
+        if (value == null) {
+            // A framework resource is present on a device but not in the
+            // shell's host table (only colors have a generated baseline).
+            // Answer TYPE_NULL instead of the named gap so a caller like
+            // AndroidX's drawable cache can skip the asset; the unloadable
+            // asset boundary is reported when a drawable is asked for.
+            if (isSystemResource(arg0)) {
+                arg1.type = TypedValue.TYPE_NULL;
+                arg1.data = 0;
+                arg1.string = null;
+                arg1.resourceId = arg0;
+                return;
+            }
+            throw gap("getValue(ILandroid/util/TypedValue;Z)V", arg0);
+        }
         arg1.type = value.type;
         arg1.data = value.data;
         arg1.string = value.string;
@@ -426,6 +481,11 @@ import tartine.fw.ThemeMode;
     private ResValue hostValue(int resId) {
         AppResourceHost host = AppResources.host();
         return host == null ? null : host.value(resId);
+    }
+
+    /** Package {@code 0x01} ids are framework resources ({@code android.R}). */
+    private static boolean isSystemResource(int resId) {
+        return (resId >>> 24) == 0x01;
     }
 
     private ResValue requireValue(String signature, int resId) {
@@ -611,6 +671,16 @@ import tartine.fw.ThemeMode;
             if (value == null) {
                 return false;
             }
+            if (arg2 && value.type == TypedValue.TYPE_ATTRIBUTE) {
+                // AOSP resolveRefs: a style value written as ?attr/other
+                // resolves against this same theme before it is handed out
+                // (Material's color-attribute readers rely on the final
+                // value, and on resourceId naming the referenced resource).
+                value = resolveIndirection(value.data, 0);
+                if (value == null) {
+                    return false;
+                }
+            }
             arg1.type = value.type;
             arg1.data = value.data;
             arg1.string = value.string;
@@ -621,6 +691,18 @@ import tartine.fw.ThemeMode;
         private ResValue resolve(int attrId) {
             AppResourceHost host = AppResources.host();
             return host == null ? null : host.attribute(attrId, styleIds());
+        }
+
+        /** Follows {@code ?attr} chains, bounded against a malformed theme. */
+        private ResValue resolveIndirection(int attrId, int depth) {
+            if (depth > 20) {
+                return null;
+            }
+            ResValue value = resolve(attrId);
+            if (value != null && value.type == TypedValue.TYPE_ATTRIBUTE) {
+                return resolveIndirection(value.data, depth + 1);
+            }
+            return value;
         }
 
         private int[] styleIds() {
@@ -701,20 +783,43 @@ import tartine.fw.ThemeMode;
             if (attrId == 0) {
                 return null;
             }
+            ResValue value = null;
             if (set instanceof XmlResourceParserImpl) {
-                ResValue fromSet = ((XmlResourceParserImpl) set).valueForAttribute(attrId);
-                if (fromSet != null) {
-                    return fromSet;
-                }
+                value = ((XmlResourceParserImpl) set).valueForAttribute(attrId);
             }
-            if (host == null) {
-                return null;
+            if (value == null && host != null) {
+                value = host.attribute(attrId, styleIds);
             }
-            ResValue value = host.attribute(attrId, styleIds);
-            if (value != null && value.type == TypedValue.TYPE_ATTRIBUTE) {
+            // AOSP's AssetManager resolves ?attr values written in the
+            // element's own attribute set against the theme before they
+            // reach the TypedArray (a color selector's
+            // android:color="?attr/..." is the common case); follow the
+            // same indirection for set-derived and style-derived values.
+            int depth = 0;
+            while (value != null && value.type == TypedValue.TYPE_ATTRIBUTE
+                    && host != null && depth++ < 20) {
                 value = host.attribute(value.data, styleIds);
             }
             return value;
         }
         }
+
+    /**
+     * AOSP {@code Resources.NotFoundException}: the checked-at-call-site
+     * runtime exception resource lookups throw when an id has no value.
+     */
+    public static class NotFoundException extends RuntimeException {
+
+        public NotFoundException() {
+            super();
+        }
+
+        public NotFoundException(String name) {
+            super(name);
+        }
+
+        public NotFoundException(String name, Exception cause) {
+            super(name, cause);
+        }
     }
+}

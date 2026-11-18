@@ -33,6 +33,7 @@ import android.util.AttributeSet;
 import android.util.LongSparseArray;
 import android.util.Property;
 import android.util.SparseArray;
+import android.util.StateSet;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityEventSource;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -264,27 +265,120 @@ import java.util.function.Consumer;
     }
 
     /** AOSP View.View(Context, AttributeSet) (lines 5938-5939): the device
-     * delegates to the 3-arg ctor with defStyleAttr 0; the shell flattens
-     * the chain onto the 1-arg constructor's seed (mContext + mResources).
+     * delegates to the 3-arg ctor with defStyleAttr 0.
      */
     public View(Context arg0, AttributeSet arg1) {
-        this(arg0);
+        this(arg0, arg1, 0);
     }
 
     /** AOSP View.View(Context, AttributeSet, int defStyleAttr)
      * (lines 5959-5960): the device delegates to the 4-arg ctor with a
-     * zero-def style resource; the shell flattens onto the 1-arg seed. */
+     * zero-def style resource; the shell reads the attributes every layout
+     * XML carries (id, background, padding, state, size) and flattens the
+     * style chain onto the element attributes. */
     public View(Context arg0, AttributeSet arg1, int arg2) {
         this(arg0);
+        if (arg1 == null) {
+            return;
+        }
+        TypedArray a = arg0.obtainStyledAttributes(arg1, new int[] {
+                ATTR_ID, ATTR_BACKGROUND, ATTR_PADDING, ATTR_PADDING_LEFT,
+                ATTR_PADDING_TOP, ATTR_PADDING_RIGHT, ATTR_PADDING_BOTTOM,
+                ATTR_PADDING_START, ATTR_PADDING_END, ATTR_VISIBILITY,
+                ATTR_ENABLED, ATTR_CLICKABLE, ATTR_FOCUSABLE,
+                ATTR_CONTENT_DESCRIPTION, ATTR_MIN_WIDTH, ATTR_MIN_HEIGHT,
+                ATTR_ALPHA, ATTR_OVER_SCROLL_MODE});
+        try {
+            mID = a.getResourceId(0, mID);
+            Drawable background = a.getDrawable(1);
+            if (background != null) {
+                setBackground(background);
+            }
+            int padding = a.getDimensionPixelSize(2, -1);
+            int left = a.getDimensionPixelSize(3, padding);
+            int top = a.getDimensionPixelSize(4, padding);
+            int right = a.getDimensionPixelSize(5, padding);
+            int bottom = a.getDimensionPixelSize(6, padding);
+            int start = a.getDimensionPixelSize(7, Integer.MIN_VALUE);
+            int end = a.getDimensionPixelSize(8, Integer.MIN_VALUE);
+            if (start != Integer.MIN_VALUE) {
+                left = start;
+            }
+            if (end != Integer.MIN_VALUE) {
+                right = end;
+            }
+            if (left >= 0 || top >= 0 || right >= 0 || bottom >= 0) {
+                setPadding(Math.max(0, left), Math.max(0, top),
+                        Math.max(0, right), Math.max(0, bottom));
+            }
+            int visibility = a.getInt(9, VISIBLE);
+            if (visibility == INVISIBLE || visibility == GONE) {
+                setVisibility(visibility);
+            }
+            if (!a.getBoolean(10, true)) {
+                setEnabled(false);
+            }
+            if (a.getBoolean(11, false)) {
+                setClickable(true);
+            }
+            int focusable = a.getInt(12, 0);
+            if (focusable != 0) {
+                setFocusable(focusable);
+            }
+            CharSequence description = a.getText(13);
+            if (description != null) {
+                setContentDescription(description);
+            }
+            int minWidth = a.getDimensionPixelSize(14, 0);
+            if (minWidth > 0) {
+                setMinimumWidth(minWidth);
+            }
+            int minHeight = a.getDimensionPixelSize(15, 0);
+            if (minHeight > 0) {
+                setMinimumHeight(minHeight);
+            }
+            if (a.hasValue(16)) {
+                setAlpha(a.getFloat(16, 1.0f));
+            }
+            int overScrollMode = a.getInt(17, OVER_SCROLL_IF_CONTENT_SCROLLS);
+            if (overScrollMode == OVER_SCROLL_ALWAYS
+                    || overScrollMode == OVER_SCROLL_NEVER) {
+                mOverScrollMode = overScrollMode;
+            }
+        } finally {
+            a.recycle();
+        }
     }
 
+    private static final int ATTR_ID = 0x010100D0;
+    private static final int ATTR_BACKGROUND = 0x010100D4;
+    private static final int ATTR_PADDING = 0x010100D5;
+    private static final int ATTR_PADDING_LEFT = 0x010100D6;
+    private static final int ATTR_PADDING_TOP = 0x010100D7;
+    private static final int ATTR_PADDING_RIGHT = 0x010100D8;
+    private static final int ATTR_PADDING_BOTTOM = 0x010100D9;
+    private static final int ATTR_PADDING_START = 0x010103B3;
+    private static final int ATTR_PADDING_END = 0x010103B4;
+    private static final int ATTR_VISIBILITY = 0x010100DC;
+    private static final int ATTR_ENABLED = 0x0101000E;
+    private static final int ATTR_CLICKABLE = 0x010100E5;
+    private static final int ATTR_FOCUSABLE = 0x010100DA;
+    private static final int ATTR_CONTENT_DESCRIPTION = 0x01010273;
+    private static final int ATTR_MIN_WIDTH = 0x0101013F;
+    private static final int ATTR_MIN_HEIGHT = 0x01010140;
+    private static final int ATTR_ALPHA = 0x0101031F;
+    private static final int ATTR_OVER_SCROLL_MODE = 0x010102C1;
+
     /** AOSP View.View(Context, AttributeSet, int, int) (line 5996): the
-     * device runs full attribute-flavored init; the shell (no attr sets
-     * yet) flattens onto the 1-arg seed which carries only the context and
-     * resources. */
+     * device runs the full attribute-flavored init; the shell flattens the
+     * style chain onto the 3-arg attribute read (element attributes win,
+     * as on device where the style only supplies defaults). Every
+     * ViewGroup ctor chains through here, so skipping the read would drop
+     * ids/backgrounds/padding on containers.
+     */
     public View(Context arg0, AttributeSet arg1, int arg2,
             int arg3) {
-        this(arg0);
+        this(arg0, arg1, arg2);
     }
 
     public void addChildrenForAccessibility(ArrayList<View> arg0) {
@@ -758,14 +852,22 @@ import java.util.function.Consumer;
         // (AOSP draws only under PFLAG3_DEFAULT_FOCUS_HIGHLIGHTED); no-op.
     }
 
-    /** AOSP View.java:25267-25275: no background, nothing to draw here. */
+    /**
+     * AOSP View.java:25267-25335, software path: sync the background bounds
+     * to the view's unscrolled size, then draw it. The alpha/tint/hotspot
+     * legs of the AOSP body are Drawable-state details carried by the
+     * drawable itself in this port.
+     */
     private void drawBackground(Canvas canvas) {
         Drawable background = mBackground;
         if (background == null) {
             return;
         }
-        // Deviation: background dimension/alpha sync (mBackgroundSizeChanged,
-        // :25267-25335) waits for a Drawable model.
+        if (mBackgroundSizeChanged) {
+            background.setBounds(0, 0, mRight - mLeft, mBottom - mTop);
+            mBackgroundSizeChanged = false;
+        }
+        background.draw(canvas);
     }
 
     /**
@@ -836,7 +938,10 @@ import java.util.function.Consumer;
     }
 
     protected void drawableStateChanged() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->drawableStateChanged()V");
+        if (mBackground != null && mBackground.isStateful()) {
+            mBackground.setState(getDrawableState());
+            invalidate();
+        }
     }
 
     public View findFocus() {
@@ -844,7 +949,13 @@ import java.util.function.Consumer;
     }
 
     public final OnBackInvokedDispatcher findOnBackInvokedDispatcher() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->findOnBackInvokedDispatcher()Landroid/window/OnBackInvokedDispatcher;");
+        // AOSP View.java:findOnBackInvokedDispatcher walks to the nearest
+        // ancestor providing a dispatcher.
+        ViewParent parent = getParent();
+        if (parent != null) {
+            return parent.findOnBackInvokedDispatcherForChild(this, this);
+        }
+        return null;
     }
 
     /**
@@ -858,12 +969,20 @@ import java.util.function.Consumer;
      * Object and the invoke misses — same hazard flagged for SkeletonGen's
      * bare type-param emission).
      */
-    @SuppressWarnings("unchecked")
     public final <T extends View> T findViewById(int arg0) {
         if (arg0 == NO_ID) {
             return null;
         }
-        return (T) (arg0 == mID ? this : null);
+        return findViewTraversal(arg0);
+    }
+
+    /**
+     * AOSP View.findViewTraversal (lines 27732-27737): the plain view matches
+     * its own id; {@link ViewGroup} overrides this to descend into children.
+     */
+    @SuppressWarnings("unchecked")
+    protected <T extends View> T findViewTraversal(int arg0) {
+        return arg0 == mID ? (T) this : null;
     }
 
     public final <T> T findViewWithTag(Object arg0) {
@@ -926,11 +1045,14 @@ import java.util.function.Consumer;
     }
 
     public View.AccessibilityDelegate getAccessibilityDelegate() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAccessibilityDelegate()Landroid/view/View$AccessibilityDelegate;");
+        // AOSP View.java:getAccessibilityDelegate reads mAccessibilityDelegate.
+        return mAccessibilityDelegate;
     }
 
     public int getAccessibilityLiveRegion() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAccessibilityLiveRegion()I");
+        // AOSP View.java:20933 reads PFLAG2_ACCESSIBILITY_LIVE_REGION_MASK;
+        // the shell stages the mode as a plain int.
+        return mAccessibilityLiveRegion;
     }
 
     public AccessibilityNodeProvider getAccessibilityNodeProvider() {
@@ -990,7 +1112,8 @@ import java.util.function.Consumer;
     }
 
     public String[] getAutofillHints() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getAutofillHints()[Ljava/lang/String;");
+        // AOSP View.java:getAutofillHints reads mAutofillHints.
+        return mAutofillHints;
     }
 
     public final AutofillId getAutofillId() {
@@ -1024,7 +1147,9 @@ import java.util.function.Consumer;
     }
 
     public int getBaseline() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getBaseline()I");
+        // AOSP View.java: the base class has no baseline; text-bearing
+        // subclasses (TextView) override with the first line's baseline.
+        return -1;
     }
 
     /** Ported from AOSP {@code View#getBottom} field getter. */
@@ -1064,6 +1189,9 @@ import java.util.function.Consumer;
      */
     protected Drawable mBackground;
 
+    /** AOSP mBackgroundSizeChanged: the background's bounds follow the view. */
+    private boolean mBackgroundSizeChanged;
+
     // AOSP View.java:2752: PFLAG_SKIP_DRAW = 0x80 (@hide constant, cited).
     private static final int PFLAG_SKIP_DRAW = 0x00000080;
 
@@ -1092,6 +1220,9 @@ import java.util.function.Consumer;
     /** AOSP PFLAG_LAYOUT_REQUIRED surrogate: a measure pass ran, so the
      *  next layout call must run onLayout even when bounds are unchanged. */
     private boolean mLayoutRequired = true;
+
+    /** AOSP PFLAG3_IS_LAID_OUT surrogate: layout() has run once. */
+    private boolean mLaidOut;
 
     /** AOSP View.mPaddingLeft/Top/Right/Bottom (absolute storage; relative
      *  setters write the same fields because the shell keeps one LTR
@@ -1169,11 +1300,18 @@ import java.util.function.Consumer;
     }
 
     public Display getDisplay() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDisplay()Landroid/view/Display;");
+        // AOSP View.java: attached views report the window's display; an
+        // unattached view has none (ViewCompat's API 17 bridge relies on
+        // this).
+        final AttachInfo attachInfo = mAttachInfo;
+        if (attachInfo != null) {
+            return attachInfo.mDisplay;
+        }
+        return null;
     }
 
     public final int[] getDrawableState() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getDrawableState()[I");
+        return onCreateDrawableState(0);
     }
 
     public Bitmap getDrawingCache() {
@@ -1350,7 +1488,8 @@ import java.util.function.Consumer;
     }
 
     public int getImportantForAutofill() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getImportantForAutofill()I");
+        // AOSP View.java:getImportantForAutofill reads the stored mode.
+        return mImportantForAutofill;
     }
 
     public int getImportantForContentCapture() {
@@ -1421,7 +1560,9 @@ import java.util.function.Consumer;
     }
 
     public int getLayoutDirection() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getLayoutDirection()I");
+        // The desktop shell is LTR-only for now; AOSP reads resolved layout
+        // direction bits that its RTL pass would have set.
+        return LAYOUT_DIRECTION_LTR;
     }
 
     /** Ported from AOSP {@code View#getLeft} field getter. */
@@ -1510,11 +1651,25 @@ import java.util.function.Consumer;
     }
 
     public int getMinimumHeight() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMinimumHeight()I");
+        // AOSP View.java:14314 reads mMinHeight.
+        return mMinHeight;
     }
 
     public int getMinimumWidth() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getMinimumWidth()I");
+        return mMinWidth;
+    }
+
+    /**
+     * AOSP hidden {@code View.getMinHeight} (used by widget measurement;
+     * not in the public stub jar).
+     */
+    public int getMinHeight() {
+        return mMinHeight;
+    }
+
+    /** AOSP hidden {@code View.getMinWidth}. */
+    public int getMinWidth() {
+        return mMinWidth;
     }
 
     public int getNextClusterForwardId() {
@@ -1554,7 +1709,9 @@ import java.util.function.Consumer;
     }
 
     public int getOverScrollMode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getOverScrollMode()I");
+        // AOSP View.java:getOverScrollMode reads mOverScrollMode, which the
+        // ctor seeds from the android:overScrollMode attribute.
+        return mOverScrollMode;
     }
 
     public ViewOverlay getOverlay() {
@@ -1806,11 +1963,19 @@ import java.util.function.Consumer;
     }
 
     protected int getSuggestedMinimumHeight() {
-        return mMinHeight;
+        int suggested = mMinHeight;
+        if (mBackground != null) {
+            suggested = Math.max(suggested, mBackground.getMinimumHeight());
+        }
+        return suggested;
     }
 
     protected int getSuggestedMinimumWidth() {
-        return mMinWidth;
+        int suggested = mMinWidth;
+        if (mBackground != null) {
+            suggested = Math.max(suggested, mBackground.getMinimumWidth());
+        }
+        return suggested;
     }
 
     public CharSequence getSupplementalDescription() {
@@ -1838,7 +2003,7 @@ import java.util.function.Consumer;
     }
 
     public Object getTag() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTag()Ljava/lang/Object;");
+        return mTag;
     }
 
     /**
@@ -1862,8 +2027,13 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTextDirection()I");
     }
 
+    /**
+     * AOSP {@code View.getTooltipText}: the tooltip set by
+     * {@link #setTooltipText(CharSequence)}, or null. The desktop window
+     * shows no hover tooltips yet, so the value is state only.
+     */
     public CharSequence getTooltipText() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->getTooltipText()Ljava/lang/CharSequence;");
+        return mTooltipText;
     }
 
     /** Ported from AOSP {@code View#getTop} field getter. */
@@ -2141,17 +2311,21 @@ import java.util.function.Consumer;
         final ViewRootImpl mViewRootImpl;
         final ViewTreeObserver mTreeObserver;
         final Handler mHandler;
+        final Display mDisplay;
 
         View mRootView;
         IBinder mWindowToken;
         boolean mHasWindowFocus;
+        boolean mInEditMode;
         int mWindowVisibility = VISIBLE;
         long mDrawingTime;
 
-        AttachInfo(ViewRootImpl viewRootImpl, ViewTreeObserver treeObserver) {
+        AttachInfo(ViewRootImpl viewRootImpl, ViewTreeObserver treeObserver,
+                Display display) {
             mViewRootImpl = viewRootImpl;
             mTreeObserver = treeObserver;
             mHandler = new Handler(Looper.getMainLooper());
+            mDisplay = display;
         }
     }
 
@@ -2169,6 +2343,20 @@ import java.util.function.Consumer;
     private boolean mPressed;
     private boolean mSelected;
     private int mFocusable;
+    /** AOSP View.DUPLICATE_PARENT_STATE (0x00400000), as a plain boolean. */
+    private boolean mDuplicateParentState;
+    /** AOSP PFLAG2_ACCESSIBILITY_LIVE_REGION_*, as a plain int. */
+    private int mAccessibilityLiveRegion = ACCESSIBILITY_LIVE_REGION_NONE;
+    /** AOSP View.mAccessibilityDelegate (AccessibilityDelegate staging). */
+    private AccessibilityDelegate mAccessibilityDelegate;
+    /** AOSP PFLAG_SCROLL_CONTAINER, staged as a plain boolean. */
+    private boolean mScrollContainer;
+    /** AOSP mOverScrollMode; default OVER_SCROLL_IF_CONTENT_SCROLLS. */
+    private int mOverScrollMode = OVER_SCROLL_IF_CONTENT_SCROLLS;
+    /** AOSP mImportantForAutofill; default AUTO. */
+    private int mImportantForAutofill = IMPORTANT_FOR_AUTOFILL_AUTO;
+    /** AOSP View.mAutofillHints (staged; no AutofillManager reads it). */
+    private String[] mAutofillHints;
 
     private OnClickListener mOnClickListener;
     private OnLongClickListener mOnLongClickListener;
@@ -2259,7 +2447,7 @@ import java.util.function.Consumer;
     }
 
     public boolean isDuplicateParentStateEnabled() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isDuplicateParentStateEnabled()Z");
+        return mDuplicateParentState;
     }
 
     public boolean isEnabled() {
@@ -2315,7 +2503,43 @@ import java.util.function.Consumer;
     }
 
     public final boolean isImportantForAutofill() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isImportantForAutofill()Z");
+        // AOSP View.java:isImportantForAutofill: an excluding ancestor wins,
+        // then the explicit YES/NO modes; AUTO falls back to the heuristics
+        // (an app resource id or autofill hints). Deviation: the platform
+        // also verifies the id resolves to an app resource; the shell keeps
+        // the id-shape check only.
+        ViewParent parent = mParent;
+        while (parent instanceof View) {
+            final int parentImportance =
+                    ((View) parent).getImportantForAutofill();
+            if (parentImportance == IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+                    || parentImportance
+                            == IMPORTANT_FOR_AUTOFILL_YES_EXCLUDE_DESCENDANTS) {
+                return false;
+            }
+            parent = parent.getParent();
+        }
+
+        final int importance = getImportantForAutofill();
+        if (importance == IMPORTANT_FOR_AUTOFILL_YES_EXCLUDE_DESCENDANTS
+                || importance == IMPORTANT_FOR_AUTOFILL_YES) {
+            return true;
+        }
+        if (importance == IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+                || importance == IMPORTANT_FOR_AUTOFILL_NO) {
+            return false;
+        }
+
+        // AUTO heuristics.
+        if (mID != NO_ID && !isViewIdGenerated(mID)) {
+            return true;
+        }
+        return getAutofillHints() != null;
+    }
+
+    /** AOSP View.isViewIdGenerated: an id minted by View.generateViewId(). */
+    private static boolean isViewIdGenerated(int id) {
+        return (id & 0xFF000000) == 0 && (id & 0x00FFFFFF) != 0;
     }
 
     public final boolean isImportantForContentCapture() {
@@ -2323,11 +2547,15 @@ import java.util.function.Consumer;
     }
 
     public boolean isInEditMode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isInEditMode()Z");
+        // AOSP View.java:isInEditMode reads AttachInfo.mInEditMode; a view
+        // that is not attached (and the shell's AttachInfo has no edit-mode
+        // flag) is not in edit mode.
+        return mAttachInfo != null && mAttachInfo.mInEditMode;
     }
 
+    /** AOSP isInLayout: true only during a ViewRootImpl layout pass. */
     public boolean isInLayout() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isInLayout()Z");
+        return false;
     }
 
     public boolean isInTouchMode() {
@@ -2341,8 +2569,9 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isKeyboardNavigationCluster()Z");
     }
 
+    /** AOSP isLaidOut: PFLAG3_IS_LAID_OUT, set after the first layout. */
     public boolean isLaidOut() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isLaidOut()Z");
+        return mLaidOut;
     }
 
     public boolean isLayoutDirectionResolved() {
@@ -2398,7 +2627,9 @@ import java.util.function.Consumer;
     }
 
     public boolean isScrollContainer() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->isScrollContainer()Z");
+        // AOSP View.java:isScrollContainer reads PFLAG_SCROLL_CONTAINER;
+        // the shell stages that bit as a plain boolean.
+        return mScrollContainer;
     }
 
     public boolean isScrollbarFadingEnabled() {
@@ -2454,7 +2685,9 @@ import java.util.function.Consumer;
     }
 
     public void jumpDrawablesToCurrentState() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->jumpDrawablesToCurrentState()V");
+        if (mBackground != null) {
+            mBackground.jumpToCurrentState();
+        }
     }
 
     public View keyboardNavigationClusterSearch(View arg0, int arg1) {
@@ -2482,9 +2715,12 @@ import java.util.function.Consumer;
             onLayout(changed, arg0, arg1, arg2, arg3);
             mLayoutRequired = false;
         }
+        // AOSP sets PFLAG3_IS_LAID_OUT here; the shell tracks the same
+        // bit as a plain boolean (read by isLaidOut).
+        mLaidOut = true;
 
-        // The rest of the AOSP body (PFLAG_FORCE_LAYOUT/PFLAG3_IS_LAID_OUT
-        // bookkeeping and the focus block) is untracked-flag territory.
+        // The rest of the AOSP body (PFLAG_FORCE_LAYOUT bookkeeping and the
+        // focus block) is untracked-flag territory.
     }
 
     /**
@@ -2546,8 +2782,19 @@ import java.util.function.Consumer;
         mLayoutRequested = false;
     }
 
+    /**
+     * AOSP View.mergeDrawableStates: appends a subclass's extra states to the
+     * tail of the base state array.
+     */
     protected static int[] mergeDrawableStates(int[] arg0, int[] arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->mergeDrawableStates([I[I)[I");
+        int i = arg0.length - 1;
+        while (i >= 0 && arg0[i] == 0) {
+            i--;
+        }
+        for (int state : arg1) {
+            arg0[++i] = state;
+        }
+        return arg0;
     }
 
     /**
@@ -2621,8 +2868,40 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onCreateContextMenu(Landroid/view/ContextMenu;)V");
     }
 
+    /**
+     * AOSP View.onCreateDrawableState: builds the state list every view
+     * publishes to its background and selector drawables; subclasses append
+     * their own states through {@link #mergeDrawableStates}.
+     */
     protected int[] onCreateDrawableState(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->onCreateDrawableState(I)[I");
+        // AOSP View.java:26278: a duplicate-parent-state view takes its
+        // parent's state instead of building its own.
+        if (mDuplicateParentState && mParent instanceof View) {
+            return ((View) mParent).onCreateDrawableState(arg0);
+        }
+        int[] state = new int[arg0 + 4];
+        int count = 0;
+        if (isEnabled()) {
+            state[count++] = StateSet.STATE_ENABLED;
+        }
+        if (isFocused()) {
+            state[count++] = StateSet.STATE_FOCUSED;
+        }
+        if (isSelected()) {
+            state[count++] = StateSet.STATE_SELECTED;
+        }
+        if (isPressed()) {
+            state[count++] = StateSet.STATE_PRESSED;
+        }
+        if (arg0 > 0) {
+            // AOSP: extraSpace slots ride after the active states so
+            // subclasses can mergeDrawableStates into the tail.
+            int[] full = new int[count + arg0];
+            System.arraycopy(state, 0, full, 0, count);
+            return full;
+        }
+        return count == 0 ? StateSet.WILD_CARD
+                : StateSet.trimStateSet(state, count);
     }
 
     public InputConnection onCreateInputConnection(EditorInfo arg0) {
@@ -3017,7 +3296,14 @@ import java.util.function.Consumer;
     }
 
     public void refreshDrawableState() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->refreshDrawableState()V");
+        int[] state = getDrawableState();
+        if (mBackground != null && mBackground.isStateful()) {
+            mBackground.setState(state);
+        }
+        drawableStateChanged();
+        if (mParent != null) {
+            mParent.childDrawableStateChanged(this);
+        }
     }
 
     public void releasePointerCapture() {
@@ -3138,11 +3424,36 @@ import java.util.function.Consumer;
     }
 
     public static int resolveSize(int arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->resolveSize(II)I");
+        return resolveSizeAndState(arg0, arg1, 0) & MEASURED_SIZE_MASK;
     }
 
+    /**
+     * AOSP View.resolveSizeAndState: an EXACT spec wins; an AT_MOST spec
+     * clamps to the spec size and flags the result as too small; an
+     * UNSPECIFIED spec keeps the desired size. The child's measured-state
+     * bits ride along in the top byte.
+     */
     public static int resolveSizeAndState(int arg0, int arg1, int arg2) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->resolveSizeAndState(III)I");
+        final int specMode = MeasureSpec.getMode(arg1);
+        final int specSize = MeasureSpec.getSize(arg1);
+        final int result;
+        switch (specMode) {
+            case MeasureSpec.MODE_AT_MOST:
+                if (specSize < arg0) {
+                    result = specSize | MEASURED_STATE_TOO_SMALL;
+                } else {
+                    result = arg0;
+                }
+                break;
+            case MeasureSpec.MODE_EXACTLY:
+                result = specSize;
+                break;
+            case MeasureSpec.MODE_UNSPECIFIED:
+            default:
+                result = arg0;
+                break;
+        }
+        return result | (arg2 & MEASURED_STATE_MASK);
     }
 
     public boolean restoreDefaultFocus() {
@@ -3153,8 +3464,13 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->restoreHierarchyState(Landroid/util/SparseArray;)V");
     }
 
-    public final void saveAttributeDataForStyleable(Context arg0, int[] arg1, AttributeSet arg2, TypedArray arg3, int arg4, int arg5) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->saveAttributeDataForStyleable(Landroid/content/Context;[ILandroid/util/AttributeSet;Landroid/content/res/TypedArray;II)V");
+    /**
+     * AOSP saveAttributeDataForStyleable: records attribute provenance for
+     * the layout inspector. The shell has no inspector, so the body is
+     * inert (AOSP itself only stores data under a debug flag).
+     */
+    public final void saveAttributeDataForStyleable(Context arg0, int[] arg1,
+            AttributeSet arg2, TypedArray arg3, int arg4, int arg5) {
     }
 
     public void saveHierarchyState(SparseArray<Parcelable> arg0) {
@@ -3192,7 +3508,9 @@ import java.util.function.Consumer;
     }
 
     public void sendAccessibilityEvent(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->sendAccessibilityEvent(I)V");
+        // AOSP View.java:sendAccessibilityEventInternal early-returns unless
+        // an AccessibilityManager is enabled; the shell has no accessibility
+        // service connection, so the event has nowhere to go.
     }
 
     public void sendAccessibilityEventUnchecked(AccessibilityEvent arg0) {
@@ -3204,9 +3522,9 @@ import java.util.function.Consumer;
     }
 
     public void setAccessibilityDelegate(View.AccessibilityDelegate delegate) {
-        // AOSP frameworks-base core/java/android/view/View.java#setAccessibilityDelegate:
-        // installs the delegate; no accessibility services headless → no-op
-        // (matches the interpreter's headless builtin).
+        // AOSP View.java:setAccessibilityDelegate stores the delegate; the
+        // notify-accessibility-state-changed leg is inert headless.
+        mAccessibilityDelegate = delegate;
     }
 
     public void setAccessibilityHeading(boolean arg0) {
@@ -3214,7 +3532,9 @@ import java.util.function.Consumer;
     }
 
     public void setAccessibilityLiveRegion(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAccessibilityLiveRegion(I)V");
+        // AOSP View.java:20908 stores the mode in PFLAG2; with no
+        // accessibility services the notification leg is inert here.
+        mAccessibilityLiveRegion = arg0;
     }
 
     public void setAccessibilityPaneTitle(CharSequence arg0) {
@@ -3269,7 +3589,9 @@ import java.util.function.Consumer;
     }
 
     public void setAutofillHints(String[] arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setAutofillHints([Ljava/lang/String;)V");
+        // AOSP View.java:setAutofillHints stores the hints and notifies the
+        // host; with no AutofillManager the notification leg is inert.
+        mAutofillHints = arg0;
     }
 
     public void setAutofillId(AutofillId arg0) {
@@ -3277,16 +3599,29 @@ import java.util.function.Consumer;
     }
 
     public void setBackground(Drawable arg0) {
+        if (arg0 == mBackground) {
+            return;
+        }
+        if (mBackground != null) {
+            mBackground.setCallback(null);
+        }
         mBackground = arg0;
+        if (arg0 != null) {
+            arg0.setCallback(this);
+            arg0.setLayoutDirection(getLayoutDirection());
+            arg0.setState(getDrawableState());
+        }
+        mBackgroundSizeChanged = true;
         requestLayout();
         invalidate();
     }
 
     public void setBackgroundColor(int arg0) {
-        // The shell's draw chain paints only a Drawable background; keep the
-        // call's invalidation observable and leave the color for the real
-        // Drawable model (no ColorDrawable skeleton yet).
-        invalidate();
+        if (arg0 == 0) {
+            setBackground(null);
+        } else {
+            setBackground(new android.graphics.drawable.ColorDrawable(arg0));
+        }
     }
 
     public void setBackgroundDrawable(Drawable arg0) {
@@ -3294,7 +3629,8 @@ import java.util.function.Consumer;
     }
 
     public void setBackgroundResource(int arg0) {
-        invalidate();
+        setBackground(arg0 == 0 ? null : mContext.getResources().getDrawable(
+                arg0, mContext.getTheme()));
     }
 
     public void setBackgroundTintBlendMode(BlendMode arg0) {
@@ -3407,7 +3743,11 @@ import java.util.function.Consumer;
     }
 
     public void setDuplicateParentStateEnabled(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setDuplicateParentStateEnabled(Z)V");
+        // AOSP routes through setFlags(DUPLICATE_PARENT_STATE); with the
+        // flag staged as a boolean this is the same state write. AOSP also
+        // documents that it must be set before the view joins its parent,
+        // which is when the parent records its notify-children bit.
+        mDuplicateParentState = arg0;
     }
 
     /**
@@ -3427,6 +3767,7 @@ import java.util.function.Consumer;
             if (!arg0) {
                 setPressed(false);
             }
+            refreshDrawableState();
             invalidate();
         }
     }
@@ -3548,9 +3889,9 @@ import java.util.function.Consumer;
     }
 
     public void setImportantForAutofill(int arg0) {
-        // AOSP frameworks-base core/java/android/view/View.java#setImportantForAutofill:
-        // autofill mode has no desktop effect without an AutofillManager;
-        // matches the interpreter's headless no-op builtin.
+        // AOSP View.java:setImportantForAutofill stores the mode and
+        // notifies the AutofillManager; the notification is inert headless.
+        mImportantForAutofill = arg0;
     }
 
     public void setImportantForContentCapture(int arg0) {
@@ -3644,6 +3985,20 @@ import java.util.function.Consumer;
     public void setMinimumWidth(int arg0) {
         mMinWidth = arg0;
         requestLayout();
+    }
+
+    /**
+     * AOSP hidden {@code View.setMinHeight} (widget measurement; not in the
+     * public stub jar). The platform setter writes the field without a
+     * layout pass.
+     */
+    public void setMinHeight(int arg0) {
+        mMinHeight = arg0;
+    }
+
+    /** AOSP hidden {@code View.setMinWidth}. */
+    public void setMinWidth(int arg0) {
+        mMinWidth = arg0;
     }
 
     public void setNestedScrollingEnabled(boolean arg0) {
@@ -3762,7 +4117,14 @@ import java.util.function.Consumer;
     }
 
     public void setOverScrollMode(int arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setOverScrollMode(I)V");
+        // AOSP View.java:setOverScrollMode rejects unknown modes.
+        if (arg0 != OVER_SCROLL_ALWAYS
+                && arg0 != OVER_SCROLL_IF_CONTENT_SCROLLS
+                && arg0 != OVER_SCROLL_NEVER) {
+            throw new IllegalArgumentException(
+                    "Invalid overscroll mode " + arg0);
+        }
+        mOverScrollMode = arg0;
     }
 
     public void setPadding(int arg0, int arg1, int arg2, int arg3) {
@@ -3816,6 +4178,7 @@ import java.util.function.Consumer;
     public void setPressed(boolean arg0) {
         if (mPressed != arg0) {
             mPressed = arg0;
+            refreshDrawableState();
             invalidate();
         }
     }
@@ -3929,7 +4292,10 @@ import java.util.function.Consumer;
     }
 
     public void setScrollContainer(boolean arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setScrollContainer(Z)V");
+        // AOSP View.java:setScrollContainer sets/clears
+        // PFLAG_SCROLL_CONTAINER and registers with AttachInfo; with no
+        // scroll-container registry, stage the bit.
+        mScrollContainer = arg0;
     }
 
     public void setScrollIndicators(int arg0) {
@@ -3955,6 +4321,7 @@ import java.util.function.Consumer;
     public void setSelected(boolean arg0) {
         if (mSelected != arg0) {
             mSelected = arg0;
+            refreshDrawableState();
             invalidate();
         }
     }
@@ -4024,9 +4391,16 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTextDirection(I)V");
     }
 
+    /**
+     * AOSP {@code View.setTooltipText}: stores the hover tooltip. AOSP also
+     * records it on the accessibility node; the desktop shell has no
+     * accessibility tree yet, so only the text is kept.
+     */
     public void setTooltipText(CharSequence arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->setTooltipText(Ljava/lang/CharSequence;)V");
+        mTooltipText = arg0;
     }
+
+    private CharSequence mTooltipText;
 
     /**
      * Ported from aosp-mirror/platform_frameworks_base
@@ -4110,9 +4484,15 @@ import java.util.function.Consumer;
     }
 
     public void setVisibility(int arg0) {
-        // AOSP View.setVisibility: stores the visibility bits; the reduced
-        // shell has no display list to invalidate yet.
-        mVisibility = arg0;
+        if (mVisibility != arg0) {
+            mVisibility = arg0;
+            if (arg0 != VISIBLE) {
+                mPressed = false;
+                mFocused = false;
+            }
+            requestLayout();
+            invalidate();
+        }
     }
 
     public void setWillNotCacheDrawing(boolean arg0) {
@@ -4120,9 +4500,12 @@ import java.util.function.Consumer;
     }
 
     public void setWillNotDraw(boolean arg0) {
-        // AOSP frameworks-base core/java/android/view/View.java#setWillNotDraw:
-        // records whether this view skips draw passes; no draw dispatch
-        // exists headless → no-op (matches the interpreter builtin).
+        if (arg0) {
+            mPrivateFlags |= PFLAG_SKIP_DRAW;
+        } else {
+            mPrivateFlags &= ~PFLAG_SKIP_DRAW;
+        }
+        invalidate();
     }
 
     public void setWindowInsetsAnimationCallback(WindowInsetsAnimation.Callback arg0) {
@@ -4231,7 +4614,7 @@ import java.util.function.Consumer;
     }
 
     protected boolean verifyDrawable(Drawable arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->verifyDrawable(Landroid/graphics/drawable/Drawable;)Z");
+        return arg0 == mBackground;
     }
 
     public boolean willNotCacheDrawing() {
@@ -4239,7 +4622,7 @@ import java.util.function.Consumer;
     }
 
     public boolean willNotDraw() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/View;->willNotDraw()Z");
+        return (mPrivateFlags & PFLAG_SKIP_DRAW) == PFLAG_SKIP_DRAW;
     }
 
         /** Scratch mirror constructor (SkeletonGen). */

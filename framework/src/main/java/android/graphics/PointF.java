@@ -3,77 +3,113 @@ package android.graphics;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-    public class PointF implements Parcelable {
+/**
+ * AOSP {@code android.graphics.PointF}: a mutable point with float
+ * coordinates. Material's shape pipeline keeps its arc-join scratch points in
+ * one, so the plain value semantics are all that is needed.
+ */
+public class PointF implements Parcelable {
 
-    public static Parcelable.Creator CREATOR;
+    public static Parcelable.Creator CREATOR = new Parcelable.Creator<PointF>() {
+        @Override
+        public PointF createFromParcel(Parcel source) {
+            PointF point = new PointF();
+            point.readFromParcel(source);
+            return point;
+        }
+
+        @Override
+        public PointF[] newArray(int size) {
+            return new PointF[size];
+        }
+    };
     public float x;
     public float y;
 
     public PointF() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;-><init>()V");
     }
 
     public PointF(Point arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;-><init>(Landroid/graphics/Point;)V");
+        x = arg0.x;
+        y = arg0.y;
     }
 
     public PointF(PointF arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;-><init>(Landroid/graphics/PointF;)V");
+        x = arg0.x;
+        y = arg0.y;
     }
 
     public PointF(float arg0, float arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;-><init>(FF)V");
+        x = arg0;
+        y = arg1;
     }
 
     public int describeContents() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->describeContents()I");
+        return 0;
     }
 
     public final boolean equals(float arg0, float arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->equals(FF)Z");
+        return x == arg0 && y == arg1;
     }
 
+    @Override
     public boolean equals(Object arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->equals(Ljava/lang/Object;)Z");
+        if (this == arg0) {
+            return true;
+        }
+        if (!(arg0 instanceof PointF)) {
+            return false;
+        }
+        PointF other = (PointF) arg0;
+        return x == other.x && y == other.y;
     }
 
+    @Override
     public int hashCode() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->hashCode()I");
+        int result = Float.floatToIntBits(x);
+        return 31 * result + Float.floatToIntBits(y);
     }
 
     public final float length() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->length()F");
+        return length(x, y);
     }
 
     public static float length(float arg0, float arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->length(FF)F");
+        return (float) Math.hypot(arg0, arg1);
     }
 
     public final void negate() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->negate()V");
+        x = -x;
+        y = -y;
     }
 
     public final void offset(float arg0, float arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->offset(FF)V");
+        x += arg0;
+        y += arg1;
     }
 
     public void readFromParcel(Parcel arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->readFromParcel(Landroid/os/Parcel;)V");
+        x = arg0.readFloat();
+        y = arg0.readFloat();
     }
 
     public final void set(PointF arg0) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->set(Landroid/graphics/PointF;)V");
+        x = arg0.x;
+        y = arg0.y;
     }
 
     public final void set(float arg0, float arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->set(FF)V");
+        x = arg0;
+        y = arg1;
     }
 
+    @Override
     public String toString() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->toString()Ljava/lang/String;");
+        return "PointF(" + x + ", " + y + ")";
     }
 
     public void writeToParcel(Parcel arg0, int arg1) {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/graphics/PointF;->writeToParcel(Landroid/os/Parcel;I)V");
+        arg0.writeFloat(x);
+        arg0.writeFloat(y);
     }
-    }
+}

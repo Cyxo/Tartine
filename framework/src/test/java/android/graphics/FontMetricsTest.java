@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import org.junit.jupiter.api.Test;
+import tartine.gfx.GfxBackend;
+import tartine.gfx.testing.RecordingBackend;
 
 /**
  * AOSP parity for Paint's pure-Java font metric value classes. Source:
@@ -88,6 +90,19 @@ class FontMetricsTest {
         Paint.FontMetricsInt target = new Paint.FontMetricsInt();
         target.set(source);
         assertEquals(source, target);
+    }
+
+    @Test
+    void fontSpacingIsDescentMinusAscent() {
+        GfxBackend.install(new RecordingBackend());
+        try {
+            Paint paint = new Paint();
+            paint.setTextSize(16.0f);
+            // RecordingBackend.METRICS: ascent -15, descent 4.
+            assertEquals(19.0f, paint.getFontSpacing());
+        } finally {
+            GfxBackend.uninstall();
+        }
     }
 
     @Test

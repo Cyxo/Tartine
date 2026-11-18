@@ -53,6 +53,9 @@ public interface GfxCanvas {
     void drawRoundRect(float left, float top, float right, float bottom,
             float rx, float ry, GfxPaint paint);
 
+    /** Draws a recorded path with the paint's fill rule and style. */
+    void drawPath(GfxPath path, GfxPaint paint);
+
     /** Draws {@code text} with its baseline origin at ({@code x}, {@code y}). */
     void drawText(String text, float x, float y, GfxFont font, GfxPaint paint);
 
