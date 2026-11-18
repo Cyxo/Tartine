@@ -2,6 +2,9 @@
 
 - **Status**: Accepted
 - **Date**: 2026-11-04
+- **Updated**: 2026-11-18 (`DisplayConfig` also carries the frame pacing
+  the host loop resolves from `display.refresh_hz`, so the guest's
+  `Display` reports the same rate)
 
 ## Context
 
@@ -56,6 +59,14 @@ metrics before guest code launches; `Resources` builds both the device
   choose a different resource set.
 - `DisplayConfig` defaults to 480x960 px mdpi so framework-only tests and
   no-window runs keep their historical numbers.
+- *2026-11-18:* the seam also carries the display refresh rate.
+  `HostConfig` resolves `display.refresh_hz` for the render loop's frame
+  period; `Main.gui` writes the same value to
+  `DisplayConfig.setRefreshHz`, and `android.view.Display` (built per
+  window root by `ViewRootImpl`, carried to every view through
+  `View.AttachInfo.mDisplay`) reports it via `getRefreshRate`/`getMode`/
+  `getSupportedRefreshRates`. It is pacing, not a resource qualifier: no
+  `Resources` rebuild happens when it changes.
 
 **Resize path.** `tartine.graphics.RenderTarget` is the replaceable raster
 target; `GuestSurface` owns one `GfxSurface` plus the framework `Canvas`

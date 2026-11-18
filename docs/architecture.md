@@ -26,10 +26,14 @@ GitLab `android_translation_layer/android_translation_layer`
   styled attributes, `XmlResourceParserImpl` replays a layout as the
   pull-parser + `AttributeSet` contract, and `LayoutInflater` builds the
   view tree (factories, parent-generated `LayoutParams`,
-  `onFinishInflate`). The `android.widget` toolkit is not ported, so a
-  real layout inflates up to the first unported element and then names it
-  (`Unable to inflate view: LinearLayout` for the layout probe); rendering
-  XML layouts and drawable/selector XML wait on that family.
+  `onFinishInflate`). The `android.widget` subset the layout probe needs is
+  ported (ADR-0015): `LinearLayout`/`FrameLayout`/`ScrollView`/`TextView`/
+  `ImageView`/`Button`/progress bars and friends inflate, measure, layout
+  and draw, so `apks/app-debug-layout-xml.apk` renders end to end.
+  Drawables without bitmaps (color/shape/gradient/inset/layer/state-list/
+  ripple/vector shells) load from XML; bitmap-backed drawables degrade to a
+  logged `framework drawable unavailable (bitmap boundary)` warning rather
+  than a hard wall (no `BitmapFactory`/`Canvas.drawBitmap` yet).
 - DEX != JVM bytecode, never load it directly: register-based (frames
   fixed at creation, up to v65535, typically <16), 16-bit code units,
   whole-app shared pools (string/type/proto/field/method); JVM is

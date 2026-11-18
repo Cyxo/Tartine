@@ -2,6 +2,8 @@
 
 - **Status**: Accepted
 - **Date**: 2026-11-12
+- **Updated**: 2026-11-18 (widget subset, drawables and rendering landed —
+  see the 2026-11-18 note in Decision)
 
 ## Context
 
@@ -74,17 +76,26 @@ host classes (and a raw host loader is not a `GuestClassLoader`). Instead
 which wraps the calling thread's `TranslatedLoader`; lookups then go through
 the sandbox allowlist like every other guest class lookup.
 
-**The unported widget toolkit is a named boundary, not a silent failure.**
-`framework/src/main/java/android/widget` contains no view classes, so
-inflation of a real layout stops at the first unported element with
-`RuntimeException("Unable to inflate view: <name> ...")` — for
-`apks/app-debug-layout-xml.apk`, `android/widget/LinearLayout`. Rendering an
-XML layout needs the platform widget toolkit
-(`LinearLayout`/`TextView`/`FrameLayout`/`ScrollView`/`Button`, ...) plus
-real measure/layout, which is a separate, larger port that this change does
-not attempt. `Resources.getDrawable` likewise remains a named gap (no
-drawable-XML/bitmap loader), so `ImageView`/material widgets are blocked on
-that family too.
+**The widget subset follows the probe walls (2026-11-18 update).** The
+follow-up ported the `android.widget` slice the layout probe exercises —
+`LinearLayout`/`FrameLayout`/`ScrollView`/`HorizontalScrollView`/`TextView`
+(+`Button`/`EditText`/`CheckBox`/`RadioButton` via `CompoundButton`)/
+`ImageView` (+`ImageButton`)/`ProgressBar`/`Space`, with `OverScroller` and
+the view side they need (`Gravity`, the animation interpolators,
+`Editable`/`SpannableStringBuilder`/`TextUtils` for text measurement).
+Platform base classes are ported faithfully and stay host framework code;
+androidx/material classes remain guest DEX running over the framework.
+Measure/layout reuse the Compose-path `View` pipeline, and draw maps onto
+the existing `Canvas`/`Paint` seam. `Resources.getDrawable` now parses
+drawable XML into the no-bitmap family (color/shape/gradient/inset/layer/
+state-list/ripple/vector shells, plus `Shape`/`RectShape`/`OvalShape`);
+bitmap-backed framework drawables degrade to a logged
+`framework drawable unavailable (bitmap boundary)` warning instead of a
+hard wall — `BitmapFactory`/`Canvas.drawBitmap` remain future work — and
+framework state-list *colors* stay unresolved because androidx inflates its
+own XML selectors. The probe (`apks/app-debug-layout-xml.apk` via
+`mise run run`/`gui ... --activity`) now completes `onCreate`, measure,
+layout, draw and one presented frame with no uncaught exception.
 
 **Non-launcher activities can be probed.** `Main` accepts
 `--activity/-a <name>` (and `run`/`gui` take an optional `[activity]`
@@ -95,11 +106,10 @@ initialization (`new OkHttpClient()`), an orthogonal boundary;
 
 ## Consequences
 
-- Apps that call `setContentView(R.layout...)` now run the real framework
-  path — resource lookup, styling, parser replay, tree building — until the
-  first unported class. The layout-XML probe on
-  `apks/app-debug-layout-xml.apk` reaches `android/widget/LinearLayout` as
-  the documented boundary.
+- Apps that call `setContentView(R.layout...)` run the real framework path —
+  resource lookup, styling, parser replay, tree building, measure/layout,
+  draw — into one presented frame for the layout probe. Unported widget
+  families still surface as inflation failures naming the class.
 - The resource/inflation framework tests run against a hand-built
   `tartine.fw.FakeAppResourceHost` (no APK needed), while the host-side
   `ResourceHostAdapter` tests keep driving the real `resources.arsc`/AXML
@@ -109,7 +119,8 @@ initialization (`new OkHttpClient()`), an orthogonal boundary;
   selector/drawable XML), none of which is implemented here.
 - Known limits carried by this decision: no `<include>` resolution, no
   namespace prefixes (compiled documents carry URIs), no resource text
-  events, no `ColorStateList`/drawable XML factories, no configuration
-  selection beyond density/platform, and no widget rendering. A guest probe
-  of a non-launcher activity may still hit the network denial first, which
-  is why `--activity` is a flag rather than a manifest behavior.
+  events, no configuration selection beyond density/platform, no bitmap
+  rendering (framework drawables degrade with a warning), and framework
+  state-list colors unresolved. A guest probe of a non-launcher activity may
+  still hit the network denial first, which is why `--activity` is a flag
+  rather than a manifest behavior.
