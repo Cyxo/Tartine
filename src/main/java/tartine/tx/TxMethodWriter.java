@@ -1617,89 +1617,24 @@ final class TxMethodWriter implements Opcodes {
                     mv.visitVarInsn(ALOAD, slot);
                     return;
                 default:
-                    // Cross-family demand on a known DEX value kind first
-                    // takes bitReinterpret's contract (fillFloatDemo: bare
-                    // aget of a [F element re-turns float bits through an
-                    // int slot; only f2i would truncate numerically). The
-                    // mixed slot holds the box, so the reinterpret decodes
-                    // the box family the last store boxed, then flips bits.
-                    if (want == INT && k == FLOAT) {
-                        mv.visitVarInsn(ALOAD, slot);
-                        mv.visitTypeInsn(CHECKCAST, "java/lang/Float");
-                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float",
-                                "floatValue", "()F", false);
-                        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float",
-                                "floatToRawIntBits", "(F)I", false);
-                        return;
-                    }
-                    if (want == FLOAT && k == INT) {
-                        mv.visitVarInsn(ALOAD, slot);
-                        mv.visitTypeInsn(CHECKCAST, "java/lang/Integer");
-                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer",
-                                "intValue", "()I", false);
-                        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float",
-                                "intBitsToFloat", "(I)F", false);
-                        return;
-                    }
-                    if (want == LONG && k == DOUBLE) {
-                        mv.visitVarInsn(ALOAD, slot);
-                        mv.visitTypeInsn(CHECKCAST, "java/lang/Double");
-                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double",
-                                "doubleValue", "()D", false);
-                        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double",
-                                "doubleToRawLongBits", "(D)J", false);
-                        return;
-                    }
-                    if (want == DOUBLE && k == LONG) {
-                        mv.visitVarInsn(ALOAD, slot);
-                        mv.visitTypeInsn(CHECKCAST, "java/lang/Long");
-                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long",
-                                "longValue", "()J", false);
-                        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double",
-                                "longBitsToDouble", "(J)D", false);
-                        return;
-                    }
-                    // Numerics unbox the last store's box family. Number is
-                    // the safe decode: a {obj,int} slot that also met a
-                    // float/long store still decodes through the same
-                    // interface instead of failing checkcast Integer.
-                    // A mixed slot can hold null (e.g. from init which writes
-                    // ACONST_NULL directly without store()); guard the unbox
-                    // so null reads as 0 instead of NPEing on intValue().
-                    Label notNull = new Label();
-                    final Label done = new Label();
-                    mv.visitVarInsn(ALOAD, slot);
-                    mv.visitInsn(DUP);
-                    mv.visitJumpInsn(IFNONNULL, notNull);
-                    mv.visitInsn(POP);
-                    switch (want) {
-                        case LONG:
-                            mv.visitInsn(LCONST_0);
-                            break;
-                        case DOUBLE:
-                            mv.visitInsn(DCONST_0);
-                            break;
-                        case FLOAT:
-                            mv.visitInsn(FCONST_0);
-                            break;
-                        default:
-                            mv.visitInsn(ICONST_0);
-                            break;
-                    }
-                    mv.visitJumpInsn(GOTO, done);
-                    mv.visitLabel(notNull);
-                    mv.visitTypeInsn(CHECKCAST, "java/lang/Number");
-                    String accessor = want == FLOAT ? "floatValue"
-                            : want == LONG ? "longValue"
-                            : want == DOUBLE ? "doubleValue"
-                            : "intValue";
-                    String accDesc = want == FLOAT ? "()F"
-                            : want == LONG ? "()J"
-                            : want == DOUBLE ? "()D"
-                            : "()I";
-                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Number",
-                            accessor, accDesc, false);
-                    mv.visitLabel(done);
+                    // Cross-family demand must dispatch on the runtime box
+                    // family, never on the statically tracked kind alone: the
+                    // slot is polymorphic, its last store can be a different
+                    // numeric family (a joined label), and a universal-zero
+                    // const stored ACONST_NULL there (the loop accumulator in
+                    // ViewUtils.getParentAbsoluteElevation, read by
+                    // add-float/2addr after the loop header cleared the
+                    // zero fact). A raw CHECKCAST Integer;intValue on that
+                    // null NPEs, so every numeric demand goes through the
+                    // null-aware dispatcher (bit-mate families still
+                    // reinterpret through floatToRawIntBits etc.).
+                    // The box family is only known per path: a const that
+                    // scanned INT (a fork stopped narrowScan) stores raw bit
+                    // ints, while the demand at a joined label may be FLOAT.
+                    // Dispatch on the runtime box family so bit reinterpret
+                    // still happens (AppCompatTextHelper's const/high16
+                    // -1.0f compared as float after an int/float join).
+                    emitMixedNumericLoad(slot, want);
                     return;
             }
         }
@@ -1848,6 +1783,106 @@ final class TxMethodWriter implements Opcodes {
         } else if (want == 'S') {
             mv.visitInsn(I2S);
         }
+    }
+
+    /**
+     * Loads a numeric value from a unified (mixed) slot through a runtime
+     * box-family dispatch. The static kind census cannot say which family a
+     * particular path boxed: a {@code const/high16} whose forward scan forked
+     * stores raw int bits, while the demand at a joined label can be float
+     * (AppCompatTextHelper's {@code const/high16 -1.0f} compared by
+     * {@code cmpl-float}). DEX reads a register's raw bits across families,
+     * so an Integer box demanded as float reinterprets through
+     * {@code intBitsToFloat}, and a Float box demanded as int through
+     * {@code floatToRawIntBits}; the matching family simply unboxes. A null
+     * slot (uninitialized/zero) reads as numeric zero.
+     */
+    private void emitMixedNumericLoad(int slot, char want) {
+        Label nullLane = new Label();
+        Label done = new Label();
+        mv.visitVarInsn(ALOAD, slot);
+        mv.visitJumpInsn(IFNULL, nullLane);
+        switch (want) {
+            case FLOAT:
+                emitBoxDispatch(slot, "java/lang/Float", "floatValue", "()F",
+                        "java/lang/Integer", "intValue", "()I",
+                        "java/lang/Float", "intBitsToFloat", "(I)F",
+                        "floatValue", "()F", done);
+                break;
+            case INT:
+                emitBoxDispatch(slot, "java/lang/Integer", "intValue", "()I",
+                        "java/lang/Float", "floatValue", "()F",
+                        "java/lang/Float", "floatToRawIntBits", "(F)I",
+                        "intValue", "()I", done);
+                break;
+            case LONG:
+                emitBoxDispatch(slot, "java/lang/Long", "longValue", "()J",
+                        "java/lang/Double", "doubleValue", "()D",
+                        "java/lang/Double", "doubleToRawLongBits", "(D)J",
+                        "longValue", "()J", done);
+                break;
+            case DOUBLE:
+                emitBoxDispatch(slot, "java/lang/Double", "doubleValue", "()D",
+                        "java/lang/Long", "longValue", "()J",
+                        "java/lang/Double", "longBitsToDouble", "(J)D",
+                        "doubleValue", "()D", done);
+                break;
+            default:
+                throw new TxTranslator.TxGap("mixed numeric load demand " + want);
+        }
+        mv.visitJumpInsn(GOTO, done);
+        mv.visitLabel(nullLane);
+        switch (want) {
+            case LONG:
+                mv.visitInsn(LCONST_0);
+                break;
+            case DOUBLE:
+                mv.visitInsn(DCONST_0);
+                break;
+            case FLOAT:
+                mv.visitInsn(FCONST_0);
+                break;
+            default:
+                mv.visitInsn(ICONST_0);
+                break;
+        }
+        mv.visitLabel(done);
+    }
+
+    /**
+     * Emits the two runtime box tests of {@link #emitMixedNumericLoad}: the
+     * matching family unboxes directly, the bit-mate family unboxes then
+     * reinterprets its bits, and anything else falls back to the
+     * {@code Number} accessor the generic lane always used.
+     */
+    private void emitBoxDispatch(int slot, String sameBox, String sameMethod,
+            String sameDesc, String mateBox, String mateUnbox,
+            String mateUnboxDesc, String bitsClass, String bitsMethod,
+            String bitsDesc, String numberMethod, String numberDesc,
+            Label done) {
+        Label notSame = new Label();
+        mv.visitVarInsn(ALOAD, slot);
+        mv.visitTypeInsn(INSTANCEOF, sameBox);
+        mv.visitJumpInsn(IFEQ, notSame);
+        mv.visitVarInsn(ALOAD, slot);
+        mv.visitTypeInsn(CHECKCAST, sameBox);
+        mv.visitMethodInsn(INVOKEVIRTUAL, sameBox, sameMethod, sameDesc, false);
+        mv.visitJumpInsn(GOTO, done);
+        mv.visitLabel(notSame);
+        Label notMate = new Label();
+        mv.visitVarInsn(ALOAD, slot);
+        mv.visitTypeInsn(INSTANCEOF, mateBox);
+        mv.visitJumpInsn(IFEQ, notMate);
+        mv.visitVarInsn(ALOAD, slot);
+        mv.visitTypeInsn(CHECKCAST, mateBox);
+        mv.visitMethodInsn(INVOKEVIRTUAL, mateBox, mateUnbox, mateUnboxDesc, false);
+        mv.visitMethodInsn(INVOKESTATIC, bitsClass, bitsMethod, bitsDesc, false);
+        mv.visitJumpInsn(GOTO, done);
+        mv.visitLabel(notMate);
+        mv.visitVarInsn(ALOAD, slot);
+        mv.visitTypeInsn(CHECKCAST, "java/lang/Number");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Number", numberMethod,
+                numberDesc, false);
     }
 
     /**

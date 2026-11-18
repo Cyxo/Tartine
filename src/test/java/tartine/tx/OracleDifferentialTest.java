@@ -111,6 +111,7 @@ final class OracleDifferentialTest {
                 noArgs("nullCast"), noArgs("castOk"), noArgs("covarPrim"),
                 noArgs("switchDemo"), noArgs("arrayCopy"),
                 noArgs("fillDemo"), noArgs("fillFloatDemo"),
+                noArgs("mixedBitsDemo"),
                 noArgs("copyDemo"), noArgs("repeatDemo"),
                 noArgs("strictSqrt"), noArgs("mathMax"),
                 noArgs("intBox"), noArgs("stringOps"),

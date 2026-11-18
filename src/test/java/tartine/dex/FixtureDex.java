@@ -18,6 +18,7 @@ import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21s
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21t;
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction22b;
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction22c;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction22t;
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction23x;
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction31i;
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction31t;
@@ -347,6 +348,8 @@ public final class FixtureDex {
                     demos.get("settingsFloatDemo"), demos.get("resolverObsDemo"),
                     demos.get("themeDemo"), demos.get("resColorDemo"), demos.get("compCbDemo"),
                     demos.get("fillFloatDemo"), demos.get("hostFillDemo"),
+                    demos.get("mixedBitsDemo"),
+                    demos.get("mixedLoopFloatDemo"),
                     demos.get("sysServiceDemo"), demos.get("a11yDemo"),
                     demos.get("a11yEnabledDemo"), demos.get("sortDemo"), demos.get("autofillDemo"),
                     demos.get("autofillCbDemo"), demos.get("importantDemo"),
@@ -2828,6 +2831,7 @@ public final class FixtureDex {
         layoutGetImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
         layoutGetImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 3, 15));
         layoutGetImpl.addInstruction(new BuilderInstruction23x(Opcode.APUT_OBJECT, 2, 1, 3));
+        layoutGetImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 1));
         layoutGetImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 2, 0,
                 0, 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/text/Layout;", "getLineAscent",
@@ -2835,6 +2839,7 @@ public final class FixtureDex {
         layoutGetImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 2));
         layoutGetImpl.addInstruction(new BuilderInstruction21s(Opcode.CONST_16, 3, 16));
         layoutGetImpl.addInstruction(new BuilderInstruction23x(Opcode.APUT_OBJECT, 2, 1, 3));
+        layoutGetImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 1));
         layoutGetImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2, 0, 2, 0,
                 0, 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Landroid/text/Layout;", "getLineDescent",
@@ -3837,6 +3842,67 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), fillFloatImpl);
         demos.put("fillFloatDemo", fillFloatDemo);
+
+        // mixedBitsDemo(): a register stored as a float on one path and as
+        // raw const/high16 bits on the other, then read as float after the
+        // join. The fork before the const's first float use makes the
+        // forward scan type it INT, so the unified slot holds an Integer
+        // box whose bits are -1.0f; the float demand must reinterpret them
+        // (AppCompatTextHelper's lineHeight sentinel does the same). The
+        // runtime path takes the const arm: (-1.0f) + (-1.0f) = -2.0f.
+        MutableMethodImplementation mixedBitsImpl = new MutableMethodImplementation(3);
+        mixedBitsImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 0));
+        mixedBitsImpl.addInstruction(new BuilderInstruction21ih(Opcode.CONST_HIGH16, 1,
+                0x3F800000));
+        mixedBitsImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_FLOAT, 2, 1, 1));
+        mixedBitsImpl.addInstruction(new BuilderInstruction21ih(Opcode.CONST_HIGH16, 1,
+                0xBF800000));
+        mixedBitsImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_FLOAT, 2, 1, 1));
+        mixedBitsImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 2));
+        Label mixedFloatJoin = mixedBitsImpl.newLabelForIndex(4);
+        Label mixedFloatConst = mixedBitsImpl.newLabelForIndex(3);
+        mixedBitsImpl.addInstruction(4, new BuilderInstruction21t(Opcode.IF_EQZ, 0,
+                mixedFloatJoin));
+        mixedBitsImpl.addInstruction(3, new BuilderInstruction10t(Opcode.GOTO,
+                mixedFloatJoin));
+        mixedBitsImpl.addInstruction(1, new BuilderInstruction21t(Opcode.IF_EQZ, 0,
+                mixedFloatConst));
+        BuilderMethod mixedBitsDemo = builder.internMethod(HELLO, "mixedBitsDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "F",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), mixedBitsImpl);
+        demos.put("mixedBitsDemo", mixedBitsDemo);
+
+        // mixedLoopFloatDemo(): the ViewUtils.getParentAbsoluteElevation
+        // shape. A const/4 #0 accumulator is read as FLOAT by an add-float
+        // inside a loop. The const's forward scan stops at the conditional
+        // branch before the add (typing it INT), and the loop header clears
+        // the universal-zero fact while the linear kind stays INT; the
+        // unified slot therefore holds null on entry and the float demand
+        // must read it as 0.0f instead of casting it to Integer. Three
+        // iterations add 1.0f each: 3.0f.
+        MutableMethodImplementation mixedLoopFloatImpl =
+                new MutableMethodImplementation(4);
+        mixedLoopFloatImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 0, 0));
+        mixedLoopFloatImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 0));
+        mixedLoopFloatImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 3, 1));
+        mixedLoopFloatImpl.addInstruction(new BuilderInstruction21ih(Opcode.CONST_HIGH16, 2,
+                0x3F800000));
+        Label mixedLoopFloatHead = mixedLoopFloatImpl.newLabelForIndex(3);
+        mixedLoopFloatImpl.addInstruction(new BuilderInstruction21t(Opcode.IF_EQZ, 3,
+                mixedLoopFloatHead));
+        mixedLoopFloatImpl.addInstruction(new BuilderInstruction23x(Opcode.ADD_FLOAT, 0, 0, 2));
+        mixedLoopFloatImpl.addInstruction(new BuilderInstruction22b(Opcode.ADD_INT_LIT8, 1, 1, 1));
+        mixedLoopFloatImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 3, 3));
+        mixedLoopFloatImpl.addInstruction(new BuilderInstruction22t(Opcode.IF_LT, 1, 3,
+                mixedLoopFloatHead));
+        mixedLoopFloatImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        BuilderMethod mixedLoopFloatDemo = builder.internMethod(HELLO,
+                "mixedLoopFloatDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "F",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), mixedLoopFloatImpl);
+        demos.put("mixedLoopFloatDemo", mixedLoopFloatDemo);
 
         // runtimeDemo(): Runtime.getRuntime().maxMemory() is positive.
         MutableMethodImplementation runtimeImpl = new MutableMethodImplementation(1);

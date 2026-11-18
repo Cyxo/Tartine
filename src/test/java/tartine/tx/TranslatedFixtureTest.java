@@ -139,6 +139,9 @@ final class TranslatedFixtureTest {
         assertEquals(8, (int) (Integer) call("arrayCopy"));
         assertEquals(2, (int) (Integer) call("fillDemo"));
         assertEquals(0x3F800000, (int) (Integer) call("fillFloatDemo"));
+        // A mixed int/float slot read as float after a join must reinterpret
+        // the Integer box's bits: (-1.0f) + (-1.0f).
+        assertEquals(-2.0f, (float) (Float) call("mixedBitsDemo"));
         assertEquals("a", (String) call("cloneDemo"));
         assertEquals("a", (String) call("copyDemo"));
         assertEquals(7, (int) (Integer) call("switchDemo"));

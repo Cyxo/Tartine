@@ -194,6 +194,14 @@ final class TranslatedVmTest {
         assertEquals(0x3FF0000000000000L, (long) (Long) call("wideHigh16Demo"));
         assertEquals(2, (int) (Integer) call("fillDemo"));
         assertEquals(0x3F800000, (int) (Integer) call("fillFloatDemo"));
+        // A mixed int/float slot whose Integer box holds const/high16 float
+        // bits: the float demand must reinterpret them after the join.
+        assertEquals(-2.0f, (float) (Float) call("mixedBitsDemo"));
+        // A unified slot whose const/4 zero sits outside a loop: the header
+        // clears the zero fact but the linear kind stays INT, so the float
+        // demand must read the null entry value as 0.0f (ViewUtils.
+        // getParentAbsoluteElevation).
+        assertEquals(3.0f, (float) (Float) call("mixedLoopFloatDemo"));
         assertEquals(7, (int) (Integer) call("zeroCheckDemo"));
         assertEquals(7, (int) (Integer) call("nullCheckDemo"));
         // A loop-carried {int,ref} register read by if-eqz with a stale
@@ -492,10 +500,19 @@ final class TranslatedVmTest {
         assertEquals(18, length(layout));
         assertEquals("hello world test", element(layout, 13));
         assertTrue(element(layout, 14) instanceof TextPaint);
-        // getLineBaseline(1) on a one-line layout: Tartine clamps to the final
-        // line box, so this is height - descent. With AOSP's default
-        // includePad (top..bottom on a single line) that is -floor(top).
-        assertEquals(9, (int) (Integer) element(layout, 15));
+        // The 30px layout width wraps the 16-character string at 8px text
+        // into several lines, so line 1 is a real line and its baseline lies
+        // inside it. By construction baseline = lineTop(2) - descent and
+        // ascent = lineTop(1) - baseline.
+        assertTrue((int) (Integer) element(layout, 0) > 1);
+        int top = (int) (Integer) element(layout, 5);
+        int bottom = (int) (Integer) element(layout, 6);
+        int baseline = (int) (Integer) element(layout, 15);
+        int lineAscent = (int) (Integer) element(layout, 16);
+        int lineDescent = (int) (Integer) element(layout, 17);
+        assertEquals(bottom - lineDescent, baseline);
+        assertEquals(top - baseline, lineAscent);
+        assertTrue(baseline > top && baseline < bottom);
     }
 
     @Test
