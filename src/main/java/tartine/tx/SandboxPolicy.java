@@ -427,6 +427,20 @@ final class SandboxPolicy {
         return classDenial(internalName);
     }
 
+    /**
+     * The reason phrase every network-capability denial carries. The
+     * translator keys the gap stub's guest-visible exception type on it
+     * (a device without network fails these calls with {@code IOException}
+     * subclasses, so apps' existing handlers keep working).
+     */
+    static final String NETWORK_REASON = "network access is not available";
+
+    /** Whether a denial message names the network-capability boundary. */
+    static boolean isNetworkDenial(String denialMessage) {
+        return denialMessage != null
+                && denialMessage.contains(NETWORK_REASON);
+    }
+
     private static String javaDenial(String name) {
         if (name.equals("java.net.Proxy") || name.equals("java.net.ProxySelector")
                 || name.equals("java.net.SocketAddress")) {
@@ -436,7 +450,7 @@ final class SandboxPolicy {
             return null;
         }
         if (name.startsWith("java.net.")) {
-            return "network access is not available: " + name;
+            return NETWORK_REASON + ": " + name;
         }
         if (name.startsWith("java.nio.file.")) {
             return "host paths are not available: " + name;

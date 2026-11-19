@@ -35,6 +35,7 @@ final class StrictTranslationTest {
             "Ltest/Hello;->intentDemo()Ljava/lang/Object;",
             "Ltest/Hello;->intentExtrasDemo()Ljava/lang/Object;",
             "Ltest/Hello;->missing()V",
+            "Ltest/Hello;->netDemo()Ljava/lang/Object;",
             "Ltest/Hello;->retainedDemo()Ljava/lang/Object;",
             "Ltest/Hello;->runtimeExecDemo()Ljava/lang/Object;",
             "Ltest/Hello;->runtimeExitDemo()V",

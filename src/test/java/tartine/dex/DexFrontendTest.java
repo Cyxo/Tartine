@@ -1545,6 +1545,11 @@ class DexFrontendTest {
         expected.append("  4: invoke-virtual v0, v1, Ljava/util/concurrent/TimeUnit;->toNanos(J)J\n");
         expected.append("  7: move-result-wide v0\n");
         expected.append("  8: return-wide v0\n");
+        expected.append("method netDemo()Ljava/lang/Object; regs=2\n");
+        expected.append("  0: const-string v0, localhost\n");
+        expected.append("  2: invoke-static v0, Ljava/net/InetAddress;->getByName(Ljava/lang/String;)Ljava/net/InetAddress;\n");
+        expected.append("  5: move-result-object v0\n");
+        expected.append("  6: return-object v0\n");
         expected.append("method nops()I regs=1\n");
         expected.append("  0: nop\n");
         expected.append("  1: const-4 v0, #7\n");

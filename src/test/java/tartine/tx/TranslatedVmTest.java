@@ -17,6 +17,7 @@ import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -297,6 +298,18 @@ final class TranslatedVmTest {
         // Stack inspection is allowed (ADR-0012: linkage compatibility, not
         // confidentiality); the host frames answer with a nonempty trace.
         assertTrue((int) (Integer) call("stackDemo") > 0);
+    }
+
+    @Test
+    void networkDenialSurfacesAsIoException() throws Exception {
+        // A device without network fails these calls with IOException
+        // subclasses, so the gap stub throws IOException (declared in the
+        // throws clause for the verifier) and apps' existing handlers keep
+        // working - the demo is OkHttp's URL-canonicalization shape.
+        IOException denied = assertThrows(IOException.class,
+                () -> call("netDemo"));
+        assertTrue(denied.getMessage().contains(
+                "network access is not available"), denied.getMessage());
     }
 
     @Test

@@ -161,8 +161,10 @@ descriptors, guest `java.io.File` subclasses) is checked before define.
    host internals, method handles, dynamic constants, denied return types)
    raise
    `SandboxDenied`, which the two-pass translator turns into the method's
-   named `UnsupportedOperationException` gap stub; class-level denials
-   surface as a named `ClassNotFoundException`.
+   named `UnsupportedOperationException` gap stub — except network-capability
+   denials, whose stub throws `IOException` (declared in the throws clause)
+   so a guest sees the failure a device without network produces; class-level
+   denials surface as a named `ClassNotFoundException`.
 
 ## Consequences
 

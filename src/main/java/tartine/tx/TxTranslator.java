@@ -642,17 +642,32 @@ public final class TxTranslator implements Opcodes {
      * Degrades a method that hit a named gap to a throwing stub: the class
      * stays loadable (translation is class-granular, one broken body would
      * otherwise kill every sibling method) and the gap surfaces exactly at
-     * first call, naming itself — the interpreter's VmException loop,
+     * first call, naming itself - the interpreter's VmException loop,
      * transposed onto translation.
+     *
+     * <p>A network-capability denial throws {@link java.io.IOException}
+     * instead: on a device without network these calls fail with
+     * {@code IOException} subclasses (UnknownHostException, ConnectException),
+     * so an app's existing handlers keep working - the same call sites do
+     * not treat a hard {@code UnsupportedOperationException} as recoverable.
+     * The stub declares the checked exception because the JVM verifier
+     * requires every thrown checked type in the throws clause (DEX has no
+     * checked exceptions, so the DEX method never declared one).
      */
     private static void emitGapStub(ClassVisitor cw, DexMethod method, int base, String msg) {
+        boolean network = SandboxPolicy.isNetworkDenial(msg);
+        String exception = network
+                ? "java/io/IOException"
+                : "java/lang/UnsupportedOperationException";
+        String[] thrown = network ? new String[] {exception} : null;
         String sig = method.owner + "->" + method.signature();
-        MethodVisitor mv = cw.visitMethod(base, method.name, asmDesc(method), null, null);
+        MethodVisitor mv = cw.visitMethod(base, method.name, asmDesc(method),
+                null, thrown);
         mv.visitCode();
-        mv.visitTypeInsn(NEW, "java/lang/UnsupportedOperationException");
+        mv.visitTypeInsn(NEW, exception);
         mv.visitInsn(DUP);
         mv.visitLdcInsn("Tartine: not implemented: " + sig + ": " + msg);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/UnsupportedOperationException",
+        mv.visitMethodInsn(INVOKESPECIAL, exception,
                 "<init>", "(Ljava/lang/String;)V", false);
         mv.visitInsn(ATHROW);
         mv.visitMaxs(0, 0);

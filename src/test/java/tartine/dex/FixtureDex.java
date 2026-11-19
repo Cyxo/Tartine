@@ -351,6 +351,7 @@ public final class FixtureDex {
                     demos.get("hostFillDemo"),
                     demos.get("mergedAgetDemo"),
                     demos.get("mixedBitsDemo"),
+                    demos.get("netDemo"),
                     demos.get("mixedLoopFloatDemo"),
                     demos.get("sysServiceDemo"), demos.get("a11yDemo"),
                     demos.get("a11yEnabledDemo"), demos.get("sortDemo"), demos.get("autofillDemo"),
@@ -3946,6 +3947,30 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), mergedAgetImpl);
         demos.put("mergedAgetDemo", mergedAgetDemo);
+
+        // netDemo(): OkHttp's URL-canonicalization shape - a guest method
+        // that references java.net.InetAddress. The sandbox denies the
+        // network capability, and the degradation surfaces as IOException
+        // (a device without network fails these calls with IOException
+        // subclasses, so apps' existing handlers keep working), not the
+        // UnsupportedOperationException other gaps throw.
+        MutableMethodImplementation netImpl = new MutableMethodImplementation(2);
+        netImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("localhost")));
+        netImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1,
+                0, 0, 0, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference("Ljava/net/InetAddress;",
+                                "getByName",
+                                Collections.singletonList("Ljava/lang/String;"),
+                                "Ljava/net/InetAddress;"))));
+        netImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        netImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        BuilderMethod netDemo = builder.internMethod(HELLO, "netDemo",
+                Collections.<ImmutableMethodParameter>emptyList(),
+                "Ljava/lang/Object;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), netImpl);
+        demos.put("netDemo", netDemo);
 
         // mixedBitsDemo(): a register stored as a float on one path and as
         // raw const/high16 bits on the other, then read as float after the
