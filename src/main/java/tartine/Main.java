@@ -1,6 +1,7 @@
 package tartine;
 
 import android.app.Activity;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Canvas;
 import android.os.Looper;
 import android.view.Choreographer;
@@ -38,6 +39,7 @@ import tartine.dex.DexDump;
 import tartine.dex.DexSet;
 import tartine.fw.AppResources;
 import tartine.fw.DisplayConfig;
+import tartine.fw.PackageConfig;
 import tartine.fw.PermissionManager;
 import tartine.fw.PermissionPrompt;
 import tartine.gfx.GfxBackend;
@@ -407,8 +409,10 @@ public final class Main {
         ApkReader reader = ApkReader.open(apk.toPath());
         BinaryXml.Element manifest = reader.manifest();
         String packageName = manifest.attr("package");
-        configurePermissions(reader, packageName);
+        int targetSdk = reader.targetSdk();
+        configurePermissions(reader, packageName, targetSdk);
         installAppResources(reader);
+        installPackageConfig(manifest, packageName, targetSdk);
         String activity = findLauncher(manifest);
         if (activityOverrideName != null) {
             activity = activityOverrideName;
@@ -536,11 +540,43 @@ public final class Main {
      * fidelity feature, not an enforcement boundary (ADR-0012).
      */
     private static void configurePermissions(ApkReader reader,
-            String packageName) throws IOException {
+            String packageName, int targetSdk) throws IOException {
         Path store = Vfs.root().resolve("permissions")
                 .resolve(sanitizePackage(packageName) + ".properties");
         PermissionManager.configure(packageName,
-                reader.declaredPermissions(), reader.targetSdk(), store);
+                reader.declaredPermissions(), targetSdk, store);
+    }
+
+    /**
+     * Publishes the manifest application metadata the framework's
+     * {@code Context.getApplicationInfo} answers. Layout code reads
+     * {@code targetSdkVersion} (AppCompat's action-bar defaults) and the
+     * supports-RTL flag (ConstraintLayout's layout direction) during measure;
+     * the remaining booleans map one-to-one onto ApplicationInfo flags.
+     */
+    private static void installPackageConfig(BinaryXml.Element manifest,
+            String packageName, int targetSdk) {
+        BinaryXml.Element application = manifest.child("application");
+        int flags = 0;
+        if (application != null) {
+            flags |= manifestFlag(application, "supportsRtl",
+                    ApplicationInfo.FLAG_SUPPORTS_RTL);
+            flags |= manifestFlag(application, "debuggable",
+                    ApplicationInfo.FLAG_DEBUGGABLE);
+            flags |= manifestFlag(application, "hardwareAccelerated",
+                    ApplicationInfo.FLAG_HARDWARE_ACCELERATED);
+            flags |= manifestFlag(application, "largeHeap",
+                    ApplicationInfo.FLAG_LARGE_HEAP);
+            flags |= manifestFlag(application, "allowBackup",
+                    ApplicationInfo.FLAG_ALLOW_BACKUP);
+        }
+        PackageConfig.install(packageName, targetSdk, flags);
+    }
+
+    /** One manifest boolean attribute as an ApplicationInfo flag bit. */
+    private static int manifestFlag(BinaryXml.Element element, String attr,
+            int bit) {
+        return "true".equals(element.attr(attr)) ? bit : 0;
     }
 
     /** Filesystem-safe file stem for a package name; never empty. */

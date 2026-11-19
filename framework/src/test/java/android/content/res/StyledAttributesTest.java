@@ -2,6 +2,7 @@ package android.content.res;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import android.content.Context;
@@ -168,6 +169,24 @@ class StyledAttributesTest {
 
         assertEquals(3, array.getInt(0, -1));
         assertFalse(array.hasValue(1));
+    }
+
+    @Test
+    void indexCountReportsOnlyPresentSlots() {
+        // AOSP's TypedArray.getIndexCount counts the attributes that
+        // actually resolved; getIndex maps each back to the styleable slot
+        // (a layout setting two of three attributes reports two).
+        XmlResourceParserImpl element = element(
+                attr(ATTR_WIDTH, TypedValue.TYPE_INT_DEC, 3),
+                attr(ATTR_DEF_STYLE, TypedValue.TYPE_INT_DEC, 4));
+
+        TypedArray array = new Context().getResources().obtainAttributes(
+                element, new int[] {ATTR_WIDTH, ATTR_TINT, ATTR_DEF_STYLE});
+
+        assertEquals(2, array.getIndexCount());
+        assertEquals(0, array.getIndex(0));
+        assertEquals(2, array.getIndex(1));
+        assertThrows(IndexOutOfBoundsException.class, () -> array.getIndex(2));
     }
 
     private static Context contextWithTheme(int styleId) {

@@ -3,7 +3,8 @@
 - **Status**: Accepted
 - **Date**: 2026-11-12
 - **Updated**: 2026-11-18 (widget subset, drawables and rendering landed —
-  see the 2026-11-18 note in Decision)
+  see the 2026-11-18 note in Decision); 2026-11-19 (launcher boundary note
+  refreshed: only the network call remains)
 
 ## Context
 
@@ -47,7 +48,9 @@ framework does about themes and inflation without a widget toolkit.
 
 **The framework owns resource semantics.** `Resources` reads values,
 colors, dimensions and strings through the host, mints `Theme`s and returns
-`XmlResourceParser`s; unknown ids stay named gaps.
+`XmlResourceParser`s; an unknown XML id throws AOSP's `NotFoundException`
+(callers such as ConstraintLayout's optional `constraintSet` lookup catch
+it), while other unknown ids stay named gaps.
 `android.content.res.XmlResourceParserImpl` replays an `XmlNode` as the
 pull-parser + `AttributeSet` contract the inflater and
 `obtainStyledAttributes` rely on. `Resources.Theme`/`TypedArray` implement
@@ -100,9 +103,14 @@ layout, draw and one presented frame with no uncaught exception.
 **Non-launcher activities can be probed.** `Main` accepts
 `--activity/-a <name>` (and `run`/`gui` take an optional `[activity]`
 argument) to launch an activity other than the manifest launcher. The
-fixture's real launcher hits the network sandbox during field
-initialization (`new OkHttpClient()`), an orthogonal boundary;
-`DebugConsoleActivity` exists precisely to be inflatable.
+fixture's real launcher now completes field initialization
+(`new OkHttpClient()` passes after the JUL/`javax.net`/proxy-metadata
+linkage widening, ADR-0009); its worker thread then hits the network sandbox
+on the first name lookup (`HostnamesKt.toCanonicalHost` ends in a denied
+`java.net.InetAddress`), and the app catches only `IOException`, so that
+boundary still surfaces as an uncaught background exception.
+`DebugConsoleActivity` exists precisely to be inflatable without the network
+path.
 
 ## Consequences
 

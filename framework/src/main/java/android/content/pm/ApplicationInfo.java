@@ -98,7 +98,6 @@ import java.util.UUID;
     public int uid;
 
     public ApplicationInfo() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/pm/ApplicationInfo;-><init>()V");
     }
 
     public ApplicationInfo(ApplicationInfo arg0) {

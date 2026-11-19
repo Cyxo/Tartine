@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.IntConsumer;
+import tartine.fw.PackageConfig;
 import tartine.fw.PermissionManager;
 
     public class Context {
@@ -361,8 +362,29 @@ import tartine.fw.PermissionManager;
         return this;
     }
 
+    private ApplicationInfo mApplicationInfo;
+
+    /**
+     * AOSP ContextImpl.getApplicationInfo answers the installed app's
+     * PackageParser data; the shell materialises it from the manifest values
+     * the host installs through {@link PackageConfig}. Layout code reads
+     * {@code targetSdkVersion} and the supports-RTL flag during measure, so
+     * an unattached context must still answer a coherent object rather than
+     * a gap.
+     */
     public ApplicationInfo getApplicationInfo() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/Context;->getApplicationInfo()Landroid/content/pm/ApplicationInfo;");
+        ApplicationInfo info = mApplicationInfo;
+        if (info == null) {
+            info = new ApplicationInfo();
+            String configured = PackageConfig.packageName();
+            info.packageName = configured.isEmpty()
+                    ? getPackageName() : configured;
+            info.name = info.packageName;
+            info.targetSdkVersion = PackageConfig.targetSdkVersion();
+            info.flags = PackageConfig.applicationFlags();
+            mApplicationInfo = info;
+        }
+        return info;
     }
 
     public AssetManager getAssets() {

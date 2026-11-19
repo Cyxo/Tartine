@@ -111,12 +111,24 @@ class XmlResourceParserImplTest {
     }
 
     @Test
-    void unknownLayoutIdReportsTheGap() {
-        UnsupportedOperationException error = assertThrows(
-                UnsupportedOperationException.class,
+    void unknownLayoutIdIsNotFoundMiss() {
+        // AOSP throws NotFoundException for an unknown id; callers such as
+        // ConstraintLayout's optional constraintSet lookup catch it.
+        Resources.NotFoundException error = assertThrows(
+                Resources.NotFoundException.class,
                 () -> new Context().getResources().getLayout(MISSING_LAYOUT));
 
-        assertTrue(error.getMessage().contains("getXml(I)"), error.getMessage());
-        assertTrue(error.getMessage().contains("id=7f030999"), error.getMessage());
+        assertTrue(error.getMessage().contains("Resource ID #0x7f030999"),
+                error.getMessage());
+    }
+
+    @Test
+    void zeroIdIsNotFoundMiss() {
+        Resources.NotFoundException error = assertThrows(
+                Resources.NotFoundException.class,
+                () -> new Context().getResources().getXml(0));
+
+        assertTrue(error.getMessage().contains("Resource ID #0x0"),
+                error.getMessage());
     }
 }

@@ -106,6 +106,14 @@
         <Class name="android.util.SparseLongArrayTest"/>
         <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
     </Match>
+    <Match>
+        <Class name="android.util.SparseIntArrayTest"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    </Match>
+    <Match>
+        <Class name="android.content.res.StyledAttributesTest"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    </Match>
 
     <!-- GuestFile deliberately hides File.createTempFile/listRoots with
          denying statics so a guest that names GuestFile directly hits the

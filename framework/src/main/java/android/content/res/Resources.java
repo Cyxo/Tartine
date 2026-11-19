@@ -406,6 +406,13 @@ import tartine.fw.ThemeMode;
             if (node != null) {
                 return new XmlResourceParserImpl(node);
             }
+            // Unknown ids are an app-visible miss, not a shell gap: AOSP
+            // throws NotFoundException and callers (ConstraintLayout's
+            // optional constraintSet attribute) catch it.
+            if (arg0 == 0 || host.resourceName(arg0, 1) == null) {
+                throw new NotFoundException("Resource ID #0x"
+                        + Integer.toHexString(arg0));
+            }
         }
         throw gap("getXml(I)Landroid/content/res/XmlResourceParser;", arg0);
     }

@@ -9,9 +9,9 @@ import tartine.fw.ResValue;
  * Tartine: a view of styled attribute values, mirroring AOSP
  * {@code android.content.res.TypedArray}. Built by
  * {@link Resources.Theme#obtainStyledAttributes} from either an element's
- * attributes or a style/theme, one entry per requested attribute id, so
- * {@code getIndex} is positional and {@code hasValue} reports whether the
- * attribute was defined anywhere in the lookup chain.
+ * attributes or a style/theme, one entry per requested attribute id; the
+ * index list keeps only the entries that resolved, and {@code hasValue}
+ * reports whether the attribute was defined anywhere in the lookup chain.
  */
 public class TypedArray implements AutoCloseable {
 
@@ -19,6 +19,14 @@ public class TypedArray implements AutoCloseable {
     private final Resources.Theme mTheme;
     private final int[] mAttrIds;
     private final ResValue[] mValues;
+    /**
+     * Styleable positions that resolved to a value, in attribute order.
+     * AOSP fills the same list in {@code mIndices} while applying the style:
+     * {@code getIndexCount} is the number of <em>present</em> attributes and
+     * {@code getIndex(at)} maps back to the styleable slot (a layout that
+     * sets three of a widget's fifty attributes reports three).
+     */
+    private final int[] mPresent;
 
     TypedArray(Resources resources, Resources.Theme theme, int[] attrIds,
             ResValue[] values) {
@@ -26,6 +34,19 @@ public class TypedArray implements AutoCloseable {
         mTheme = theme;
         mAttrIds = attrIds;
         mValues = values;
+        int count = 0;
+        for (ResValue value : values) {
+            if (value != null) {
+                count++;
+            }
+        }
+        mPresent = new int[count];
+        int at = 0;
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] != null) {
+                mPresent[at++] = i;
+            }
+        }
     }
 
     private ResValue valueAt(int index) {
@@ -48,11 +69,11 @@ public class TypedArray implements AutoCloseable {
     }
 
     public int getIndex(int at) {
-        return at;
+        return mPresent[at];
     }
 
     public int getIndexCount() {
-        return mValues.length;
+        return mPresent.length;
     }
 
     /** AOSP hasValue: the attribute resolved anywhere in the lookup chain. */

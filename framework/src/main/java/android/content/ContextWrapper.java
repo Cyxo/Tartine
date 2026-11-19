@@ -243,7 +243,8 @@ import java.util.function.IntConsumer;
     }
 
     public ApplicationInfo getApplicationInfo() {
-        throw new UnsupportedOperationException("Tartine: not implemented: Landroid/content/ContextWrapper;->getApplicationInfo()Landroid/content/pm/ApplicationInfo;");
+        return mBase == null ? super.getApplicationInfo()
+                : mBase.getApplicationInfo();
     }
 
     public AssetManager getAssets() {
