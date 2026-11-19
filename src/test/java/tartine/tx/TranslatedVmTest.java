@@ -194,6 +194,17 @@ final class TranslatedVmTest {
         assertEquals(0x3FF0000000000000L, (long) (Long) call("wideHigh16Demo"));
         assertEquals(2, (int) (Integer) call("fillDemo"));
         assertEquals(0x3F800000, (int) (Integer) call("fillFloatDemo"));
+        // The store opcode follows the array ELEMENT: kindOf collapses char
+        // to INT, and iastore on a char[] (okio's hex table) fails
+        // verification — the element-specific castore is what loads.
+        assertEquals(51, (int) (Integer) call("fillCharDemo"));
+        // ConstraintSet.getDebugName's frame merge: the array register is
+        // reused for the returned String inside a try whose handler rejoins
+        // the loop, so AALOAD reads a slot the JVM merged to Object. The
+        // tracked-descriptor CHECKCAST keeps the class loadable and the
+        // loop running.
+        assertEquals("counter", (String) call("mergedAgetDemo", "c"));
+        assertEquals("UNKNOWN", (String) call("mergedAgetDemo", "zz"));
         // A mixed int/float slot whose Integer box holds const/high16 float
         // bits: the float demand must reinterpret them after the join.
         assertEquals(-2.0f, (float) (Float) call("mixedBitsDemo"));

@@ -2751,7 +2751,7 @@ final class TxMethodWriter implements Opcodes {
         int arr = in.registers.get(1);
         int idx = in.registers.get(2);
         String op = in.opcode;
-        load(arr, OBJ);
+        loadArray(arr);
         load(idx, INT);
         if (op.equals("aget-object")) {
             mv.visitInsn(AALOAD);
@@ -2816,7 +2816,7 @@ final class TxMethodWriter implements Opcodes {
         int arr = in.registers.get(1);
         int idx = in.registers.get(2);
         String op = in.opcode;
-        load(arr, OBJ);
+        loadArray(arr);
         load(idx, INT);
         if (op.equals("aput-object")) {
             load(value, OBJ);
@@ -2886,6 +2886,26 @@ final class TxMethodWriter implements Opcodes {
         return TxDescriptors.arrayElement(arr);
     }
 
+    /**
+     * Loads a register known to hold an array, narrowed to its tracked
+     * descriptor.
+     *
+     * <p>DEX registers are JVM locals shared by the whole method, so a loop
+     * or try/catch merge can widen a slot to {@code Object} even where the
+     * DEX verifier knows the array type at the use. {@code AALOAD} on an
+     * Object-typed slot makes ASM's frame merge produce a dimension -1 type,
+     * which it writes as the illegal class name {@code "Ljava/lang/Object;"}
+     * (ConstraintSet.getDebugName). The cast is a no-op at runtime and
+     * keeps every array instruction verifier-shaped.
+     */
+    private void loadArray(int reg) {
+        load(reg, OBJ);
+        String desc = regArray[reg];
+        if (desc != null) {
+            mv.visitTypeInsn(CHECKCAST, desc);
+        }
+    }
+
     private void emitFilledNewArray(Insn in) {
         boolean range = in.opcode.equals("filled-new-array-range");
         String arrDesc = typeRef(in).descriptor(); // e.g. [I or [Ljava/lang/String;
@@ -2944,39 +2964,52 @@ final class TxMethodWriter implements Opcodes {
         int arr = in.registers.get(0);
         Insn payload = payloadOf(in);
         String arrDesc = regArray[arr];
-        char elemKind;
-        if (arrDesc != null) {
-            String elem = TxDescriptors.arrayElement(arrDesc);
-            elemKind = kindOf(elem);
-        } else {
-            elemKind = switch (payload.elementWidth) {
-                case 1 -> INT;
-                case 2 -> INT;
-                case 4 -> INT;
-                case 8 -> LONG;
-                default -> INT;
-            };
+        if (arrDesc == null) {
             gapLog("fill-array-data array type unknown (width "
                     + payload.elementWidth + ")", in);
+            return;
         }
-        load(arr, OBJ);
+        // The store opcode follows the array ELEMENT, not the widened DEX
+        // kind: kindOf collapses byte/char/short/boolean to INT, and using
+        // iastore on a char[] (okio's hex digit table) fails verification.
+        String elem = TxDescriptors.arrayElement(arrDesc);
+        loadArray(arr);
         for (int e = 0; e < payload.payloadData.size(); e++) {
             pushInt(e);
             long bits = payload.payloadData.get(e);
-            if (elemKind == LONG) {
-                mv.visitLdcInsn(bits);
-                mv.visitInsn(LASTORE);
-            } else if (elemKind == FLOAT) {
-                mv.visitLdcInsn(Float.intBitsToFloat((int) bits));
-                mv.visitInsn(FASTORE);
-            } else if (elemKind == DOUBLE) {
-                mv.visitLdcInsn(Double.longBitsToDouble(bits));
-                mv.visitInsn(DASTORE);
-            } else {
-                pushInt((int) bits);
-                mv.visitInsn(IASTORE);
+            switch (elem) {
+                case "J":
+                    mv.visitLdcInsn(bits);
+                    mv.visitInsn(LASTORE);
+                    break;
+                case "F":
+                    mv.visitLdcInsn(Float.intBitsToFloat((int) bits));
+                    mv.visitInsn(FASTORE);
+                    break;
+                case "D":
+                    mv.visitLdcInsn(Double.longBitsToDouble(bits));
+                    mv.visitInsn(DASTORE);
+                    break;
+                case "C":
+                    pushInt((int) bits);
+                    mv.visitInsn(CASTORE);
+                    break;
+                case "S":
+                    pushInt((int) bits);
+                    mv.visitInsn(SASTORE);
+                    break;
+                case "B": case "Z":
+                    pushInt((int) bits);
+                    mv.visitInsn(BASTORE);
+                    break;
+                case "I":
+                    pushInt((int) bits);
+                    mv.visitInsn(IASTORE);
+                    break;
+                default:
+                    throw gap("fill-array-data element " + elem, in);
             }
-            load(arr, OBJ); // re-load the array for the next element
+            loadArray(arr); // re-load the array for the next element
         }
     }
 

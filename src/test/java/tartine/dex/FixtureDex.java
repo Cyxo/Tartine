@@ -347,7 +347,9 @@ public final class FixtureDex {
                     demos.get("settingsUriDemo"), demos.get("contentObserverDemo"),
                     demos.get("settingsFloatDemo"), demos.get("resolverObsDemo"),
                     demos.get("themeDemo"), demos.get("resColorDemo"), demos.get("compCbDemo"),
-                    demos.get("fillFloatDemo"), demos.get("hostFillDemo"),
+                    demos.get("fillFloatDemo"), demos.get("fillCharDemo"),
+                    demos.get("hostFillDemo"),
+                    demos.get("mergedAgetDemo"),
                     demos.get("mixedBitsDemo"),
                     demos.get("mixedLoopFloatDemo"),
                     demos.get("sysServiceDemo"), demos.get("a11yDemo"),
@@ -3842,6 +3844,108 @@ public final class FixtureDex {
                 AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
                 Collections.emptySet(), Collections.emptySet(), fillFloatImpl);
         demos.put("fillFloatDemo", fillFloatDemo);
+
+        // fillCharDemo(): okio's hex-digit-table shape — fill-array-data
+        // whose tracked element is char. kindOf collapses char to INT, and
+        // iastore on a char[] fails verification; the element-specific
+        // castore is what makes the translated <clinit> load. Returns
+        // digits[3] = '3' (51).
+        MutableMethodImplementation fillCharImpl = new MutableMethodImplementation(2);
+        fillCharImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 6));
+        fillCharImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 0, 1,
+                builder.internTypeReference("[C")));
+        fillCharImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 3));
+        fillCharImpl.addInstruction(new BuilderInstruction23x(Opcode.AGET_CHAR, 0, 0, 1));
+        fillCharImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN, 0));
+        fillCharImpl.addInstruction(new BuilderArrayPayload(2,
+                Arrays.asList((int) '0', (int) '1', (int) '2',
+                        (int) '3', (int) '4', (int) '5')));
+        Label fillCharData = fillCharImpl.newLabelForIndex(5);
+        fillCharImpl.addInstruction(2,
+                new BuilderInstruction31t(Opcode.FILL_ARRAY_DATA, 0, fillCharData));
+        BuilderMethod fillCharDemo = builder.internMethod(HELLO, "fillCharDemo",
+                Collections.<ImmutableMethodParameter>emptyList(), "I",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), fillCharImpl);
+        demos.put("fillCharDemo", fillCharDemo);
+
+        // mergedAgetDemo(needle): ConstraintSet.getDebugName's frame-merge
+        // shape. The array register is reused for the returned String inside
+        // a try whose handler rejoins the loop, so the JVM frame merges the
+        // slot to java/lang/Object; AALOAD on that slot used to make ASM
+        // emit the illegal class name "Ljava/lang/Object;" (ClassFormatError
+        // at defineClass). The tracked-descriptor CHECKCAST keeps the frame
+        // an array. Returns the first field name containing the needle.
+        MutableMethodImplementation mergedAgetImpl = new MutableMethodImplementation(6);
+        mergedAgetImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
+                builder.internTypeReference(HELLO)));
+        mergedAgetImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1,
+                0, 0, 0, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference("Ljava/lang/Class;",
+                                "getDeclaredFields",
+                                Collections.<String>emptyList(),
+                                "[Ljava/lang/reflect/Field;"))));
+        mergedAgetImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        mergedAgetImpl.addInstruction(new BuilderInstruction12x(Opcode.ARRAY_LENGTH, 1, 0));
+        mergedAgetImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
+        // v5 is the needle parameter; the loop reads fields[i].getName()
+        // and returns the first name containing it. The try reuses the
+        // array register (v0) for the returned String; the handler below
+        // rejoins the loop, merging the slot to Object.
+        mergedAgetImpl.addInstruction(new BuilderInstruction23x(Opcode.AGET_OBJECT, 3, 0, 2));
+        mergedAgetImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1,
+                3, 0, 0, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference("Ljava/lang/reflect/Field;",
+                                "getName",
+                                Collections.<String>emptyList(),
+                                "Ljava/lang/String;"))));
+        mergedAgetImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 4));
+        mergedAgetImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 2,
+                4, 5, 0, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference("Ljava/lang/String;", "contains",
+                                Collections.singletonList("Ljava/lang/CharSequence;"),
+                                "Z"))));
+        mergedAgetImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT, 4));
+        mergedAgetImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 1,
+                3, 0, 0, 0, 0, builder.internMethodReference(
+                        new ImmutableMethodReference("Ljava/lang/reflect/Field;",
+                                "getName",
+                                Collections.<String>emptyList(),
+                                "Ljava/lang/String;"))));
+        mergedAgetImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        mergedAgetImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        mergedAgetImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_EXCEPTION, 4));
+        mergedAgetImpl.addInstruction(new BuilderInstruction22b(Opcode.ADD_INT_LIT8, 2, 2, 1));
+        mergedAgetImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 0,
+                builder.internStringReference("UNKNOWN")));
+        mergedAgetImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
+        // Labels bind to the body's instruction locations before any insert
+        // (loop exit on the UNKNOWN const, try over the second getName
+        // through the return, handler and increment on move-exception /
+        // add-int-lit8); they ride their instructions through the three
+        // inserts below.
+        Label mergedLoopExit = mergedAgetImpl.newLabelForIndex(15);
+        Label mergedTryStart = mergedAgetImpl.newLabelForIndex(10);
+        Label mergedHandler = mergedAgetImpl.newLabelForIndex(13);
+        Label mergedLoopTail = mergedAgetImpl.newLabelForIndex(14);
+        // The loop bound check goes in before the aget; the head label
+        // binds after the insert so the back edge retests the bound
+        // (labeling the aget instead let the loop overrun the array).
+        mergedAgetImpl.addInstruction(5, new BuilderInstruction22t(Opcode.IF_GE, 2, 1,
+                mergedLoopExit));
+        Label mergedLoopHead = mergedAgetImpl.newLabelForIndex(5);
+        mergedAgetImpl.addInstruction(11, new BuilderInstruction21t(Opcode.IF_EQZ, 4,
+                mergedLoopTail));
+        mergedAgetImpl.addInstruction(17, new BuilderInstruction10t(Opcode.GOTO,
+                mergedLoopHead));
+        mergedAgetImpl.addCatch(mergedTryStart, mergedHandler, mergedHandler);
+        BuilderMethod mergedAgetDemo = builder.internMethod(HELLO, "mergedAgetDemo",
+                Collections.singletonList(new ImmutableMethodParameter(
+                        "Ljava/lang/String;", Collections.emptySet(), "needle")),
+                "Ljava/lang/String;",
+                AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(),
+                Collections.emptySet(), Collections.emptySet(), mergedAgetImpl);
+        demos.put("mergedAgetDemo", mergedAgetDemo);
 
         // mixedBitsDemo(): a register stored as a float on one path and as
         // raw const/high16 bits on the other, then read as float after the
