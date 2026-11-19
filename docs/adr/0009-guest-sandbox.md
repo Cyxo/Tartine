@@ -2,7 +2,8 @@
 
 - **Status**: Accepted; trust-model framing superseded by ADR-0012
 - **Date**: 2026-10-31
-- **Updated**: 2026-11-02 (file-backed streams, per-access realpath check)
+- **Updated**: 2026-11-02 (file-backed streams, per-access realpath check);
+  2026-11-19 (framework reflection plus JUL/OkHttp linkage widening)
 
 ## Context
 
@@ -45,7 +46,8 @@ documented guest-safe answer:
   default because libraries catch exceptions differently; `setProperty`,
   `clearProperty`, and `getenv` stay denied.
 - `GuestReflect`: reflection lookups and member access over guest-declared
-  members only (details below).
+  members and the framework's public `android.*` API; `setAccessible` stays
+  guest-only (details below).
 - `GuestClassLoader` and `GuestSandbox`: `Class.getClassLoader`,
   `ClassLoader.loadClass`/`getResources`/`getParent`, and the one-, two-,
   and three-argument `Class.forName`. Resources are empty, the parent is
@@ -75,12 +77,17 @@ is not enough.
 
 ### 2. The declaring-class gate for reflection
 
-A reflection member is allowed only when its declaring class was loaded by
-the guest `TranslatedLoader`. Host-declared members are outside the guest
-universe:
+A reflection lookup or member use is allowed only when its declaring class
+was loaded by the guest `TranslatedLoader` or belongs to the framework's
+`android.*` API. Real host classes (`java.*`, `tartine.*`, bundled host
+libraries) are outside the guest universe. The framework exception is the
+2026-11-19 widening: kotlinx-coroutines resolves `Handler.createAsync` by
+reflection and reflectively calls `Looper.getMainLooper`, and those
+`android.*` classes are host-compiled framework code, not host internals.
 
-- `getDeclared*` and `newInstance` require a guest receiver, because they
-  enumerate the receiver's own members; a host receiver is a named denial.
+- `getDeclared*` and `newInstance` require a guest or framework receiver,
+  because they enumerate the receiver's own members; a real host receiver is
+  a named denial.
 - Plural lookups (`getMethods`, `getFields`, `getClasses`) filter
   host-declared results.
 - The inheritance-aware singular lookups (`getMethod`, `getField`) answer
@@ -88,13 +95,38 @@ universe:
   guest class that inherits `Object.toString` behaves as if the host member
   does not exist.
 - Member access (`Method.invoke`, `Constructor.newInstance`,
-  `Field.get*`/`set*`, `setAccessible`/`trySetAccessible`) refuses a host
-  member with a named `SandboxDenied`, and re-checks at the point of use
-  because a `Method` object can outlive the lookup that produced it.
+  `Field.get*`/`set*`) permits guest and framework members and refuses a
+  real host member with a named `SandboxDenied`, re-checking at the point of
+  use because a `Method` object can outlive the lookup that produced it.
+  `setAccessible`/`trySetAccessible` stay guest-only, so framework private
+  state keeps its AOSP access checks.
 
 Metadata types (`Method`, `Field`, `Constructor`, `Parameter`, `Modifier`,
 `Array`, `InvocationTargetException`) stay loadable because guest signatures
 mention them.
+
+### 2a. Linkage widening without a capability claim
+
+OkHttp construction and kotlinx-coroutines' `Dispatchers.Main` lookup drove a
+second group of policy additions. They follow ADR-0012: the boundary exists
+for linkage compatibility and accident prevention, not confidentiality, so a
+type that libraries merely *mention* or *store* is allowed while the
+capability stays denied:
+
+- `java.util.logging.Logger`/`Level` (OkHttp's logging platform; JUL is also
+  Tartine's diagnostics backend), while `LogManager`/`FileHandler` stay
+  denied.
+- `java.net.Proxy`/`ProxySelector`/`SocketAddress` (reference-only proxy
+  metadata OkHttp stores and queries while constructing a client).
+- The `java.nio.channels.Channel`/`ReadableByteChannel`/`ByteChannel`
+  interfaces (return-type linkage), while file/socket channels stay denied.
+- `javax.net.*` (TLS/socket-factory signature types; a guest call that
+  returns a socket is still refused by return type) and
+  `javax.security.auth.x500.*` (`X509Certificate.getSubjectX500Principal`).
+- `Thread.getStackTrace` (caller logging); `getAllStackTraces` and the
+  loader/thread-control members stay denied. `java.net.InetAddress`, sockets,
+  `URL`, `java.lang.reflect.Proxy`, `ClassLoader`, and `java.lang.invoke`
+  remain denied.
 
 ### 3. Linkage without exposure
 

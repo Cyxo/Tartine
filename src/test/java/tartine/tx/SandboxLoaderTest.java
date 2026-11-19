@@ -66,7 +66,7 @@ class SandboxLoaderTest {
             "java.lang.ClassLoader",
             "java.lang.invoke.MethodHandles",
             "java.util.ServiceLoader",
-            "java.util.logging.Logger",
+            "java.util.logging.LogManager",
             "org.objectweb.asm.ClassWriter",
             "tartine.Main",
         };

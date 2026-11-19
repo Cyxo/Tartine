@@ -13,13 +13,14 @@ import tartine.tx.TranslatedLoader;
  * Guest-side reflection bridge.
  *
  * <p>The translator routes reflection lookups and member access here instead
- * of denying them outright. The bridge allows a member only when its
- * <em>declaring class</em> was loaded by the guest {@link TranslatedLoader};
- * host-declared members are outside the guest universe. Member access
- * ({@code invoke}, {@code newInstance}, field get/set,
- * {@code setAccessible}) refuses a host member with a named
- * {@link SandboxDenied}, and the check runs again there because a
- * {@code Method} object can outlive the lookup that produced it.
+ * of denying them outright. A member is visible when its <em>declaring
+ * class</em> is either a guest class loaded by the {@link TranslatedLoader}
+ * or a framework class from the shell's {@code android.*} API. Real host
+ * classes ({@code java.*}, the shell itself) stay outside the guest universe.
+ * Member access ({@code invoke}, {@code newInstance}, field get/set) refuses
+ * a host member with a named {@link SandboxDenied}, and the check runs again
+ * there because a {@code Method} object can outlive the lookup that produced
+ * it.
  *
  * <p>Receiver classes are checked for the declared-member lookups
  * ({@code getDeclared*}, {@code newInstance}) because those enumerate the
@@ -28,6 +29,11 @@ import tartine.tx.TranslatedLoader;
  * the inheritance-aware singular lookups ({@code getMethod}, {@code getField})
  * answer Java's "not found" ({@code NoSuchMethodException}/
  * {@code NoSuchFieldException}) instead of leaking a host member.
+ *
+ * <p>{@code setAccessible} stays guest-only: apps may call the framework's
+ * public API reflectively (kotlinx-coroutines probes
+ * {@code Handler.createAsync}), but private framework state keeps its
+ * AOSP access checks.
  */
 public final class GuestReflect {
     private GuestReflect() {
@@ -35,6 +41,23 @@ public final class GuestReflect {
 
     private static boolean isGuest(Class<?> type) {
         return type != null && type.getClassLoader() instanceof TranslatedLoader;
+    }
+
+    /**
+     * The framework module's {@code android.*} classes are the guest's
+     * Android API, not host internals. Reflection may look them up and call
+     * their public methods (kotlinx-coroutines probes the API-28
+     * {@code Handler.createAsync} factory this way); private framework state
+     * still needs {@code setAccessible}, which stays guest-only.
+     */
+    private static boolean isFramework(Class<?> type) {
+        return type != null && !isGuest(type)
+                && type.getName().startsWith("android.");
+    }
+
+    /** Guest-visible classes: the app's own and the framework's API. */
+    private static boolean isVisible(Class<?> type) {
+        return isGuest(type) || isFramework(type);
     }
 
     private static void requireGuestClass(Class<?> type, String operation) {
@@ -45,9 +68,19 @@ public final class GuestReflect {
         }
     }
 
-    private static void requireGuestMember(Member member, String operation) {
+    /** Lookup receiver for the reflective class queries. */
+    private static void requireLookupClass(Class<?> type, String operation) {
+        if (!isVisible(type)) {
+            throw new SandboxDenied(operation + " on host class "
+                    + (type == null ? "null" : type.getName())
+                    + " is not available");
+        }
+    }
+
+    /** Member check for invocation: guest members plus the framework API. */
+    private static void requireInvocableMember(Member member, String operation) {
         Class<?> declaring = member.getDeclaringClass();
-        if (!isGuest(declaring)) {
+        if (!isVisible(declaring)) {
             throw new SandboxDenied(operation + " on host member "
                     + declaring.getName() + "." + member.getName()
                     + " is not available");
@@ -57,7 +90,7 @@ public final class GuestReflect {
     private static void requireGuestAccessible(AccessibleObject object,
             String operation) {
         if (object instanceof Member member) {
-            requireGuestMember(member, operation);
+            requireInvocableMember(member, operation);
             return;
         }
         throw new SandboxDenied(operation
@@ -70,51 +103,51 @@ public final class GuestReflect {
 
     public static Method getDeclaredMethod(Class<?> type, String name,
             Class<?>... parameterTypes) throws NoSuchMethodException {
-        requireGuestClass(type, "Class.getDeclaredMethod");
+        requireLookupClass(type, "Class.getDeclaredMethod");
         return type.getDeclaredMethod(name, parameterTypes);
     }
 
     public static Method[] getDeclaredMethods(Class<?> type) {
-        requireGuestClass(type, "Class.getDeclaredMethods");
+        requireLookupClass(type, "Class.getDeclaredMethods");
         return type.getDeclaredMethods();
     }
 
     public static Field getDeclaredField(Class<?> type, String name)
             throws NoSuchFieldException {
-        requireGuestClass(type, "Class.getDeclaredField");
+        requireLookupClass(type, "Class.getDeclaredField");
         return type.getDeclaredField(name);
     }
 
     public static Field[] getDeclaredFields(Class<?> type) {
-        requireGuestClass(type, "Class.getDeclaredFields");
+        requireLookupClass(type, "Class.getDeclaredFields");
         return type.getDeclaredFields();
     }
 
     public static Constructor<?> getDeclaredConstructor(Class<?> type,
             Class<?>... parameterTypes) throws NoSuchMethodException {
-        requireGuestClass(type, "Class.getDeclaredConstructor");
+        requireLookupClass(type, "Class.getDeclaredConstructor");
         return type.getDeclaredConstructor(parameterTypes);
     }
 
     public static Constructor<?>[] getDeclaredConstructors(Class<?> type) {
-        requireGuestClass(type, "Class.getDeclaredConstructors");
+        requireLookupClass(type, "Class.getDeclaredConstructors");
         return type.getDeclaredConstructors();
     }
 
     public static Class<?>[] getDeclaredClasses(Class<?> type) {
-        requireGuestClass(type, "Class.getDeclaredClasses");
+        requireLookupClass(type, "Class.getDeclaredClasses");
         return type.getDeclaredClasses();
     }
 
     /** Reflective lookup restricted to guest-visible methods. */
     public static Method getMethod(Class<?> type, String name,
             Class<?>... parameterTypes) throws NoSuchMethodException {
-        requireGuestClass(type, "Class.getMethod");
+        requireLookupClass(type, "Class.getMethod");
         Method method = type.getMethod(name, parameterTypes);
         // Host members are outside the guest universe, so the
         // inheritance-aware lookup behaves like Java's "not found" rather
         // than leaking a host Method that invoke would refuse anyway.
-        if (!isGuest(method.getDeclaringClass())) {
+        if (!isVisible(method.getDeclaringClass())) {
             throw new NoSuchMethodException("host method "
                     + method.getDeclaringClass().getName() + "." + name
                     + " is not visible to guest reflection");
@@ -124,18 +157,18 @@ public final class GuestReflect {
 
     /** Guest-visible public methods; host members are filtered out. */
     public static Method[] getMethods(Class<?> type) {
-        requireGuestClass(type, "Class.getMethods");
+        requireLookupClass(type, "Class.getMethods");
         return Arrays.stream(type.getMethods())
-                .filter(method -> isGuest(method.getDeclaringClass()))
+                .filter(method -> isVisible(method.getDeclaringClass()))
                 .toArray(Method[]::new);
     }
 
     /** Reflective field lookup restricted to guest-visible fields. */
     public static Field getField(Class<?> type, String name)
             throws NoSuchFieldException {
-        requireGuestClass(type, "Class.getField");
+        requireLookupClass(type, "Class.getField");
         Field field = type.getField(name);
-        if (!isGuest(field.getDeclaringClass())) {
+        if (!isVisible(field.getDeclaringClass())) {
             throw new NoSuchFieldException("host field "
                     + field.getDeclaringClass().getName() + "." + name
                     + " is not visible to guest reflection");
@@ -145,28 +178,28 @@ public final class GuestReflect {
 
     /** Guest-visible public fields; host members are filtered out. */
     public static Field[] getFields(Class<?> type) {
-        requireGuestClass(type, "Class.getFields");
+        requireLookupClass(type, "Class.getFields");
         return Arrays.stream(type.getFields())
-                .filter(field -> isGuest(field.getDeclaringClass()))
+                .filter(field -> isVisible(field.getDeclaringClass()))
                 .toArray(Field[]::new);
     }
 
     public static Constructor<?> getConstructor(Class<?> type,
             Class<?>... parameterTypes) throws NoSuchMethodException {
-        requireGuestClass(type, "Class.getConstructor");
+        requireLookupClass(type, "Class.getConstructor");
         return type.getConstructor(parameterTypes);
     }
 
     public static Constructor<?>[] getConstructors(Class<?> type) {
-        requireGuestClass(type, "Class.getConstructors");
+        requireLookupClass(type, "Class.getConstructors");
         return type.getConstructors();
     }
 
     /** Guest-visible member classes. */
     public static Class<?>[] getClasses(Class<?> type) {
-        requireGuestClass(type, "Class.getClasses");
+        requireLookupClass(type, "Class.getClasses");
         return Arrays.stream(type.getClasses())
-                .filter(GuestReflect::isGuest)
+                .filter(GuestReflect::isVisible)
                 .toArray(Class<?>[]::new);
     }
 
@@ -199,7 +232,7 @@ public final class GuestReflect {
         if (constructor == null) {
             throw new NullPointerException("constructor");
         }
-        requireGuestMember(constructor, "Constructor.newInstance");
+        requireInvocableMember(constructor, "Constructor.newInstance");
         return constructor.newInstance(args);
     }
 
@@ -213,115 +246,115 @@ public final class GuestReflect {
         if (method == null) {
             throw new NullPointerException("method");
         }
-        requireGuestMember(method, "Method.invoke");
+        requireInvocableMember(method, "Method.invoke");
         return method.invoke(receiver, args);
     }
 
     public static Object get(Field field, Object receiver)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.get");
+        requireInvocableMember(field, "Field.get");
         return field.get(receiver);
     }
 
     public static boolean getBoolean(Field field, Object receiver)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.getBoolean");
+        requireInvocableMember(field, "Field.getBoolean");
         return field.getBoolean(receiver);
     }
 
     public static byte getByte(Field field, Object receiver)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.getByte");
+        requireInvocableMember(field, "Field.getByte");
         return field.getByte(receiver);
     }
 
     public static char getChar(Field field, Object receiver)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.getChar");
+        requireInvocableMember(field, "Field.getChar");
         return field.getChar(receiver);
     }
 
     public static short getShort(Field field, Object receiver)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.getShort");
+        requireInvocableMember(field, "Field.getShort");
         return field.getShort(receiver);
     }
 
     public static int getInt(Field field, Object receiver)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.getInt");
+        requireInvocableMember(field, "Field.getInt");
         return field.getInt(receiver);
     }
 
     public static long getLong(Field field, Object receiver)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.getLong");
+        requireInvocableMember(field, "Field.getLong");
         return field.getLong(receiver);
     }
 
     public static float getFloat(Field field, Object receiver)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.getFloat");
+        requireInvocableMember(field, "Field.getFloat");
         return field.getFloat(receiver);
     }
 
     public static double getDouble(Field field, Object receiver)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.getDouble");
+        requireInvocableMember(field, "Field.getDouble");
         return field.getDouble(receiver);
     }
 
     public static void set(Field field, Object receiver, Object value)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.set");
+        requireInvocableMember(field, "Field.set");
         field.set(receiver, value);
     }
 
     public static void setBoolean(Field field, Object receiver, boolean value)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.setBoolean");
+        requireInvocableMember(field, "Field.setBoolean");
         field.setBoolean(receiver, value);
     }
 
     public static void setByte(Field field, Object receiver, byte value)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.setByte");
+        requireInvocableMember(field, "Field.setByte");
         field.setByte(receiver, value);
     }
 
     public static void setChar(Field field, Object receiver, char value)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.setChar");
+        requireInvocableMember(field, "Field.setChar");
         field.setChar(receiver, value);
     }
 
     public static void setShort(Field field, Object receiver, short value)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.setShort");
+        requireInvocableMember(field, "Field.setShort");
         field.setShort(receiver, value);
     }
 
     public static void setInt(Field field, Object receiver, int value)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.setInt");
+        requireInvocableMember(field, "Field.setInt");
         field.setInt(receiver, value);
     }
 
     public static void setLong(Field field, Object receiver, long value)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.setLong");
+        requireInvocableMember(field, "Field.setLong");
         field.setLong(receiver, value);
     }
 
     public static void setFloat(Field field, Object receiver, float value)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.setFloat");
+        requireInvocableMember(field, "Field.setFloat");
         field.setFloat(receiver, value);
     }
 
     public static void setDouble(Field field, Object receiver, double value)
             throws IllegalAccessException {
-        requireGuestMember(field, "Field.setDouble");
+        requireInvocableMember(field, "Field.setDouble");
         field.setDouble(receiver, value);
     }
 

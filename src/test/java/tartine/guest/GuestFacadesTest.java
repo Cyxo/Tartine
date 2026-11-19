@@ -9,6 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
@@ -85,6 +89,30 @@ class GuestFacadesTest {
         assertThrows(NoSuchMethodException.class,
                 () -> GuestReflect.getMethod(loader.loadClass("test.Sub"),
                         "toString"));
+    }
+
+    @Test
+    void frameworkReflectionIsLookupVisibleAndInvocable() throws Exception {
+        // android.* framework classes participate in guest reflection (the
+        // kotlinx-coroutines Dispatchers.Main path looks up
+        // Handler.createAsync and invokes Looper.getMainLooper)...
+        Method createAsync = GuestReflect.getDeclaredMethod(Handler.class,
+                "createAsync", Looper.class);
+        assertEquals(Handler.class, createAsync.getDeclaringClass());
+        Method getMainLooper = GuestReflect.getDeclaredMethod(Looper.class,
+                "getMainLooper");
+        // ...including a reflective static invoke. getMainLooper answers null
+        // on a thread with no installed main looper, so the point is that the
+        // framework bridge itself is allowed; a second invoke on a
+        // deterministic static proves the result path too.
+        Object mainLooper = GuestReflect.invoke(getMainLooper, null);
+        assertTrue(mainLooper == null || mainLooper instanceof Looper);
+        Method uptime = GuestReflect.getDeclaredMethod(SystemClock.class,
+                "uptimeMillis");
+        assertInstanceOf(Long.class, GuestReflect.invoke(uptime, null));
+        // A framework field read reports the modeled API level.
+        Field sdkInt = GuestReflect.getField(Build.VERSION.class, "SDK_INT");
+        assertEquals(36, GuestReflect.getInt(sdkInt, null));
     }
 
     @Test

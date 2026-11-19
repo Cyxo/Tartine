@@ -294,7 +294,9 @@ final class TranslatedVmTest {
         assertSandboxDenied("runtimeExitDemo");
         assertSandboxDenied("runtimeHaltDemo");
         assertSandboxDenied("systemSetPropertyDemo");
-        assertSandboxDenied("stackDemo");
+        // Stack inspection is allowed (ADR-0012: linkage compatibility, not
+        // confidentiality); the host frames answer with a nonempty trace.
+        assertTrue((int) (Integer) call("stackDemo") > 0);
     }
 
     @Test
@@ -370,10 +372,10 @@ final class TranslatedVmTest {
     @Test
     void sdkLevelIsApi36() throws Exception {
         assertEquals(36, (int) (Integer) call("sdk"));
-        // The reflective SDK_INT read targets a host framework class, so the
-        // declaring-class check denies it; the direct field read stays
-        // available.
-        assertSandboxDenied("sdkIntDemo");
+        // Framework classes are lookup-visible and their members invocable
+        // (the kotlinx-coroutines widening): the reflective SDK_INT read
+        // reports the modeled API too.
+        assertEquals(36, (int) (Integer) call("sdkIntDemo"));
     }
 
     @Test
@@ -528,9 +530,12 @@ final class TranslatedVmTest {
 
     @Test
     void reflection() throws Exception {
-        // Host/framework-declared members stay denied; a guest class's own
-        // inherited guest member is allowed at lookup and invoke.
-        assertSandboxDenied("reflectDemo");
+        // Framework classes are lookup-visible and their members invocable
+        // (Handler.createAsync is the kotlinx-coroutines Dispatchers.Main
+        // lookup); the demo also reflectively invokes Looper.getMainLooper.
+        Method createAsync = (Method) call("reflectDemo");
+        assertEquals("createAsync", createAsync.getName());
+        assertSame(android.os.Handler.class, createAsync.getDeclaringClass());
         assertSandboxDenied("reflectMissDemo");
         assertEquals("base", (String) call("reflectPubDemo"));
         // A host method inherited by a guest class reads as "not found"

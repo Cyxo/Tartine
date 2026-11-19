@@ -4526,7 +4526,11 @@ public final class FixtureDex {
                 Collections.emptySet(), Collections.emptySet(), detachedHandlerImpl);
         demos.put("detachedHandlerDemo", detachedHandlerDemo);
 
-        // reflectDemo(): Handler.createAsync via getDeclaredMethod + invoke.
+        // reflectDemo(): framework reflection — the kotlinx-coroutines
+        // Dispatchers.Main shape. getDeclaredMethod on Handler.createAsync
+        // and a reflective static invoke of Looper.getMainLooper both stay
+        // visible/invocable; the Method from the lookup is returned (the
+        // looper itself is null off the main thread, which is fine).
         MutableMethodImplementation reflectImpl = new MutableMethodImplementation(4);
         reflectImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_CLASS, 0,
                 builder.internTypeReference("Landroid/os/Handler;")));
@@ -4545,23 +4549,30 @@ public final class FixtureDex {
                         Arrays.asList("Ljava/lang/String;", "[Ljava/lang/Class;"),
                         "Ljava/lang/reflect/Method;"))));
         reflectImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
-        reflectImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0,
-                0, builder.internMethodReference(new ImmutableMethodReference(
-                        "Landroid/os/Looper;", "getMainLooper",
-                        Collections.<String>emptyList(), "Landroid/os/Looper;"))));
+        // Reflectively invoke Looper.getMainLooper via the looked-up
+        // Method. A null result off the main thread still proves the
+        // framework member invocation is allowed.
+        reflectImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
+        reflectImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 2, 2,
+                builder.internTypeReference("[Ljava/lang/Class;")));
+        reflectImpl.addInstruction(new BuilderInstruction21c(Opcode.CONST_STRING, 3,
+                builder.internStringReference("getMainLooper")));
+        reflectImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 1, 3, 2,
+                0, 0, builder.internMethodReference(new ImmutableMethodReference(
+                        "Ljava/lang/Class;", "getDeclaredMethod",
+                        Arrays.asList("Ljava/lang/String;", "[Ljava/lang/Class;"),
+                        "Ljava/lang/reflect/Method;"))));
         reflectImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
-        reflectImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 1));
+        reflectImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 2, 0));
         reflectImpl.addInstruction(new BuilderInstruction22c(Opcode.NEW_ARRAY, 2, 2,
                 builder.internTypeReference("[Ljava/lang/Object;")));
         reflectImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 3, 0));
-        reflectImpl.addInstruction(new BuilderInstruction23x(Opcode.APUT_OBJECT, 1, 2, 3));
-        reflectImpl.addInstruction(new BuilderInstruction11n(Opcode.CONST_4, 1, 0));
-        reflectImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 0, 1, 2,
+        reflectImpl.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL, 3, 1, 3, 2,
                 0, 0, builder.internMethodReference(new ImmutableMethodReference(
                         "Ljava/lang/reflect/Method;", "invoke",
                         Arrays.asList("Ljava/lang/Object;", "[Ljava/lang/Object;"),
                         "Ljava/lang/Object;"))));
-        reflectImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        reflectImpl.addInstruction(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
         reflectImpl.addInstruction(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
         BuilderMethod reflectDemo = builder.internMethod(HELLO, "reflectDemo",
                 Collections.<ImmutableMethodParameter>emptyList(), "Ljava/lang/Object;",

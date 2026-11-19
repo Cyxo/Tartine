@@ -215,11 +215,15 @@ final class SandboxPolicy {
             "setProperty",
             "setSecurityManager");
 
-    /** {@code java.lang.Thread} members that expose host loaders/stacks. */
+    /**
+     * {@code java.lang.Thread} members that expose host loaders or control
+     * other threads. {@code getStackTrace} is allowed: apps use it for their
+     * own caller logging, and ADR-0012 treats the boundary as linkage
+     * compatibility, not a confidentiality sandbox.
+     */
     private static final Set<String> THREAD_DENIED = Set.of(
             "getAllStackTraces",
             "getContextClassLoader",
-            "getStackTrace",
             "resume",
             "setContextClassLoader",
             "stop",
@@ -424,11 +428,28 @@ final class SandboxPolicy {
     }
 
     private static String javaDenial(String name) {
+        if (name.equals("java.net.Proxy") || name.equals("java.net.ProxySelector")
+                || name.equals("java.net.SocketAddress")) {
+            // Reference-only proxy metadata: OkHttpClient stores these in
+            // fields and asks ProxySelector for the host default while it is
+            // constructed. Neither type opens a socket.
+            return null;
+        }
         if (name.startsWith("java.net.")) {
             return "network access is not available: " + name;
         }
         if (name.startsWith("java.nio.file.")) {
             return "host paths are not available: " + name;
+        }
+        if (name.equals("java.nio.channels.Channel")
+                || name.equals("java.nio.channels.ByteChannel")
+                || name.equals("java.nio.channels.ReadableByteChannel")
+                || name.equals("java.nio.channels.WritableByteChannel")) {
+            // Android's channel interfaces: okio declares them on Source and
+            // Sink (and therefore Buffer). They are metadata only; every host
+            // channel implementation (FileChannel, SocketChannel, ...) stays
+            // denied.
+            return null;
         }
         if (name.startsWith("java.nio.channels.")) {
             return "channels are not available: " + name;
@@ -446,6 +467,13 @@ final class SandboxPolicy {
                 || name.startsWith("java.applet.")
                 || name.startsWith("java.beans.")) {
             return "host desktop/database access is not available: " + name;
+        }
+        if (name.equals("java.util.logging.Logger")
+                || name.equals("java.util.logging.Level")) {
+            // OkHttp's Platform keeps a java.util.logging logger; JUL is
+            // Tartine's own diagnostics backend (ADR-0011), so the type is
+            // present on the guest's Android API surface too.
+            return null;
         }
         if (name.startsWith("java.util.logging.")
                 || name.startsWith("java.util.prefs.")
@@ -497,9 +525,17 @@ final class SandboxPolicy {
     private static String javaxDenial(String name) {
         if (name.startsWith("javax.crypto.")
                 || name.startsWith("javax.security.cert.")
+                // X509Certificate.getSubjectX500Principal (Android API).
+                || name.startsWith("javax.security.auth.x500.")
                 || name.startsWith("javax.microedition.")
                 || name.startsWith("javax.inject.")
-                || name.startsWith("javax.annotation.")) {
+                || name.startsWith("javax.annotation.")
+                // Android's socket/TLS API (HostnameVerifier, SocketFactory,
+                // SSLSocketFactory, X509TrustManager, SSLContext, ...).
+                // OkHttp references these in fields and builds its default
+                // trust manager while a client is constructed; a guest call
+                // that returns a socket is still refused by return type.
+                || name.startsWith("javax.net.")) {
             return null;
         }
         return "host extension API is not available: " + name;

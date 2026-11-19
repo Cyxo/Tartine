@@ -39,7 +39,6 @@ final class StrictTranslationTest {
             "Ltest/Hello;->runtimeExecDemo()Ljava/lang/Object;",
             "Ltest/Hello;->runtimeExitDemo()V",
             "Ltest/Hello;->runtimeHaltDemo()V",
-            "Ltest/Hello;->stackDemo()I",
             "Ltest/Hello;->systemSetPropertyDemo()Ljava/lang/Object;");
 
     /**

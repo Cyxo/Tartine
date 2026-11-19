@@ -22,11 +22,25 @@ class SandboxPolicyTest {
         assertNull(SandboxPolicy.classDenial("org/xmlpull/v1/XmlPullParser"));
         assertNull(SandboxPolicy.classDenial("tartine/guest/GuestFile"));
         assertNull(SandboxPolicy.classDenial("tartine/guest/GuestFiles"));
+        // Reference-only networking metadata OkHttp loads eagerly.
+        assertNull(SandboxPolicy.classDenial("java/net/Proxy"));
+        assertNull(SandboxPolicy.classDenial("java/net/ProxySelector"));
+        assertNull(SandboxPolicy.classDenial("java/net/SocketAddress"));
+        assertNull(SandboxPolicy.classDenial("java/nio/channels/Channel"));
+        assertNull(SandboxPolicy.classDenial("java/nio/channels/ReadableByteChannel"));
+        assertNull(SandboxPolicy.classDenial("java/nio/channels/ByteChannel"));
+        assertNull(SandboxPolicy.classDenial("java/util/logging/Logger"));
+        assertNull(SandboxPolicy.classDenial("java/util/logging/Level"));
+        assertNull(SandboxPolicy.classDenial("javax/security/auth/x500/X500Principal"));
+        assertNull(SandboxPolicy.classDenial("javax/net/ssl/SSLSocketFactory"));
+        assertNull(SandboxPolicy.classDenial("javax/net/ssl/HostnameVerifier"));
     }
 
     @Test
     void hostDenies() {
         assertNotNull(SandboxPolicy.classDenial("java/net/Socket"));
+        assertNotNull(SandboxPolicy.classDenial("java/net/InetAddress"));
+        assertNotNull(SandboxPolicy.classDenial("java/net/URL"));
         assertNull(SandboxPolicy.classDenial("java/io/FileInputStream"));
         assertNull(SandboxPolicy.classDenial("java/io/FileOutputStream"));
         assertNull(SandboxPolicy.classDenial("java/io/FileReader"));
@@ -35,6 +49,7 @@ class SandboxPolicyTest {
         assertNotNull(SandboxPolicy.classDenial("java/io/FileDescriptor"));
         assertNotNull(SandboxPolicy.classDenial("java/nio/file/Path"));
         assertNotNull(SandboxPolicy.classDenial("java/nio/channels/FileChannel"));
+        assertNotNull(SandboxPolicy.classDenial("java/nio/channels/SocketChannel"));
         assertNotNull(SandboxPolicy.classDenial("java/lang/Runtime"));
         assertNotNull(SandboxPolicy.classDenial("java/lang/ProcessBuilder"));
         assertNotNull(SandboxPolicy.classDenial("java/lang/ProcessHandle"));
@@ -45,7 +60,8 @@ class SandboxPolicyTest {
         assertNotNull(SandboxPolicy.classDenial("java/lang/reflect/Proxy"));
         assertNotNull(SandboxPolicy.classDenial("java/util/ServiceLoader"));
         assertNotNull(SandboxPolicy.classDenial("java/util/ResourceBundle"));
-        assertNotNull(SandboxPolicy.classDenial("java/util/logging/Logger"));
+        assertNotNull(SandboxPolicy.classDenial("java/util/logging/LogManager"));
+        assertNotNull(SandboxPolicy.classDenial("java/util/logging/FileHandler"));
         assertNotNull(SandboxPolicy.classDenial("java/util/prefs/Preferences"));
         assertNotNull(SandboxPolicy.classDenial("java/util/zip/ZipFile"));
         assertNotNull(SandboxPolicy.classDenial("java/util/jar/JarFile"));
@@ -159,8 +175,13 @@ class SandboxPolicyTest {
                 "newInstance", "([Ljava/lang/Object;)Ljava/lang/Object;", true));
         assertNotNull(SandboxPolicy.memberDenial("java/lang/reflect/AccessibleObject",
                 "setAccessible", "(Z)V", true));
-        assertNotNull(SandboxPolicy.memberDenial("java/lang/Thread",
+        // Stack inspection is allowed: apps use it for caller logging and
+        // ADR-0012 treats the boundary as linkage, not confidentiality.
+        assertNull(SandboxPolicy.memberDenial("java/lang/Thread",
                 "getStackTrace", "()[Ljava/lang/StackTraceElement;", true));
+        assertNotNull(SandboxPolicy.memberDenial("java/lang/Thread",
+                "getAllStackTraces",
+                "()Ljava/util/Map;", true));
         assertNotNull(SandboxPolicy.memberDenial("java/lang/Thread",
                 "getContextClassLoader", "()Ljava/lang/ClassLoader;", true));
         assertNull(SandboxPolicy.memberDenial("java/lang/Thread", "currentThread",
