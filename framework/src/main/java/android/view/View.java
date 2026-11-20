@@ -2768,6 +2768,12 @@ import java.util.function.Consumer;
                 || arg1 != mOldHeightMeasureSpec;
         if (forceLayout) {
             mPrivateFlags &= ~PFLAG_MEASURED_DIMENSION_SET;
+            // AOSP resolves relative layout params before onMeasure.
+            // ConstraintLayout maps its start/end anchors and margins to the
+            // physical left/right fields in this callback.
+            if (mLayoutParams != null) {
+                mLayoutParams.resolveLayoutDirection(getLayoutDirection());
+            }
             onMeasure(arg0, arg1);
             if ((mPrivateFlags & PFLAG_MEASURED_DIMENSION_SET)
                     != PFLAG_MEASURED_DIMENSION_SET) {
@@ -3945,6 +3951,13 @@ import java.util.function.Consumer;
 
     public void setLayoutParams(ViewGroup.LayoutParams arg0) {
         mLayoutParams = arg0;
+        // Parents such as ConstraintLayout build their solver graph before
+        // measuring the child, so relative params must already be physical
+        // when assigned (AOSP reaches the same state during addView's RTL
+        // resolution). measure() repeats this for later direction updates.
+        if (arg0 != null) {
+            arg0.resolveLayoutDirection(getLayoutDirection());
+        }
     }
 
     /**

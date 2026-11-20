@@ -75,6 +75,17 @@ import tartine.fw.ThemeMode;
      * baseline ({@link SystemColors}) backs system color ids.
      */
     public int getColor(int arg0) {
+        return getColor(arg0, null);
+    }
+
+    /**
+     * AOSP: {@code Resources.getColor(int, Theme)} resolves through theme-based
+     * getValue; the installed table already resolves references, so both
+     * overloads read the same value. A color-state-list XML resource answers
+     * its default item, matching AOSP's
+     * {@code getColorStateList(id).getDefaultColor()} route.
+     */
+    public int getColor(int arg0, Resources.Theme arg1) {
         ResValue value = hostValue(arg0);
         if (value != null) {
             if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
@@ -82,7 +93,10 @@ import tartine.fw.ThemeMode;
                 return value.data;
             }
             if (value.type == TypedValue.TYPE_STRING && value.string != null) {
-                return parseColor(value.string);
+                if (value.string.endsWith(".xml")) {
+                    return getColorStateList(arg0, arg1).getDefaultColor();
+                }
+                return parseColorText(value.string);
             }
             return value.data;
         }
@@ -93,25 +107,31 @@ import tartine.fw.ThemeMode;
         return fallback;
     }
 
-    /**
-     * AOSP: {@code Resources.getColor(int, Theme)} resolves through theme-based
-     * getValue; the installed table already resolves references, so both
-     * overloads read the same value.
-     */
-    public int getColor(int arg0, Resources.Theme arg1) {
-        return getColor(arg0);
-    }
-
     public ColorStateList getColorStateList(int arg0) {
-        return ColorStateList.valueOf(getColor(arg0));
+        return getColorStateList(arg0, null);
     }
 
+    /**
+     * AOSP {@code Resources.getColorStateList}: a flat color answers a
+     * one-entry list; a {@code <selector>} file (the compiled value is the
+     * XML path string) parses through {@link ColorStateList#createFromXml}.
+     */
     public ColorStateList getColorStateList(int arg0, Resources.Theme arg1) {
-        return getColorStateList(arg0);
+        ResValue value = hostValue(arg0);
+        if (value != null && value.type == TypedValue.TYPE_STRING
+                && value.string != null && value.string.endsWith(".xml")) {
+            try (XmlResourceParser parser = getXml(arg0)) {
+                return ColorStateList.createFromXml(this, parser, arg1);
+            } catch (RuntimeException ignored) {
+                // Fall through to the flat value (AOSP would report the
+                // malformed selector; the shell keeps drawing a default).
+            }
+        }
+        return ColorStateList.valueOf(getColor(arg0, arg1));
     }
 
     /** Parses {@code #rgb}/{@code #argb}/{@code #rrggbb}/{@code #aarrggbb}. */
-    private static int parseColor(String text) {
+    static int parseColorText(String text) {
         if (text == null || text.isEmpty() || text.charAt(0) != '#') {
             return 0;
         }

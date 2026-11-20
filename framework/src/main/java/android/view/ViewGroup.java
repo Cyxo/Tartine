@@ -872,22 +872,30 @@ import java.util.function.Consumer;
         throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup;->getChildDrawingOrder(II)I");
     }
 
+    /**
+     * AOSP ViewGroup.getChildMeasureSpec: the parent's spec and the child's
+     * layout dimension combine into the child spec. An exact dimension is
+     * always EXACTLY; MATCH_PARENT is as large as the parent allows (EXACTLY
+     * only under an EXACTLY parent), WRAP_CONTENT is at most that space.
+     */
     public static int getChildMeasureSpec(int arg0, int arg1, int arg2) {
         int specMode = MeasureSpec.getMode(arg0);
         int specSize = MeasureSpec.getSize(arg0);
+        int size = Math.max(0, specSize - arg1);
         int resultSize = 0;
         int resultMode = 0;
         if (arg2 >= 0) {
             resultSize = arg2;
             resultMode = MeasureSpec.MODE_EXACTLY;
         } else if (specMode == MeasureSpec.MODE_EXACTLY) {
-            resultSize = Math.max(0, specSize - arg1);
-            resultMode = MeasureSpec.MODE_EXACTLY;
+            resultSize = size;
+            resultMode = arg2 == LayoutParams.MATCH_PARENT
+                    ? MeasureSpec.MODE_EXACTLY : MeasureSpec.MODE_AT_MOST;
         } else if (specMode == MeasureSpec.MODE_AT_MOST) {
-            resultSize = Math.max(0, specSize - arg1);
+            resultSize = size;
             resultMode = MeasureSpec.MODE_AT_MOST;
         } else {
-            resultSize = 0;
+            resultSize = size;
             resultMode = MeasureSpec.MODE_UNSPECIFIED;
         }
         return MeasureSpec.makeMeasureSpec(resultSize, resultMode);
@@ -1495,8 +1503,9 @@ import java.util.function.Consumer;
             height = arg1;
         }
 
+        /** AOSP base LayoutParams has no direction-dependent state. */
         public void resolveLayoutDirection(int arg0) {
-            throw new UnsupportedOperationException("Tartine: not implemented: Landroid/view/ViewGroup$LayoutParams;->resolveLayoutDirection(I)V");
+            // MarginLayoutParams resolves its relative margins here.
         }
 
         /**

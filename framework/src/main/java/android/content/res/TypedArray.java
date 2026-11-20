@@ -230,6 +230,16 @@ public class TypedArray implements AutoCloseable {
         if (value.type == TypedValue.TYPE_REFERENCE && mResources != null) {
             return mResources.getColor(value.data, mTheme);
         }
+        if (value.type == TypedValue.TYPE_STRING && value.string != null) {
+            if (value.string.startsWith("#")) {
+                return Resources.parseColorText(value.string);
+            }
+            if (value.string.endsWith(".xml") && value.sourceId != 0
+                    && mResources != null) {
+                return mResources.getColor(value.sourceId, mTheme);
+            }
+            return defaultValue;
+        }
         if (value.type == TypedValue.TYPE_NULL) {
             return defaultValue;
         }
@@ -243,6 +253,16 @@ public class TypedArray implements AutoCloseable {
         }
         if (value.type == TypedValue.TYPE_REFERENCE && mResources != null) {
             return mResources.getColorStateList(value.data, mTheme);
+        }
+        if (value.type == TypedValue.TYPE_STRING && value.string != null) {
+            if (value.string.startsWith("#")) {
+                return ColorStateList.valueOf(
+                        Resources.parseColorText(value.string));
+            }
+            if (value.string.endsWith(".xml") && value.sourceId != 0
+                    && mResources != null) {
+                return mResources.getColorStateList(value.sourceId, mTheme);
+            }
         }
         return ColorStateList.valueOf(value.data);
     }

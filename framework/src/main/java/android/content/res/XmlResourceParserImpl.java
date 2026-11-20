@@ -376,8 +376,16 @@ final class XmlResourceParserImpl implements XmlResourceParser {
         }
         for (XmlNode.Attribute attr : current.attributes) {
             if (attr.resourceId == attrId) {
+                // AOSP TypedValue.resourceId names the resource a *reference*
+                // points at; a plain int/dimension/string has no source
+                // resource. Reporting the attribute's own id here would make
+                // TypedArray.getResourceId answer it for every literal value
+                // (ConstraintLayout's "parent" is the int 0, which its
+                // getResourceId -> getInt fallback must see as UNSET first).
+                int sourceId = attr.type == 0x01 || attr.type == 0x02
+                        ? attr.data : 0;
                 return new tartine.fw.ResValue(attr.type, attr.data, attr.string,
-                        attr.resourceId);
+                        sourceId);
             }
         }
         return null;

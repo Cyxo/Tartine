@@ -145,6 +145,23 @@ class StyledAttributesTest {
     }
 
     @Test
+    void elementLiteralValuesDoNotReportResourceIds() {
+        XmlResourceParserImpl element = element(
+                attr(ATTR_WIDTH, TypedValue.TYPE_INT_DEC, 17),
+                attr(ATTR_TINT, TypedValue.TYPE_DIMENSION, 0x00000301),
+                new XmlNode.Attribute(null, "attr", ATTR_DEF_STYLE,
+                        TypedValue.TYPE_STRING, 0, "literal"));
+
+        TypedArray array = new Context().getResources().obtainAttributes(
+                element, new int[] {ATTR_WIDTH, ATTR_TINT, ATTR_DEF_STYLE});
+
+        for (int i = 0; i < 3; i++) {
+            assertTrue(array.hasValue(i));
+            assertEquals(-1, array.getResourceId(i, -1));
+        }
+    }
+
+    @Test
     void elementLocalValuesSurviveWithoutHost() {
         AppResources.install(null);
         XmlResourceParserImpl element = element(

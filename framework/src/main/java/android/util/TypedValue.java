@@ -58,9 +58,19 @@ public class TypedValue {
     public CharSequence string;
     public int type;
 
-    /** AOSP's complex-value radix scales, most to least precise. */
+    /**
+     * AOSP's complex-value radix scales. {@link #complexToFloat} keeps the
+     * mantissa in place ({@code complex & 0xFFFFFF00}), so the radix-0 entry
+     * folds in the 8-bit mantissa shift: 23p0 (an integer) scales by
+     * 1/2^8, not by 1 as a pre-shifted reading would suggest.
+     */
+    private static final float MANTISSA_MULT =
+            1.0f / (1 << COMPLEX_MANTISSA_SHIFT);
     private static final float[] RADIX_MULTS = {
-        1.0f / (1 << 23), 1.0f / (1 << 15), 1.0f / (1 << 7), 1.0f
+        1.0f * MANTISSA_MULT,
+        1.0f / (1 << 7) * MANTISSA_MULT,
+        1.0f / (1 << 15) * MANTISSA_MULT,
+        1.0f / (1 << 23) * MANTISSA_MULT
     };
 
     private static final String[] DIMENSION_UNIT_STRS = {
@@ -146,7 +156,7 @@ public class TypedValue {
         final float value = complexToFloat(data);
         final float f = applyDimension((data >> COMPLEX_UNIT_SHIFT) & COMPLEX_UNIT_MASK,
                 value, metrics);
-        final int res = (int) (f + 0.5f);
+        final int res = (int) ((f >= 0) ? (f + 0.5f) : (f - 0.5f));
         if (res != 0) {
             return res;
         }

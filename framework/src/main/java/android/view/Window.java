@@ -34,7 +34,28 @@ public class Window {
      */
     public Window(Context context) {
         mDecor = new DecorView(context);
+        // AOSP PhoneWindow.generateLayout applies the theme's
+        // android:windowBackground to the decor. The shell reads the same
+        // theme value; a color resource becomes a ColorDrawable, so a
+        // Material3 light window paints its background instead of leaving
+        // the raster at the host's clear color. (Bitmap/nine-patch
+        // backgrounds still degrade at the bitmap boundary.)
+        android.content.res.TypedArray a = context.obtainStyledAttributes(
+                new int[] {ATTR_WINDOW_BACKGROUND});
+        android.graphics.drawable.Drawable background;
+        try {
+            background = a.getDrawable(0);
+        } finally {
+            a.recycle();
+        }
+        if (background != null) {
+            mBackgroundDrawable = background;
+            mDecor.setBackground(background);
+        }
     }
+
+    /** {@code android.R.attr.windowBackground} (API 1). */
+    private static final int ATTR_WINDOW_BACKGROUND = 0x01010054;
 
     /** AOSP Window.getDecorView(). */
     public View getDecorView() {
