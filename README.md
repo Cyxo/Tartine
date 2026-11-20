@@ -39,9 +39,9 @@ Tartine can currently parse **pure-Kotlin/Java APKs** and keep their Compose UI 
   <i>On the left, the app run by Tartine. On the right, the same app running on a real Android device, mirrored with scrcpy.</i>
 </p>
 
-> Current Android API coverage: ~3.6% of the public SDK's concrete `android.*` methods (`mise run coverage:api`)
+> Current Android API coverage: ~6.7% of the public SDK's concrete `android.*` methods (`mise run coverage:api`)
 > 
-> ![](https://api.barbuilder.dev/percentage/3.6?style=pill&color=44cc11&label=3.6%&width=400)
+> ![](https://api.barbuilder.dev/percentage/6.7?style=pill&color=44cc11&label=6.7%&width=400)
 
 Here's a list of currently working features:
 - **Pure-DEX apps (Java/Kotlin/Compose, no XML layouts, no native code) run end-to-end** - manifest parsing, DEX -> JVM translation (the only VM), the framework activity lifecycle and a real `ViewRootImpl` attach, composition, and a continuous measure/layout/draw loop; framework behavior is added wall-by-wall via named `UnsupportedOperationException` gaps surfaced by `mise run run`/`refs`. *Limitation: `mise run run` halts at the first named gap on headless runs until the family is ported.*
